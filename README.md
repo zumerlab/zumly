@@ -1,10 +1,10 @@
-# zum
+# ZUM
 zoomable ui toolkit
 
-# Objetive
+## Objetive
 Create a toolkit to develop zoomable UIs
 
-# Ideas
+## Ideas
 - Library
   - Create a standalone js library
   - Use js vanilla as much as possible
