@@ -1,0 +1,106 @@
+<html>
+<head>
+    <meta charset="utf-8">
+        <title>
+            zumly
+        </title>
+    </meta>
+    <style type="text/css">
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      .canvas, .subcanvas {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        
+      }
+
+      .view {
+        will-change: transform;
+        background-color: white
+       }
+       .zoomable {
+        background-color: white
+       }
+       .current {
+        z-index: 20
+       }
+       .previous {
+        // z-index: 10;
+        // opacity: .5
+       }
+       .last {
+        // z-index: 5;
+        // opacity: .5
+       }
+       .view-container {
+        background-color: white
+       }
+       .center-me {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+      }
+    </style>
+</head>
+<body>
+  <div class="canvas"></div>
+<script type="module">
+import Zumly from '../dist/zumly.mjs'
+const home = `
+<div class="view" style='position: absolute; height: 400px; width: 400px; border: 1px solid red; '>
+    <div class='zoomable' data-go-to='contact' style='height: 170px; width: 170px; border: 1px solid red; transform: translate(50px, 30px)'>
+        @contact
+    </div>
+    <span  class='zoomable' data-go-to='mail' style=''>cualquier cosa anda</span>
+</div>
+`
+const contact = `
+<div class="view" style='position: absolute; height: 400px; width: 400px; border: 1px solid green; '>
+  <div class='zoomable' data-go-to='mail' style='height: 170px; width: 170px; border: 1px solid green; transform: translate(90px, 80px)'>
+        @mail
+    </div>
+</div>
+`
+
+const mail = `
+<div class="view" style='position: absolute; height: 400px; width: 400px; border: 1px solid purple;'>
+  <div class='zoomable' data-go-to='home' style='height: 170px; width: 170px; border: 1px solid purple; transform: translate(120px, 180px)'>
+        @home
+    </div>
+</div>
+`
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: home,
+  views: {
+    home,
+    contact,
+    mail
+  }
+})
+
+app.init()
+</script>
+<!-- <script src="../dist/mytest.umd.js"></script>
+
+<script>
+var uno = new mytest('uno', '.zoomable')
+
+var dos = new mytest('dos', '.test')
+
+console.log(uno)
+console.log('---')
+console.log(dos)
+console.log('---')
+console.log(new mytest('tes'))
+</script> -->
+
+    </body>
+</html>
