@@ -19,7 +19,7 @@ export default class Zumly {
       y: coords.y
     })
     // agrega eventos a todos los .zoomable
-    document.querySelectorAll('.zoomable')
+    view.querySelectorAll('.zoomable')
       .forEach(el => el.addEventListener('click', () => this.zoomIn(el)))
   }
   storeViews (data) {
@@ -44,9 +44,6 @@ export default class Zumly {
     var goneView = null
     goneView = document.querySelector('.last')
     if (goneView !== null) {
-        goneView.querySelectorAll('.zoomable')
-      .forEach(el => el.removeEventListener('click', () => this.zoomIn(el)))
-        //el.addEventListener('click', () => this.zoomIn(el)))
         canvas.removeChild(goneView)
     }
     // si existe transforma previous view en last view
@@ -67,8 +64,8 @@ export default class Zumly {
     document.querySelector('.view').classList.add('current')
     var currentView = document.querySelector('.current')
     let coordenadasCurrentView = currentView.getBoundingClientRect()
-    // agrega eventos
-    document.querySelectorAll('.zoomable')
+    // agrega eventos al currentview
+    currentView.querySelectorAll('.zoomable')
       .forEach(vx => vx.addEventListener('click', () => this.zoomIn(vx))) // HANBRIA QUE REMOVCER EL EVENTO AL REMOVER LA VIEW
     // canvas
     let scale = coordenadasCurrentView.width / coordenadasEl.width
@@ -125,13 +122,14 @@ export default class Zumly {
 }
 // TEMAS A RESOLVER:
 // - dsp usar css vars
-// - DESHABILITAR CLICK ON TRANSITIONS VIA JS O CSS
-// - LISTO AUMENTAR SCALE DE LASTVIEW. 
+// - DESHABILITAR CLICK ON TRANSITIONS VIA JS O CSS. VIA CSS. FALTA DESHABILITAR LA NEW CURRENT VIEW VIA UNA CLASS TEMPORAIA
+// LISTO AUMENTAR SCALE DE LASTVIEW. 
 // - CAMBIAR EL NOMBRE ADEMAS lasrvoew
 // - ZOOM BACK
-// - ver tema de centrar new view en duferebte elementos
-// - LISTO identificar zoombale el clickeado
-// - tener en cuenta posicion inicial de las vistas, que afecta como se renderizan en la nueva vista. 
+// - USR FLIP
+// LISTO ver tema de centrar new view en duferebte elementos
+// LISTO identificar zoombale el clickeado
+// LISTO tener en cuenta posicion inicial de las vistas, que afecta como se renderizan en la nueva vista. 
 // quizas hacer un overrride de esas cosas en caso que no sea la vista inicial.
 // LISTO ver tema de tamano diferente de las .views
 // LISTO zoom infinito YEAHH!!
