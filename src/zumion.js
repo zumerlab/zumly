@@ -63,6 +63,7 @@ export default class Zumly {
     mountPoint.prepend(newView.content)
     document.querySelector('.view').classList.add('current')
     var currentView = document.querySelector('.current')
+    currentView.classList.add('no-events')
     let coordenadasCurrentView = currentView.getBoundingClientRect()
     // agrega eventos al currentview
     currentView.querySelectorAll('.zoomable')
@@ -116,6 +117,7 @@ export default class Zumly {
     currentView.style.transition = `transform ${scale * 0.5}s`
     // requestAnimationFrame(function() {
         currentView.style.transform = `translate(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px)`
+        currentView.addEventListener('transitionend', () => currentView.classList.remove('no-events'))
     // })
     this.storeViews({x: newcoordenadasEl.x, y: newcoordenadasEl.y})
   }
