@@ -6,6 +6,11 @@ export default class Zumly {
 // methods
   init () {
     const rootDiv = document.querySelector(this.app.mount)
+    var self = this
+    rootDiv.addEventListener('click', function (e) {
+      e.stopPropagation()
+      self.zoomOut()
+    })
     var newView = document.createElement('template')
     newView.innerHTML = this.app.initialView
     rootDiv.prepend(newView.content)
@@ -32,15 +37,19 @@ export default class Zumly {
         ]
     })
     // agrega eventos a todos los .zoomable
+    var self = this
     view.querySelectorAll('.zoomable')
-      .forEach(el => el.addEventListener('click', () => this.zoomIn(el)))
+      .forEach(el => el.addEventListener('click', function (e) {
+        e.stopPropagation()
+        self.zoomIn(el)
+      }))
   }
   storeViews (data) {
     this.storedViews.push(data)
     console.log(this.storedViews)
   }
   zoomOut () {
-
+    console.log('zoomOut clicked')
   }
   zoomIn (el) {
     // clicked element with .zoomable
@@ -80,8 +89,16 @@ export default class Zumly {
     currentView.classList.add('no-events')
     let coordenadasCurrentView = currentView.getBoundingClientRect()
     // agrega eventos al currentview
+    var self = this
     currentView.querySelectorAll('.zoomable')
-      .forEach(vx => vx.addEventListener('click', () => this.zoomIn(vx))) // HANBRIA QUE REMOVCER EL EVENTO AL REMOVER LA VIEW
+      .forEach(vx => vx.addEventListener('click', function (e) {
+        e.stopPropagation()
+        self.zoomIn(vx)
+      })) // HANBRIA QUE REMOVCER EL EVENTO AL REMOVER LA VIEW
+    currentView.onclick = function (e) {
+      e.stopPropagation()
+      console.log('ff')
+    }
     // canvas
     let scale = coordenadasCurrentView.width / coordenadasEl.width
     let scaleInv = 1 / scale
