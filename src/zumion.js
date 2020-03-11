@@ -14,9 +14,22 @@ export default class Zumly {
     var coords = view.getBoundingClientRect()
     // add to storage
     this.storeViews({
-      view: view,
-      x: coords.x,
-      y: coords.y
+        zoomLevel: this.storedViews.length,
+        views: [
+      // se guardan datos previos
+          { 
+            location: 'current',
+            element: view, // dsp poner nombre
+            backwardState: {
+              origin: '',
+              transition: '',
+              x: coords.x,
+              y: coords.y,
+              scale: 1
+            },
+            forwardState: null
+          }
+        ]
     })
     // agrega eventos a todos los .zoomable
     view.querySelectorAll('.zoomable')
@@ -24,6 +37,7 @@ export default class Zumly {
   }
   storeViews (data) {
     this.storedViews.push(data)
+    console.log(this.storedViews)
   }
   zoomOut () {
 
@@ -119,7 +133,112 @@ export default class Zumly {
         currentView.style.transform = `translate(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px)`
         currentView.addEventListener('transitionend', () => currentView.classList.remove('no-events'))
     // })
-    this.storeViews({x: newcoordenadasEl.x, y: newcoordenadasEl.y})
+    if (lastView !== null) {
+      this.storeViews(
+    {
+      zoomLevel: this.storedViews.length,
+      views: [
+      // se guardan datos previos
+          { 
+            location: 'current',
+            element: currentView, // dsp poner nombre
+            backwardState: {
+              origin: currentView.style.transformOrigin,
+              transition: currentView.style.transition,
+              x: coordenadasEl.x,
+              y: coordenadasEl.y,
+              scale: scaleInv
+            },
+            forwardState: {
+              origin: currentView.style.transformOrigin,
+              transition: currentView.style.transition,
+              x: newcoordenadasEl.x,
+              y: newcoordenadasEl.y,
+              scale: 1
+            }
+          },
+          { 
+            location: 'previous',
+            element: previousView, // dsp poner nombre
+            backwardState: {
+              origin: previousView.style.transformOrigin,
+              transition: previousView.style.transition,
+              x: coordenadasPreviousView.x,
+              y: coordenadasPreviousView.y,
+              scale: 1
+            },
+            forwardState: {
+              origin: previousView.style.transformOrigin,
+              transition: previousView.style.transition,
+              x: x,
+              y: y,
+              scale: scale
+            }
+          },
+          { 
+            location: 'last',
+            element: lastView, // dsp poner nombre
+            backwardState: {
+              origin: lastView.style.transformOrigin,
+              transition: lastView.style.transition,
+              transform: clvt
+            },
+            forwardState: {
+              origin: lastView.style.transformOrigin,
+              transition: lastView.style.transition,
+              transform: lastView.style.transform
+            }
+          }
+        ]
+      }
+    )
+    } else {
+      this.storeViews(
+    {
+      zoomLevel: this.storedViews.length,
+      views: [
+      // se guardan datos previos
+          { 
+            location: 'current',
+            element: currentView, // dsp poner nombre
+            backwardState: {
+              origin: currentView.style.transformOrigin,
+              transition: currentView.style.transition,
+              x: coordenadasEl.x,
+              y: coordenadasEl.y,
+              scale: scaleInv
+            },
+            forwardState: {
+              origin: currentView.style.transformOrigin,
+              transition: currentView.style.transition,
+              x: newcoordenadasEl.x,
+              y: newcoordenadasEl.y,
+              scale: 1
+            }
+          },
+          { 
+            location: 'previous',
+            element: previousView, // dsp poner nombre
+            backwardState: {
+              origin: previousView.style.transformOrigin,
+              transition: previousView.style.transition,
+              x: coordenadasPreviousView.x,
+              y: coordenadasPreviousView.y,
+              scale: 1
+            },
+            forwardState: {
+              origin: currentView.style.transformOrigin,
+              transition: currentView.style.transition,
+              x: x,
+              y: y,
+              scale: scale
+            }
+          }
+        ]
+      }
+    )
+    }
+    
   }
 }
 // TEMAS A RESOLVER:
