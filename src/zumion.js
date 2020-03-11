@@ -12,10 +12,11 @@ export default class Zumly {
       self.zoomOut()
     })
     var newView = document.createElement('template')
-    newView.innerHTML = this.app.initialView
+    newView.innerHTML = this.app.views[this.app.initialView]
     rootDiv.prepend(newView.content)
     var view = document.querySelector('.view')
     view.classList.add('current')
+    view.dataset.viewName = this.app.initialView
     var coords = view.getBoundingClientRect()
     // add to storage
     this.storeViews({
@@ -24,13 +25,11 @@ export default class Zumly {
       // se guardan datos previos
           { 
             location: 'current',
-            element: view, // dsp poner nombre
+            viewName: this.app.initialView,
             backwardState: {
-              origin: '',
-              transition: '',
-              x: coords.x,
-              y: coords.y,
-              scale: 1
+              origin: view.style.transformOrigin,
+              transition: view.style.transition,
+              transform: view.style.transform
             },
             forwardState: null
           }
@@ -43,6 +42,7 @@ export default class Zumly {
         e.stopPropagation()
         self.zoomIn(el)
       }))
+    console.log(this.app.views)
   }
   storeViews (data) {
     this.storedViews.push(data)
@@ -50,6 +50,29 @@ export default class Zumly {
   }
   zoomOut () {
     console.log('zoomOut clicked')
+    var ultimaVista = this.storedViews[this.storedViews.length - 1]
+    this.storedViews.pop()
+    console.log(ultimaVista.views[0])
+    let current = ultimaVista.views[0]
+    let previous = ultimaVista.views[1]
+    const canvas = document.querySelector(this.app.mount)
+    var currentView = canvas.querySelector('div:nth-child(1)')
+    var previousView = canvas.querySelector('div:nth-child(2)')
+    var lastView = canvas.querySelector('div:nth-child(3)')
+    //console.log(currentView, previousView)
+    currentView.style.transformOrigin = current.backwardState.origin
+    currentView.style.transition = current.backwardState.transition
+    currentView.style.transform = current.backwardState.transform
+    currentView.addEventListener('transitionend', () => canvas.removeChild(currentView))
+    previousView.style.transformOrigin = previous.backwardState.origin
+    previousView.style.transition = previous.backwardState.transition
+    previousView.style.transform =previous.backwardState.transform
+    if (lastView !== null) {
+      let last = ultimaVista.views[2]
+      lastView.style.transformOrigin = last.backwardState.origin
+      lastView.style.transition = last.backwardState.transition
+      lastView.style.transform =last.backwardState.transform
+    }
   }
   zoomIn (el) {
     // clicked element with .zoomable
@@ -86,6 +109,7 @@ export default class Zumly {
     mountPoint.prepend(newView.content)
     document.querySelector('.view').classList.add('current')
     var currentView = document.querySelector('.current')
+    currentView.dataset.viewName = el.dataset.goTo
     currentView.classList.add('no-events')
     let coordenadasCurrentView = currentView.getBoundingClientRect()
     // agrega eventos al currentview
@@ -125,6 +149,7 @@ export default class Zumly {
         lastView.style.transform = clvt
     }
     previousView.style.transform = `translate(${coordenadasPreviousView.x}px, ${coordenadasPreviousView.y}px)`
+    var prePrevTransform = previousView.style.transform
     el.getBoundingClientRect()
     previousView.style.filter = 'blur(2px)'
     previousView.style.transition = `transform ${scale * 0.5}s`
@@ -135,6 +160,7 @@ export default class Zumly {
     currentView.style.transformOrigin = 'top left'
     // requestAnimationFrame(function() {
         currentView.style.transform = `translate(${coordenadasEl.x}px, ${coordenadasEl.y}px) scale(${scaleInv})`
+        var preCurrentTransform = currentView.style.transform
     // })
     if (lastView !== null) {
         lastView.style.transition = `transform ${scale * 0.5}s`
@@ -158,43 +184,35 @@ export default class Zumly {
       // se guardan datos previos
           { 
             location: 'current',
-            element: currentView, // dsp poner nombre
+            viewName: currentView.dataset.viewName,
             backwardState: {
               origin: currentView.style.transformOrigin,
               transition: currentView.style.transition,
-              x: coordenadasEl.x,
-              y: coordenadasEl.y,
-              scale: scaleInv
+              transform: preCurrentTransform
             },
             forwardState: {
               origin: currentView.style.transformOrigin,
               transition: currentView.style.transition,
-              x: newcoordenadasEl.x,
-              y: newcoordenadasEl.y,
-              scale: 1
+              transform: currentView.style.transform
             }
           },
           { 
             location: 'previous',
-            element: previousView, // dsp poner nombre
+            viewName: previousView.dataset.viewName, // dsp poner nombre
             backwardState: {
               origin: previousView.style.transformOrigin,
               transition: previousView.style.transition,
-              x: coordenadasPreviousView.x,
-              y: coordenadasPreviousView.y,
-              scale: 1
+              transform: prePrevTransform
             },
             forwardState: {
               origin: previousView.style.transformOrigin,
               transition: previousView.style.transition,
-              x: x,
-              y: y,
-              scale: scale
+              transform: previousView.style.transform
             }
           },
           { 
             location: 'last',
-            element: lastView, // dsp poner nombre
+            viewName: lastView.dataset.viewName, // dsp poner nombre
             backwardState: {
               origin: lastView.style.transformOrigin,
               transition: lastView.style.transition,
@@ -215,40 +233,32 @@ export default class Zumly {
       zoomLevel: this.storedViews.length,
       views: [
       // se guardan datos previos
-          { 
+{ 
             location: 'current',
-            element: currentView, // dsp poner nombre
+            viewName: currentView.dataset.viewName,
             backwardState: {
               origin: currentView.style.transformOrigin,
               transition: currentView.style.transition,
-              x: coordenadasEl.x,
-              y: coordenadasEl.y,
-              scale: scaleInv
+              transform: preCurrentTransform
             },
             forwardState: {
               origin: currentView.style.transformOrigin,
               transition: currentView.style.transition,
-              x: newcoordenadasEl.x,
-              y: newcoordenadasEl.y,
-              scale: 1
+              transform: currentView.style.transform
             }
           },
           { 
             location: 'previous',
-            element: previousView, // dsp poner nombre
+            viewName: previousView.dataset.viewName, // dsp poner nombre
             backwardState: {
               origin: previousView.style.transformOrigin,
               transition: previousView.style.transition,
-              x: coordenadasPreviousView.x,
-              y: coordenadasPreviousView.y,
-              scale: 1
+              transform: prePrevTransform
             },
             forwardState: {
-              origin: currentView.style.transformOrigin,
-              transition: currentView.style.transition,
-              x: x,
-              y: y,
-              scale: scale
+              origin: previousView.style.transformOrigin,
+              transition: previousView.style.transition,
+              transform: previousView.style.transform
             }
           }
         ]
@@ -259,16 +269,16 @@ export default class Zumly {
   }
 }
 // TEMAS A RESOLVER:
+// 
 // - dsp usar css vars
-// - DESHABILITAR CLICK ON TRANSITIONS VIA JS O CSS. VIA CSS. FALTA DESHABILITAR LA NEW CURRENT VIEW VIA UNA CLASS TEMPORAIA
+// - LISTO DESHABILITAR CLICK ON TRANSITIONS VIA JS O CSS. VIA CSS. FALTA DESHABILITAR LA NEW CURRENT VIEW VIA UNA CLASS TEMPORAIA
 // LISTO AUMENTAR SCALE DE LASTVIEW. 
 // - CAMBIAR EL NOMBRE ADEMAS lasrvoew
-// - ZOOM BACK
-// - USR FLIP
+// WIP ZOOM BACK: - se hace por dataset.viewName
+// - USR FLIP (PODRIA ANDAR)
 // LISTO ver tema de centrar new view en duferebte elementos
 // LISTO identificar zoombale el clickeado
-// LISTO tener en cuenta posicion inicial de las vistas, que afecta como se renderizan en la nueva vista. 
-// quizas hacer un overrride de esas cosas en caso que no sea la vista inicial.
+// LISTO tener en cuenta posicion inicial de las vistas, que afecta como se renderizan en la nueva vista. quizas hacer un overrride de esas cosas en caso que no sea la vista inicial.
 // LISTO ver tema de tamano diferente de las .views
 // LISTO zoom infinito YEAHH!!
 // LISTO el resultado de previus view aka last se resta al resultado freal de prevuous

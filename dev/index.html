@@ -30,7 +30,7 @@
         background-color: white
        }
        .current {
-        z-index: 20
+        z-index: 20;
        }
        .previous, .last {
         pointer-events: none;
@@ -75,7 +75,7 @@ const mail = `
 `
 const app = new Zumly({
   mount: '.canvas',
-  initialView: home,
+  initialView: 'home',
   views: {
     home,
     contact,
