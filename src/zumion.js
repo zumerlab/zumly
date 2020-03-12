@@ -42,19 +42,21 @@ export default class Zumly {
         e.stopPropagation()
         self.zoomIn(el)
       }))
-    console.log(this.app.views)
   }
   storeViews (data) {
     this.storedViews.push(data)
-    console.log(this.storedViews)
+    // console.log(this.storedViews)
   }
   zoomOut () {
+    console.log(this.storedViews)
     console.log('zoomOut clicked')
     var ultimaVista = this.storedViews[this.storedViews.length - 1]
     this.storedViews.pop()
-    console.log(ultimaVista.views[0])
     let current = ultimaVista.views[0]
     let previous = ultimaVista.views[1]
+    let last = ultimaVista.views[2]
+    let gone = ultimaVista.views[3]
+    console.log(gone)
     const canvas = document.querySelector(this.app.mount)
     var currentView = canvas.querySelector('div:nth-child(1)')
     var previousView = canvas.querySelector('div:nth-child(2)')
@@ -63,16 +65,35 @@ export default class Zumly {
     currentView.style.transformOrigin = current.backwardState.origin
     currentView.style.transition = current.backwardState.transition
     currentView.style.transform = current.backwardState.transform
-    currentView.addEventListener('transitionend', () => canvas.removeChild(currentView))
+    currentView.addEventListener('transitionend', () => {
+      canvas.removeChild(canvas.querySelector('div:first-child'))
+      })
+    previousView.style.filter = ''
+    previousView.classList.remove('previous')
+    previousView.classList.add('current')
     previousView.style.transformOrigin = previous.backwardState.origin
     previousView.style.transition = previous.backwardState.transition
     previousView.style.transform =previous.backwardState.transform
-    if (lastView !== null) {
-      let last = ultimaVista.views[2]
+    if (last !== undefined) {
+      lastView.classList.remove('last')
+      lastView.classList.add('previous')
       lastView.style.transformOrigin = last.backwardState.origin
       lastView.style.transition = last.backwardState.transition
       lastView.style.transform =last.backwardState.transform
+      // canvas.removeChild(canvas.querySelector('div:nth-child(1)'))
     }
+    if (gone !== undefined) {
+      var newView = document.createElement('template')
+      newView.innerHTML = this.app.views[gone.viewName]
+      canvas.append(newView.content)
+      var newlastView = canvas.querySelector('div:last-child')
+      newlastView.classList.add('last')
+      newlastView.style.transformOrigin = last.backwardState.origin
+      newlastView.style.transition = last.backwardState.transition
+      newlastView.style.transform =last.backwardState.transform
+      // canvas.removeChild(canvas.querySelector('div:nth-child(1)'))
+    }
+    //FALTA INCORPORAR VIEWS SACADAS Y CAMBIAR LAS CLASES 
   }
   zoomIn (el) {
     // clicked element with .zoomable
@@ -176,12 +197,13 @@ export default class Zumly {
         currentView.style.transform = `translate(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px)`
         currentView.addEventListener('transitionend', () => currentView.classList.remove('no-events'))
     // })
-    if (lastView !== null) {
-      this.storeViews(
-    {
+
+    // ADD GONE VIIEW Y LISTO EL POLLO
+    var snapShoot = {
       zoomLevel: this.storedViews.length,
-      views: [
-      // se guardan datos previos
+      views: []
+    }
+    let currentv = currentView ? 
           { 
             location: 'current',
             viewName: currentView.dataset.viewName,
@@ -195,7 +217,8 @@ export default class Zumly {
               transition: currentView.style.transition,
               transform: currentView.style.transform
             }
-          },
+          } : null
+    let previousv = previousView ? 
           { 
             location: 'previous',
             viewName: previousView.dataset.viewName, // dsp poner nombre
@@ -209,7 +232,8 @@ export default class Zumly {
               transition: previousView.style.transition,
               transform: previousView.style.transform
             }
-          },
+          } : null
+    let lastv = lastView ? 
           { 
             location: 'last',
             viewName: lastView.dataset.viewName, // dsp poner nombre
@@ -223,49 +247,23 @@ export default class Zumly {
               transition: lastView.style.transition,
               transform: lastView.style.transform
             }
-          }
-        ]
-      }
-    )
-    } else {
-      this.storeViews(
-    {
-      zoomLevel: this.storedViews.length,
-      views: [
-      // se guardan datos previos
-{ 
-            location: 'current',
-            viewName: currentView.dataset.viewName,
-            backwardState: {
-              origin: currentView.style.transformOrigin,
-              transition: currentView.style.transition,
-              transform: preCurrentTransform
-            },
-            forwardState: {
-              origin: currentView.style.transformOrigin,
-              transition: currentView.style.transition,
-              transform: currentView.style.transform
-            }
-          },
+          } : null
+    let gonev = goneView ? 
           { 
-            location: 'previous',
-            viewName: previousView.dataset.viewName, // dsp poner nombre
+            location: 'gone',
+            viewName: goneView.dataset.viewName, // dsp poner nombre
             backwardState: {
-              origin: previousView.style.transformOrigin,
-              transition: previousView.style.transition,
-              transform: prePrevTransform
+              origin: goneView.style.transformOrigin,
+              transition: null,
+              transform: goneView.style.transform
             },
-            forwardState: {
-              origin: previousView.style.transformOrigin,
-              transition: previousView.style.transition,
-              transform: previousView.style.transform
-            }
-          }
-        ]
-      }
-    )
-    }
-    
+            forwardState: null
+          } : null
+    if (currentv !== null) snapShoot.views.push(currentv)
+      if (previousv !== null) snapShoot.views.push(previousv)
+        if (lastv !== null) snapShoot.views.push(lastv)
+          if (gonev !== null) snapShoot.views.push(gonev)
+    this.storeViews(snapShoot)
   }
 }
 // TEMAS A RESOLVER:
