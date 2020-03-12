@@ -48,51 +48,55 @@ export default class Zumly {
     // console.log(this.storedViews)
   }
   zoomOut () {
-    console.log(this.storedViews)
-    console.log('zoomOut clicked')
-    var ultimaVista = this.storedViews[this.storedViews.length - 1]
-    this.storedViews.pop()
-    let current = ultimaVista.views[0]
-    let previous = ultimaVista.views[1]
-    let last = ultimaVista.views[2]
-    let gone = ultimaVista.views[3]
-    console.log(gone)
-    const canvas = document.querySelector(this.app.mount)
-    var currentView = canvas.querySelector('div:nth-child(1)')
-    var previousView = canvas.querySelector('div:nth-child(2)')
-    var lastView = canvas.querySelector('div:nth-child(3)')
-    //console.log(currentView, previousView)
-    currentView.style.transformOrigin = current.backwardState.origin
-    currentView.style.transition = current.backwardState.transition
-    currentView.style.transform = current.backwardState.transform
-    currentView.addEventListener('transitionend', () => {
-      canvas.removeChild(canvas.querySelector('div:first-child'))
-      })
-    previousView.style.filter = ''
-    previousView.classList.remove('previous')
-    previousView.classList.add('current')
-    previousView.style.transformOrigin = previous.backwardState.origin
-    previousView.style.transition = previous.backwardState.transition
-    previousView.style.transform =previous.backwardState.transform
-    if (last !== undefined) {
-      lastView.classList.remove('last')
-      lastView.classList.add('previous')
-      lastView.style.transformOrigin = last.backwardState.origin
-      lastView.style.transition = last.backwardState.transition
-      lastView.style.transform =last.backwardState.transform
-      // canvas.removeChild(canvas.querySelector('div:nth-child(1)'))
+    console.log(this.storedViews.length)
+    if (this.storedViews.length > 1) {
+        console.log(this.storedViews)
+        var ultimaVista = this.storedViews[this.storedViews.length - 1]
+        let current = ultimaVista.views[0]
+        let previous = ultimaVista.views[1]
+        let last = ultimaVista.views[2]
+        let gone = ultimaVista.views[3]
+        console.log(gone)
+        const canvas = document.querySelector(this.app.mount)
+        var currentView = canvas.querySelector('.view.current')
+        var previousView = canvas.querySelector('.view.previous')
+        var lastView = canvas.querySelector('.view.last')
+        //console.log(currentView, previousView)
+        currentView.style.transformOrigin = current.backwardState.origin
+        currentView.style.transition = current.backwardState.transition
+        currentView.style.transform = current.backwardState.transform
+        currentView.addEventListener('transitionend', () => {
+          canvas.removeChild(canvas.querySelector('.view.current'))
+          })
+        previousView.style.filter = ''
+        previousView.classList.remove('previous')
+        previousView.classList.add('current')
+        previousView.style.transformOrigin = previous.backwardState.origin
+        previousView.style.transition = previous.backwardState.transition
+        previousView.style.transform =previous.backwardState.transform
+        if (last !== undefined) {
+          lastView.classList.remove('last')
+          lastView.classList.add('previous')
+          lastView.style.opacity = 1 // hack opacity
+          lastView.style.transformOrigin = last.backwardState.origin
+          lastView.style.transition = last.backwardState.transition
+          lastView.style.transform =last.backwardState.transform
+          // canvas.removeChild(canvas.querySelector('div:nth-child(1)'))
+        }
+        if (gone !== undefined) {
+          //var newView = document.createElement('template')
+          //newView.innerHTML = gone.viewName
+          canvas.append(gone.viewName)
+          var newlastView = canvas.querySelector('.view:last-child')
+          newlastView.style.opacity = 0 // hack opacity
+          //newlastView.classList.add('last')
+          //newlastView.style.transformOrigin = gone.backwardState.origin
+          //newlastView.style.transition = gone.backwardState.transition
+          //newlastView.style.transform = gone.backwardState.transform
+        }
+        this.storedViews.pop()
     }
-    if (gone !== undefined) {
-      var newView = document.createElement('template')
-      newView.innerHTML = this.app.views[gone.viewName]
-      canvas.append(newView.content)
-      var newlastView = canvas.querySelector('div:last-child')
-      newlastView.classList.add('last')
-      newlastView.style.transformOrigin = last.backwardState.origin
-      newlastView.style.transition = last.backwardState.transition
-      newlastView.style.transform =last.backwardState.transform
-      // canvas.removeChild(canvas.querySelector('div:nth-child(1)'))
-    }
+    
     //FALTA INCORPORAR VIEWS SACADAS Y CAMBIAR LAS CLASES 
   }
   zoomIn (el) {
@@ -165,7 +169,8 @@ export default class Zumly {
         lastView.style.transition = 'transform 0s'
         // var scale1 = coordenadasLastView.width / cpe.width
         lastView.style.transform = `translate(${x}px, ${y}px) scale(${scale * scale})`
-        var last = document.querySelector('.last > .active')
+        var last = document.querySelector('.last > .active') // BUG A RESOLVER... CUANDO SE VUELVE A METER LA VIEW...
+        // QUIZAS LA SOLUCION ES METER LA VIEW ENTERA EN GONE... :)
         var coorLast = last.getBoundingClientRect()
         lastView.style.transform = clvt
     }
@@ -249,12 +254,12 @@ export default class Zumly {
             }
           } : null
     let gonev = goneView ? 
-          { 
+          { // ACA VA LA VISTA ENTERA FALTA REALIZAR UN ZOOM IGUAL ANTES DE SACARLA DE JUEGO
             location: 'gone',
-            viewName: goneView.dataset.viewName, // dsp poner nombre
+            viewName: goneView, //.dataset.viewName, // dsp poner nombre
             backwardState: {
               origin: goneView.style.transformOrigin,
-              transition: null,
+              transition: goneView.style.transition,
               transform: goneView.style.transform
             },
             forwardState: null
