@@ -51,15 +51,18 @@
 <script type="module">
 import Zumly from '../dist/zumly.mjs'
 const home = `
-<div class="view" style='position: absolute; height: 400px; width: 400px; border: 1px solid red; '>
+<div class="view" style='position: absolute; height: 500px; width: 500px; border: 1px solid red; '>
     <div class='zoomable' data-go-to='contact' style='height: 170px; width: 170px; border: 1px solid red; transform: translate(50px, 30px)'>
         @contact
     </div>
     <span  class='zoomable' data-go-to='mail' style=''>cualquier cosa anda</span>
+    <div class='zoomable' data-go-to='contact' style='height: 170px; width: 170px; border: 1px solid red; transform: translate(150px, 90px)'>
+        @texd
+    </div>
 </div>
 `
 const contact = `
-<div class="view" style='position: absolute; height: 400px; width: 400px; border: 1px solid green; '>
+<div class="view" style='position: absolute; height: 500px; width: 500px; border: 1px solid green; '>
   <div class='zoomable' data-go-to='mail' style='height: 170px; width: 170px; border: 1px solid green; transform: translate(90px, 80px)'>
         @mail
     </div>
@@ -67,7 +70,7 @@ const contact = `
 `
 
 const mail = `
-<div class="view" style='position: absolute; height: 400px; width: 400px; border: 1px solid purple;'>
+<div class="view" style='position: absolute; height: 500px; width: 500px; border: 1px solid purple;'>
   <div class='zoomable' data-go-to='home' style='height: 170px; width: 170px; border: 1px solid purple; transform: translate(120px, 180px)'>
         @home
     </div>
