@@ -48,15 +48,12 @@ export default class Zumly {
     // console.log(this.storedViews)
   }
   zoomOut () {
-    console.log(this.storedViews.length)
     if (this.storedViews.length > 1) {
-        console.log(this.storedViews)
         var ultimaVista = this.storedViews[this.storedViews.length - 1]
         let current = ultimaVista.views[0]
         let previous = ultimaVista.views[1]
         let last = ultimaVista.views[2]
         let gone = ultimaVista.views[3]
-        console.log(gone)
         const canvas = document.querySelector(this.app.mount)
         var currentView = canvas.querySelector('.view.current')
         var previousView = canvas.querySelector('.view.previous')
@@ -158,7 +155,7 @@ export default class Zumly {
     `
     let x = coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + coordenadasPreviousView.x
     let y = coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + coordenadasPreviousView.y
-    let move = `translate(${x}px, ${y}px) scale(${scale})`
+    let move = `translate3d(${x}px, ${y}px, 0px) scale(${scale})`
     previousView.style.transform = move
     var newcoordenadasEl = el.getBoundingClientRect()
     // vuelve a setear coordenadas
@@ -168,38 +165,38 @@ export default class Zumly {
         //var cpe = prevEl.getBoundingClientRect()
         lastView.style.transition = 'transform 0s'
         // var scale1 = coordenadasLastView.width / cpe.width
-        lastView.style.transform = `translate(${x}px, ${y}px) scale(${scale * scale})`
+        lastView.style.transform = `translate3d(${x}px, ${y}px, 0px) scale(${scale * scale})`
         var last = document.querySelector('.last > .active') // BUG A RESOLVER... CUANDO SE VUELVE A METER LA VIEW...
         // QUIZAS LA SOLUCION ES METER LA VIEW ENTERA EN GONE... :)
         var coorLast = last.getBoundingClientRect()
         lastView.style.transform = clvt
     }
-    previousView.style.transform = `translate(${coordenadasPreviousView.x}px, ${coordenadasPreviousView.y}px)`
+    previousView.style.transform = `translate3d(${coordenadasPreviousView.x}px, ${coordenadasPreviousView.y}px, 0px)`
     var prePrevTransform = previousView.style.transform
     el.getBoundingClientRect()
-    previousView.style.filter = 'blur(2px)'
-    previousView.style.transition = `transform ${scale * 0.5}s`
+    // previousView.style.filter = 'blur(2px)'
+    previousView.style.transition = `transform ${scale * 0.4}s ease-in-out`
     // requestAnimationFrame(function() {
         previousView.style.transform = move
     // })
     ///
     currentView.style.transformOrigin = 'top left'
     // requestAnimationFrame(function() {
-        currentView.style.transform = `translate(${coordenadasEl.x}px, ${coordenadasEl.y}px) scale(${scaleInv})`
+        currentView.style.transform = `translate3d(${coordenadasEl.x}px, ${coordenadasEl.y}px, 0px) scale(${scaleInv})`
         var preCurrentTransform = currentView.style.transform
     // })
     if (lastView !== null) {
-        lastView.style.transition = `transform ${scale * 0.5}s`
+        lastView.style.transition = `transform ${scale * 0.4}s ease-in-out`
         var prev = document.querySelector('.previous')
         var coorPrev = prev.getBoundingClientRect()
         // requestAnimationFrame(function() {
-            lastView.style.transform = `translate(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y}px) scale(${scale * scale})`
+            lastView.style.transform = `translate3d(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y}px, 0px) scale(${scale * scale})`
         // })
     } 
     el.getBoundingClientRect()
-    currentView.style.transition = `transform ${scale * 0.5}s`
+    currentView.style.transition = `transform ${scale * 0.4}s ease-in-out`
     // requestAnimationFrame(function() {
-        currentView.style.transform = `translate(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px)`
+        currentView.style.transform = `translate3d(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px, 0px)`
         currentView.addEventListener('transitionend', () => currentView.classList.remove('no-events'))
     // })
 
@@ -224,7 +221,7 @@ export default class Zumly {
             }
           } : null
     let previousv = previousView ? 
-          { 
+          {
             location: 'previous',
             viewName: previousView.dataset.viewName, // dsp poner nombre
             backwardState: {

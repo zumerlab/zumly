@@ -23,17 +23,20 @@
         pointer-events: none;
       }
       .view {
-        will-change: transform;
+        // will-change: transform;
+        perspective: 1000px;
         background-color: white
        }
        .zoomable {
         background-color: white
        }
        .current {
-        z-index: 20;
+        // z-index: 20;
        }
        .previous, .last {
         pointer-events: none;
+        //filter: blur(2px);
+        opacity: .1;
        }
        .view-container {
         background-color: white
