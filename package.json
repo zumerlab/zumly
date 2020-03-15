@@ -1,6 +1,6 @@
 {
   "name": "zumly",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "main": "dist/zumly.min.mjs",
   "module": "dist/zumly.mjs",
   "browser": "dist/zumly.umd.js",
