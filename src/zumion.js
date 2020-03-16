@@ -64,6 +64,8 @@ export default class Zumly {
         currentView.addEventListener('transitionend', () => {
           canvas.removeChild(canvas.querySelector('.view.current'))
           })
+        let elementoClickeado = previousView.querySelector('.active')
+        elementoClickeado.classList.remove('active')
         previousView.style.filter = ''
         previousView.classList.remove('previous')
         previousView.classList.add('current')
