@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.5](https://github.com/zumly/compare/v0.2.4...v0.2.5) (2020-03-16)
+
+
+### Performance Improvements
+
+* ⚡️ add meta viewport ([a95b4ac](https://github.com/zumly/commit/a95b4ac))
+
+
+
 ## [0.2.4](https://github.com/zumly/compare/v0.2.3...v0.2.4) (2020-03-16)
 
 

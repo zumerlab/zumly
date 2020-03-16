@@ -1,6 +1,6 @@
 {
   "name": "zumly",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "author": "Juan Martín Muda",
   "main": "dist/zumly.min.mjs",
   "module": "dist/zumly.mjs",
@@ -36,7 +36,7 @@
     "prepare": "yarn build",
     "build": "rollup -c",
     "build:watch": "rollup -c -w",
-    "watch": "concurrently 'yarn build:watch' 'yarn serve -l tcp://127.0.0.1'",
+    "watch": "concurrently 'yarn build:watch' 'yarn serve'",
     "test": "jest && yarn build",
     "lint": "standard 'src/*.js'"
   },
