@@ -1,53 +1,8 @@
 <html>
 <head>
-    <meta charset="utf-8">
-        <title>
-            zumly
-        </title>
-    </meta>
-    <style type="text/css">
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      .canvas, .subcanvas {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        
-      }
-      .no-events {
-        pointer-events: none;
-      }
-      .view {
-        // will-change: transform;
-        perspective: 1000px;
-        background-color: white
-       }
-       .zoomable {
-        background-color: white
-       }
-       .current {
-        // z-index: 20;
-       }
-       .previous, .last {
-        pointer-events: none;
-        //filter: blur(2px);
-        opacity: .1;
-       }
-       .view-container {
-        background-color: white
-       }
-       .center-me {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-      }
-    </style>
+    <title>zumly</title>
+    <meta charset="utf-8"></meta>
+    <link rel="stylesheet" type="text/css" href="../dist/zumly.css">
 </head>
 <body>
   <div class="canvas"></div>

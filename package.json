@@ -1,6 +1,7 @@
 {
   "name": "zumly",
   "version": "0.2.3",
+  "author": "Juan Martín Muda",
   "main": "dist/zumly.min.mjs",
   "module": "dist/zumly.mjs",
   "browser": "dist/zumly.umd.js",
@@ -12,18 +13,24 @@
   "devDependencies": {
     "@babel/core": "7.6.4",
     "@babel/preset-env": "7.6.3",
+    "autoprefixer": "^9.7.4",
     "babel-core": "7.0.0-bridge.0",
     "babel-jest": "24.9.0",
     "concurrently": "4.1.2",
     "jest": "24.9.0",
+    "moment": "^2.24.0",
+    "postcss": "^7.0.27",
+    "postcss-banner": "^3.0.1",
     "rollup": "1.25.1",
     "rollup-plugin-babel": "4.3.3",
-    "rollup-plugin-babel-minify": "^9.1.0",
+    "rollup-plugin-babel-minify": "^9.1.1",
     "rollup-plugin-commonjs": "10.1.0",
+    "rollup-plugin-license": "^0.13.0",
     "rollup-plugin-node-resolve": "5.2.0",
-    "rollup-plugin-uglify": "^6.0.3",
+    "rollup-plugin-postcss": "^2.4.1",
+    "rollup-plugin-uglify": "^6.0.4",
     "serve": "11.2.0",
-    "standard": "^14.3.1"
+    "standard": "^14.3.3"
   },
   "scripts": {
     "prepare": "yarn build",
@@ -32,16 +39,6 @@
     "watch": "concurrently 'yarn build:watch' 'yarn serve -l tcp://127.0.0.1'",
     "test": "jest && yarn build",
     "lint": "standard 'src/*.js'"
-  },
-  "renovate": {
-    "extends": [
-      "config:js-lib"
-    ],
-    "automerge": true,
-    "major": {
-      "automerge": false
-    },
-    "automergeType": "branch"
   },
   "files": [
     "dist"

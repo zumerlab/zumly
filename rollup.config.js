@@ -3,6 +3,15 @@ import commonjs from 'rollup-plugin-commonjs';
 import pkg from './package.json';
 import babel from 'rollup-plugin-babel';
 import minify from 'rollup-plugin-babel-minify';
+import postcss from 'rollup-plugin-postcss';
+import autoprefixer from 'autoprefixer';
+import license from 'rollup-plugin-license';
+import licenseCss from  'postcss-banner';
+import moment from  'moment';
+const banner = `
+${pkg.name} ${ pkg.version} 
+Generated ${moment().format('YYYY-DD-MM')}
+${ pkg.author} Copyright ${ pkg.license}`
 
 export default [
   // browser-friendly UMD build
@@ -16,6 +25,19 @@ export default [
     plugins: [
       minify({
         comments: false
+      }),
+      license({
+        banner: banner
+      }),
+      postcss({
+        extract: true,
+        minimize: true,
+        plugins: [
+        autoprefixer,
+        licenseCss({
+          banner: banner
+        })
+        ]
       })
     ]
   },
@@ -25,7 +47,21 @@ export default [
       name: 'zumly',
       file: pkg.module,
       format: 'es'
-    }
+    },
+    plugins: [
+    license({
+        banner: banner
+      }),
+    postcss({
+      extract: true,
+      plugins: [
+        autoprefixer,
+        licenseCss({
+          banner: banner
+        })
+        ]
+      })
+    ]
   },
 
   // CommonJS (for Node) and ES module (for bundlers) build.
@@ -44,8 +80,20 @@ export default [
         exclude: 'node_modules/**',
       }),
       minify({
-        comments: false
+        comments: false,
+      }),
+      license({
+        banner: banner
+      }),
+      postcss({
+        plugins: [
+        autoprefixer,
+        licenseCss({
+          banner: banner
+        })
+        ]
       })
+
     ],
     output: { 
       name: 'zumly', 

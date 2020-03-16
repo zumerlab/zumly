@@ -1,0 +1,38 @@
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+.canvas {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.no-events {
+	pointer-events: none;
+}
+
+.view {
+	will-change: transform;
+	background-color: white
+}
+
+.zoomable {
+	background-color: white
+}
+
+.current {
+	z-index: 20;
+}
+
+.previous, .last {
+	pointer-events: none;
+	user-select: none;
+}
+
+.view-container {
+	background-color: white
+}

@@ -3,7 +3,6 @@ export default class Zumly {
     this.app = options
     this.storedViews = []
   }
-// methods
   init () {
     const rootDiv = document.querySelector(this.app.mount)
     var self = this
