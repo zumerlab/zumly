@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [0.3.0](https://github.com/zumly/compare/v0.2.6...v0.3.0) (2020-03-28)
+
+
+### Bug Fixes
+
+* 🐛 Change a bit the index.html demo code ([db06353](https://github.com/zumly/commit/db06353))
+* 🐛 Reorder layers ([f68115d](https://github.com/zumly/commit/f68115d))
+
+
+### Features
+
+* 🎸 Add fade in out animations & delete obsolete styles ([f11368d](https://github.com/zumly/commit/f11368d))
+
+
+
 ## [0.2.6](https://github.com/zumly/compare/v0.2.5...v0.2.6) (2020-03-16)
 
 
