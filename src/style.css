@@ -1,3 +1,19 @@
+:root {
+--previous-transform-one: '';
+--previous-transform-two: '';
+--previous-origin-one: '';
+--previous-origin-two: '';
+--last-transform-one: '';
+--last-transform-two: '';
+--last-origin-one: '';
+--last-origin-two: '';
+--current-transform-one: '';
+--current-transform-two: '';
+--current-origin-one: '';
+--current-origin-two: '';
+--animation-duration: '';
+}
+
 * {
 	box-sizing: border-box;
 	margin: 0;
@@ -10,21 +26,12 @@
 	height: 100%;
 	overflow: hidden;
 }
-.overlay {
-	position: absolute;
-	width: 100%;
-	height: 100%;
-	overflow: hidden;
-	backdrop-filter: blur(2px);
-	
-}
 
 .no-events {
 	pointer-events: none;
 }
 
 .view {
-	will-change: transform;
 	background-color: white
 }
 
@@ -54,15 +61,58 @@
 	background-color: white
 }
 
-@keyframes disappear {
+.zoom-out-previous {
+	animation-name: zoomoutprevious;
+	animation-duration: var(--animation-duration);
+	animation-timing-function: ease-in-out;
+	animation-fill-mode: forwards;
+}
+.zoom-out-last {
+	animation-name: zoomoutlast;
+	animation-duration: var(--animation-duration);
+	animation-timing-function: ease-in-out;
+	animation-fill-mode: forwards;
+}
+.zoom-out-current {
+	animation-name: zoomoutcurrent;
+	animation-duration: var(--animation-duration);
+	animation-timing-function: ease-in-out;
+	animation-fill-mode: forwards;
+}
+@keyframes zoomoutprevious {
 	0% {
+		transform-origin: var(--previous-origin-one);
+		transform: var(--previous-transform-one)
+	}
+
+	100% {
+		transform-origin: var(--previous-origin-two);
+		transform: var(--previous-transform-two)
+	}
+}
+@keyframes zoomoutlast {
+	0% {
+		transform-origin: var(--last-origin-one);
+		transform: var(--last-transform-one)
+	}
+
+	100% {
+		transform-origin: var(--last-origin-two);
+		transform: var(--last-transform-two)
+	}
+}
+@keyframes zoomoutcurrent {
+	0% {
+		transform-origin: var(--current-origin-one);
+		transform: var(--current-transform-one);
 		opacity: 1
 	}
 
-	to {
+	100% {
+		transform-origin: var(--current-origin-two);
+		transform: var(--current-transform-two);
 		opacity: 0
 	}
-
 }
 
 @keyframes appear {
@@ -70,7 +120,7 @@
 		opacity: 0
 	}
 
-	to {
+	100% {
 		opacity: 1
 	}
 

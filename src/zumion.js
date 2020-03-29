@@ -53,32 +53,71 @@ zoomOut() {
         let gone = ultimaVista.views[3]
         const canvas = document.querySelector(this.app.mount)
         var currentView = canvas.querySelector('.view.current')
-        currentView.classList.remove('current')
-        currentView.classList.add('disappear')
+        // currentView.classList.remove('current')
+        // currentView.classList.add('disappear')
         var previousView = canvas.querySelector('.view.previous')
         var lastView = canvas.querySelector('.view.last')
         //console.log(currentView, previousView)
-        currentView.style.transformOrigin = current.backwardState.origin
+        /*currentView.style.transformOrigin = current.backwardState.origin
         currentView.style.transition = current.backwardState.transition
         currentView.style.transform = current.backwardState.transform
         currentView.addEventListener('transitionend', () => {
-            canvas.removeChild(canvas.querySelector('.view.disappear'))
+            canvas.removeChild(currentView)
+        })*/
+        currentView.style.willChange = 'transform, opacity';
+        previousView.style.willChange = 'transform';
+        document.documentElement.style.setProperty('--current-transform-one', current.forwardState.transform);
+        document.documentElement.style.setProperty('--current-transform-two', current.backwardState.transform);
+        document.documentElement.style.setProperty('--current-origin-one', current.forwardState.origin);
+        document.documentElement.style.setProperty('--current-origin-two', current.backwardState.origin);
+        document.documentElement.style.setProperty('--animation-duration', current.backwardState.duration);
+        currentView.classList.add('zoom-out-current')
+        currentView.addEventListener('animationend', () => {
+            canvas.removeChild(currentView)
         })
         let elementoClickeado = previousView.querySelector('.active')
         elementoClickeado.classList.remove('active')
         // previousView.style.filter = ''
         previousView.classList.remove('previous')
         previousView.classList.add('current')
-        previousView.style.transformOrigin = previous.backwardState.origin
-        previousView.style.transition = previous.backwardState.transition
-        previousView.style.transform = previous.backwardState.transform
+        // previousView.style.transformOrigin = previous.backwardState.origin
+        // previousView.style.transition = previous.backwardState.transition
+        // previousView.style.transform = previous.backwardState.transform
+        document.documentElement.style.setProperty('--previous-transform-one', previous.forwardState.transform);
+        document.documentElement.style.setProperty('--previous-transform-two', previous.backwardState.transform);
+        document.documentElement.style.setProperty('--previous-origin-one', previous.forwardState.origin);
+        document.documentElement.style.setProperty('--previous-origin-two', previous.backwardState.origin);
+        previousView.classList.add('zoom-out-previous')
+        previousView.addEventListener('animationend', () => {
+            previousView.classList.remove('zoom-out-previous')
+            previousView.style.willChange = 'auto'
+            previousView.style.transition = 'transform 0s'
+            previousView.style.transformOrigin = previous.backwardState.origin
+            previousView.style.transform = previous.backwardState.transform
+        })
+        // previousView.style.transformOrigin = previous.backwardState.origin
+        // previousView.style.transition = previous.backwardState.transition
+        // previousView.style.transform = previous.backwardState.transform
         if (last !== undefined) {
-            lastView.classList.remove('last')
+            lastView.style.willChange = 'transform';
             lastView.classList.add('previous')
-            lastView.style.opacity = 1
-            lastView.style.transformOrigin = last.backwardState.origin
+            lastView.classList.remove('last')
+            document.documentElement.style.setProperty('--last-transform-one', last.forwardState.transform);
+            document.documentElement.style.setProperty('--last-transform-two', last.backwardState.transform);
+            document.documentElement.style.setProperty('--last-origin-one', last.forwardState.origin);
+            document.documentElement.style.setProperty('--last-origin-two', last.backwardState.origin);
+            lastView.classList.add('zoom-out-last')
+            lastView.addEventListener('animationend', () => {
+                lastView.style.willChange = 'auto'
+                lastView.classList.remove('zoom-out-last')
+                lastView.style.transition = 'transform 0s'
+                lastView.style.transformOrigin = last.backwardState.origin
+                lastView.style.transform = last.backwardState.transform
+            })
+            /*lastView.style.transformOrigin = last.backwardState.origin
             lastView.style.transition = last.backwardState.transition
-            lastView.style.transform = last.backwardState.transform
+            lastView.style.transform = last.backwardState.transform*/
+            lastView.style.opacity = 1
         }
         if (gone !== undefined) {
             canvas.prepend(gone.viewName)
@@ -147,9 +186,10 @@ zoomIn(el) {
     let scaleInvy = 1 / scaley
     previousView.style.transition = 'transform 0s'
     previousView.style.transformOrigin = `
-${coordenadasEl.x + coordenadasEl.width / 2 - coordenadasPreviousView.x}px
-${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px
-`
+    ${coordenadasEl.x + coordenadasEl.width / 2 - coordenadasPreviousView.x}px
+    ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px
+    `
+    var duration = `${scale * 0.4}s`
     let x = coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + coordenadasPreviousView.x
     let y = coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + coordenadasPreviousView.y
     let move = `translate3d(${x}px, ${y}px, 0px) scale(${scale})`
@@ -167,19 +207,19 @@ ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px
     previousView.style.transform = `translate3d(${coordenadasPreviousView.x}px, ${coordenadasPreviousView.y}px, 0px)`
     var prePrevTransform = previousView.style.transform
     el.getBoundingClientRect()
-    previousView.style.transition = `transform ${scale * 0.4}s ease-in-out`
+    previousView.style.transition = `transform ${duration} ease-in-out`
     previousView.style.transform = move
     currentView.style.transformOrigin = 'top left'
     currentView.style.transform = `translate3d(${coordenadasEl.x}px, ${coordenadasEl.y}px, 0px) scale(${scaleInv})`
     var preCurrentTransform = currentView.style.transform
     if (lastView !== null) {
-        lastView.style.transition = `transform ${scale * 0.4}s ease-in-out`
+        lastView.style.transition = `transform ${duration} ease-in-out`
         var prev = document.querySelector('.previous')
         var coorPrev = prev.getBoundingClientRect()
         lastView.style.transform = `translate3d(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y}px, 0px) scale(${scale * scale})`
     }
     el.getBoundingClientRect()
-    currentView.style.transition = `transform ${scale * 0.4}s ease-in-out`
+    currentView.style.transition = `transform ${duration} ease-in-out`
     currentView.style.transform = `translate3d(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px, 0px)`
     currentView.addEventListener('transitionend', () => {
       currentView.classList.remove('no-events')
@@ -195,11 +235,13 @@ ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px
         backwardState: {
             origin: currentView.style.transformOrigin,
             transition: currentView.style.transition,
+            duration: duration,
             transform: preCurrentTransform
         },
         forwardState: {
             origin: currentView.style.transformOrigin,
             transition: currentView.style.transition,
+            duration: duration,
             transform: currentView.style.transform
         }
     } : null
@@ -209,11 +251,13 @@ ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px
         backwardState: {
             origin: previousView.style.transformOrigin,
             transition: previousView.style.transition,
+            duration: duration,
             transform: prePrevTransform
         },
         forwardState: {
             origin: previousView.style.transformOrigin,
             transition: previousView.style.transition,
+            duration: duration,
             transform: previousView.style.transform
         }
     } : null
@@ -223,11 +267,13 @@ ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px
         backwardState: {
             origin: lastView.style.transformOrigin,
             transition: lastView.style.transition,
+            duration: duration,
             transform: clvt
         },
         forwardState: {
             origin: lastView.style.transformOrigin,
             transition: lastView.style.transition,
+            duration: duration,
             transform: lastView.style.transform
         }
     } : null
@@ -237,6 +283,7 @@ ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px
         backwardState: {
             origin: goneView.style.transformOrigin,
             transition: goneView.style.transition,
+            duration: duration,
             transform: goneView.style.transform
         },
         forwardState: null
@@ -268,13 +315,12 @@ function step(timestamp) {
 
 window.requestAnimationFrame(step);*/
 // TEMAS A RESOLVER:
-// CAMBIAR ORDEN LAYERS ESTAN INVERTIDOS.
-// crear un layer blur o de diferrente estilos para no afectar el rendimiento de la navegacion
-// usando backdrop-filter. no anda no ffox
+// LISTO CAMBIAR ORDEN LAYERS ESTAN INVERTIDOS.
+// NO POSSIBLE: crear un layer blur o de diferrente estilos para no afectar el rendimiento de la navegacion usando backdrop-filter. no anda no ffox
 // limitar scale factor en altura? limitar tamanos de los zoomable y views?
 // PASAR A ANIMATINS CSS CON CSS VARIABLES
-// ver tema de transicion de la nueva vista in and out
-// ver bus de ejecucion de transition aun en movimiento
+// LISTO: ver tema de transicion de la nueva vista in and out
+// WIP ver bus de ejecucion de transition aun en movimiento
 // poner opciones para los devs: efectos blur, velocidad variable, constante, custom de transicion
 // ultra optimizar el zoomin, zoomout...
 // // Set will-change when the element is hovered
