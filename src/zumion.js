@@ -61,10 +61,7 @@ zoomOut() {
         document.documentElement.style.setProperty('--current-origin-one', current.forwardState.origin);
         document.documentElement.style.setProperty('--current-origin-two', current.backwardState.origin);
         document.documentElement.style.setProperty('--animation-duration-back', current.backwardState.duration);
-        currentView.classList.add('zoom-out-current')
-        currentView.addEventListener('animationend', () => {
-            canvas.removeChild(currentView)
-        })
+        
         previousView.querySelector('.active').classList.remove('active')
         previousView.classList.remove('previous')
         previousView.classList.add('current')
@@ -73,6 +70,28 @@ zoomOut() {
         document.documentElement.style.setProperty('--previous-transform-two', previous.backwardState.transform);
         document.documentElement.style.setProperty('--previous-origin-one', previous.forwardState.origin);
         document.documentElement.style.setProperty('--previous-origin-two', previous.backwardState.origin);
+        if (last !== undefined) {
+            lastView.style.willChange = 'transform';
+            lastView.classList.add('previous')
+            lastView.style.opacity = 1
+            lastView.classList.remove('last')
+            document.documentElement.style.setProperty('--last-transform-one', last.forwardState.transform);
+            document.documentElement.style.setProperty('--last-transform-two', last.backwardState.transform);
+            document.documentElement.style.setProperty('--last-origin-one', last.forwardState.origin);
+            document.documentElement.style.setProperty('--last-origin-two', last.backwardState.origin);
+            
+        }
+        if (gone !== undefined) {
+            canvas.prepend(gone.viewName)
+            var newlastView = canvas.querySelector('.view:first-child')
+            newlastView.style.opacity = 0
+
+        }
+        this.storedViews.pop()
+        currentView.classList.add('zoom-out-current')
+        currentView.addEventListener('animationend', () => {
+            canvas.removeChild(currentView)
+        })
         previousView.classList.add('zoom-out-previous')
         previousView.addEventListener('animationend', () => {
             previousView.classList.remove('zoom-out-previous')
@@ -82,14 +101,7 @@ zoomOut() {
             previousView.style.transform = previous.backwardState.transform
         })
         if (last !== undefined) {
-            lastView.style.willChange = 'transform';
-            lastView.classList.add('previous')
-            lastView.classList.remove('last')
-            document.documentElement.style.setProperty('--last-transform-one', last.forwardState.transform);
-            document.documentElement.style.setProperty('--last-transform-two', last.backwardState.transform);
-            document.documentElement.style.setProperty('--last-origin-one', last.forwardState.origin);
-            document.documentElement.style.setProperty('--last-origin-two', last.backwardState.origin);
-            lastView.classList.add('zoom-out-last')
+          lastView.classList.add('zoom-out-last')
             lastView.addEventListener('animationend', () => {
                 lastView.style.willChange = 'auto'
                 lastView.classList.remove('zoom-out-last')
@@ -98,10 +110,6 @@ zoomOut() {
                 lastView.style.transform = last.backwardState.transform
             })
         }
-        if (gone !== undefined) {
-            canvas.prepend(gone.viewName)
-        }
-        this.storedViews.pop()
     }
 }
 zoomIn(el) {
@@ -156,17 +164,21 @@ zoomIn(el) {
         e.stopPropagation()
     }
     // canvas
+    //ver esto cuando ya no queda history back
+    let preScale = getComputedStyle(document.documentElement).getPropertyValue('--previous-scale-two');
+
     let scale = coordenadasCurrentView.width / coordenadasEl.width
     let scaleInv = 1 / scale
-    let scaley = coordenadasCurrentView.height / coordenadasEl.height
-    let scaleInvy = 1 / scaley
+    document.documentElement.style.setProperty('--previous-scale-two', scale);
+    // let scaley = coordenadasCurrentView.height / coordenadasEl.height
+    // let scaleInvy = 1 / scaley
     // arreglos previous
     previousView.style.transition = 'transform 0s'
     previousView.style.transformOrigin = `
     ${coordenadasEl.x + coordenadasEl.width / 2 - coordenadasPreviousView.x}px
     ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px
     `
-    var duration = `${scale * 0.4}s`
+    var duration = `1s`
     let x = coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + coordenadasPreviousView.x
     let y = coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + coordenadasPreviousView.y
     let move = `translate3d(${x}px, ${y}px, 0px) scale(${scale})`
@@ -175,8 +187,9 @@ zoomIn(el) {
     if (lastView !== null) {
         var newcoordenadasPV = previousView.getBoundingClientRect()
         lastView.style.transition = 'transform 0s'
-        lastView.style.transform = `translate3d(${x}px, ${y}px, 0px) scale(${scale * scale})`
-        var last = document.querySelector('.last > .active')
+        lastView.style.transform = `translate3d(${x}px, ${y}px, 0px) scale(${scale * preScale})`
+        let dd = document.querySelector('.last')
+        var last = dd.querySelector('.active')
         var coorLast = last.getBoundingClientRect()
         lastView.style.transform = clvt
     }
@@ -191,7 +204,7 @@ zoomIn(el) {
     if (lastView !== null) {
       var prev = document.querySelector('.previous')
       var coorPrev = prev.getBoundingClientRect()
-      var lastransform = `translate3d(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y}px, 0px) scale(${scale * scale})`
+      var lastransform = `translate3d(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y}px, 0px) scale(${scale * preScale})`
       }
     el.getBoundingClientRect()
     var cutransition = `transform ${duration} ease-in-out`
@@ -271,7 +284,21 @@ zoomIn(el) {
     document.documentElement.style.setProperty('--current-transform-two', `translate3d(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px, 0px)`);
     document.documentElement.style.setProperty('--current-origin-one', '50% 50%');
     document.documentElement.style.setProperty('--current-origin-two', 'top left');
+    document.documentElement.style.setProperty('--animation-duration-back', duration);
+    
+    previousView.style.willChange = 'transform';
+    document.documentElement.style.setProperty('--previous-transform-one', prePrevTransform);
+    document.documentElement.style.setProperty('--previous-transform-two', move);
+    document.documentElement.style.setProperty('--previous-origin-one', previousView.style.transformOrigin);
+    document.documentElement.style.setProperty('--previous-origin-two', previousView.style.transformOrigin);
     // document.documentElement.style.setProperty('--animation-duration-back', duration);
+    if (lastView !== null) {
+      lastView.style.willChange = 'transform';
+        document.documentElement.style.setProperty('--last-transform-one', clvt);
+        document.documentElement.style.setProperty('--last-transform-two', lastransform);
+        document.documentElement.style.setProperty('--last-origin-one', lastView.style.transformOrigin);
+        document.documentElement.style.setProperty('--last-origin-two', lastView.style.transformOrigin);
+    }
     currentView.classList.add('zoom-in-current')
     currentView.addEventListener('animationend', () => {
         currentView.style.willChange = 'auto'
@@ -279,14 +306,8 @@ zoomIn(el) {
         currentView.classList.remove('no-events')
         currentView.style.transition = 'all 0s'
         currentView.style.transformOrigin = 'top left'
-        currentView.style.transform = `translate3d(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px, 0px)`
+        currentView.style.transform = getComputedStyle(document.documentElement).getPropertyValue('--current-transform-two');
     })
-    previousView.style.willChange = 'transform';
-    document.documentElement.style.setProperty('--previous-transform-one', prePrevTransform);
-    document.documentElement.style.setProperty('--previous-transform-two', move);
-    document.documentElement.style.setProperty('--previous-origin-one', previousView.style.transformOrigin);
-    document.documentElement.style.setProperty('--previous-origin-two', previousView.style.transformOrigin);
-    document.documentElement.style.setProperty('--animation-duration-back', duration);
     previousView.classList.add('zoom-in-previous')
     previousView.addEventListener('animationend', () => {
         previousView.style.willChange = 'auto'
@@ -294,15 +315,9 @@ zoomIn(el) {
         //previousView.classList.remove('no-events')
         previousView.style.transition = 'transform 0s'
         previousView.style.transformOrigin = getComputedStyle(document.documentElement).getPropertyValue('--previous-origin-two');
-        previousView.style.transform = move
+        previousView.style.transform = getComputedStyle(document.documentElement).getPropertyValue('--previous-transform-two');
     })
     if (lastView !== null) {
-      lastView.style.willChange = 'transform';
-        document.documentElement.style.setProperty('--last-transform-one', clvt);
-        document.documentElement.style.setProperty('--last-transform-two', lastransform);
-        document.documentElement.style.setProperty('--last-origin-one', lastView.style.transformOrigin);
-        document.documentElement.style.setProperty('--last-origin-two', lastView.style.transformOrigin);
-        // document.documentElement.style.setProperty('--animation-duration-back', duration);
         lastView.classList.add('zoom-in-last')
         lastView.addEventListener('animationend', () => {
             lastView.style.willChange = 'auto'
@@ -315,45 +330,24 @@ zoomIn(el) {
     }
   }
 }
-/*(function() {
-  var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-                              window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
-  window.requestAnimationFrame = requestAnimationFrame;
-})();
 
-var start = null;
-var element = document.getElementById('SomeElementYouWantToAnimate');
-
-function step(timestamp) {
-  if (!start) start = timestamp;
-  var progress = timestamp - start;
-  element.style.transform = 'translateX(' + Math.min(progress / 10, 200) + 'px)';
-  if (progress < 2000) {
-    window.requestAnimationFrame(step);
-  }
-}
-
-window.requestAnimationFrame(step);*/
-// TEMAS A RESOLVER:
-// LISTO CAMBIAR ORDEN LAYERS ESTAN INVERTIDOS.
-// NO POSSIBLE: crear un layer blur o de diferrente estilos para no afectar el rendimiento de la navegacion usando backdrop-filter. no anda no ffox
-// limitar scale factor en altura? limitar tamanos de los zoomable y views?
-// PASAR A ANIMATINS CSS CON CSS VARIABLES
-// LISTO: ver tema de transicion de la nueva vista in and out
-// WIP ver bus de ejecucion de transition aun en movimiento
-// poner opciones para los devs: efectos blur, velocidad variable, constante, custom de transicion
-// ultra optimizar el zoomin, zoomout...
-// // Set will-change when the element is hovered
-/*el.addEventListener('mouseenter', hintBrowser);
-el.addEventListener('animationEnd', removeHint);
-
-function hintBrowser() {
-  // The optimizable properties that are going to change
-  // in the animation's keyframes block
-  this.style.willChange = 'transform, opacity';
-}
-
-function removeHint() {
-  this.style.willChange = 'auto';
-}*/
-// - dsp usar css vars
+/*
+TEMAS A RESOLVER:
+VER TEMA DE PRESCALE VIA CSS VARIABLES ...
+LISTO HAY UN BUG FEO SI SE USA UN BOTON CON TAMANO DIFERENTE. pasa cuando el boton zoomable es distinto de tamno a otro boton zoombale.
+anda muy  muy mal un efecto blur 
+LISTO BAUG FIERO: LASTVIEW
+Testear views con react, svelte y vuejs
+NAVEGACION: por mouse scroll,  teclas, etc como en github trending
+LISTO modo full zoom view . se hace armando views mas anches que el vireport
+LISTO CAMBIAR ORDEN LAYERS ESTAN INVERTIDOS.
+NO POSSIBLE: crear un layer blur o de diferrente estilos para no afectar el rendimiento de la navegacion usando backdrop-filter. no anda no ffox
+limitar scale factor en altura? limitar tamanos de los zoomable y views?
+LISTO: PASAR A ANIMATINS CSS CON CSS VARIABLES
+LISTO: ver tema de transicion de la nueva vista in and out
+LISTO: ver buG de ejecucion de transition aun en movimiento
+poner opciones para los devs: efectos blur, velocidad variable, constante, custom de transicion
+WIP ultra optimizar el zoomin, zoomout...FALTA HACER FUNCIONES
+LISTO Set will-change when the element is hovered
+LISTO dsp usar css vars
+*/

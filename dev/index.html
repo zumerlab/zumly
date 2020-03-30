@@ -10,18 +10,20 @@
 <script type="module">
 import Zumly from '../dist/zumly.mjs'
 const home = `
-<div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid red; '>
-    <div class='zoomable' data-go-to='mail' style='height: 170px; width: 170px;border: 1px solid red; transform: translate(50px, 30px)'>
+<div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid red;'>
+  
+    <div class='zoomable' data-go-to='mail' style='height: 130px; width: 130px;border: 1px solid red; transform: translate(50px, 30px)'>
         @contact
     </div>
-    <div class='zoomable' data-go-to='contact' style='height: 200px; width: 100px; border: 1px solid red; transform: translate(150px, 90px);'>
+    <div class='zoomable' data-go-to='contact' style='height: 90px; width: 90px; border: 1px solid red; transform: translate(150px, 90px);'>
         @texd
     </div>
+
 </div>
 `
 const contact = `
-<div class="view" style='position: absolute; height:400px; width:200px; border: 1px solid green; '>
-  <div class='zoomable' data-go-to='mail' style='height: 170px; width: 170px; border: 1px solid green; transform: translate(90px, 80px)'>
+<div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid green; '>
+  <div class='zoomable' data-go-to='mail' style='height: 180px; width: 180px; border: 1px solid green; transform: translate(90px, 80px)'>
         @mail
     </div>
 </div>
@@ -29,7 +31,7 @@ const contact = `
 
 const mail = `
 <div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid purple;'>
-  <div class='zoomable' data-go-to='home' style='height: 170px; width: 170px; border: 1px solid purple; transform: translate(120px, 180px)'>
+  <div class='zoomable' data-go-to='home' style='height: 150px; width: 350px; border: 1px solid purple; transform: translate(120px, 180px)'>
         @home
     </div>
 </div>

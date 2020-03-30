@@ -12,6 +12,7 @@
 --current-origin-one: '';
 --current-origin-two: '';
 --animation-duration-back: '';
+--previous-scale-two: 1;
 }
 
 * {
@@ -32,33 +33,20 @@
 }
 
 .view {
-	background-color: white
 }
 
 .zoomable {
 	/*background-color: white*/
 }
-.disappear {
-	animation-name: disappear;
-	animation-duration: 800ms;
-	animation-fill-mode: forwards
-}
-.appear {
-	animation-name: appear;
-	animation-duration: 800ms;
-	animation-fill-mode: forwards
-}
+
 .current {
+	
 }
 
 .previous, .last {
 	pointer-events: none;
 	user-select: none;
-	/*filter: blur(2px);*/
-}
-
-.view-container {
-	background-color: white
+	
 }
 
 .zoom-out-previous {
@@ -164,14 +152,4 @@
 		transform: var(--current-transform-two);
 		opacity: 1;
 	}
-}
-@keyframes appear {
-	0% {
-		opacity: 0
-	}
-
-	100% {
-		opacity: 1
-	}
-
 }
