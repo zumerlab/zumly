@@ -53,36 +53,22 @@ zoomOut() {
         let gone = ultimaVista.views[3]
         const canvas = document.querySelector(this.app.mount)
         var currentView = canvas.querySelector('.view.current')
-        // currentView.classList.remove('current')
-        // currentView.classList.add('disappear')
         var previousView = canvas.querySelector('.view.previous')
         var lastView = canvas.querySelector('.view.last')
-        //console.log(currentView, previousView)
-        /*currentView.style.transformOrigin = current.backwardState.origin
-        currentView.style.transition = current.backwardState.transition
-        currentView.style.transform = current.backwardState.transform
-        currentView.addEventListener('transitionend', () => {
-            canvas.removeChild(currentView)
-        })*/
         currentView.style.willChange = 'transform, opacity';
-        previousView.style.willChange = 'transform';
         document.documentElement.style.setProperty('--current-transform-one', current.forwardState.transform);
         document.documentElement.style.setProperty('--current-transform-two', current.backwardState.transform);
         document.documentElement.style.setProperty('--current-origin-one', current.forwardState.origin);
         document.documentElement.style.setProperty('--current-origin-two', current.backwardState.origin);
-        document.documentElement.style.setProperty('--animation-duration', current.backwardState.duration);
+        document.documentElement.style.setProperty('--animation-duration-back', current.backwardState.duration);
         currentView.classList.add('zoom-out-current')
         currentView.addEventListener('animationend', () => {
             canvas.removeChild(currentView)
         })
-        let elementoClickeado = previousView.querySelector('.active')
-        elementoClickeado.classList.remove('active')
-        // previousView.style.filter = ''
+        previousView.querySelector('.active').classList.remove('active')
         previousView.classList.remove('previous')
         previousView.classList.add('current')
-        // previousView.style.transformOrigin = previous.backwardState.origin
-        // previousView.style.transition = previous.backwardState.transition
-        // previousView.style.transform = previous.backwardState.transform
+        previousView.style.willChange = 'transform';
         document.documentElement.style.setProperty('--previous-transform-one', previous.forwardState.transform);
         document.documentElement.style.setProperty('--previous-transform-two', previous.backwardState.transform);
         document.documentElement.style.setProperty('--previous-origin-one', previous.forwardState.origin);
@@ -95,9 +81,6 @@ zoomOut() {
             previousView.style.transformOrigin = previous.backwardState.origin
             previousView.style.transform = previous.backwardState.transform
         })
-        // previousView.style.transformOrigin = previous.backwardState.origin
-        // previousView.style.transition = previous.backwardState.transition
-        // previousView.style.transform = previous.backwardState.transform
         if (last !== undefined) {
             lastView.style.willChange = 'transform';
             lastView.classList.add('previous')
@@ -114,15 +97,9 @@ zoomOut() {
                 lastView.style.transformOrigin = last.backwardState.origin
                 lastView.style.transform = last.backwardState.transform
             })
-            /*lastView.style.transformOrigin = last.backwardState.origin
-            lastView.style.transition = last.backwardState.transition
-            lastView.style.transform = last.backwardState.transform*/
-            lastView.style.opacity = 1
         }
         if (gone !== undefined) {
             canvas.prepend(gone.viewName)
-            var newlastView = canvas.querySelector('.view:last-child')
-            newlastView.style.opacity = 0
         }
         this.storedViews.pop()
     }
@@ -136,11 +113,8 @@ zoomIn(el) {
     // create new view
     var newView = document.createElement('template')
     newView.innerHTML = this.app.views[el.dataset.goTo]
-    // create overlay effect
-    //var overlay = document.createElement('template')
-    //overlay.innerHTML = `<div class='overlay'></div>`
-    // transforma current view en previous view
     var previousView = document.querySelector('.current')
+    // esto lo puede sacar de currentview backsate.
     let coordenadasPreviousView = previousView.getBoundingClientRect()
     var lastView = null
     var goneView = null
@@ -153,6 +127,7 @@ zoomIn(el) {
     if (lastView !== null) {
         lastView.classList.remove('previous')
         lastView.classList.add('last')
+        // esto lo puede sacar de previousview.backstate
         var coordenadasLastView = lastView.getBoundingClientRect()
         var clvt = lastView.style.transform
     }
@@ -166,9 +141,10 @@ zoomIn(el) {
     mountPoint.append(newView.content)
     mountPoint.querySelector('.view:last-child').classList.add('current')
     var currentView = document.querySelector('.current')
-    currentView.classList.add('appear')
+    // currentView.classList.add('appear')
     currentView.dataset.viewName = el.dataset.goTo
     currentView.classList.add('no-events')
+    // esto deberia ser iguaal a el.getbounding
     let coordenadasCurrentView = currentView.getBoundingClientRect()
     // agrega eventos al currentview
     var self = this
@@ -184,6 +160,7 @@ zoomIn(el) {
     let scaleInv = 1 / scale
     let scaley = coordenadasCurrentView.height / coordenadasEl.height
     let scaleInvy = 1 / scaley
+    // arreglos previous
     previousView.style.transition = 'transform 0s'
     previousView.style.transformOrigin = `
     ${coordenadasEl.x + coordenadasEl.width / 2 - coordenadasPreviousView.x}px
@@ -195,7 +172,6 @@ zoomIn(el) {
     let move = `translate3d(${x}px, ${y}px, 0px) scale(${scale})`
     previousView.style.transform = move
     var newcoordenadasEl = el.getBoundingClientRect()
-    // vuelve a setear coordenadas
     if (lastView !== null) {
         var newcoordenadasPV = previousView.getBoundingClientRect()
         lastView.style.transition = 'transform 0s'
@@ -206,25 +182,21 @@ zoomIn(el) {
     }
     previousView.style.transform = `translate3d(${coordenadasPreviousView.x}px, ${coordenadasPreviousView.y}px, 0px)`
     var prePrevTransform = previousView.style.transform
-    el.getBoundingClientRect()
-    previousView.style.transition = `transform ${duration} ease-in-out`
-    previousView.style.transform = move
+    var prtransition = `transform ${duration} ease-in-out`
+    var prtransform = move
+    var prorigin = previousView.style.transformOrigin
     currentView.style.transformOrigin = 'top left'
     currentView.style.transform = `translate3d(${coordenadasEl.x}px, ${coordenadasEl.y}px, 0px) scale(${scaleInv})`
     var preCurrentTransform = currentView.style.transform
     if (lastView !== null) {
-        lastView.style.transition = `transform ${duration} ease-in-out`
-        var prev = document.querySelector('.previous')
-        var coorPrev = prev.getBoundingClientRect()
-        lastView.style.transform = `translate3d(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y}px, 0px) scale(${scale * scale})`
-    }
+      var prev = document.querySelector('.previous')
+      var coorPrev = prev.getBoundingClientRect()
+      var lastransform = `translate3d(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y}px, 0px) scale(${scale * scale})`
+      }
     el.getBoundingClientRect()
-    currentView.style.transition = `transform ${duration} ease-in-out`
-    currentView.style.transform = `translate3d(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px, 0px)`
-    currentView.addEventListener('transitionend', () => {
-      currentView.classList.remove('no-events')
-      currentView.classList.remove('appear')
-    })
+    var cutransition = `transform ${duration} ease-in-out`
+    var cutransform = `translate3d(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px, 0px)`
+    // arrays
     var snapShoot = {
         zoomLevel: this.storedViews.length,
         views: []
@@ -240,9 +212,9 @@ zoomIn(el) {
         },
         forwardState: {
             origin: currentView.style.transformOrigin,
-            transition: currentView.style.transition,
+            transition: cutransition,
             duration: duration,
-            transform: currentView.style.transform
+            transform: cutransform
         }
     } : null
     let previousv = previousView ? {
@@ -258,7 +230,7 @@ zoomIn(el) {
             origin: previousView.style.transformOrigin,
             transition: previousView.style.transition,
             duration: duration,
-            transform: previousView.style.transform
+            transform: move
         }
     } : null
     let lastv = lastView ? {
@@ -274,7 +246,7 @@ zoomIn(el) {
             origin: lastView.style.transformOrigin,
             transition: lastView.style.transition,
             duration: duration,
-            transform: lastView.style.transform
+            transform: lastransform
         }
     } : null
     let gonev = goneView ? { // ACA VA LA VISTA ENTERA FALTA REALIZAR UN ZOOM IGUAL ANTES DE SACARLA DE JUEGO
@@ -293,7 +265,55 @@ zoomIn(el) {
     if (lastv !== null) snapShoot.views.push(lastv)
     if (gonev !== null) snapShoot.views.push(gonev)
     this.storeViews(snapShoot)
-}
+    // animation
+    currentView.style.willChange = 'transform, opacity';
+    document.documentElement.style.setProperty('--current-transform-one', `translate3d(${coordenadasEl.x}px, ${coordenadasEl.y}px, 0px) scale(${scaleInv})`);
+    document.documentElement.style.setProperty('--current-transform-two', `translate3d(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px, 0px)`);
+    document.documentElement.style.setProperty('--current-origin-one', '50% 50%');
+    document.documentElement.style.setProperty('--current-origin-two', 'top left');
+    // document.documentElement.style.setProperty('--animation-duration-back', duration);
+    currentView.classList.add('zoom-in-current')
+    currentView.addEventListener('animationend', () => {
+        currentView.style.willChange = 'auto'
+        currentView.classList.remove('zoom-in-current')
+        currentView.classList.remove('no-events')
+        currentView.style.transition = 'all 0s'
+        currentView.style.transformOrigin = 'top left'
+        currentView.style.transform = `translate3d(${newcoordenadasEl.x}px, ${newcoordenadasEl.y}px, 0px)`
+    })
+    previousView.style.willChange = 'transform';
+    document.documentElement.style.setProperty('--previous-transform-one', prePrevTransform);
+    document.documentElement.style.setProperty('--previous-transform-two', move);
+    document.documentElement.style.setProperty('--previous-origin-one', previousView.style.transformOrigin);
+    document.documentElement.style.setProperty('--previous-origin-two', previousView.style.transformOrigin);
+    document.documentElement.style.setProperty('--animation-duration-back', duration);
+    previousView.classList.add('zoom-in-previous')
+    previousView.addEventListener('animationend', () => {
+        previousView.style.willChange = 'auto'
+        previousView.classList.remove('zoom-in-previous')
+        //previousView.classList.remove('no-events')
+        previousView.style.transition = 'transform 0s'
+        previousView.style.transformOrigin = getComputedStyle(document.documentElement).getPropertyValue('--previous-origin-two');
+        previousView.style.transform = move
+    })
+    if (lastView !== null) {
+      lastView.style.willChange = 'transform';
+        document.documentElement.style.setProperty('--last-transform-one', clvt);
+        document.documentElement.style.setProperty('--last-transform-two', lastransform);
+        document.documentElement.style.setProperty('--last-origin-one', lastView.style.transformOrigin);
+        document.documentElement.style.setProperty('--last-origin-two', lastView.style.transformOrigin);
+        // document.documentElement.style.setProperty('--animation-duration-back', duration);
+        lastView.classList.add('zoom-in-last')
+        lastView.addEventListener('animationend', () => {
+            lastView.style.willChange = 'auto'
+            lastView.classList.remove('zoom-in-last')
+            //lastView.classList.remove('no-events')
+            lastView.style.transition = 'transform 0s'
+            lastView.style.transformOrigin = getComputedStyle(document.documentElement).getPropertyValue('--last-origin-two');
+            lastView.style.transform = lastransform
+        })
+    }
+  }
 }
 /*(function() {
   var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
