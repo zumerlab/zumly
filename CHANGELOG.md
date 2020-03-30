@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.2](https://github.com/zumly/compare/v0.3.1...v0.3.2) (2020-03-30)
+
+
+### Performance Improvements
+
+* ⚡️ Big speed and smoothness improvments! ([fa24ebc](https://github.com/zumly/commit/fa24ebc))
+
+
+
 ## [0.3.1](https://github.com/zumly/compare/v0.3.0...v0.3.1) (2020-03-29)
 
 
