@@ -6,7 +6,13 @@
     <link rel="stylesheet" type="text/css" href="../dist/zumly.css">
 </head>
 <body>
-  <div class="canvas"></div>
+  <div style="position: absolute; left: 700px; height:500px; width:500px; border: 1px solid red;">
+    <div class="uno canvas"></div>
+  </div>
+  <div style="position: absolute; left: 50px; height:500px; width:500px; border: 1px solid green;">
+    <div class="dos canvas"></div>
+  </div>
+  
 <script type="module">
 import Zumly from '../dist/zumly.mjs'
 const home = `
@@ -36,8 +42,9 @@ const mail = `
     </div>
 </div>
 `
+
 const app = new Zumly({
-  mount: '.canvas',
+  mount: '.uno',
   initialView: 'home',
   views: {
     home,
@@ -47,6 +54,19 @@ const app = new Zumly({
 })
 
 app.init()
+const app1 = new Zumly({
+  mount: '.dos',
+  initialView: 'home',
+  views: {
+    home,
+    contact,
+    mail
+  }
+})
+
+app1.init()
+
+console.log(app, app1)
 </script>
 <!-- <script src="../dist/mytest.umd.js"></script>
 

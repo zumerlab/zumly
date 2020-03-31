@@ -1,17 +1,4 @@
 :root {
---previous-transform-one: '';
---previous-transform-two: '';
---previous-origin-one: '';
---previous-origin-two: '';
---last-transform-one: '';
---last-transform-two: '';
---last-origin-one: '';
---last-origin-two: '';
---current-transform-one: '';
---current-transform-two: '';
---current-origin-one: '';
---current-origin-two: '';
---animation-duration-back: '';
 --previous-scale-two: 1;
 }
 
@@ -40,13 +27,12 @@
 }
 
 .current {
-	
 }
 
 .previous, .last {
 	pointer-events: none;
 	user-select: none;
-	
+	background-color: rgb(255,255,255,0.9);
 }
 
 .zoom-out-previous {
