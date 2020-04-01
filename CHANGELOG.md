@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.4](https://github.com/zumly/compare/v0.3.3...v0.3.4) (2020-04-01)
+
+
+### Bug Fixes
+
+* 🐛 Allows mutiple Zumly's instances ([4f4bb55](https://github.com/zumly/commit/4f4bb55))
+* 🐛 Zumly's multiple instances almost ready! ([d72d8c6](https://github.com/zumly/commit/d72d8c6))
+
+
+
 ## [0.3.3](https://github.com/zumly/compare/v0.3.2...v0.3.3) (2020-03-30)
 
 
