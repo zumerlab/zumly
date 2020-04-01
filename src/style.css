@@ -1,7 +1,3 @@
-:root {
---previous-scale-two: 1;
-}
-
 * {
 	box-sizing: border-box;
 	margin: 0;
@@ -17,13 +13,13 @@
 
 .no-events {
 	pointer-events: none;
+	user-select: none;
 }
 
 .view {
 }
 
 .zoomable {
-	/*background-color: white*/
 }
 
 .current {
@@ -33,109 +29,4 @@
 	pointer-events: none;
 	user-select: none;
 	background-color: rgb(255,255,255,0.9);
-}
-
-.zoom-out-previous {
-	animation-name: zoomoutprevious;
-	animation-duration: var(--animation-duration-back);
-	animation-timing-function: ease-in-out;
-	animation-fill-mode: forwards;
-}
-.zoom-out-last {
-	animation-name: zoomoutlast;
-	animation-duration: var(--animation-duration-back);
-	animation-timing-function: ease-in-out;
-	animation-fill-mode: forwards;
-}
-.zoom-out-current {
-	animation-name: zoomoutcurrent;
-	animation-duration: var(--animation-duration-back);
-	animation-timing-function: ease-in-out;
-	animation-fill-mode: forwards;
-}
-.zoom-in-current {
-	animation-name: zoomincurrent;
-	animation-duration: var(--animation-duration-back);
-	animation-timing-function: ease-in-out;
-	animation-fill-mode: forwards;
-}
-.zoom-in-previous {
-	animation-name: zoominprevious;
-	animation-duration: var(--animation-duration-back);
-	animation-timing-function: ease-in-out;
-	animation-fill-mode: forwards;
-}
-.zoom-in-last {
-	animation-name: zoominlast;
-	animation-duration: var(--animation-duration-back);
-	animation-timing-function: ease-in-out;
-	animation-fill-mode: forwards;
-}
-@keyframes zoomoutprevious {
-	0% {
-		transform-origin: var(--previous-origin-one);
-		transform: var(--previous-transform-one)
-	}
-
-	100% {
-		transform-origin: var(--previous-origin-two);
-		transform: var(--previous-transform-two)
-	}
-}
-@keyframes zoomoutlast {
-	0% {
-		transform-origin: var(--last-origin-one);
-		transform: var(--last-transform-one)
-	}
-
-	100% {
-		transform-origin: var(--last-origin-two);
-		transform: var(--last-transform-two)
-	}
-}
-@keyframes zoomoutcurrent {
-	0% {
-		transform-origin: var(--current-origin-one);
-		transform: var(--current-transform-one);
-		opacity: 1
-	}
-
-	100% {
-		transform-origin: var(--current-origin-two);
-		transform: var(--current-transform-two);
-		opacity: 0
-	}
-}
-@keyframes zoominprevious {
-	0% {
-		transform-origin: var(--previous-origin-one);
-		transform: var(--previous-transform-one)
-	}
-
-	100% {
-		transform-origin: var(--previous-origin-two);
-		transform: var(--previous-transform-two)
-	}
-}
-@keyframes zoominlast {
-	0% {
-		transform-origin: var(--last-origin-one);
-		transform: var(--last-transform-one)
-	}
-
-	100% {
-		transform-origin: var(--last-origin-two);
-		transform: var(--last-transform-two)
-	}
-}
-@keyframes zoomincurrent {
-	0% {
-		transform: var(--current-transform-one);
-		opacity: 0;
-	}
-
-	100% {
-		transform: var(--current-transform-two);
-		opacity: 1;
-	}
 }
