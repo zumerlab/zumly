@@ -1,8 +1,9 @@
+//REF https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes#Defining_classes 
 class Zumly {
 constructor(options) {
     this.app = options
     this.storedViews = []
-    this.storedPreviousScale = 1
+    this.storedPreviousScale = [1]
     this._sessionId = Zumly.counter
     this.blockEvents = false
 }
@@ -181,7 +182,6 @@ init() {
                 viewName: this.app.initialView,
                 backwardState: {
                     origin: view.style.transformOrigin,
-                    transition: view.style.transition,
                     transform: view.style.transform
                 },
                 forwardState: null
@@ -193,10 +193,11 @@ storeViews(data) {
     this.storedViews.push(data)
 }
 setPreviousScale(scale) {
-    this.storedPreviousScale = scale
+    this.storedPreviousScale.push(scale)
 }
 zoomOut() {
     if (this.storedViews.length > 1 && !this.blockEvents) {
+        this.storedPreviousScale.pop()
         var ultimaVista = this.storedViews[this.storedViews.length - 1]
         let current = ultimaVista.views[0]
         let previous = ultimaVista.views[1]
@@ -272,7 +273,7 @@ zoomOut() {
         previousView.classList.add(`zoom-previous-view-${this._sessionId}`)
         if (last !== undefined) lastView.classList.add(`zoom-last-view-${this._sessionId}`)
     } else {
-      console.info(`Zumly: llegaste al ppio o hay animacion corriendo`)
+      console.info(`Zumly: zoomOut disabled`)
     }
 }
 zoomIn(el) {
@@ -330,7 +331,7 @@ zoomIn(el) {
     }
     // canvas
     //ver esto cuando ya no queda history back
-    let preScale = this.storedPreviousScale
+    let preScale = this.storedPreviousScale[this.storedPreviousScale.length - 1]
 
     let scale = coordenadasCurrentView.width / coordenadasEl.width
     let scaleInv = 1 / scale
@@ -370,7 +371,6 @@ zoomIn(el) {
       var lastransform = `translate3d(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x - offsetX}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y - offsetY}px, 0px) scale(${scale * preScale})`
       }
     el.getBoundingClientRect()
-    var cutransition = `transform ${duration} ease-in-out`
     var cutransform = `translate3d(${newcoordenadasEl.x - offsetX}px, ${newcoordenadasEl.y - offsetY}px, 0px)`
     // arrays
     var snapShoot = {
@@ -382,13 +382,11 @@ zoomIn(el) {
         viewName: currentView.dataset.viewName,
         backwardState: {
             origin: currentView.style.transformOrigin,
-            transition: currentView.style.transition,
             duration: duration,
             transform: preCurrentTransform
         },
         forwardState: {
             origin: currentView.style.transformOrigin,
-            transition: cutransition,
             duration: duration,
             transform: cutransform
         }
@@ -398,13 +396,11 @@ zoomIn(el) {
         viewName: previousView.dataset.viewName,
         backwardState: {
             origin: previousView.style.transformOrigin,
-            transition: previousView.style.transition,
             duration: duration,
             transform: prePrevTransform
         },
         forwardState: {
             origin: previousView.style.transformOrigin,
-            transition: previousView.style.transition,
             duration: duration,
             transform: move
         }
@@ -414,13 +410,11 @@ zoomIn(el) {
         viewName: lastView.dataset.viewName,
         backwardState: {
             origin: lastView.style.transformOrigin,
-            transition: lastView.style.transition,
             duration: duration,
             transform: clvt
         },
         forwardState: {
             origin: lastView.style.transformOrigin,
-            transition: lastView.style.transition,
             duration: duration,
             transform: lastransform
         }
@@ -430,7 +424,6 @@ zoomIn(el) {
         viewName: goneView,
         backwardState: {
             origin: goneView.style.transformOrigin,
-            transition: goneView.style.transition,
             duration: duration,
             transform: goneView.style.transform
         },
@@ -482,7 +475,8 @@ zoomIn(el) {
         //previousView.classList.remove('no-events')
         previousView.style.transition = 'transform 0s'
         previousView.style.transformOrigin = getComputedStyle(document.documentElement).getPropertyValue(`--previousView-transformOrigin-end-${this._sessionId}`)
-        previousView.style.transform = getComputedStyle(document.documentElement).getPropertyValue(`--previousView-transform-end-${this._sessionId}`)
+        previousView.style.transform = move
+        //document.documentElement.style.setProperty(`--previousView-transform-end-${this._sessionId}`, '')
     })
     if (lastView !== null) {
       lastView.addEventListener('animationend', () => {
@@ -492,19 +486,21 @@ zoomIn(el) {
             lastView.style.transition = 'transform 0s'
             lastView.style.transformOrigin = getComputedStyle(document.documentElement).getPropertyValue(`--lastView-transformOrigin-end-${this._sessionId}`)
             lastView.style.transform = lastransform
+            //document.documentElement.style.setProperty(`--lastView-transform-end-${this._sessionId}`, '')
         })
     }
     currentView.classList.add(`zoom-in-current-view-${this._sessionId}`)
     previousView.classList.add(`zoom-previous-view-${this._sessionId}`)
     if (lastView !== null) lastView.classList.add(`zoom-last-view-${this._sessionId}`)
   } else {
-    console.log('zoom in. hay animacion corriendo')
+    console.info(`Zumly: zoomIn disabled`)
   } 
 }
 }
 
 /*
 TEMAS A RESOLVER:
+LISTO BUG EN 3 NIVEL AL HACER IN Y DSP OUT Y DSP IN .... RARO. es por la escale
 TODOS: RESPONSIVE, VER REMOVEEVENTS, optiomizar mem staorage, agregar router, agregar eventos disparadores de navegacion, ver temita de losefectos de capas anteriores
 ARREGLAR TRANSFORM ORIGN PARA QUE SEA SIEMPRE 50% 50% (OJO CON LOS SVG)
 LISTO MULTIPLES INSTANCES. FALTA VER TEMA CSS VARIABLES UNICAS
