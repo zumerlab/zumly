@@ -7,7 +7,7 @@ constructor(options) {
     this._sessionId = Zumly.counter
     this.blockEvents = false
 }
-
+// Private methods
 get sessionId () {
   return this._sessionId
 }
@@ -17,144 +17,97 @@ static get counter () {
   return Zumly._counter
 }
 
+static get instance () {
+  // Zumly._counter = (Zumly._counter || 0) + 1
+  return Zumly._counter
+}
+
+static capitalize (value) {
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+static prepareCSS () {
+  var instanceStyle = document.createElement('style')
+  let views = ['current', 'previous', 'last']
+  let instance = Zumly.instance
+  let result = ''
+  views.map(view => {
+  result += `
+  .zoom-${view}-view-${instance} {
+      -webkit-animation-name: zoom${Zumly.capitalize(view)}View${instance};
+              animation-name: zoom${Zumly.capitalize(view)}View${instance};
+      -webkit-animation-duration: var(--animation-duration-${instance});
+              animation-duration: var(--animation-duration-${instance});
+      -webkit-animation-timing-function: ease-in-out;
+              animation-timing-function: ease-in-out;
+      -webkit-animation-fill-mode: forwards;
+              animation-fill-mode: forwards;
+    }
+  @-webkit-keyframes zoom${Zumly.capitalize(view)}View${instance} {
+      0% {
+        transform-origin: var(--${view}View-transformOrigin-start-${instance});
+        transform: var(--${view}View-transform-start-${instance});
+        opacity: var(--${view}View-opacity-start-${instance})
+      }
+
+      100% {
+        transform-origin: var(--${view}View-transformOrigin-end-${instance});
+        transform: var(--${view}View-transform-end-${instance});
+        opacity: var(--${view}View-opacity-end-${instance})
+      }
+    }
+  @keyframes zoom${Zumly.capitalize(view)}View${instance} {
+      0% {
+        transform-origin: var(--${view}View-transformOrigin-start-${instance});
+        transform: var(--${view}View-transform-start-${instance});
+        opacity: var(--${view}View-opacity-start-${instance})
+      }
+
+      100% {
+        transform-origin: var(--${view}View-transformOrigin-end-${instance});
+        transform: var(--${view}View-transform-end-${instance});
+        opacity: var(--${view}View-opacity-end-${instance})
+      }
+    }
+  `
+  })
+  instanceStyle.innerHTML = result
+  document.head.appendChild(instanceStyle)
+}
+
+static setCSSVariables (transition, viewStage) {
+  let current = viewStage.views[0]
+  let previous = viewStage.views[1]
+  let last = viewStage.views[2]
+  let views = [{name:'current', stage: current}, {name:'previous', stage: previous}, {name:'last', stage: last}]
+  let instance = Zumly.instance
+  views.map(view => {
+    if (transition === 'zoomOut') {
+      document.documentElement.style.setProperty(`--${view.name}View-transform-start-${instance}`, view[stage].forwardState.transform)
+      document.documentElement.style.setProperty(`--${view.name}View-transform-end-${instance}`, view[stage].backwardState.transform)
+      document.documentElement.style.setProperty(`--${view.name}View-transformOrigin-start-${instance}`, view[stage].forwardState.origin)
+      document.documentElement.style.setProperty(`--${view.name}View-transformOrigin-end-${instance}`, view[stage].backwardState.origin)
+      if (view === 'current') document.documentElement.style.setProperty(`--animation-duration-${instance}`, view[stage].backwardState.duration)
+      document.documentElement.style.setProperty(`--${view.name}View-opacity-start-${instance}`, 1)
+      document.documentElement.style.setProperty(`--${view.name}View-opacity-end-${instance}`, 0)
+    }
+      if (transition === 'zoomIn') {
+      document.documentElement.style.setProperty(`--${view.name}View-transform-start-${instance}`, `translate3d(${coordenadasEl.x - offsetX}px, ${coordenadasEl.y - offsetY}px, 0px) scale(${scaleInv})`)
+      document.documentElement.style.setProperty(`--${view.name}View-transform-end-${instance}`, `translate3d(${newcoordenadasEl.x - offsetX}px, ${newcoordenadasEl.y - offsetY}px, 0px)`)
+      document.documentElement.style.setProperty(`--${view.name}View-transformOrigin-start-${instance}`, 'top left')
+      document.documentElement.style.setProperty(`--${view.name}View-transformOrigin-end-${instance}`, 'top left')
+      if (view === 'current') document.documentElement.style.setProperty(`--animation-duration-${instance}`, view[stage].backwardState.duration)
+      document.documentElement.style.setProperty(`--${view.name}View-opacity-start-${instance}`, 0)
+      document.documentElement.style.setProperty(`--${view.name}View-opacity-end-${instance}`, 1)
+    }
+    
+  })
+} 
+// Public methods
+
 init() {
     // add instance style
-    var instanceStyle = document.createElement('style')
-    instanceStyle.innerHTML = `
-    .zoom-in-current-view-${this._sessionId} {
-      -webkit-animation-name: zoomInCurrentView${this._sessionId};
-              animation-name: zoomInCurrentView${this._sessionId};
-      -webkit-animation-duration: var(--animation-duration-${this._sessionId});
-              animation-duration: var(--animation-duration-${this._sessionId});
-      -webkit-animation-timing-function: ease-in-out;
-              animation-timing-function: ease-in-out;
-      -webkit-animation-fill-mode: forwards;
-              animation-fill-mode: forwards;
-    }
-    .zoom-out-current-view-${this._sessionId} {
-      -webkit-animation-name: zoomOutCurrentView${this._sessionId};
-              animation-name: zoomOutCurrentView${this._sessionId};
-      -webkit-animation-duration: var(--animation-duration-${this._sessionId});
-              animation-duration: var(--animation-duration-${this._sessionId});
-      -webkit-animation-timing-function: ease-in-out;
-              animation-timing-function: ease-in-out;
-      -webkit-animation-fill-mode: forwards;
-              animation-fill-mode: forwards;
-    }
-    .zoom-previous-view-${this._sessionId} {
-      -webkit-animation-name: zoomPreviousView${this._sessionId};
-              animation-name: zoomPreviousView${this._sessionId};
-      -webkit-animation-duration: var(--animation-duration-${this._sessionId});
-              animation-duration: var(--animation-duration-${this._sessionId});
-      -webkit-animation-timing-function: ease-in-out;
-              animation-timing-function: ease-in-out;
-      -webkit-animation-fill-mode: forwards;
-              animation-fill-mode: forwards;
-    }
-    .zoom-last-view-${this._sessionId} {
-      -webkit-animation-name: zoomLastView${this._sessionId};
-              animation-name: zoomLastView${this._sessionId};
-      -webkit-animation-duration: var(--animation-duration-${this._sessionId});
-              animation-duration: var(--animation-duration-${this._sessionId});
-      -webkit-animation-timing-function: ease-in-out;
-              animation-timing-function: ease-in-out;
-      -webkit-animation-fill-mode: forwards;
-              animation-fill-mode: forwards;
-    }
-    @-webkit-keyframes zoomInCurrentView${this._sessionId} {
-      0% {
-        transform: var(--currentView-transform-start-${this._sessionId});
-        opacity: var(--currentView-opacity-start-${this._sessionId})
-      }
-
-      100% {
-        transform: var(--currentView-transform-end-${this._sessionId});
-        opacity: var(--currentView-opacity-end-${this._sessionId})
-      }
-    }
-    @keyframes zoomInCurrentView${this._sessionId} {
-      0% {
-        transform: var(--currentView-transform-start-${this._sessionId});
-        opacity: var(--currentView-opacity-start-${this._sessionId})
-      }
-
-      100% {
-        transform: var(--currentView-transform-end-${this._sessionId});
-        opacity: var(--currentView-opacity-end-${this._sessionId})
-      }
-    }
-    @-webkit-keyframes zoomOutCurrentView${this._sessionId} {
-      0% {
-        transform-origin: var(--currentView-transformOrigin-start-${this._sessionId});
-        transform: var(--currentView-transform-start-${this._sessionId});
-        opacity: var(--currentView-opacity-start-${this._sessionId})
-      }
-
-      100% {
-        transform-origin: var(--currentView-transformOrigin-end-${this._sessionId});
-        transform: var(--currentView-transform-end-${this._sessionId});
-        opacity: var(--currentView-opacity-end-${this._sessionId})
-      }
-    }
-    @keyframes zoomOutCurrentView${this._sessionId} {
-      0% {
-        transform-origin: var(--currentView-transformOrigin-start-${this._sessionId});
-        transform: var(--currentView-transform-start-${this._sessionId});
-        opacity: var(--currentView-opacity-start-${this._sessionId})
-      }
-
-      100% {
-        transform-origin: var(--currentView-transformOrigin-end-${this._sessionId});
-        transform: var(--currentView-transform-end-${this._sessionId});
-        opacity: var(--currentView-opacity-end-${this._sessionId})
-      }
-    }
-    @-webkit-keyframes zoomPreviousView${this._sessionId} {
-      0% {
-        transform-origin: var(--previousView-transformOrigin-start-${this._sessionId});
-        transform: var(--previousView-transform-start-${this._sessionId})
-      }
-
-      100% {
-        transform-origin: var(--previousView-transformOrigin-end-${this._sessionId});
-        transform: var(--previousView-transform-end-${this._sessionId})
-      }
-    }
-    @keyframes zoomPreviousView${this._sessionId} {
-      0% {
-        transform-origin: var(--previousView-transformOrigin-start-${this._sessionId});
-        transform: var(--previousView-transform-start-${this._sessionId})
-      }
-
-      100% {
-        transform-origin: var(--previousView-transformOrigin-end-${this._sessionId});
-        transform: var(--previousView-transform-end-${this._sessionId})
-      }
-    }
-    @-webkit-keyframes zoomLastView${this._sessionId} {
-      0% {
-        transform-origin: var(--lastView-transformOrigin-start-${this._sessionId});
-        transform: var(--lastView-transform-start-${this._sessionId})
-      }
-
-      100% {
-        transform-origin: var(--lastView-transformOrigin-end-${this._sessionId});
-        transform: var(--lastView-transform-end-${this._sessionId})
-      }
-    }
-    @keyframes zoomLastView${this._sessionId} {
-      0% {
-        transform-origin: var(--lastView-transformOrigin-start-${this._sessionId});
-        transform: var(--lastView-transform-start-${this._sessionId})
-      }
-
-      100% {
-        transform-origin: var(--lastView-transformOrigin-end-${this._sessionId});
-        transform: var(--lastView-transform-end-${this._sessionId})
-      }
-    }
-    `
-    document.head.appendChild(instanceStyle)
+    Zumly.prepareCSS()
     const canvas = document.querySelector(this.app.mount)
     var self = this //OPTIMIZAR
     canvas.addEventListener('click', function(e) {
@@ -208,10 +161,8 @@ zoomOut() {
         var previousView = canvas.querySelector('.view.previous')
         var lastView = canvas.querySelector('.view.last')
         currentView.style.willChange = 'transform, opacity'
-        // currentView-transform-start-z1
-        // currentView-transform-end-z1
-        // currentView-transformOrigin-start-z1
-        // animation-duration-z1
+        // Zumly.setCSSVariables('zoomOut', ultimavista)
+        //
         document.documentElement.style.setProperty(`--currentView-transform-start-${this._sessionId}`, current.forwardState.transform)
         document.documentElement.style.setProperty(`--currentView-transform-end-${this._sessionId}`, current.backwardState.transform)
         document.documentElement.style.setProperty(`--currentView-transformOrigin-start-${this._sessionId}`, current.forwardState.origin)
@@ -223,13 +174,15 @@ zoomOut() {
         previousView.querySelector('.active').classList.remove('active')
         previousView.classList.remove('previous')
         previousView.classList.add('current')
-        previousView.style.willChange = 'transform'
+        previousView.style.willChange = 'transform, opacity'
         document.documentElement.style.setProperty(`--previousView-transform-start-${this._sessionId}`, previous.forwardState.transform)
         document.documentElement.style.setProperty(`--previousView-transform-end-${this._sessionId}`, previous.backwardState.transform)
         document.documentElement.style.setProperty(`--previousView-transformOrigin-start-${this._sessionId}`, previous.forwardState.origin)
         document.documentElement.style.setProperty(`--previousView-transformOrigin-end-${this._sessionId}`, previous.backwardState.origin)
+        document.documentElement.style.setProperty(`--previousView-opacity-start-${this._sessionId}`, 1)
+        document.documentElement.style.setProperty(`--previousView-opacity-end-${this._sessionId}`, 1)
         if (last !== undefined) {
-            lastView.style.willChange = 'transform'
+            lastView.style.willChange = 'transform, opacity'
             lastView.classList.add('previous')
             lastView.style.opacity = 1
             lastView.classList.remove('last')
@@ -237,6 +190,8 @@ zoomOut() {
             document.documentElement.style.setProperty(`--lastView-transform-end-${this._sessionId}`, last.backwardState.transform)
             document.documentElement.style.setProperty(`--lastView-transformOrigin-start-${this._sessionId}`, last.forwardState.origin)
             document.documentElement.style.setProperty(`--lastView-transformOrigin-end-${this._sessionId}`, last.backwardState.origin)
+            document.documentElement.style.setProperty(`--lastView-opacity-start-${this._sessionId}`, 1)
+            document.documentElement.style.setProperty(`--lastView-opacity-end-${this._sessionId}`, 1)
             
         }
         if (gone !== undefined) {
@@ -269,7 +224,7 @@ zoomOut() {
                 lastView.style.transform = last.backwardState.transform
             })
         }
-        currentView.classList.add(`zoom-out-current-view-${this._sessionId}`)
+        currentView.classList.add(`zoom-current-view-${this._sessionId}`)
         previousView.classList.add(`zoom-previous-view-${this._sessionId}`)
         if (last !== undefined) lastView.classList.add(`zoom-last-view-${this._sessionId}`)
     } else {
@@ -362,7 +317,7 @@ zoomIn(el) {
     previousView.style.transform = `translate3d(${coordenadasPreviousView.x - offsetX}px, ${coordenadasPreviousView.y  - offsetY}px, 0px)`
     var prePrevTransform = previousView.style.transform
     var prorigin = previousView.style.transformOrigin
-    currentView.style.transformOrigin = 'top left'
+    currentView.style.transformOrigin = '0 0'
     currentView.style.transform = `translate3d(${coordenadasEl.x - offsetX}px, ${coordenadasEl.y - offsetY}px, 0px) scale(${scaleInv})`
     var preCurrentTransform = currentView.style.transform
     if (lastView !== null) {
@@ -434,35 +389,44 @@ zoomIn(el) {
     if (lastv !== null) snapShoot.views.push(lastv)
     if (gonev !== null) snapShoot.views.push(gonev)
     this.storeViews(snapShoot)
+  //
+    var ultimaVista = this.storedViews[this.storedViews.length - 1]
+    let currentv1 = ultimaVista.views[0]
+    let previousv1 = ultimaVista.views[1]
+    let lastv1 = ultimaVista.views[2]
+    let gonev1 = ultimaVista.views[3]
     // animation
     currentView.style.willChange = 'transform, opacity'
-    document.documentElement.style.setProperty(`--currentView-transform-start-${this._sessionId}`, `translate3d(${coordenadasEl.x - offsetX}px, ${coordenadasEl.y - offsetY}px, 0px) scale(${scaleInv})`)
-    document.documentElement.style.setProperty(`--currentView-transform-end-${this._sessionId}`, `translate3d(${newcoordenadasEl.x - offsetX}px, ${newcoordenadasEl.y - offsetY}px, 0px)`)
-    document.documentElement.style.setProperty(`--currentView-transformOrigin-start-${this._sessionId}`, '50% 50%')
-    document.documentElement.style.setProperty(`--currentView-transformOrigin-end-${this._sessionId}`, 'top left')
+    document.documentElement.style.setProperty(`--currentView-transform-start-${this._sessionId}`, currentv1.backwardState.transform)
+    document.documentElement.style.setProperty(`--currentView-transform-end-${this._sessionId}`, currentv1.forwardState.transform)
+    document.documentElement.style.setProperty(`--currentView-transformOrigin-start-${this._sessionId}`, currentv1.backwardState.origin)
+    document.documentElement.style.setProperty(`--currentView-transformOrigin-end-${this._sessionId}`, currentv1.forwardState.origin)
     document.documentElement.style.setProperty(`--animation-duration-${this._sessionId}`, duration)
     document.documentElement.style.setProperty(`--currentView-opacity-start-${this._sessionId}`, 0)
     document.documentElement.style.setProperty(`--currentView-opacity-end-${this._sessionId}`, 1)
     
-    previousView.style.willChange = 'transform'
+    previousView.style.willChange = 'transform, opacity'
     document.documentElement.style.setProperty(`--previousView-transform-start-${this._sessionId}`, prePrevTransform)
     document.documentElement.style.setProperty(`--previousView-transform-end-${this._sessionId}`, move)
     document.documentElement.style.setProperty(`--previousView-transformOrigin-start-${this._sessionId}`, previousView.style.transformOrigin)
     document.documentElement.style.setProperty(`--previousView-transformOrigin-end-${this._sessionId}`, previousView.style.transformOrigin)
-    // document.documentElement.style.setProperty('--animation-duration-back', duration)
+    document.documentElement.style.setProperty(`--previousView-opacity-start-${this._sessionId}`, 1)
+    document.documentElement.style.setProperty(`--previousView-opacity-end-${this._sessionId}`, 1)
     if (lastView !== null) {
-      lastView.style.willChange = 'transform'
+      lastView.style.willChange = 'transform, opacity'
         document.documentElement.style.setProperty(`--lastView-transform-start-${this._sessionId}`, clvt)
         document.documentElement.style.setProperty(`--lastView-transform-end-${this._sessionId}`, lastransform)
         document.documentElement.style.setProperty(`--lastView-transformOrigin-start-${this._sessionId}`, lastView.style.transformOrigin)
         document.documentElement.style.setProperty(`--lastView-transformOrigin-end-${this._sessionId}`, lastView.style.transformOrigin)
+        document.documentElement.style.setProperty(`--lastView-opacity-start-${this._sessionId}`, 1)
+        document.documentElement.style.setProperty(`--lastView-opacity-end-${this._sessionId}`, 1)
     }
     currentView.addEventListener('animationstart', () => {
         this.blockEvents = true
     })
     currentView.addEventListener('animationend', () => {
         currentView.style.willChange = 'auto'
-        currentView.classList.remove(`zoom-in-current-view-${this._sessionId}`)
+        currentView.classList.remove(`zoom-current-view-${this._sessionId}`)
         currentView.classList.remove('no-events')
         currentView.style.transition = 'all 0s'
         currentView.style.transformOrigin = 'top left'
@@ -489,7 +453,7 @@ zoomIn(el) {
             //document.documentElement.style.setProperty(`--lastView-transform-end-${this._sessionId}`, '')
         })
     }
-    currentView.classList.add(`zoom-in-current-view-${this._sessionId}`)
+    currentView.classList.add(`zoom-current-view-${this._sessionId}`)
     previousView.classList.add(`zoom-previous-view-${this._sessionId}`)
     if (lastView !== null) lastView.classList.add(`zoom-last-view-${this._sessionId}`)
   } else {
