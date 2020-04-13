@@ -18,10 +18,13 @@ import Zumly from '../dist/zumly.mjs'
 const home = `
 <div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid red;'>
   
-    <div class='zoomable' data-go-to='mail' style='height: 130px; width: 130px;border: 1px solid red; transform: translate(50px, 30px)'>
+    <div class='zoomable' data-go-to='mail' style='height: 100px; width: 70px;border: 1px solid red; transform: translate(50px, 30px)'>
         @contact
     </div>
-    <div class='zoomable' data-go-to='contact' style='height: 90px; width: 90px; border: 1px solid red; transform: translate(150px, 90px);'>
+    <div class='zoomable' data-go-to='contact' style='height: 90px; width: 190px; border: 1px solid red; transform: translate(150px, 90px);'>
+        @texd
+    </div>
+    <div class='zoomable' data-go-to='contact' style='height: 90px; width: 90px; border: 1px solid red; transform: translate(0px, -100%);'>
         @texd
     </div>
 
@@ -31,6 +34,9 @@ const contact = `
 <div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid green; '>
   <div class='zoomable' data-go-to='mail' style='height: 180px; width: 180px; border: 1px solid green; transform: translate(90px, 80px)'>
         @mail
+    </div>
+    <div class='zoomable' data-go-to='contact' style='height: 90px; width: 90px; border: 1px solid red; transform: translate(250px, 190px);'>
+        @texd
     </div>
 </div>
 `

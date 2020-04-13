@@ -17,9 +17,11 @@
 }
 
 .view {
+	border-radius: 50%
 }
 
 .zoomable {
+	border-radius: 50%
 }
 
 .current {
