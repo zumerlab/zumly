@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [0.4.0](https://github.com/zumly/compare/v0.3.6...v0.4.0) (2020-04-13)
+
+
+### Features
+
+* 🎸 zoom now accepts irregular shapes ([7bd3f24](https://github.com/zumly/commit/7bd3f24))
+
+
+
 ## [0.3.6](https://github.com/zumly/compare/v0.3.5...v0.3.6) (2020-04-06)
 
 
