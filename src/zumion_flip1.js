@@ -4,7 +4,7 @@ class Zumly {
       this.app = options
       this.storedViews = []
       this.storedPreviousScale = [1]
-      this._sessionId = Zumly.counter
+      this.instance = Zumly.counter
       this.blockEvents = false
       this.canvas = document.querySelector(this.app.mount)
   }
@@ -12,11 +12,6 @@ class Zumly {
 
   static get counter () {
     Zumly._counter = (Zumly._counter || 0) + 1
-    return Zumly._counter
-  }
-
-  get instance () {
-    // Zumly._counter = (Zumly._counter || 0) + 1
     return Zumly._counter
   }
 
@@ -294,7 +289,7 @@ class Zumly {
         var transformLastView_0 = lastView.style.transform
         var newcoordenadasPV = previousView.getBoundingClientRect()
         lastView.style.transform = `translate3d(${x - offsetX}px, ${y - offsetY}px, 0px) scale(${scale * preScale})`
-        let last = canvas.querySelector('.last').querySelector('.active')
+        let last = lastView.querySelector('.active')
         var coorLast = last.getBoundingClientRect()
         lastView.style.transform = transformLastView_0
         previousView.style.transform = transformPreviousView_0
