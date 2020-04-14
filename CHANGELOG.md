@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+# [0.5.0](https://github.com/zumly/compare/v0.4.0...v0.5.0) (2020-04-14)
+
+
+### Bug Fixes
+
+* 🐛 Fix instance id ([c600871](https://github.com/zumly/commit/c600871))
+
+
+### Features
+
+* 🎸 Allows custom parametres for duration, ease and filters ([a8a538d](https://github.com/zumly/commit/a8a538d))
+
+
+
 # [0.4.0](https://github.com/zumly/compare/v0.3.6...v0.4.0) (2020-04-13)
 
 
