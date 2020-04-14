@@ -11,28 +11,21 @@
 	overflow: hidden;
 }
 
-.no-events {
-	pointer-events: none;
-	user-select: none;
-}
-
 .view {
 	border-radius: 50%
 }
 
 .zoomable {
-	border-radius: 50%
+	border-radius: 50%;
+	cursor: pointer
 }
 
 .current {
 }
 
-.previous, .last {
+.no-events, .previous, .last {
 	pointer-events: none;
 	user-select: none;
 }
-.previous {
-}
-
-.last {
+.previous, .last {
 }

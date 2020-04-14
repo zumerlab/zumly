@@ -18,15 +18,20 @@ import Zumly from '../dist/zumly.mjs'
 const home = `
 <div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid red;'>
   
-    <div class='zoomable' data-go-to='mail' style='height: 100px; width: 70px;border: 1px solid red; transform: translate(50px, 30px)'>
+    <div class='zoomable' data-duration='14s' data-go-to='mail' style='height: 100px; width: 70px;border: 1px solid red; transform: translate(50px, 30px)'>
         @contact
     </div>
-    <div class='zoomable' data-go-to='contact' style='height: 90px; width: 190px; border: 1px solid red; transform: translate(150px, 90px);'>
+    <div class='zoomable' data-go-to='contact' data-ease='cubic-bezier(0.68, -0.6, 0.32, 1.6)' style='height: 90px; width: 190px; border: 1px solid red; transform: translate(150px, 90px);'>
         @texd
     </div>
-    <div class='zoomable' data-go-to='contact' style='height: 90px; width: 90px; border: 1px solid red; transform: translate(0px, -100%);'>
-        @texd
-    </div>
+    <div style="width: 50px">
+    <svg  viewBox="0 0 60 100"> 
+        <path class='zoomable'  data-go-to='contact'  data-duration='4s' data-ease='steps(10)' fill="#ABABAB" d="M59.717,50.177c0-13.252-3.631-25.945-10.495-36.82l2.998-1.873L39.891,0.667l4.318,15.823l3.1-1.937 c6.64,10.515,10.152,22.797,10.152,35.624c0,12.927-3.56,25.284-10.294,35.848l-2.959-1.849L39.891,100L52.22,89.183l-3.14-1.962 C56.037,76.298,59.717,63.529,59.717,50.177z"/> 
+    </svg>    
+</div>
+    <span class='zoomable' data-go-to='contact'>
+       Reacciona
+    </span>
 
 </div>
 `
@@ -67,6 +72,12 @@ const app1 = new Zumly({
     home,
     contact,
     mail
+  },
+  transitions: {
+    duration: '2s',     // default 1s, overridable
+    ease: 'ease-in',    // ease-in-out, cubic-bezier, etc, overridable
+    effects: ['blur', 'sepia', 'saturate'],       // applied over not active views
+    cover: 'width'      // for covering different shapes, height, overrridable, widht
   }
 })
 
@@ -76,14 +87,6 @@ app1.init()
 
 <script>
 var uno = new mytest('uno', '.zoomable')
-
-var dos = new mytest('dos', '.test')
-
-console.log(uno)
-console.log('---')
-console.log(dos)
-console.log('---')
-console.log(new mytest('tes'))
 </script> -->
 
     </body>
