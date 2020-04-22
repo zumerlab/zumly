@@ -1,6 +1,6 @@
 {
   "name": "zumly",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": "Juan Martín Muda",
   "main": "dist/zumly.min.mjs",
   "module": "dist/zumly.mjs",
