@@ -36,7 +36,7 @@ const home = `
 </div>
 `
 const contact = `
-<div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid green; '>
+<div class="view" style='position: absolute; height:100%; width:100%; border: 1px solid green; '>
   <div class='zoomable' data-go-to='mail' style='height: 180px; width: 180px; border: 1px solid green; transform: translate(90px, 80px)'>
         @mail
     </div>
@@ -47,7 +47,7 @@ const contact = `
 `
 
 const mail = `
-<div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid purple;'>
+<div class="view" style='position: absolute; height:500px; width:500px; border: 1px solid purple;'>
   <div class='zoomable' data-go-to='home' style='height: 150px; width: 350px; border: 1px solid purple; transform: translate(120px, 180px)'>
         @home
     </div>
@@ -77,7 +77,7 @@ const app1 = new Zumly({
     duration: '2s',     // default 1s, overridable
     ease: 'ease-in',    // ease-in-out, cubic-bezier, etc, overridable
     effects: ['blur', 'sepia', 'saturate'],       // applied over not active views
-    cover: 'width'      // for covering different shapes, height, overrridable, widht
+    cover: 'height'      // for covering different shapes, height, overrridable, widht
   }
 })
 

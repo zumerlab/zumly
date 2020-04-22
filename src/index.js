@@ -1,5 +1,5 @@
 import './style.css'
-import Zumly from './zumion_flip1.js'
+import Zumly from './zumly.js'
 export default Zumly
 
 /*

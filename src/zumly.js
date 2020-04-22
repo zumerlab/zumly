@@ -2,24 +2,40 @@
 class Zumly {
   constructor(options) {
       this.app = options
+      this.instance = Zumly.counter
+      if (options.transitions) {
+        this.duration = options.transitions.duration || '1s'
+        this.ease = options.transitions.ease || 'ease-in-out'
+      } else {
+        this.duration = '1s'
+        this.ease = 'ease-in-out'
+      }
+      if (options.transitions && options.transitions.effects) {
+        var fx_0 = ''
+        var fx_1 = ''
+        options.transitions.effects.map(effect => {
+          fx_0 += `${effect === 'blur' ? 'blur(0px) ' : effect === 'sepia' ? 'sepia(0) ' : effect === 'saturate' ? 'saturate(0)' : 'none'}`
+          fx_1 += `${effect === 'blur' ? 'blur(2px) ' : effect === 'sepia' ? 'sepia(5) ' : effect === 'saturate' ? 'saturate(8)' : 'none'}`
+        })
+      } else {
+        fx_0 = 'none'
+        fx_1 = 'none'
+      }
+      this.effects = [fx_0, fx_1]
+      if (options.transitions && options.transitions.cover) {
+        this.cover = options.transitions.cover || 'width'
+      } else {
+        this.cover = 'width'
+      }
       this.storedViews = []
       this.storedPreviousScale = [1]
-      this._sessionId = Zumly.counter
       this.blockEvents = false
       this.canvas = document.querySelector(this.app.mount)
   }
   // Private methods
-  get sessionId () {
-    return this._sessionId
-  }
 
   static get counter () {
     Zumly._counter = (Zumly._counter || 0) + 1
-    return Zumly._counter
-  }
-
-  static get instance () {
-    // Zumly._counter = (Zumly._counter || 0) + 1
     return Zumly._counter
   }
 
@@ -27,10 +43,10 @@ class Zumly {
     return value.charAt(0).toUpperCase() + value.slice(1)
   }
 
-  static prepareCSS () {
+  prepareCSS () {
     var instanceStyle = document.createElement('style')
     let views = ['current', 'previous', 'last']
-    let instance = Zumly.instance
+    let instance = this.instance
     let result = ''
     views.map(view => {
     result += `
@@ -39,35 +55,37 @@ class Zumly {
                 animation-name: zoom${Zumly.capitalize(view)}View${instance};
         -webkit-animation-duration: var(--animation-duration-${instance});
                 animation-duration: var(--animation-duration-${instance});
-        -webkit-animation-timing-function: ease-in-out;
-                animation-timing-function: ease-in-out;
-        -webkit-animation-fill-mode: forwards;
-                animation-fill-mode: forwards;
+        -webkit-animation-timing-function: var(--animation-ease-${instance});
+                animation-timing-function: var(--animation-ease-${instance});
       }
     @-webkit-keyframes zoom${Zumly.capitalize(view)}View${instance} {
         0% {
           transform-origin: var(--${view}View-transformOrigin-start-${instance});
           transform: var(--${view}View-transform-start-${instance});
-          opacity: var(--${view}View-opacity-start-${instance})
+          opacity: var(--${view}View-opacity-start-${instance});
+          filter: var(--${view}View-filter-start-${instance})
         }
 
         100% {
           transform-origin: var(--${view}View-transformOrigin-end-${instance});
           transform: var(--${view}View-transform-end-${instance});
-          opacity: var(--${view}View-opacity-end-${instance})
+          opacity: var(--${view}View-opacity-end-${instance});
+          filter: var(--${view}View-filter-end-${instance})
         }
       }
     @keyframes zoom${Zumly.capitalize(view)}View${instance} {
         0% {
           transform-origin: var(--${view}View-transformOrigin-start-${instance});
           transform: var(--${view}View-transform-start-${instance});
-          opacity: var(--${view}View-opacity-start-${instance})
+          opacity: var(--${view}View-opacity-start-${instance});
+          filter: var(--${view}View-filter-start-${instance})
         }
 
         100% {
           transform-origin: var(--${view}View-transformOrigin-end-${instance});
           transform: var(--${view}View-transform-end-${instance});
-          opacity: var(--${view}View-opacity-end-${instance})
+          opacity: var(--${view}View-opacity-end-${instance});
+          filter: var(--${view}View-filter-end-${instance})
         }
       }
     `
@@ -75,14 +93,14 @@ class Zumly {
     instanceStyle.innerHTML = result
     document.head.appendChild(instanceStyle)
   }
-
+  
   setCSSVariables (transition) {
     let viewStage = this.storedViews[this.storedViews.length - 1]
     let current = viewStage.views[0]
     let previous = viewStage.views[1]
     let last = viewStage.views[2]
     let views = [{name:'current', stage: current}, {name:'previous', stage: previous}, {name:'last', stage: last}]
-    let instance = Zumly.instance
+    let instance = this.instance
     views.map(view => {
       if (transition === 'zoomOut' && view.stage !== undefined) {
         document.documentElement.style.setProperty(`--${view.name}View-transform-start-${instance}`, view.stage.forwardState.transform)
@@ -90,9 +108,14 @@ class Zumly {
         document.documentElement.style.setProperty(`--${view.name}View-transformOrigin-start-${instance}`, view.stage.forwardState.origin)
         document.documentElement.style.setProperty(`--${view.name}View-transformOrigin-end-${instance}`, view.stage.backwardState.origin)
         document.documentElement.style.setProperty(`--${view.name}View-opacity-start-${instance}`, 1)
+        document.documentElement.style.setProperty(`--${view.name}View-filter-start-${instance}`, view.stage.forwardState.filter)
+        document.documentElement.style.setProperty(`--${view.name}View-filter-end-${instance}`, view.stage.backwardState.filter)
         if (view.name === 'current') { 
           document.documentElement.style.setProperty(`--animation-duration-${instance}`, view.stage.backwardState.duration)
+          document.documentElement.style.setProperty(`--animation-ease-${instance}`, view.stage.backwardState.ease)
           document.documentElement.style.setProperty(`--${view.name}View-opacity-end-${instance}`, 0)
+          document.documentElement.style.setProperty(`--${view.name}View-filter-start-${instance}`, `none`)
+          document.documentElement.style.setProperty(`--${view.name}View-filter-end-${instance}`, `none`)
         } else {
           document.documentElement.style.setProperty(`--${view.name}View-opacity-end-${instance}`, 1)
         }
@@ -102,9 +125,14 @@ class Zumly {
         document.documentElement.style.setProperty(`--${view.name}View-transform-end-${instance}`, view.stage.forwardState.transform)
         document.documentElement.style.setProperty(`--${view.name}View-transformOrigin-start-${instance}`, view.stage.backwardState.origin)
         document.documentElement.style.setProperty(`--${view.name}View-transformOrigin-end-${instance}`, view.stage.forwardState.origin)
+        document.documentElement.style.setProperty(`--${view.name}View-filter-start-${instance}`, view.stage.backwardState.filter)
+        document.documentElement.style.setProperty(`--${view.name}View-filter-end-${instance}`, view.stage.forwardState.filter)
         if (view.name === 'current') { 
           document.documentElement.style.setProperty(`--animation-duration-${instance}`, view.stage.forwardState.duration)
+          document.documentElement.style.setProperty(`--animation-ease-${instance}`, view.stage.forwardState.ease)
           document.documentElement.style.setProperty(`--${view.name}View-opacity-start-${instance}`, 0)
+          document.documentElement.style.setProperty(`--${view.name}View-filter-start-${instance}`, `none`)
+          document.documentElement.style.setProperty(`--${view.name}View-filter-end-${instance}`, `none`)
         } else {
           document.documentElement.style.setProperty(`--${view.name}View-opacity-start-${instance}`, 1)
         }
@@ -115,12 +143,13 @@ class Zumly {
   // Public methods
   init() {
     // add instance style
-    Zumly.prepareCSS()
+    this.prepareCSS()
     const canvas = this.canvas
     canvas.addEventListener('click', e => {
       e.stopPropagation()
       this.zoomOut()
     })
+    console.log(this)
     var newView = document.createElement('template')
     newView.innerHTML = this.app.views[this.app.initialView]
     canvas.prepend(newView.content)
@@ -128,10 +157,7 @@ class Zumly {
     view.classList.add('current')
     view.dataset.viewName = this.app.initialView
     // agrega eventos a todos los .zoomable
-    view.querySelectorAll('.zoomable').forEach(el => el.addEventListener('click', e => {
-      e.stopPropagation()
-      this.zoomIn(el)
-    }))
+    view.querySelectorAll('.zoomable').forEach(el => el.addEventListener('click', this.addZoomInEvent.bind(this)))
     // add to storage. OPTIMIZAR
     this.storeViews({
       zoomLevel: this.storedViews.length,
@@ -152,6 +178,9 @@ class Zumly {
   storeViews(data) {
     this.storedViews.push(data)
   }
+  disableBlockEvents() {
+    this.blockEvents = false
+  }
   setPreviousScale(scale) {
     this.storedPreviousScale.push(scale)
   }
@@ -163,21 +192,21 @@ class Zumly {
       let previous = ultimaVista.views[1]
       let last = ultimaVista.views[2]
       let gone = ultimaVista.views[3]
-      var instance = Zumly.instance
+      var instance = this.instance
       const canvas = this.canvas
       var currentView = canvas.querySelector('.view.current')
       var previousView = canvas.querySelector('.view.previous')
       var lastView = canvas.querySelector('.view.last')
-      currentView.style.willChange = 'transform, opacity'
+      currentView.style.willChange = 'transform, opacity, filter'
       this.setCSSVariables('zoomOut')
       //
       previousView.querySelector('.active').classList.remove('active')
       previousView.classList.remove('previous')
       previousView.classList.add('current')
-      previousView.style.willChange = 'transform, opacity'
+      previousView.style.willChange = 'transform, opacity, filter'
      
       if (last !== undefined) {
-        lastView.style.willChange = 'transform, opacity'
+        lastView.style.willChange = 'transform, opacity, filter'
         lastView.classList.add('previous')
         lastView.style.opacity = 1
         lastView.classList.remove('last')
@@ -188,38 +217,45 @@ class Zumly {
         newlastView.style.opacity = 0
       }
       this.storedViews.pop()
-      var currentEvent1 = () => {
-        this.blockEvents = false
-        currentView.removeEventListener('animationend', currentEvent1)
+      var self = this
+      function handler (event) {
+        let element = event.target
+        if (event.target.classList.contains(`zoom-previous-view-${instance}`)) {
+          var origin = previous.backwardState.origin
+          var transform = previous.backwardState.transform
+          element.style.willChange = 'auto'
+          element.classList.remove(`zoom-previous-view-${instance}`)
+          element.style.transformOrigin = origin
+          element.style.transform = transform
+          element.style.filter = 'none'
+          element.removeEventListener('animationend', handler)
+        } else {
+          origin = last.backwardState.origin
+          transform = last.backwardState.transform
+          element.style.willChange = 'auto'
+          element.classList.remove(`zoom-last-view-${instance}`)
+          element.style.transformOrigin = origin
+          element.style.transform = transform
+          element.style.filter = getComputedStyle(document.documentElement).getPropertyValue(`--previousView-filter-end-${instance}`)
+          element.removeEventListener('animationend', handler)
+        }
       }
-      var currentEvent = () => {
+      currentView.addEventListener('animationstart', function handlerStart () {
+        self.blockEvents = true
+        currentView.querySelectorAll('.zoomable').forEach(vx => vx.removeEventListener('click', self.addZoomInEvent.bind(self)))
+        currentView.removeEventListener('animationstart', handlerStart)
+      })
+      currentView.addEventListener('animationend', function handlerEnd () {
         canvas.removeChild(currentView)
-        this.blockEvents = false
-        currentView.removeEventListener('animationend', currentEvent)
-      }
-      var previousEvent = () => {
-        previousView.classList.remove(`zoom-previous-view-${instance}`)
-        previousView.style.willChange = 'auto'
-        previousView.style.transformOrigin = previous.backwardState.origin
-        previousView.style.transform = previous.backwardState.transform
-        previousView.removeEventListener('animationend', previousEvent)
-      }
-      var lastEvent = () => {
-        lastView.style.willChange = 'auto'
-        lastView.classList.remove(`zoom-last-view-${instance}`)
-        lastView.style.transformOrigin = last.backwardState.origin
-        lastView.style.transform = last.backwardState.transform
-        lastView.removeEventListener('animationend', lastEvent)
-      }
-      
-        currentView.addEventListener('animationstart', currentEvent1)
-        currentView.addEventListener('animationend', currentEvent)
-        previousView.addEventListener('animationend', previousEvent)
-        if (last !== undefined) lastView.addEventListener('animationend', lastEvent)
+        self.blockEvents = false
+        currentView.removeEventListener('animationstart', handlerEnd)
+      })
+      previousView.addEventListener('animationend', handler)
+      if (last !== undefined) lastView.addEventListener('animationend', handler)
 
-        currentView.classList.add(`zoom-current-view-${instance}`)
-        previousView.classList.add(`zoom-previous-view-${instance}`)
-        if (last !== undefined) lastView.classList.add(`zoom-last-view-${instance}`)
+      currentView.classList.add(`zoom-current-view-${instance}`)
+      previousView.classList.add(`zoom-previous-view-${instance}`)
+      if (last !== undefined) lastView.classList.add(`zoom-last-view-${instance}`)
 
     } else {
       console.info(`Zumly: zoomOut disabled`)
@@ -228,8 +264,9 @@ class Zumly {
   zoomIn(el) {
     // only runs if there is no transition running
     if (!this.blockEvents) {
+      console.log(this)
       // getContext()
-      var instance = Zumly.instance
+      var instance = this.instance
       let canvas = this.canvas
       let coordenadasCanvas = canvas.getBoundingClientRect()
       var offsetX = coordenadasCanvas.left
@@ -251,23 +288,39 @@ class Zumly {
       if (goneView !== null) canvas.removeChild(goneView)
       // do changes
       // Add events to currentView
-      var currentEvent2 = (e) => {
-        e.stopPropagation()
-        this.zoomIn(e.target)
-      }
-      currentView.querySelectorAll('.zoomable').forEach(vx => vx.addEventListener('click', currentEvent2))
+      currentView.querySelectorAll('.zoomable').forEach(vx => vx.addEventListener('click', this.addZoomInEvent.bind(this)))
       // calculateLayers('previous'
       currentView.classList.add('current')
       currentView.classList.add('no-events')
       currentView.dataset.viewName = el.dataset.goTo
-      let scale = currentView.getBoundingClientRect().width / coordenadasEl.width
+      let cc = currentView.getBoundingClientRect()
+      let scale = cc.width / coordenadasEl.width
       let scaleInv = 1 / scale
-      this.setPreviousScale(scale)
-      var duration = `1s`
-      currentView.style.transformOrigin = '0 0'
-      var transformCurrentView_0 = `translate3d(${coordenadasEl.x - offsetX}px, ${coordenadasEl.y - offsetY}px, 0px) scale(${scaleInv})`
-      // CURRENT VIEW EXACTAMENTE ONDE ESTANA EL ELEMTO CLICKEADO
-      currentView.style.transform = transformCurrentView_0 
+      let scaleh = cc.height / coordenadasEl.height
+      let scaleInvh = 1 / scaleh
+      // muy interesante featura... usar el zoom de acuardo a la h o w mayor y agra
+      
+      var duration = el.dataset.duration || this.duration
+      var ease = el.dataset.ease || this.ease
+      var filterIn = this.effects[0]
+      var filterOut = this.effects[1]
+      var cover = this.cover
+      currentView.style.transformOrigin = `0 0`
+      if (cover === 'width') {
+        var laScala = scale
+        var laScalaInv = scaleInv
+      } else if (cover === 'height') {
+        laScala = scaleh
+        laScalaInv = scaleInvh
+      } else {
+        laScala = scale
+        laScalaInv = scaleInv
+        console.log('cover no width no height')
+      }
+      this.setPreviousScale(laScala)
+      var transformCurrentView_0 = `translate3d(${coordenadasEl.x - offsetX + (coordenadasEl.width - cc.width * laScalaInv) / 2}px, ${coordenadasEl.y - offsetY + (coordenadasEl.height - cc.height * laScalaInv) / 2}px, 0px) scale(${laScalaInv})`
+      currentView.style.transform = transformCurrentView_0
+      // currentView.style.transformOrigin = '50% 50%'
       //
       previousView.classList.add('previous')
       previousView.classList.remove('current')
@@ -279,28 +332,32 @@ class Zumly {
       let x = coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + coordenadasPreviousView.x
       let y = coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + coordenadasPreviousView.y
 
-      let transformPreviousView_1 = `translate3d(${x}px, ${y}px, 0px) scale(${scale})`
+      let transformPreviousView_1 = `translate3d(${x}px, ${y}px, 0px) scale(${laScala})`
       // PREVIOUS VIEW FINAL STAGE
       previousView.style.transform = transformPreviousView_1
       // ACA CAMBIA LA COSA, LEVANTO LAS COORDENADAS DEL ELEMENTO CLICLEADO QUE ESTBA DNRO DE PREVIOUS VIEW
       var newcoordenadasEl = el.getBoundingClientRect()
       // LO QUE DETERMINA LA POSICINES FONAL DEL CURRENT VIEW
-      var transformCurrentView_1 = `translate3d(${newcoordenadasEl.x - offsetX}px, ${newcoordenadasEl.y - offsetY}px, 0px)`
+      var transformCurrentView_1 = `translate3d(${newcoordenadasEl.x - offsetX + (newcoordenadasEl.width - cc.width) / 2}px, ${newcoordenadasEl.y - offsetY + (newcoordenadasEl.height - cc.height) / 2}px, 0px)`
 
       if (lastView !== null) {
         lastView.classList.remove('previous')
         lastView.classList.add('last')
-        // TOMO LA TRANFROMS INICIAL DE LAST VIEW
         var transformLastView_0 = lastView.style.transform
         var newcoordenadasPV = previousView.getBoundingClientRect()
-        // lastView.style.transition = 'transform 0s'
-        lastView.style.transform = `translate3d(${x - offsetX}px, ${y - offsetY}px, 0px) scale(${scale * preScale})`
-        let last = canvas.querySelector('.last').querySelector('.active')
+        lastView.style.transform = `translate3d(${x - offsetX}px, ${y - offsetY}px, 0px) scale(${laScala * preScale})`
+        let last = lastView.querySelector('.active')
         var coorLast = last.getBoundingClientRect()
         lastView.style.transform = transformLastView_0
         previousView.style.transform = transformPreviousView_0
         var coorPrev = previousView.getBoundingClientRect()
-        var transformLastView_1 = `translate3d(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x - offsetX}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y - offsetY}px, 0px) scale(${scale * preScale})`
+        var transformLastView_1 = `
+        translate3d(
+        ${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x - offsetX
+          + (newcoordenadasPV.width - coorLast.width) / 2}px, 
+        ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y - offsetY 
+          + (newcoordenadasPV.height - coorLast.height) / 2}px, 0px)
+        scale(${laScala * preScale})`
       } else {
         previousView.style.transform = transformPreviousView_0
       }
@@ -315,12 +372,16 @@ class Zumly {
         backwardState: {
           origin: currentView.style.transformOrigin,
           duration: duration,
-          transform: transformCurrentView_0
+          ease: ease,
+          transform: transformCurrentView_0,
+          filter: filterIn
         },
         forwardState: {
           origin: currentView.style.transformOrigin,
           duration: duration,
-          transform: transformCurrentView_1
+          ease: ease,
+          transform: transformCurrentView_1,
+          filter: filterOut
         }
       } : null
       let previousv = previousView ? {
@@ -329,12 +390,16 @@ class Zumly {
         backwardState: {
           origin: previousView.style.transformOrigin,
           duration: duration,
-          transform: transformPreviousView_0
+          ease: ease,
+          transform: transformPreviousView_0,
+          filter: filterIn
         },
         forwardState: {
           origin: previousView.style.transformOrigin,
           duration: duration,
-          transform: transformPreviousView_1
+          ease: ease,
+          transform: transformPreviousView_1,
+          filter: filterOut
         }
       } : null
       let lastv = lastView ? {
@@ -343,12 +408,16 @@ class Zumly {
         backwardState: {
           origin: lastView.style.transformOrigin,
           duration: duration,
-          transform: transformLastView_0
+          ease: ease,
+          transform: transformLastView_0,
+          filter: filterIn
         },
         forwardState: {
           origin: lastView.style.transformOrigin,
           duration: duration,
-          transform: transformLastView_1
+          ease: ease,
+          transform: transformLastView_1,
+          filter: filterOut
         }
       } : null
       let gonev = goneView ? { // ACA VA LA VISTA ENTERA FALTA REALIZAR UN ZOOM IGUAL ANTES DE SACARLA DE JUEGO
@@ -362,40 +431,38 @@ class Zumly {
       this.storeViews(snapShoot)
       // animation
       this.setCSSVariables('zoomIn')
-      currentView.style.willChange = 'transform, opacity'
-      previousView.style.willChange = 'transform, opacity'
-      if (lastView !== null) lastView.style.willChange = 'transform, opacity'
-      var currentEvent1 = () => {
-        this.blockEvents = true
-        currentView.removeEventListener('animationstart', currentEvent1)
+      currentView.style.willChange = 'transform, opacity, filter'
+      previousView.style.willChange = 'transform, opacity, filter'
+      if (lastView !== null) lastView.style.willChange = 'transform, opacity, filter'
+      var self = this
+      function handler (event) {
+        let element = event.target
+        if (event.target.classList.contains('current')) {
+          self.blockEvents = false
+          var viewName = 'current'
+          var transform = transformCurrentView_1
+        } else if (event.target.classList.contains('previous')) {
+          viewName = 'previous'
+          transform = transformPreviousView_1
+        } else {
+          viewName = 'last'
+          transform = transformLastView_1
+        }
+        element.style.willChange = 'auto'
+        element.classList.remove(`zoom-${viewName}-view-${instance}`)
+        element.classList.remove('no-events')
+        element.style.transformOrigin = element.style.transformOrigin
+        element.style.transform = transform
+        element.style.filter = getComputedStyle(document.documentElement).getPropertyValue(`--${viewName}View-filter-end-${instance}`)
+        element.removeEventListener('animationend', handler)
       }
-      var currentEvent = () => {
-        currentView.style.willChange = 'auto'
-        currentView.classList.remove(`zoom-current-view-${instance}`)
-        currentView.classList.remove('no-events')
-        currentView.style.transformOrigin =  currentView.style.transformOrigin
-        currentView.style.transform =  transformCurrentView_1
-        this.blockEvents = false
-        currentView.removeEventListener('animationend', currentEvent)
-      }
-      var previousEvent = () => {
-        previousView.style.willChange = 'auto'
-        previousView.classList.remove(`zoom-previous-view-${instance}`)
-        previousView.style.transformOrigin =  previousView.style.transformOrigin
-        previousView.style.transform = transformPreviousView_1
-        previousView.removeEventListener('animationend', previousEvent)
-      }
-      var lastEvent = () => {
-        lastView.style.willChange = 'auto'
-        lastView.classList.remove(`zoom-last-view-${instance}`)
-        lastView.style.transformOrigin =  lastView.style.transformOrigin
-        lastView.style.transform = transformLastView_1
-        lastView.removeEventListener('animationend', lastEvent)
-      }
-      currentView.addEventListener('animationstart', currentEvent1)
-      currentView.addEventListener('animationend', currentEvent)
-      previousView.addEventListener('animationend', previousEvent)
-      if (lastView !== null) lastView.addEventListener('animationend', lastEvent)
+      currentView.addEventListener('animationstart', function handlerStart () {
+        self.blockEvents = true
+        currentView.removeEventListener('animationstart', handlerStart)
+      })
+      currentView.addEventListener('animationend', handler)
+      previousView.addEventListener('animationend', handler)
+      if (lastView !== null) lastView.addEventListener('animationend', handler)
       currentView.classList.add(`zoom-current-view-${instance}`)
       previousView.classList.add(`zoom-previous-view-${instance}`)
       if (lastView !== null) lastView.classList.add(`zoom-last-view-${instance}`)
@@ -403,204 +470,60 @@ class Zumly {
       console.info(`Zumly: zoomIn disabled`)
     } 
   }
+  addZoomInEvent (event) {
+    event.stopPropagation()
+    this.zoomIn(event.target)
+  }
 }
 /*
-var elem = document.querySelectorAll('.element');
-
-for (i = 0; i < elem.length; i++ ) {
-
-  elem[i].addEventListener('click', function(){
-       
-    if (this.classList.contains('collapsed')) {
-      
-      var that = this;
-
-      that.classList.remove('collapsed');
-      that.classList.add('expanded');
-      var collapsed = that.getBoundingClientRect();
-      that.classList.remove('expanded');
-      that.classList.add('collapsed');
-      var expanded = that.getBoundingClientRect();
-      that.classList.add('expanding');
-
-      var invertedTop = collapsed.top - expanded.top;
-      var invertedLeft = collapsed.left - expanded.left;
-      var invertedWidth = collapsed.width / expanded.width;
-      var invertedHeight = collapsed.height / expanded.height;
-
-      that.style.transformOrigin = 'top left';
-
-      that.style.transform = 'translateX(' + invertedLeft + 'px) translateY(' + invertedTop + 'px) translateZ(0) scaleX(' + invertedWidth + ') scaleY(' + invertedHeight + ')';
-
-      that.addEventListener('transitionend', function handler(event) {
-          that.style.transform = '';
-          that.style.transformOrigin = '';
-          that.classList.remove('expanding');
-          that.classList.remove('collapsed');
-          that.classList.add('expanded');
-          that.removeEventListener('transitionend', handler);  
-      });
-       
-    } else if (this.classList.contains('expanded') && !this.classList.contains('collapsing')) { 
-    
-      var that = this;
-      
-      requestAnimationFrame(function(){
-        
-
-        that.classList.remove('expanded');
-        that.classList.add('collapsed');
-        var collapsed = that.getBoundingClientRect();
-        that.classList.remove('collapsed');
-        that.classList.add('expanded');
-        var expanded = that.getBoundingClientRect();
-        that.classList.add('collapsing');
-        
-        var invertedTop = collapsed.top - expanded.top;
-        var invertedLeft = collapsed.left - expanded.left;
-        var invertedWidth = collapsed.width / expanded.width;
-        var invertedHeight = collapsed.height / expanded.height;
-        
-        that.style.transformOrigin = 'top left';
-        that.style.transform = 'translate(' + invertedLeft + 'px, ' + invertedTop + 'px) scale(' + invertedWidth + ', ' + invertedHeight + ')';
-                
-        that.addEventListener('transitionend', function handler(event) {
-            that.style.transform = '';
-            that.style.transformOrigin = '';
-            that.style.webkitTransform = '';
-            that.style.webkitTransformationOrigin = '';
-            that.classList.remove('collapsing');
-            that.classList.remove('expanded');
-            that.classList.add('collapsed');
-            that.removeEventListener('transitionend', handler);
-        });
-        
-      });
-      
-    }
-    
-  });
-  
-};
-
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  background-color: #e67e22;
-  align-items: center;
-  height: 100%;
-  font-family: 'Roboto', sans-serif;
-}
-
-body {
-  padding: 20px 0 ;
-}
-
-.app {
-    width: 375px;
-    max-height: 620px;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.content {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  height: 100%;
-}
-
-.container {
-  height: 155px;
-}
-
-.element {
-  cursor: pointer;
-}
-
-
-.element.collapsed {
-  height: 155px;
-  width: 375px;
-}
-
-.element.expanded {
-    top: 0;
-    height: 100%;
-    width: 1200px;
-    z-index: 1;
-    opacity: 1;
-    position: absolute;
-    left: 50%;
-    margin-left: -600px;
-  filter: blur(2px)
-  
-} 
-
-.expanding {
-    transition: transform 330ms ease-in;
-}
-
-.collapsing {
-    transition: transform 270ms ease-in;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 TEMAS A RESOLVER:
-LISTO BUG EN 3 NIVEL AL HACER IN Y DSP OUT Y DSP IN .... RARO. es por la escale
-TODOS: RESPONSIVE, VER REMOVEEVENTS, optiomizar mem staorage, agregar router, agregar eventos disparadores de navegacion, ver temita de losefectos de capas anteriores
-ARREGLAR TRANSFORM ORIGN PARA QUE SEA SIEMPRE 50% 50% (OJO CON LOS SVG)
-LISTO MULTIPLES INSTANCES. FALTA VER TEMA CSS VARIABLES UNICAS
-FALTA VER TEMA DE BOTNES ZOOMABLES NO REGUALRES.
-VER TEMA DE PRESCALE VIA CSS VARIABLES ...
-LISTO HAY UN BUG FEO SI SE USA UN BOTON CON TAMANO DIFERENTE. pasa cuando el boton zoomable es distinto de tamno a otro boton zoombale.
-anda muy  muy mal un efecto blur 
-LISTO BAUG FIERO: LASTVIEW
-Testear views con react, svelte y vuejs
-NAVEGACION: por mouse scroll,  teclas, etc como en github trending
-LISTO modo full zoom view . se hace armando views mas anches que el vireport
-LISTO CAMBIAR ORDEN LAYERS ESTAN INVERTIDOS.
-NO POSSIBLE: crear un layer blur o de diferrente estilos para no afectar el rendimiento de la navegacion usando backdrop-filter. no anda no ffox
-limitar scale factor en altura? limitar tamanos de los zoomable y views?
-LISTO: PASAR A ANIMATINS CSS CON CSS VARIABLES
-LISTO: ver tema de transicion de la nueva vista in and out
-LISTO: ver buG de ejecucion de transition aun en movimiento
-poner opciones para los devs: efectos blur, velocidad variable, constante, custom de transicion
-WIP ultra optimizar el zoomin, zoomout...FALTA HACER FUNCIONES
-LISTO Set will-change when the element is hovered
-LISTO dsp usar css vars
+✅ BUG EN 3 NIVEL AL HACER IN Y DSP OUT Y DSP IN .... RARO. es por la escale
+✅ ARREGLAR TRANSFORM ORIGN PARA QUE SEA SIEMPRE 50% 50% (OJO CON LOS SVG)
+✅ MULTIPLES INSTANCES. FALTA VER TEMA CSS VARIABLES UNICAS
+✅ FALTA VER TEMA DE BOTNES ZOOMABLES NO REGUALRES.
+✅ HAY UN BUG FEO SI SE USA UN BOTON CON TAMANO DIFERENTE. pasa cuando el boton zoomable es distinto de tamno a otro boton zoombale.
+👀 no tan mal excepto en ffox, anda muy  muy mal un efecto blur 
+✅ BAUG FIERO: LASTVIEW
+✅ modo full zoom view . se hace armando views mas anches que el vireport
+✅ CAMBIAR ORDEN LAYERS ESTAN INVERTIDOS.
+✅: PASAR A ANIMATINS CSS CON CSS VARIABLES
+✅: ver tema de transicion de la nueva vista in and out
+✅: ver buG de ejecucion de transition aun en movimiento
+✅ Set will-change when the element is hovered
+✅ dsp usar css vars
+🔪 WIP events
+🔪 WIP ultra optimizar el zoomin, zoomout...FALTA HACER FUNCIONES
+✅ multiple instances 💪
+🔪 FXS de capas anteriores
+✅ PARAMETRIZAR: poner opciones para los devs: efectos blur, velocidad variable, constante, custom de transicion, zoom on different shapes yeahp
+
+
+
+TODOS
+⭕️ DESAMBIGUAR CSS CLASSES, ARMAR CLASS SI HACE FALTA
+⭕️ Testear views con react, svelte y vuejs
+    PARA QUE ANDE ZUMLY TENDRE QUE ARMAR UN WARPPER PARA VUE Y REACT
+PARA CASOS MAS VANILLA: NO HABURA PROBLEMA: VIEWS CON vanilla-js y lit-html
+⭕️ RESPONSIVE, pasar px a %.. o up to you diria 
+⭕️ horizontal same level mavigation:no necesita agregar nueva vista porque esta el mismo nivel.
+⭕️ ⭐️ third party animation libraries, animejs
+⭕️ ⭐️ notificaciones al methods: imporrtante por si hay errores del usuario y del sistema.
+⭕️ agregar router, 
+⭕️ ⭐️ agregar eventos disparadores de navegacion, NAVEGACION: por mouse scroll,  teclas, etc como en github trending:
+https://gist.github.com/SleepWalker/da5636b1abcbaff48c4d
+
+O armer borders fancy para zoom, como recuadros, coloreado de areas, etc
+si se quiere cubir todo el canvas la view nueva debe tener 100% o mismo widht o hegiht
+
+
+las vistas con bordes, fondos, etc son cosas opcionales.... bien podrian ser invisibles o bien podria activarse onhover tipo mira, o con backgrounds semitransparents.
 */
+
+
 
 /*
 Ideas:
+📚 FLIP https://codepen.io/zircle/pen/wvKwRJa
 - No hacer views.
 - Los elementos estaran dentro de un container "view-container".
 - Solo puede haber un view-container por vista.
