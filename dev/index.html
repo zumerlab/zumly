@@ -3,91 +3,69 @@
     <title>zumly</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="../dist/zumly.css">
+    <link rel="stylesheet" type="text/css" href="../dist/zumly.min.css">
 </head>
 <body>
-  <div style="position: absolute; left: 700px; height:500px; width:500px; border: 1px solid red;">
+  <div style="position: absolute; height:100%; width:100%; border: 1px solid red;">
     <div class="uno canvas"></div>
   </div>
-  <div style="position: absolute; left: 50px; height:500px; width:500px; border: 1px solid green;">
-    <div class="dos canvas"></div>
-  </div>
-  
-<script type="module">
-import Zumly from '../dist/zumly.mjs'
-const home = `
-<div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid red;'>
-  
-    <div class='zoomable' data-duration='14s' data-go-to='mail' style='height: 100px; width: 70px;border: 1px solid red; transform: translate(50px, 30px)'>
+  <script type="module">
+  import Zumly from '../dist/zumly.min.mjs'
+  const home = {
+    async render () {
+      return `<div class="view" style='position: absolute; height:400px; width:400px; border: 1px solid red; background-color: gray'>
+      <div class='zoomable' data-duration='14s' data-go-to='mail' style='height: 100px; width: 70px;border: 1px solid red; transform: translate(50px, 30px)'>
         @contact
-    </div>
-    <div class='zoomable' data-go-to='contact' data-ease='cubic-bezier(0.68, -0.6, 0.32, 1.6)' style='height: 90px; width: 190px; border: 1px solid red; transform: translate(150px, 90px);'>
+      </div>
+      <div class='zoomable' data-go-to='contact' data-ease='cubic-bezier(0.68, -0.6, 0.32, 1.6)' style='height: 90px; width: 190px; border: 1px solid red; transform: translate(150px, 90px);'>
         @texd
-    </div>
-    <div style="width: 50px">
-    <svg  viewBox="0 0 60 100"> 
-        <path class='zoomable'  data-go-to='contact'  data-duration='4s' data-ease='steps(10)' fill="#ABABAB" d="M59.717,50.177c0-13.252-3.631-25.945-10.495-36.82l2.998-1.873L39.891,0.667l4.318,15.823l3.1-1.937 c6.64,10.515,10.152,22.797,10.152,35.624c0,12.927-3.56,25.284-10.294,35.848l-2.959-1.849L39.891,100L52.22,89.183l-3.14-1.962 C56.037,76.298,59.717,63.529,59.717,50.177z"/> 
-    </svg>    
-</div>
-    <span class='zoomable' data-go-to='contact'>
-       Reacciona
-    </span>
-
-</div>
-`
-const contact = `
-<div class="view" style='position: absolute; height:100%; width:100%; border: 1px solid green; '>
-  <div class='zoomable' data-go-to='mail' style='height: 180px; width: 180px; border: 1px solid green; transform: translate(90px, 80px)'>
+      </div>
+      <div style="width: 50px">
+        <svg  viewBox="0 0 60 100"> 
+          <path class='zoomable'  data-go-to='contact'  data-duration='4s' data-ease='steps(10)' fill="#ABABAB" d="M59.717,50.177c0-13.252-3.631-25.945-10.495-36.82l2.998-1.873L39.891,0.667l4.318,15.823l3.1-1.937 c6.64,10.515,10.152,22.797,10.152,35.624c0,12.927-3.56,25.284-10.294,35.848l-2.959-1.849L39.891,100L52.22,89.183l-3.14-1.962 C56.037,76.298,59.717,63.529,59.717,50.177z"/> 
+        </svg>    
+      </div>
+      <span class='zoomable' data-go-to='contact'>
+        Reacciona
+      </span>
+  </div>`
+    }
+  }
+  const itera = ['a','a','a','a','a','a','a','a','a','a']
+  const contact = {
+    async render () {
+      return `<div class="view" style='position: absolute; height:100%; width:100%; border: 1px solid green; background: url("https://d2x3xhvgiqkx42.cloudfront.net/12345678-1234-1234-1234-1234567890ab/07c98144-2ae5-43c5-9590-3d82f0444689/2019/05/20/45137f29-b1b5-45e7-b0dd-6576dc72a521/4ff96231-fef8-4c3b-8e6c-f0a19de9da1f.png")'>
+  ${itera.map((el, index) => `<span class=""></span><div class='zoomable' data-go-to='mail' style='position: absolute; height: 80px; width: 80px; border: 1px solid green; transform: translate(${1 + index * 100 + 80}px, 50px);'>@mail</div>`).join(' ')}
+      <div class='zoomable' data-go-to='mail' style='height: 180px; width: 180px; border: 1px solid green; transform: translate(90px, 80px)'>
         @mail
-    </div>
-    <div class='zoomable' data-go-to='contact' style='height: 90px; width: 90px; border: 1px solid red; transform: translate(250px, 190px);'>
+      </div>
+      <div class='zoomable' data-go-to='contact' style='height: 90px; width: 90px; border: 1px solid red; transform: translate(250px, 190px);'>
         @texd
-    </div>
-</div>
-`
-
-const mail = `
-<div class="view" style='position: absolute; height:500px; width:500px; border: 1px solid purple;'>
-  <div class='zoomable' data-go-to='home' style='height: 150px; width: 350px; border: 1px solid purple; transform: translate(120px, 180px)'>
-        @home
-    </div>
-</div>
-`
-
-const app = new Zumly({
-  mount: '.uno',
-  initialView: 'home',
-  views: {
-    home,
-    contact,
-    mail
+      </div>
+  </div>`
+    }
   }
-})
-
-app.init()
-const app1 = new Zumly({
-  mount: '.dos',
-  initialView: 'home',
-  views: {
-    home,
-    contact,
-    mail
-  },
-  transitions: {
-    duration: '2s',     // default 1s, overridable
-    ease: 'ease-in',    // ease-in-out, cubic-bezier, etc, overridable
-    effects: ['blur', 'sepia', 'saturate'],       // applied over not active views
-    cover: 'height'      // for covering different shapes, height, overrridable, widht
+  const mail = {
+    async render () {
+      return `<div class="view" style='position: absolute; height:500px; width:500px; border: 1px solid purple;'>
+    <div class='zoomable' data-go-to='home' style='height: 150px; width: 350px; border: 1px solid purple; transform: translate(120px, 180px)'>
+      @home
+    </div>
+  </div>`
+    }
   }
-})
 
-app1.init()
-</script>
-<!-- <script src="../dist/mytest.umd.js"></script>
+  const app = new Zumly({
+    mount: '.uno',
+    initialView: 'home',
+    views: {
+      home,
+      contact,
+      mail
+    }
+  })
 
-<script>
-var uno = new mytest('uno', '.zoomable')
-</script> -->
-
-    </body>
+  app.init()
+  </script>
+  </body>
 </html>

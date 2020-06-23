@@ -1,31 +1,26 @@
 * {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 .canvas {
-	position: absolute;
-	width: 100%;
-	height: 100%;
-	overflow: hidden;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-.view {
-	border-radius: 50%
+.canvas:focus {
+  outline: none;
 }
 
 .zoomable {
-	border-radius: 50%;
-	cursor: pointer
-}
-
-.current {
+  cursor: pointer
 }
 
 .no-events, .previous, .last {
-	pointer-events: none;
-	user-select: none;
+  pointer-events: none;
+  user-select: none;
 }
-.previous, .last {
-}
+
