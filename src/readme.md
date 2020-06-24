@@ -5,7 +5,7 @@ TEMAS A RESOLVER:
 ✅ MULTIPLES INSTANCES. FALTA VER TEMA CSS VARIABLES UNICAS
 ✅ FALTA VER TEMA DE BOTNES ZOOMABLES NO REGUALRES.
 ✅ HAY UN BUG FEO SI SE USA UN BOTON CON TAMANO DIFERENTE. pasa cuando el boton zoomable es distinto de tamno a otro boton zoombale.
-👀 no tan mal excepto en ffox, anda muy  muy mal un efecto blur 
+✅ no tan mal excepto en ffox, anda muy  muy mal un efecto blur 
 ✅ BAUG FIERO: LASTVIEW
 ✅ modo full zoom view . se hace armando views mas anches que el vireport
 ✅ CAMBIAR ORDEN LAYERS ESTAN INVERTIDOS.
@@ -14,25 +14,24 @@ TEMAS A RESOLVER:
 ✅: ver buG de ejecucion de transition aun en movimiento
 ✅ Set will-change when the element is hovered
 ✅ dsp usar css vars
-🔪 WIP events
-🔪 WIP ultra optimizar el zoomin, zoomout...FALTA HACER FUNCIONES
+✅ WIP events
+✅ WIP ultra optimizar el zoomin, zoomout...FALTA HACER FUNCIONES
 ✅ multiple instances 💪
-🔪 FXS de capas anteriores
+✅ FXS de capas anteriores
 ✅ PARAMETRIZAR: poner opciones para los devs: efectos blur, velocidad variable, constante, custom de transicion, zoom on different shapes yeahp
+✅ agregar eventos disparadores de navegacion, NAVEGACION: por mouse scroll,  teclas, etc como en github trending
+⭕️ ⭐️ notificaciones al methods: imporrtante por si hay errores del usuario y del sistema.
+✅ DESAMBIGUAR CSS CLASSES, ARMAR CLASS SI HACE FALTA
+
 
 
 
 TODOS
-⭕️ DESAMBIGUAR CSS CLASSES, ARMAR CLASS SI HACE FALTA
-⭕️ Testear views con react, svelte y vuejs
-    PARA QUE ANDE ZUMLY TENDRE QUE ARMAR UN WARPPER PARA VUE Y REACT
-PARA CASOS MAS VANILLA: NO HABURA PROBLEMA: VIEWS CON vanilla-js y lit-html
-⭕️ RESPONSIVE, pasar px a %.. o up to you diria 
+⭕️ Testear views con react, svelte y vuejs. PARA QUE ANDE ZUMLY TENDRE QUE ARMAR UN WARPPER PARA VUE Y REACT
+> PARA CASOS MAS VANILLA: NO HABURA PROBLEMA: VIEWS CON vanilla-js y lit-html
 ⭕️ horizontal same level mavigation:no necesita agregar nueva vista porque esta el mismo nivel.
 ⭕️ ⭐️ third party animation libraries, animejs
-⭕️ ⭐️ notificaciones al methods: imporrtante por si hay errores del usuario y del sistema.
-⭕️ agregar router, 
-⭕️ ⭐️ agregar eventos disparadores de navegacion, NAVEGACION: por mouse scroll,  teclas, etc como en github trending:
+~~⭕️ agregar router. not now~~
 https://gist.github.com/SleepWalker/da5636b1abcbaff48c4d
 
 O armer borders fancy para zoom, como recuadros, coloreado de areas, etc
@@ -94,7 +93,7 @@ Features:
 - tipos de zoom: zumly default (aka zircle), full-transition (elimina la vistas prev y last)
 - Eventos por scroll, botones como en github-trending.
 - multiple instances 💪
-- responsive first
+- responsive first.. agnostic
 
 Zircle legacy - otro repo:
 - Armar un theme de views circulares con svg, que permita tambien diferenters shapoes y formas geometricas comnbinadas.

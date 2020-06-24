@@ -1,26 +1,42 @@
-* {
+.zumly-canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-.canvas {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+.zumly-canvas > * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.canvas:focus {
+.zumly-canvas:focus {
   outline: none;
 }
 
-.zoomable {
-  cursor: pointer
+.z-view {
+
 }
 
-.no-events, .previous, .last {
+.z-view.is-current-view {
+
+}
+
+.z-view.is-new-current-view {
+
+}
+
+.z-view.is-previous-view, .z-view.is-last-view, .z-view.has-no-events,  {
   pointer-events: none;
   user-select: none;
 }
 
+.zoom-me {
+  cursor: pointer
+}
+
+.zoom-me > .zoomed {}
