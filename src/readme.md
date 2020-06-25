@@ -20,25 +20,22 @@ TEMAS A RESOLVER:
 ✅ FXS de capas anteriores
 ✅ PARAMETRIZAR: poner opciones para los devs: efectos blur, velocidad variable, constante, custom de transicion, zoom on different shapes yeahp
 ✅ agregar eventos disparadores de navegacion, NAVEGACION: por mouse scroll,  teclas, etc como en github trending
-⭕️ ⭐️ notificaciones al methods: imporrtante por si hay errores del usuario y del sistema.
+✅  ⭐️ notificaciones al methods: imporrtante por si hay errores del usuario y del sistema. con trace
 ✅ DESAMBIGUAR CSS CLASSES, ARMAR CLASS SI HACE FALTA
-
-
-
+✅ Testear views con svelte y vuejs. anda usando  ustom components
+⭕️ TEMPLATE ENGINE. Andaria cualquiera, pero hay que modificar Zumly.render() para que acepte parametros. Pienso en lit-html entre otros template engines
+⭕️ Si el usuario define que las nuevas views seran full cover... {
+	- podria usar router y cosas mas clasicas.
+	- se podria optimizar el engine para eliminar vistas previas.
+	}
 
 TODOS
-⭕️ Testear views con react, svelte y vuejs. PARA QUE ANDE ZUMLY TENDRE QUE ARMAR UN WARPPER PARA VUE Y REACT
-> PARA CASOS MAS VANILLA: NO HABURA PROBLEMA: VIEWS CON vanilla-js y lit-html
-⭕️ horizontal same level mavigation:no necesita agregar nueva vista porque esta el mismo nivel.
-⭕️ ⭐️ third party animation libraries, animejs
-~~⭕️ agregar router. not now~~
-https://gist.github.com/SleepWalker/da5636b1abcbaff48c4d
-
-O armer borders fancy para zoom, como recuadros, coloreado de areas, etc
-si se quiere cubir todo el canvas la view nueva debe tener 100% o mismo widht o hegiht
-
-
-las vistas con bordes, fondos, etc son cosas opcionales.... bien podrian ser invisibles o bien podria activarse onhover tipo mira, o con backgrounds semitransparents.
+⭕️ ico, views.. etc
+⭕️ scroll de contenido versus gstures
+⭕️ horizontal same level mavigation: no necesita agregar nueva vista porque esta el mismo nivel (aunque toca un elemento en el previous. Ver)
+⭕️ ⭐️ third party animation libraries, animejs. Hay que armar una forma de escupir resultados de coordenadas en partes, no en bloque como ahora.
+⭕️ Zircle legacy - otro repo: Armar un theme de views circulares con svg, que permita tambien diferenters shapoes y formas geometricas comnbinadas.
+~~⭕️ agregar router. Not now~~ https://gist.github.com/SleepWalker/da5636b1abcbaff48c4d
 
 Ideas:
 📚 FLIP https://codepen.io/zircle/pen/wvKwRJa
@@ -95,6 +92,5 @@ Features:
 - multiple instances 💪
 - responsive first.. agnostic
 
-Zircle legacy - otro repo:
-- Armar un theme de views circulares con svg, que permita tambien diferenters shapoes y formas geometricas comnbinadas.
+ Zircle legacy - otro repo: Armar un theme de views circulares con svg, que permita tambien diferenters shapoes y formas geometricas comnbinadas.
 

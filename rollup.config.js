@@ -8,10 +8,10 @@ import autoprefixer from 'autoprefixer';
 import license from 'rollup-plugin-license';
 import licenseCss from  'postcss-banner';
 import moment from  'moment';
-const banner = `
-${pkg.name} ${ pkg.version} 
-Generated ${moment().format('YYYY-DD-MM')}
-${ pkg.author} Copyright ${ pkg.license}`
+const banner = `${pkg.name} v${pkg.version} 
+Build on ${moment().format('YYYY-DD-MM')}
+Author ${pkg.author}, Copyright ${pkg.license}
+https://zumly.org`
 
 export default [
   // browser-friendly UMD build
@@ -33,10 +33,10 @@ export default [
         extract: true,
         minimize: true,
         plugins: [
-        autoprefixer,
-        licenseCss({
-          banner: banner
-        })
+          autoprefixer,
+          licenseCss({
+            banner: banner
+          })
         ]
       })
     ]
@@ -49,27 +49,20 @@ export default [
       format: 'es'
     },
     plugins: [
-    license({
+      license({
         banner: banner
       }),
-    postcss({
-      extract: true,
-      plugins: [
-        autoprefixer,
-        licenseCss({
-          banner: banner
-        })
+      postcss({
+        extract: true,
+        plugins: [
+          autoprefixer,
+          licenseCss({
+            banner: banner
+          })
         ]
       })
     ]
   },
-
-  // CommonJS (for Node) and ES module (for bundlers) build.
-  // (We could have three entries in the configuration array
-  // instead of two, but it's quicker to generate multiple
-  // builds from a single configuration where possible, using
-  // an array for the `output` option, where we can specify
-  // `file` and `format` for each target)
   {
     input: 'src/index.js',
     external: [],
@@ -87,13 +80,12 @@ export default [
       }),
       postcss({
         plugins: [
-        autoprefixer,
-        licenseCss({
-          banner: banner
-        })
+          autoprefixer,
+          licenseCss({
+            banner: banner
+          })
         ]
       })
-
     ],
     output: { 
       name: 'zumly', 

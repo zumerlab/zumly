@@ -1,0 +1,35 @@
+<html>
+<head>
+    <title>Zumly</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <script src="https://unpkg.com/vue"></script>
+    <script src="../demo/vue-component.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="../dist/zumly.min.css">
+</head>
+<body>
+  <div style="position: absolute; height:100%; width:100%; border: 1px solid red;">
+    <div class="uno zumly-canvas"></div>
+  </div>
+  <script type="module">
+  import Zumly from '../dist/zumly.mjs'
+  import home from '../demo/views/home.js'
+  import contact from '../demo/views/contact.js'
+  import mail from '../demo/views/mail.js'
+
+  const app = new Zumly({
+    mount: '.uno',
+    initialView: 'home',
+    views: {
+      home,
+      contact,
+      mail
+    },
+    debug: true
+  })
+
+  app.init()
+ 
+  </script>
+  </body>
+</html>
