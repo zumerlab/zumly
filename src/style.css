@@ -6,6 +6,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  perspective: 1000px
 }
 
 .zumly-canvas > * {
@@ -30,9 +31,17 @@
 
 }
 
-.z-view.is-previous-view, .z-view.is-last-view, .z-view.has-no-events,  {
+.z-view.is-previous-view, .z-view.is-last-view, .z-view.has-no-events  {
   pointer-events: none;
   user-select: none;
+}
+
+.z-view.performance {
+  will-change: transform, opacity, filter
+}
+
+.z-view.hide {
+  opacity: 0
 }
 
 .zoom-me {
