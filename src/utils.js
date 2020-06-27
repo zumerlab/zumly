@@ -129,7 +129,7 @@ export function notification (debug, msg, type) {
   if (msg && type === 'welcome') {
     console.info(`%c Zumly %c ${msg}`, `background: #424085; color: white; border-radius: 3px;`, `color: #424085`) // eslint-disable-line no-console
   }
-  if (msg && debug && type === 'info' || type === undefined) {
+  if (msg && debug && (type === 'info' || type === undefined)) {
     console.info(`%c Zumly %c ${msg}`, `background: #6679A3; color: #304157; border-radius: 3px;`, `color: #6679A3`) // eslint-disable-line no-console
   }
   if (msg && type === 'warn') {
@@ -140,3 +140,89 @@ export function notification (debug, msg, type) {
   }
 }
 
+function checkArray (array) {
+ // remove duplicates and map
+ if(array.length === 1 && array[0].toLowerCase() === 'none') {
+    return true
+  } else {
+    let unique = array => [...new Set(array)]
+    let lowerArray = array.map(e => e.toLowerCase())
+    return unique(lowerArray).every(value => ['blur', 'sepia', 'saturate'].indexOf(value) !== -1)
+  }
+}
+
+function setFx (values) {
+    var start = ''
+    var end = ''
+    values.map(effect => {
+      start += `${effect.toLowerCase() === 'blur' ? 'blur(0px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(0) ' : effect.toLowerCase() === 'saturate' ? 'saturate(0) ' : 'none'}`
+        end += `${effect.toLowerCase() === 'blur' ? 'blur(0.8px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(5) ' : effect.toLowerCase() === 'saturate' ? 'saturate(8) ' : 'none'}`
+    })
+    return [start, end]
+}
+function assignProperty(instance, propertiesToAdd, value) {
+    return instance[propertiesToAdd] = value;
+}
+
+function validate (instance, name, value, type, options = {isRequired: false, defaultValue: 0, allowedValues: 0, hasValidation: 0, hasAssignFunction: 0}) {
+  var msg = `'${name}' property is required when instance is defined`
+  //var assign = assignProperty(instance, name, value)
+  //var assignDefault = assignProperty(instance, name, options.defaultValue)
+  var checkValue = value !== undefined ? true : false
+  var checkDefault = options.defaultValue !== undefined ? true : false
+  var checkCustomValidation = options.hasValidation !== undefined ? true : false
+  var checkCustomAssign = options.hasAssignFunction !== undefined ? true : false
+  if (type === 'string' || type === 'object' || type === 'boolean') {
+    var checkTypeof = typeof value === type
+    var value = checkTypeof && type === 'string' ? value.toLowerCase() : value
+  } else if (type === 'array') {
+    checkTypeof = Array.isArray(value)
+  }
+  if (options.isRequired) {
+    checkValue && checkTypeof ? assignProperty(instance, name, value) : notification(false, msg, `error`)
+  }
+  if (checkDefault) {
+    checkValue && checkTypeof ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg, `error`)
+  }
+  if (checkCustomValidation && checkDefault) {
+    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg, `error`)
+  }
+  if (checkCustomValidation && checkDefault && checkCustomAssign) {
+    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, options.hasAssignFunction) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg, `error`)
+  }
+
+}
+export function checkParameters (parameters, instance) {
+  // First check if options are provided
+  if (parameters && typeof parameters === 'object') {
+    assignProperty(instance, 'options', true)
+    // Then check its properties
+    // mount property. String DOM element. Required
+    validate(instance, 'mount', parameters.mount, 'string', {isRequired: true})
+    // initialView property. Strng view name. Required
+    validate(instance, 'initialView', parameters.initialView, 'string', {isRequired: true})
+    // views property. Object with views. Required
+    validate(instance, 'views', parameters.views, 'object', {isRequired: true})
+    // debug property. Boolean. Optional. Default false
+    validate(instance, 'debug', parameters.debug, 'boolean', {defaultValue: false})
+    // Check transtions
+    if (parameters.transitions && typeof parameters.transitions === 'object') {
+      //value exist; type, allowed, deafult
+      validate(instance, 'cover', parameters.transitions.cover, 'string', {defaultValue: 'width', hasValidation: () => {['height', 'width'].indexOf(parameters.transitions.cover.toLowerCase()) !== -1}})
+      //value, type, , default
+      validate(instance, 'duration', parameters.transitions.duration, 'string', {defaultValue: '1s'})
+      //value, type, ,default
+      validate(instance, 'ease', parameters.transitions.ease, 'string', {defaultValue: 'ease-in-out'})
+      //value, type, custom validation, custom asignament, default
+      validate(instance, 'effects', parameters.transitions.effects, 'array', {defaultValue: ['none','none'], hasValidation: checkArray(parameters.transitions.effects), hasAssignFunction: setFx(parameters.transitions.effects)})
+    } else {
+      // assign deafult values
+      assignProperty(instance, 'cover', `width`)
+      assignProperty(instance, 'duration', `1s`)
+      assignProperty(instance, 'ease', `ease-in-out`)
+      assignProperty(instance, 'effects', ['none','none'])
+    }
+  } else {
+    notification(false, `'options' object has to be provided when instance is defined`, `error`)
+  }
+}

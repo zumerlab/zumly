@@ -1,61 +1,73 @@
-import {shimIdleCallBack, prepareCSS, setCSSVariables, renderView, notification} from './utils.js'
+import {shimIdleCallBack, prepareCSS, setCSSVariables, renderView, notification, checkParameters} from './utils.js'
 
 window.requestIdleCallback = window.requestIdleCallback || shimIdleCallBack
 
 /** 
  * Zumly
- * Powers your apps with a zoomable user interface (ZUI) taste
+ * Powers your apps with a zoomable user interface (ZUI) taste.
+ * @class
  */
 class Zumly {
+  /** 
+  * Creates a Zumly instance
+  * @constructor
+  * @params {Objet} options
+  * @example
+  *  new Zumly({
+  *  mount: '.mount',
+  *  initialView: 'home',
+  *  views: {
+  *   home,
+  *   contact,
+  *   ...
+  *  }
+  *
+  */
   constructor(options) {
-    // internal state
+    // Internal state:
+
+    // Register global instances of Zumly
     this.instance = Zumly.counter
+    // Store snapshots of each zoom transition
     this.storedViews = []
-    this.storedPreviousScale = [1]
-    this.blockEvents = false
+    // Show current zoom level properties
     this.currentStage = null
+    // Store the scale of previous zoom transition
+    this.storedPreviousScale = [1]
+    // Array of events useful for debugging
+    this.trace = []
+    // Deactive events during transtions
+    this.blockEvents = false
+    // Initial values for gesture events 
     this.touchstartX = 0
     this.touchstartY = 0
     this.touchendX = 0
     this.touchendY = 0
-    // user options internal state
-    this.app = options
-    this.debug = false
-    this.trace = []
-    this.debug = options.debug !== undefined ? options.debug : false
-    this.cover = options.transitions && options.transitions.cover ? options.transitions.cover : 'width'
-    this.duration = options.transition && options.transitions.duration ? options.transitions.duration : '1s'
-    this.ease = options.transition && options.transitions.ease ? options.transitions.ease : 'ease-in-out'
-    this.effects = ['none', 'none']
-    if (options.transitions && options.transitions.effects) {
-      var start = ''
-      var end = ''
-      options.transitions.effects.map(effect => {
-        start += `${effect === 'blur' ? 'blur(0px) ' : effect === 'sepia' ? 'sepia(0) ' : effect === 'saturate' ? 'saturate(0)' : 'none'}`
-        end += `${effect === 'blur' ? 'blur(0.8px) ' : effect === 'sepia' ? 'sepia(5) ' : effect === 'saturate' ? 'saturate(8)' : 'none'}`
-      })
-      this.effects = [start, end]
+    // Check if user options exist
+    checkParameters(options, this)
+    if (this.options) {
+      // Event bindings:
+      this._onZoom = this.onZoom.bind(this)
+      this._onZoomInHandlerStart = this.onZoomInHandlerStart.bind(this)
+      this._onZoomInHandlerEnd = this.onZoomInHandlerEnd.bind(this)
+      this._onZoomOutHandlerStart = this.onZoomOutHandlerStart.bind(this)
+      this._onZoomOutHandlerEnd = this.onZoomOutHandlerEnd.bind(this)
+      this._onTouchStart = this.onTouchStart.bind(this)
+      this._onTouchEnd = this.onTouchEnd.bind(this)
+      this._onKeyUp = this.onKeyUp.bind(this)
+      this._onWeel = this.onWeel.bind(this)
+      // Prepare the instance:
+      this.canvas = document.querySelector(this.mount)
+      this.canvas.setAttribute('tabindex', this.instance)
+      this.canvas.addEventListener('mouseup', this._onZoom, false)
+      this.canvas.addEventListener('touchend', this._onZoom, false)
+      this.canvas.addEventListener('touchstart', this._onTouchStart, false)
+      this.canvas.addEventListener('touchend', this._onTouchEnd, false)
+      this.canvas.addEventListener('keyup', this._onKeyUp, false)
+      this.canvas.addEventListener('wheel', this._onWeel, false)
+    } else {
+      this.notify(`is unable to start: no {options} have been passed to the Zumly's instance.`, 'error')
     }
-    // event binding
-    this._onZoom = this.onZoom.bind(this)
-    this._onZoomInHandlerStart = this.onZoomInHandlerStart.bind(this)
-    this._onZoomInHandlerEnd = this.onZoomInHandlerEnd.bind(this)
-    this._onZoomOutHandlerStart = this.onZoomOutHandlerStart.bind(this)
-    this._onZoomOutHandlerEnd = this.onZoomOutHandlerEnd.bind(this)
-    /// gesture binding
-    this._onTouchStart = this.onTouchStart.bind(this)
-    this._onTouchEnd = this.onTouchEnd.bind(this)
-    this._onKeyUp = this.onKeyUp.bind(this)
-    this._onWeel = this.onWeel.bind(this)
-    // initiate sandbox instance
-    this.canvas = document.querySelector(this.app.mount)
-    this.canvas.setAttribute('tabindex', this.instance)
-    this.canvas.addEventListener('mouseup', this._onZoom, false)
-    this.canvas.addEventListener('touchend', this._onZoom, false)
-    this.canvas.addEventListener('touchstart', this._onTouchStart, false)
-    this.canvas.addEventListener('touchend', this._onTouchEnd, false)
-    this.canvas.addEventListener('keyup', this._onKeyUp, false)
-    this.canvas.addEventListener('wheel', this._onWeel, false)
   }
   /** 
    * Helpers
@@ -91,35 +103,36 @@ class Zumly {
    * Public methods
    */
   async init() {
-    // add instance style
-    this.tracing('init()')
-    prepareCSS(this.instance)
-    await renderView(this.app.initialView, this.canvas, this.app.views, 'init')
-    // add to storage. OPTIMIZAR
-    this.storeViews({
-      zoomLevel: this.storedViews.length,
-      views: [{
-        location: 'current-view',
-        viewName: this.app.initialView,
-        backwardState: {
-          origin: '0 0',
-          transform: ''
-        }
-      }]
-    })
-    //
-    this.notify(`${this.instance > 1 ? 
-      `instance nº ${this.instance} is active.` : 
-      `is running! Instance nº ${this.instance} is active. ${this.debug ? `\nDebug is active, can be deactivate by setting 'debug: false' when you define the instance.`: ''}
-      More tips & docs at https://zumly.org`}`,
-      'welcome')
+    if (this.options) {
+      // add instance style
+      this.tracing('init()')
+      prepareCSS(this.instance)
+      await renderView(this.initialView, this.canvas, this.views, 'init')
+      // add to storage. OPTIMIZAR
+      this.storeViews({
+        zoomLevel: this.storedViews.length,
+        views: [{
+          location: 'current-view',
+          viewName: this.initialView,
+          backwardState: {
+            origin: '0 0',
+            transform: ''
+          }
+        }]
+      })
+      //
+      this.notify(`${this.instance > 1 ? 
+        `instance nº ${this.instance} is active.` : 
+        `is running! Instance nº ${this.instance} is active. ${this.debug ? `\nDebug is active, can be deactivate by setting 'debug: false' when you define the instance.`: ''}
+        More tips & docs at https://zumly.org`}`,
+        'welcome')
+    }
   }
   /** 
    * Main methods
    */
   async zoomIn(el) {
     this.tracing('zoomIn()')
-    // only runs if there is no transition running
     var instance = this.instance
     let canvas = this.canvas
     let coordenadasCanvas = canvas.getBoundingClientRect()
@@ -129,7 +142,7 @@ class Zumly {
     // generated new view from activated .zoom-me element
     // generateNewView(el)
     this.tracing('renderView()')
-    await renderView(el, canvas, this.app.views)
+    await renderView(el, canvas, this.views)
     el.classList.add('zoomed')
     let coordenadasEl = el.getBoundingClientRect()
     // create new view in a template tag
@@ -333,7 +346,7 @@ class Zumly {
    * Event hangling
    */
   onZoom (event) {
-    if (this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && !event.target.classList.contains('is-current-view')) {
+    if (this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null) {
       this.tracing('onZoom()')
       event.stopPropagation()
       this.zoomOut()
@@ -379,11 +392,11 @@ class Zumly {
     this.tracing('onTouchStart()')
     this.touchstartX = event.changedTouches[0].screenX
     this.touchstartY = event.changedTouches[0].screenY
-    event.preventDefault()
+    //event.preventDefault()
   }
   onTouchEnd (event) {
     if (!this.blockEvents) {
-      this.tracing('onTouchStart()')
+      this.tracing('onTouchEnd()')
       this.touchendX = event.changedTouches[0].screenX
       this.touchendY = event.changedTouches[0].screenY
       this.handleGesture(event)
