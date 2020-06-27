@@ -14,7 +14,6 @@ Author ${pkg.author}, Copyright ${pkg.license}
 https://zumly.org`
 
 export default [
-  // browser-friendly UMD build
   {
     input: 'src/index.js',
     output: {
@@ -91,6 +90,6 @@ export default [
       name: 'zumly', 
       file: pkg.browser, 
       format: 'umd'
-    },
-  },
+    }
+  }
 ];

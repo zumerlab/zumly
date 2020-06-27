@@ -23,14 +23,25 @@ TEMAS A RESOLVER:
 ✅  ⭐️ notificaciones al methods: imporrtante por si hay errores del usuario y del sistema. con trace
 ✅ DESAMBIGUAR CSS CLASSES, ARMAR CLASS SI HACE FALTA
 ✅ Testear views con svelte y vuejs. anda usando  ustom components
+✅  BUG TOUCHING CURRENT ON MOBILE
+- ARMAR DEMO
+- SUBIRLO A VERCEL
+- MANDAR EMAIL EXPLICANDO Y PONIENDO MI EMAIL
+
+⭕️ extract helper fx
+⭕️ sacar init... que arranque nomas
+⭕️ ico, views.. etc
+⭕️ custom vars predefined if it is cleaner
 ⭕️ TEMPLATE ENGINE. Andaria cualquiera, pero hay que modificar Zumly.render() para que acepte parametros. Pienso en lit-html entre otros template engines
 ⭕️ Si el usuario define que las nuevas views seran full cover... {
 	- podria usar router y cosas mas clasicas.
 	- se podria optimizar el engine para eliminar vistas previas.
 	}
 
+
+
 TODOS
-⭕️ ico, views.. etc
+
 ⭕️ scroll de contenido versus gstures
 ⭕️ horizontal same level mavigation: no necesita agregar nueva vista porque esta el mismo nivel (aunque toca un elemento en el previous. Ver)
 ⭕️ ⭐️ third party animation libraries, animejs. Hay que armar una forma de escupir resultados de coordenadas en partes, no en bloque como ahora.
