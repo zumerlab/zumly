@@ -25,7 +25,6 @@ class Zumly {
   */
   constructor(options) {
     // Internal state:
-
     // Register global instances of Zumly
     this.instance = Zumly.counter
     // Store snapshots of each zoom transition
@@ -112,7 +111,6 @@ class Zumly {
       this.storeViews({
         zoomLevel: this.storedViews.length,
         views: [{
-          location: 'current-view',
           viewName: this.initialView,
           backwardState: {
             origin: '0 0',
@@ -123,9 +121,9 @@ class Zumly {
       //
       this.notify(`${this.instance > 1 ? 
         `instance nº ${this.instance} is active.` : 
-        `is running! Instance nº ${this.instance} is active. ${this.debug ? `\nDebug is active, can be deactivate by setting 'debug: false' when you define the instance.`: ''}
-        More tips & docs at https://zumly.org`}`,
-        'welcome')
+        `is running! Instance nº ${this.instance} is active. ${this.debug ? 
+        `Debug is active, can be deactivate by setting 'debug: false' when you define the instance.`: ''}
+        More tips & docs at https://zumly.org`}`, 'welcome')
     }
   }
   /** 
@@ -217,7 +215,6 @@ class Zumly {
       views: []
     }
     let currentv = currentView ? {
-      location: 'current-view',
       viewName: currentView.dataset.viewName,
       backwardState: {
         origin: currentView.style.transformOrigin,
@@ -235,7 +232,6 @@ class Zumly {
       }
     } : null
     let previousv = previousView ? {
-      location: 'previous-view',
       viewName: previousView.dataset.viewName,
       backwardState: {
         origin: previousView.style.transformOrigin,
@@ -253,7 +249,6 @@ class Zumly {
       }
     } : null
     let lastv = lastView ? {
-      location: 'last-view',
       viewName: lastView.dataset.viewName,
       backwardState: {
         origin: lastView.style.transformOrigin,
@@ -271,7 +266,6 @@ class Zumly {
       }
     } : null
     let gonev = removeView ? { // ACA VA LA VISTA ENTERA FALTA REALIZAR UN ZOOM IGUAL ANTES DE SACARLA DE JUEGO
-        location: 'removed-view',
         viewName: removeView
     } : null
     if (currentv !== null) snapShoot.views.push(currentv)
@@ -400,7 +394,7 @@ class Zumly {
       this.touchendX = event.changedTouches[0].screenX
       this.touchendY = event.changedTouches[0].screenY
       this.handleGesture(event)
-      event.preventDefault()
+      // event.preventDefault()
     }
   }
   handleGesture(event) {
