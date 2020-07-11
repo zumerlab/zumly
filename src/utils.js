@@ -4,23 +4,27 @@
 
 function checkArray (array) {
  // remove duplicates and map
- if(array.length === 1 && array[0].toLowerCase() === 'none') {
+ if(array !== undefined && array[0].toLowerCase() === 'none') {
     return true
-  } else {
-    let unique = array => [...new Set(array)]
-    let lowerArray = array.map(e => e.toLowerCase())
-    return unique(lowerArray).every(value => ['blur', 'sepia', 'saturate'].indexOf(value) !== -1)
+  }
+if (array !== undefined && array.length > 0) {
+  let unique = array => [...new Set(array)];
+  let lowerArray = array.map(e => e.toLowerCase());
+  return unique(lowerArray).every(value => ['blur', 'sepia', 'saturate'].indexOf(value) !== -1)
   }
 }
 
 function setFx (values) {
     var start = ''
     var end = ''
-    values.map(effect => {
-      start += `${effect.toLowerCase() === 'blur' ? 'blur(0px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(0) ' : effect.toLowerCase() === 'saturate' ? 'saturate(0) ' : 'none'}`
-        end += `${effect.toLowerCase() === 'blur' ? 'blur(0.8px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(5) ' : effect.toLowerCase() === 'saturate' ? 'saturate(8) ' : 'none'}`
-    })
-    return [start, end]
+    if (values !== undefined) {
+      values.map(effect => {
+        start += `${effect.toLowerCase() === 'blur' ? 'blur(0px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(0) ' : effect.toLowerCase() === 'saturate' ? 'saturate(0) ' : 'none'}`
+          end += `${effect.toLowerCase() === 'blur' ? 'blur(0.8px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(5) ' : effect.toLowerCase() === 'saturate' ? 'saturate(8) ' : 'none'}`
+      })
+      return [start, end]
+    }
+    
 }
 function assignProperty(instance, propertiesToAdd, value) {
     return instance[propertiesToAdd] = value;
@@ -47,6 +51,7 @@ function validate (instance, name, value, type, options = {isRequired: false, de
   if (checkCustomValidation && checkDefault) {
     checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg, `error`)
   }
+  // console.log(name, checkCustomValidation, checkDefault, checkCustomAssign)
   if (checkCustomValidation && checkDefault && checkCustomAssign) {
     checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, options.hasAssignFunction) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg, `error`)
   }
@@ -159,7 +164,11 @@ export async function renderView (el, canvas, views, init) {
     init ? viewName = el : viewName = el.dataset.to 
     requestIdleCallback(async () => {
       var newView = document.createElement('template')
-      newView.innerHTML = await views[viewName].render()
+      // makes optional de 'render' function
+      typeof views[viewName] === 'object' && views[viewName].render !== undefined ?
+        newView.innerHTML = await views[viewName].render() :
+        newView.innerHTML = views[viewName]
+
       let vv = newView.content.querySelector('.z-view')
       if (!init) {
         vv.classList.add('is-new-current-view')
@@ -171,8 +180,10 @@ export async function renderView (el, canvas, views, init) {
       }
       vv.style.transformOrigin = `0 0`
       vv.dataset.viewName = viewName
-      var rect = canvas.append(newView.content)
-      resolve(rect)
+      var appendedView = canvas.append(newView.content)
+      // makes optional de 'mounted' hook
+      typeof views[viewName] === 'object' && views[viewName].mounted !== undefined && typeof views[viewName].mounted() === 'function' ? await views[viewName].mounted() : '';
+      resolve(appendedView)
     })
   })
 }

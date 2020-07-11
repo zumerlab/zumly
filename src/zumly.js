@@ -42,6 +42,7 @@ class Zumly {
     this.touchstartY = 0
     this.touchendX = 0
     this.touchendY = 0
+    this.touching = false;
     // Check if user options exist
     checkParameters(options, this)
     if (this.options) {
@@ -57,13 +58,13 @@ class Zumly {
       this._onWeel = this.onWeel.bind(this)
       // Prepare the instance:
       this.canvas = document.querySelector(this.mount)
-      this.canvas.setAttribute('tabindex', this.instance)
+      this.canvas.setAttribute('tabindex', 0)
       this.canvas.addEventListener('mouseup', this._onZoom, false)
       this.canvas.addEventListener('touchend', this._onZoom, false)
-      this.canvas.addEventListener('touchstart', this._onTouchStart, false)
+      this.canvas.addEventListener('touchstart', this._onTouchStart, {passive: true})
       this.canvas.addEventListener('touchend', this._onTouchEnd, false)
       this.canvas.addEventListener('keyup', this._onKeyUp, false)
-      this.canvas.addEventListener('wheel', this._onWeel, false)
+      this.canvas.addEventListener('wheel', this._onWeel, {passive: true})
     } else {
       this.notify(`is unable to start: no {options} have been passed to the Zumly's instance.`, 'error')
     }
@@ -101,6 +102,9 @@ class Zumly {
   /** 
    * Public methods
    */
+  zoomLevel() {
+    return this.storedViews.length
+  }
   async init() {
     if (this.options) {
       // add instance style
@@ -340,12 +344,12 @@ class Zumly {
    * Event hangling
    */
   onZoom (event) {
-    if (this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null) {
+    if (this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null && !this.touching) {
       this.tracing('onZoom()')
       event.stopPropagation()
       this.zoomOut()
     } 
-    if (!this.blockEvents && event.target.classList.contains('zoom-me')){
+    if (!this.blockEvents && event.target.classList.contains('zoom-me') && !this.touching){
       this.tracing('onZoom()')
       event.stopPropagation()
       this.zoomIn(event.target)
@@ -371,7 +375,6 @@ class Zumly {
     // inertia need to be fixed
      if (!this.blockEvents) {
       this.tracing('onWeel()')
-      event.preventDefault()
       if (event.deltaY < 0) {}
       if (event.deltaY > 0) {
         if (this.storedViews.length > 1 && !this.blockEvents) {
@@ -384,9 +387,9 @@ class Zumly {
   }
   onTouchStart (event) {
     this.tracing('onTouchStart()')
+    this.touching = true
     this.touchstartX = event.changedTouches[0].screenX
     this.touchstartY = event.changedTouches[0].screenY
-    //event.preventDefault()
   }
   onTouchEnd (event) {
     if (!this.blockEvents) {
@@ -402,6 +405,7 @@ class Zumly {
     this.tracing('handleGesture()')
     if (this.touchendX < this.touchstartX - 30) {
       if (this.storedViews.length > 1 && !this.blockEvents) {
+        this.tracing('swipe left');
         this.zoomOut()
       } else {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe left", "warn")
@@ -409,10 +413,23 @@ class Zumly {
     }
     if (this.touchendY < this.touchstartY - 10) {
       if (this.storedViews.length > 1 && !this.blockEvents) {
-        this.zoomOut()
+        this.tracing('swipe up');
+        // Disabled. In near future enable if Zumly is full screen
+        // this.zoomOut()
       } else {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe up", "warn")
       }
+    }
+    if (this.touchendY === this.touchstartY && !this.blockEvents && event.target.classList.contains('zoom-me') && this.touching) {
+      this.touching = false
+      this.tracing('tap');
+      event.preventDefault();
+      this.zoomIn(event.target);
+    }
+    if (this.touchendY === this.touchstartY && this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null && this.touching) {
+      this.touching = false
+      this.tracing('tap');
+      this.zoomOut();
     }
   }
   onZoomOutHandlerStart(event) {

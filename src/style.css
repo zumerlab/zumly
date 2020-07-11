@@ -6,7 +6,8 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  perspective: 1000px
+  perspective: 1000px;
+  cursor: zoom-out;
 }
 
 .zumly-canvas > * {
@@ -24,7 +25,7 @@
 }
 
 .z-view.is-current-view {
-
+  cursor: default;
 }
 
 .z-view.is-new-current-view {
@@ -45,7 +46,7 @@
 }
 
 .zoom-me {
-  cursor: pointer
+  cursor: zoom-in;
 }
 
 .zoom-me > .zoomed {}
