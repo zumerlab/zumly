@@ -1,95 +1,80 @@
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
 import pkg from './package.json';
-import babel from 'rollup-plugin-babel';
-import minify from 'rollup-plugin-babel-minify';
+import { terser } from 'rollup-plugin-terser';
 import postcss from 'rollup-plugin-postcss';
-import autoprefixer from 'autoprefixer';
-import license from 'rollup-plugin-license';
-import licenseCss from  'postcss-banner';
-import moment from  'moment';
-const banner = `${pkg.name} v${pkg.version} 
-Build on ${moment().format('YYYY-DD-MM')}
-Author ${pkg.author}, Copyright ${pkg.license}
+import postcssBanner from 'postcss-banner';
+import copy from 'rollup-plugin-copy';
+import serve from 'rollup-plugin-serve'
+import livereload from 'rollup-plugin-livereload'
+const banner = `/**
+* ${pkg.name} v${pkg.version} 
+* Author ${pkg.author}, @license ${pkg.license}
+* https://zumly.org 
+*/`
+const bannerCss = `${pkg.name} v${pkg.version} 
+Author ${pkg.author}, @license ${pkg.license}
 https://zumly.org`
 
 export default [
   {
     input: 'src/index.js',
+    // check this in near future
+    onwarn (warning, warn) {return},
     output: {
-      name: 'zumly',
+      name: pkg.name.toLowerCase(),
       file: pkg.main,
-      format: 'es'
+      format: 'es',
+      banner
     },
     plugins: [
-      minify({
-        comments: false
-      }),
-      license({
-        banner: banner
-      }),
       postcss({
-        extract: true,
+        extract:true,
         minimize: true,
         plugins: [
-          autoprefixer,
-          licenseCss({
-            banner: banner
+          postcssBanner({
+            banner: bannerCss,
+            important: true
           })
         ]
-      })
-    ]
+      }),
+      terser()
+    ],
+    watch: {
+      clearScreen: false
+    }
   },
   {
     input: 'src/index.js',
+    onwarn (warning, warn) {return},
     output: {
-      name: 'zumly',
+      name: pkg.name.toLowerCase(),
       file: pkg.module,
-      format: 'es'
+      format: 'es',
+      banner
     },
     plugins: [
-      license({
-        banner: banner
-      }),
       postcss({
-        extract: true,
+        extract:true,
         plugins: [
-          autoprefixer,
-          licenseCss({
-            banner: banner
+          postcssBanner({
+            banner: bannerCss
           })
         ]
-      })
-    ]
-  },
-  {
-    input: 'src/index.js',
-    external: [],
-    plugins: [
-      resolve(),
-      commonjs(),
-      babel({
-        exclude: 'node_modules/**',
       }),
-      minify({
-        comments: false,
-      }),
-      license({
-        banner: banner
-      }),
-      postcss({
-        plugins: [
-          autoprefixer,
-          licenseCss({
-            banner: banner
-          })
+      copy({
+        targets: [
+          { src: 'dist', dest: 'public' },
+          { 
+            src: 'src/assets/index.html', 
+            dest: 'public', 
+            transform: (contents) => contents.toString().replace('__VERSION__', `v${pkg.version}` )
+          }
         ]
-      })
+      }),
+     serve({contentBase:'public', port:'9090'}),
+     livereload('public')
     ],
-    output: { 
-      name: 'zumly', 
-      file: pkg.browser, 
-      format: 'umd'
+    watch: {
+      clearScreen: false
     }
   }
-];
+]
