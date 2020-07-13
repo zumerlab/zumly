@@ -1,6 +1,6 @@
 {
   "name": "Zumly",
-  "version": "0.9.5",
+  "version": "0.9.4",
   "author": "Juan Martín Muda",
   "main": "dist/zumly.min.mjs",
   "module": "dist/zumly.mjs",
@@ -22,7 +22,8 @@
     "rollup-plugin-serve": "^1.0.1",
     "rollup-plugin-terser": "^6.1.0",
     "snazzy": "^8.0.0",
-    "standard": "^14.3.3"
+    "standard": "^14.3.3",
+    "standard-version": "^8.0.1"
   },
   "scripts": {
     "art": "ascii-art image src/assets/zumly_art.svg",
@@ -30,7 +31,8 @@
     "dev": "npm-run-all -s --silent art watch",
     "build": "rollup -c",
     "lint": "standard --fix 'src/*.js' | snazzy",
-    "test": "lint && jest && build"
+    "test": "lint && jest && build",
+    "release": "standard-version"
   },
   "files": [
     "dist"
