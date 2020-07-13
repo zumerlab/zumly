@@ -19,11 +19,11 @@ import Zumly from 'zumly/zumly.mjs'
 import {home} from './views/home.js'
 
 const app = new Zumly({
-	mount: '.one',
-	initialView: 'home',
-	views: {
-	  home
-	}
+  mount: '.one',
+  initialView: 'home',
+  views: {
+    home
+  }
 })
 
 app.init()
@@ -44,29 +44,29 @@ app.init()
 
 ```js
 Zumly({
-	// Mount DOM Element. String. Required
-	mount: '.className',
-	// First rendered view name. String. Required
-	initialView: 'viewName',
-	// Store all views. Object. Required
-	views: {
-		view1,
-		view2,
-		. . .
-	}, 
-	// Customize transitions. Object. Optional
-	transitions: {
-		// Effects for background views. Array. ['blur', 'sepia', 'sature']
-		effects: ['sepia'],
-		// How new injected view is adapted. String. Default 'width'
-		cover: 'height',
-		// Transition duration. String. Default '1s'
-		duration: '1300ms' ,
-		// Transition ease. String. Default 'ease-in-out'
-		ease: 'cubic-bezier(0.25,0.1,0.25,1)'
-	},
-	// Activate debug notifications. Boolean. Default false
-	debug: true
+  // Mount DOM Element. String. Required
+  mount: '.className',
+  // First rendered view name. String. Required
+  initialView: 'viewName',
+  // Store all views. Object. Required
+  views: {
+    view1,
+    view2,
+    . . .
+  }, 
+  // Customize transitions. Object. Optional
+  transitions: {
+    // Effects for background views. Array. ['blur', 'sepia', 'sature']
+    effects: ['sepia'],
+    // How new injected view is adapted. String. Default 'width'
+    cover: 'height',
+    // Transition duration. String. Default '1s'
+    duration: '1300ms' ,
+    // Transition ease. String. Default 'ease-in-out'
+    ease: 'cubic-bezier(0.25,0.1,0.25,1)'
+  },
+  // Activate debug notifications. Boolean. Default false
+  debug: true
 })
 // Initialize instance
 .init()
