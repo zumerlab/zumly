@@ -1,58 +1,127 @@
 # Zumly
 
-> Full featured Javascript library for building zoomable user interfaces (ZUI)
+> Zumly powers user interfaces with beautiful zooming transitions.
 
-## Features
-- Infinite zoom levels
-- Multiple instances
-- Framework agnostic library, but framework friendly
-- UI agnostic.
-- ESM
-- No dependencies
+
+## Installation
+```sh
+npm install @zumly/zumly
+
+# or
+
+yarn add @zumly/zumly
+```
+
+## Usage
+```js
+
+import Zumly from 'zumly/zumly.mjs'
+import {home} from './views/home.js'
+
+const app = new Zumly({
+	mount: '.one',
+	initialView: 'home',
+	views: {
+	  home
+	}
+})
+
+app.init()
+
+```
+
+```html
+<!-- Each view needs a .z-view -->
+<div class="z-view">
+<!-- Zoomable elements need .zoom-me and data-to with atarget view-->
+ <div class='zoom-me' data-to='anotherView'>
+ </div>
+</div>
+
+```
+
+### Options
+
+```js
+Zumly({
+	// Mount DOM Element. String. Required
+	mount: '.className',
+	// First rendered view name. String. Required
+	initialView: 'viewName',
+	// Store all views. Object. Required
+	views: {
+		view1,
+		view2,
+		. . .
+	}, 
+	// Customize transitions. Object. Optional
+	transitions: {
+		// Effects for background views. Array. ['blur', 'sepia', 'sature']
+		effects: ['sepia'],
+		// How new injected view is adapted. String. Default 'width'
+		cover: 'height',
+		// Transition duration. String. Default '1s'
+		duration: '1300ms' ,
+		// Transition ease. String. Default 'ease-in-out'
+		ease: 'cubic-bezier(0.25,0.1,0.25,1)'
+	},
+	// Activate debug notifications. Boolean. Default false
+	debug: true
+})
+// Initialize instance
+.init()
+```
 
 ## Developer environment requirements
 
 To run this project, you will need:
 
-- Node.js >= v10.5.0, use nvm - [install instructions](https://github.com/creationix/nvm#install-script)
-- Yarn >= v1.7.0 - [install instructions ("Alternatives" tab)](https://yarnpkg.com/en/docs/install#alternatives-rc)
+- Node.js >= v10.5.0,[install instructions](https://nodejs.org/)
 
 ## Dev mode
 
 When developing you can run:
 
+```sh
+npm run dev
+
+# or
+
+yarn dev
 ```
-yarn watch
-```
 
-This will regenerate the build files each time a source file is changed and serve on http://127.0.0.1:5000.
-
-### Previewing umd build in the browser
-
-If your package works in the browser, you can open `dev/index.html` to try it out.
+This will regenerate the build files each time a source file is changed and serve on http://localhost:9090
 
 ## Running tests
 
 ```sh
-yarn
+npm run test
+
+# or
+
 yarn test
-yarn test --watch
 ```
 
-## Publishing
+## Building
 
 ```sh
-npm publish
+npm run build
+
+# or
+
+yarn build
 ```
 
-## Additional tooling
+## Changelog
 
-Based on your need, you might want to add:
-- [ESLint](https://eslint.org/) and [Prettier](https://prettier.io/)
-- CHANGELOG.md generation with [conventional-changelog](https://github.com/conventional-changelog)
-
-If so, please do and open pull requests when you feel like it.
+Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
 
 ## Original idea
 
-I initially created Zircle as an experiment, now the things are a bit serious.
+I initially created [Zircle UI](https://github.com/zircleUI/zircleUI) as an experiment, now the things are a bit more serious.
+
+## License
+
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
+
+
