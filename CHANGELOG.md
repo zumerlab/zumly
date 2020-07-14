@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.9.6](https://github.com///compare/v0.9.5...v0.9.6) (2020-07-14)
+
+
+### Bug Fixes
+
+* 🐛 validate() ([308ea9a](https://github.com///commit/308ea9a0489a6e99886dc94e1d7289a728bf9d99))
+
 ## [0.9.5](https://github.com/zumly/zumly/compare/v0.9.4...v0.9.5) (2020-07-13)
 
 ## [0.9.4](https://github.com/zumly/zumly/compare/v0.9.3...v0.9.4) (2020-07-13)
