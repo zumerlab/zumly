@@ -1,0 +1,57 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Zumly class Zumly({options}) 1`] = `
+<body>
+  
+    
+  <!-- DIV canvas -->
+  
+    
+  <div
+    class="first zumly-canvas"
+    tabindex="0"
+  >
+    
+  
+    <div
+      class="z-view is-current-view"
+      data-view-name="home"
+      style="transform-origin: 0 0;"
+    >
+      
+   
+      <div
+        class="card zoom-me"
+        data-to="newView"
+      />
+      
+  
+    </div>
+  </div>
+  
+    
+  <div
+    class="second zumly-canvas"
+    tabindex="0"
+  >
+    
+  
+    <div
+      class="z-view is-current-view"
+      data-view-name="home"
+      style="transform-origin: 0 0;"
+    >
+      
+   
+      <div
+        class="card zoom-me"
+        data-to="newView"
+      />
+      
+  
+    </div>
+  </div>
+  
+  
+</body>
+`;
