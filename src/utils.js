@@ -28,6 +28,7 @@ function assignProperty (instance, propertiesToAdd, value) {
 
 function validate (instance, name, value, type, options = { isRequired: false, defaultValue: 0, allowedValues: 0, hasValidation: 0, hasAssignFunction: 0 }) {
   var msg = `'${name}' property is required when instance is defined`
+  var msg1 = `'${name}' property has problems`
   var checkValue = value !== undefined
   var checkDefault = options.defaultValue !== undefined
   var checkCustomValidation = options.hasValidation !== undefined
@@ -41,15 +42,15 @@ function validate (instance, name, value, type, options = { isRequired: false, d
   if (options.isRequired) {
     checkValue && checkTypeof ? assignProperty(instance, name, value) : notification(false, msg, 'error')
   }
-  if (checkDefault) {
-    checkValue && checkTypeof ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg, 'error')
+  if (checkDefault && !checkCustomValidation && !checkCustomAssign) {
+    checkValue && checkTypeof ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg1, 'error')
   }
-  if (checkCustomValidation && checkDefault) {
-    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg, 'error')
+  if (checkCustomValidation && checkDefault && !checkCustomAssign) {
+    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg1, 'error')
   }
   // console.log(name, checkCustomValidation, checkDefault, checkCustomAssign)
   if (checkCustomValidation && checkDefault && checkCustomAssign) {
-    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, options.hasAssignFunction) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg, 'error')
+    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, options.hasAssignFunction) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg1, 'error')
   }
 }
 
