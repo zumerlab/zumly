@@ -1,8 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`awesome class Awesome(string) 1`] = `
-Awesome {
-  "id": undefined,
-  "string": "cool",
-}
-`;

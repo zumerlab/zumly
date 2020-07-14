@@ -17,7 +17,7 @@
     <link rel="preload" as="script" crossorigin href="./lib/anime.es.js" >
     <link rel="stylesheet" rel="preload" as="style" href="./css/font.css">
     <link rel="stylesheet" rel="preload" as="style" href="./css/font-awesome.min.css" >
-    <link rel="stylesheet" rel="preload" as="style" href="../dist/zumly.css" >
+    <link rel="stylesheet" rel="preload" as="style" href="./dist/zumly.css" >
     <link rel="stylesheet" rel="preload" as="style" href="./css/style.css" >
     </head>
     <body>
@@ -45,7 +45,7 @@
             </div>
             <div class="lt-content">
                     <span class="box1">
-                        Running demo using Zumly v0.9.2
+                        Running demo using Zumly
                     </span><br>
                     
                     <div class="presentation">
@@ -115,7 +115,10 @@
               uiAgnostic,
               multipleInstances,
               standaloneJSLibrary
-            }
+            },
+            transitions: {
+                effects: ['blur','sepia', 'saturate']
+              }
           })
 
           app.init()
