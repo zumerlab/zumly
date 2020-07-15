@@ -35,7 +35,7 @@ function validate (instance, name, value, type, options = { isRequired: false, d
   var checkCustomAssign = options.hasAssignFunction !== undefined
   if (type === 'string' || type === 'object' || type === 'boolean') {
     var checkTypeof = typeof value === type // eslint-disable-line
-    value = checkTypeof && type === 'string' ? value.toLowerCase() : value
+    // value = checkTypeof && type === 'string' ? value.toLowerCase() : value
   } else if (type === 'array') {
     checkTypeof = Array.isArray(value)
   }
