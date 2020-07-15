@@ -1,9 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Zumly class Zumly({options}) 1`] = `
+exports[`Zumly instances should be reflected on DOM 1`] = `
 <body>
-  
-    
   <!-- DIV canvas -->
   
     
@@ -11,15 +9,13 @@ exports[`Zumly class Zumly({options}) 1`] = `
     class="first zumly-canvas"
     tabindex="0"
   >
-    
-  
     <div
       class="z-view is-current-view"
-      data-view-name="home"
+      data-view-name="homeView"
       style="transform-origin: 0 0;"
     >
       
-   
+    
       <div
         class="card zoom-me"
         data-to="newView"
@@ -34,15 +30,13 @@ exports[`Zumly class Zumly({options}) 1`] = `
     class="second zumly-canvas"
     tabindex="0"
   >
-    
-  
     <div
       class="z-view is-current-view"
-      data-view-name="home"
+      data-view-name="homeView"
       style="transform-origin: 0 0;"
     >
       
-   
+    
       <div
         class="card zoom-me"
         data-to="newView"
@@ -51,7 +45,5 @@ exports[`Zumly class Zumly({options}) 1`] = `
   
     </div>
   </div>
-  
-  
 </body>
 `;
