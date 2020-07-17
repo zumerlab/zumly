@@ -1,15 +1,40 @@
 {
   "name": "Zumly",
   "version": "0.9.6",
-  "author": "Juan Martín Muda",
-  "main": "dist/zumly.min.mjs",
-  "module": "dist/zumly.mjs",
+  "description": "Javascript library for building zooming user interfaces",
+  "author": {
+    "name": "Juan Martín Muda",
+    "email": "zumly.js@gmail.com"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zumly"
+    "url": "https://github.com/zumly/zumly"
+  },
+  "bugs": {
+    "url": "https://github.com/zumly/zumly/issues"
+  },
+  "keywords": [
+    "zumly",
+    "zooming",
+    "javascript",
+    "UI",
+    "library"
+  ],
+  "main": "dist/zumly.min.mjs",
+  "module": "dist/zumly.mjs",
+  "browser": "dist/zumly.umd.js",
+  "scripts": {
+    "art": "ascii-art image src/assets/zumly_art.svg",
+    "watch": "rollup --config rollup.config.dev.js -w",
+    "dev": "npm-run-all -s --silent art watch",
+    "build": "rollup --config rollup.config.prod.js",
+    "lint": "standard --fix 'src/*.js' | snazzy",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose --silent"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^14.0.0",
+    "@rollup/plugin-node-resolve": "^8.4.0",
     "ascii-art": "^2.5.0",
     "jest": "^26.1.0",
     "jest-environment-jsdom-sixteen": "^1.0.3",
@@ -23,14 +48,6 @@
     "rollup-plugin-terser": "^6.1.0",
     "snazzy": "^8.0.0",
     "standard": "^14.3.3"
-  },
-  "scripts": {
-    "art": "ascii-art image src/assets/zumly_art.svg",
-    "watch": "rollup --config rollup.config.dev.js -w",
-    "dev": "npm-run-all -s --silent art watch",
-    "build": "rollup --config rollup.config.prod.js",
-    "lint": "standard --fix 'src/*.js' | snazzy",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "type": "module",
   "jest": {

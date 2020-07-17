@@ -28,7 +28,7 @@ a public method is called
 The next step could be to test the business logic implemented in "showPreview()" or "hidePreview()".
 
 */
-import Zumly from '../src/zumly.js'
+import {Zumly} from '../src/zumly.js'
 import {jest} from '@jest/globals';
 // some variables for testing purposes
 let zumly0

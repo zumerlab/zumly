@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta content="width=device-width,initial-scale=1" name="viewport">
     <title>Zumly dev</title>
-    <meta content="Zumly powers user interfaces with beautiful zooming transtions" name="description">
+    <meta content="Zumly powers user interfaces with zooming transtions" name="description">
     <meta name="author" content="Juan Martín Muda">
     <meta name="copyright" content="MIT">
     <link href="./images/favicon.ico" rel="icon" type="image/x-icon">
@@ -14,7 +14,7 @@
     <link rel="prefetch" href="./css/ossb.woff2" >
     <link rel="prefetch" href="./css/opensansitalic.woff2" >
     <link rel="prefetch" href="./css/osbold.woff2" >
-    <link rel="preload" as="script" crossorigin href="./lib/anime.es.js" >
+    <!-- <script src="./dist/zumly.umd.js"></script> -->
     <link rel="stylesheet" rel="preload" as="style" href="./css/font.css">
     <link rel="stylesheet" rel="preload" as="style" href="./css/font-awesome.min.css" >
     <link rel="stylesheet" rel="preload" as="style" href="./dist/zumly.css" >
@@ -101,24 +101,52 @@
                 </ul>
             </div>
         </div>
-        <script type="module" async>
+        <script type="module">
           import Zumly from '../dist/zumly.mjs'
-          import {features, infiniteZoomingLevels, looping, uiAgnostic, multipleInstances, standaloneJSLibrary} from './views/views.js'
-
+          import {looping, uiAgnostic, multipleInstances, standaloneJSLibrary} from './views/views.js'
+          const features = `
+          <div class="z-view features"  style="overflow: hidden; position: absolute;">
+               <div class='card zoom-me' id="f1" data-to='infiniteZoomingLevels'>
+                    Infinite zooming levels
+                </div>
+                <div class='card zoom-me' id="f2" data-to='uiAgnostic'>
+                    UI agnostic
+                    
+                </div>
+                <div class='card zoom-me' id="f3" data-to='multipleInstances'>
+                    Multiple instances
+                    
+                </div>
+                <div class='card zoom-me' id="f4" data-to='standaloneJSLibrary'">
+                    Standalone JS library
+                    
+                </div>
+          </div>`
+           const infiniteZoomingLevels = {
+            async render () {
+              return `<div class="z-view" id="f2-1" style='height:300px; width:300px; position:absolute'>
+              <div class="description">
+              Zooming forever...
+                <svg id="lens" style="position: absolute; top: 195px; left: 155px" width="30" height="30" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M163.784 146.293H154.573L151.308 143.145C163.13 129.433 169.627 111.928 169.614 93.8241C169.614 78.8345 165.169 64.1816 156.841 51.7183C148.514 39.255 136.677 29.541 122.828 23.8047C108.98 18.0685 93.7414 16.5676 79.0399 19.4919C64.3384 22.4162 50.8342 29.6344 40.235 40.2336C29.6358 50.8328 22.4177 64.337 19.4934 79.0385C16.5691 93.74 18.0699 108.978 23.8062 122.827C29.5424 136.676 39.2564 148.512 51.7198 156.84C64.1831 165.168 78.836 169.612 93.8255 169.612C112.598 169.612 129.854 162.733 143.146 151.307L146.294 154.571V163.783L204.593 221.965L221.966 204.592L163.784 146.293V146.293ZM93.8255 146.293C64.7927 146.293 41.3566 122.857 41.3566 93.8241C41.3566 64.7913 64.7927 41.3552 93.8255 41.3552C122.858 41.3552 146.294 64.7913 146.294 93.8241C146.294 122.857 122.858 146.293 93.8255 146.293ZM99.6554 64.6747H87.9956V87.9942H64.6761V99.6539H87.9956V122.973H99.6554V99.6539H122.975V87.9942H99.6554V64.6747Z" fill="var(--accent-color)"/>
+              </svg>
+                <svg fill="none" height="180" viewbox="140 0 400 550" width="160" style="position: absolute; top: 120px; left: 90px;" xmlns="http://www.w3.org/2000/svg">
+                  <g>
+                      <path class='zoom-me' data-to="looping"  d="M333.889 9.54527C341.086 5.37583 349.973 5.41676 357.131 9.65228L563.79 131.934C570.819 136.093 575.115 143.667 575.077 151.834L573.958 395.051C573.92 403.218 569.554 410.752 562.488 414.846L354.711 535.22C347.515 539.389 338.627 539.348 331.469 535.113L124.81 412.831C117.781 408.673 113.485 401.098 113.523 392.931L114.643 149.714C114.68 141.547 119.046 134.013 126.113 129.919L333.889 9.54527Z" fill="transparent" id="hexagon" stroke="var(--purple)" stroke-width="7">
+                      </path>
+                  </g>
+              </svg>
+              </div>
+              
+            </div>`}
+          }
           const app = new Zumly({
             mount: '.one',
             initialView: 'features',
             views: {
               features,
-              infiniteZoomingLevels,
-              looping,
-              uiAgnostic,
-              multipleInstances,
-              standaloneJSLibrary
-            },
-            transitions: {
-                effects: ['blur','sepia', 'saturate']
-              }
+              infiniteZoomingLevels
+            }
           })
 
           app.init()

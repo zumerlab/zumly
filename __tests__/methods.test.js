@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import Zumly from '../src/zumly.js'
+import {Zumly} from '../src/zumly.js'
 // import { renderView } from '../src/utils.js'
 import {jest} from '@jest/globals';
 

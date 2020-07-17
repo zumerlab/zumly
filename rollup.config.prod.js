@@ -2,6 +2,7 @@ import pkg from './package.json';
 import { terser } from 'rollup-plugin-terser';
 import postcss from 'rollup-plugin-postcss';
 import postcssBanner from 'postcss-banner';
+import commonjs from '@rollup/plugin-commonjs';
 const banner = `/**
 * ${pkg.name} v${pkg.version} 
 * Author ${pkg.author}, @license ${pkg.license}
@@ -13,11 +14,26 @@ https://zumly.org`
 
 export default [
 {
-  input: 'src/index.js',
+  input: 'src/entry.js',
   // check this in near future
   onwarn (warning, warn) {return},
   output: {
-    name: pkg.name.toLowerCase(),
+    name: pkg.name,
+    file: pkg.browser,
+    format: 'umd',
+    banner
+  },
+  plugins: [
+    postcss(),
+    commonjs()
+  ]
+},
+{
+  input: 'src/entry.js',
+  // check this in near future
+  onwarn (warning, warn) {return},
+  output: {
+    name: pkg.name,
     file: pkg.module,
     format: 'es',
     banner
@@ -34,11 +50,11 @@ export default [
   ]
 },
 {
-  input: 'src/index.js',
+  input: 'src/entry.js',
   // check this in near future
   onwarn (warning, warn) {return},
   output: {
-    name: pkg.name.toLowerCase(),
+    name: pkg.name,
     file: pkg.main,
     format: 'es',
     banner

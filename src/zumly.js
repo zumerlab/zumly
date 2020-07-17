@@ -7,7 +7,7 @@ window.requestIdleCallback = window.requestIdleCallback || shimIdleCallBack
  * Powers your apps with a zoomable user interface (ZUI) taste.
  * @class
  */
-class Zumly {
+export class Zumly {
   /**
   * Creates a Zumly instance
   * @constructor
@@ -522,4 +522,3 @@ class Zumly {
     element.removeEventListener('animationend', this._onZoomInHandlerEnd)
   }
 }
-export default Zumly
