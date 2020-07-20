@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://zumly.org">
-    <img src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/logo-zumly-bw.png" width="200">
+    <img src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/logo-zumly.png" width="200">
   </a>
 </p>
 
@@ -48,7 +48,7 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
 
 <link rel="stylesheet" href="zumly/dist/zumly.css">
 
-<!-- Or "https://unpkg.com/zumly@0.9.7/zumly.css" -->
+<!-- Or "https://unpkg.com/zumly@0.9.8/zumly.css" -->
 
 ```
 
@@ -57,7 +57,7 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
 <script type="module">
   import Zumly from "zumly/dist/zumly.mjs"
 
-  // Or "https://unpkg.com/zumly@0.9.7/zumly.mjs"
+  // Or "https://unpkg.com/zumly@0.9.8/zumly.mjs"
 <script>
 ```
 
@@ -68,7 +68,7 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
 
 <link rel="stylesheet" href="zumly/dist/zumly.css">
 
-<!-- Or "https://unpkg.com/zumly@0.9.7/zumly.css" -->
+<!-- Or "https://unpkg.com/zumly@0.9.8/zumly.css" -->
 
 ```
 
