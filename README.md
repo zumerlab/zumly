@@ -48,7 +48,7 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
 
 <link rel="stylesheet" href="zumly/dist/zumly.css">
 
-<!-- Or "https://unpkg.com/zumly@0.9.8/zumly.css" -->
+<!-- Or "https://unpkg.com/zumly@0.9.9/zumly.css" -->
 
 ```
 
@@ -57,7 +57,7 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
 <script type="module">
   import Zumly from "zumly/dist/zumly.mjs"
 
-  // Or "https://unpkg.com/zumly@0.9.8/zumly.mjs"
+  // Or "https://unpkg.com/zumly@0.9.9/zumly.mjs"
 <script>
 ```
 
@@ -68,7 +68,7 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
 
 <link rel="stylesheet" href="zumly/dist/zumly.css">
 
-<!-- Or "https://unpkg.com/zumly@0.9.8/zumly.css" -->
+<!-- Or "https://unpkg.com/zumly@0.9.9/zumly.css" -->
 
 ```
 
