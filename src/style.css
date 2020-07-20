@@ -4,17 +4,10 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
   perspective: 1000px;
   cursor: zoom-out;
-}
-
-.zumly-canvas > * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 .zumly-canvas:focus {
@@ -22,7 +15,7 @@
 }
 
 .z-view {
-
+  position: absolute;
 }
 
 .z-view.is-current-view {
