@@ -7,9 +7,10 @@
     "email": "zumly.js@gmail.com"
   },
   "license": "MIT",
+  "homepage": "https://zumly.org",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zumly/zumly"
+    "url": "https://github.com/zumly/zumly.git"
   },
   "bugs": {
     "url": "https://github.com/zumly/zumly/issues"
@@ -38,11 +39,11 @@
     "ascii-art": "^2.5.0",
     "jest": "^26.1.0",
     "jest-environment-jsdom-sixteen": "^1.0.3",
-    "jest-environment-node": "^26.1.0",
     "npm-run-all": "^4.1.5",
     "postcss": "^7.0.27",
     "postcss-banner": "^3.0.2",
     "rollup": "^2.2.1",
+    "rollup-plugin-copy": "^3.3.0",
     "rollup-plugin-live-server": "^1.0.3",
     "rollup-plugin-postcss": "^3.1.2",
     "rollup-plugin-terser": "^6.1.0",

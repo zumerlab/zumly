@@ -3,13 +3,14 @@ import { terser } from 'rollup-plugin-terser';
 import postcss from 'rollup-plugin-postcss';
 import postcssBanner from 'postcss-banner';
 import commonjs from '@rollup/plugin-commonjs';
+import copy from 'rollup-plugin-copy'
 const banner = `/**
 * ${pkg.name} v${pkg.version} 
-* Author ${pkg.author}, @license ${pkg.license}
+* Author ${pkg.author.name}, @license ${pkg.license}
 * https://zumly.org 
 */`
 const bannerCss = `${pkg.name} v${pkg.version} 
-Author ${pkg.author}, @license ${pkg.license}
+Author ${pkg.author.name}, @license ${pkg.license}
 https://zumly.org`
 
 export default [
@@ -70,6 +71,14 @@ export default [
         })
       ]
     }),
-    terser()
+    terser(),
+    copy({
+      targets: [{
+        src: './src/assets/readme-template.md',
+        rename: 'README.md',
+        dest: './',
+        transform: (contents) => contents.toString().replace(new RegExp('__VERSION__', 'g'), pkg.version)
+      }]
+    })
   ]
 }]
