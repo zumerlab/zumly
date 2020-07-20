@@ -31,12 +31,12 @@ The next step could be to test the business logic implemented in "showPreview()"
 import {Zumly} from '../src/zumly.js'
 import {jest} from '@jest/globals';
 // some variables for testing purposes
-let zumly0
-let zumly1
-let homeView
+var zumly0
+var zumly1
+var homeView
 
 
-beforeAll(async () => {
+beforeAll(() => {
   // prepare template for testing
   document.body.innerHTML = `<!-- DIV canvas -->
     <div class="first zumly-canvas"></div>
@@ -52,7 +52,7 @@ beforeAll(async () => {
         initialView: 'homeView',
         views: {homeView}
       })
-  await zumly0.init()
+  zumly0.init()
   
   zumly1 = new Zumly({
         mount: '.second',
@@ -62,7 +62,7 @@ beforeAll(async () => {
           effects: ['blur','sepia','saturate']
         }
       })
-     await zumly1.init()
+  zumly1.init()
 });
 
 describe('Zumly parameters', () => {
@@ -147,7 +147,7 @@ describe('Zumly instances', () => {
 
   it('should be reflected on DOM', () => {
 
-    expect(document.body).toMatchSnapshot()
+     expect(document.body).toMatchSnapshot()
     
   })
 
