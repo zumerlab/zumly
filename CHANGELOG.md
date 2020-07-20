@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.9.8](https://github.com/zumly/zumly/compare/v0.9.7...v0.9.8) (2020-07-20)
+
 ### [0.9.7](https://github.com/zumly/zumly/compare/v0.9.6...v0.9.7) (2020-07-17)
 
 
@@ -9,12 +11,12 @@ All notable changes to this project will be documented in this file. See [standa
 
 * 🐛 disable transform string to loweCase ([df92e42](https://github.com/zumly/zumly/commit/df92e42e9a9d8819bc8140fbc02de7b72c04bda7))
 
-### [0.9.6](https://github.com///compare/v0.9.5...v0.9.6) (2020-07-14)
+### [0.9.6](https://github.com/zumly/zumly/compare/v0.9.5...v0.9.6) (2020-07-14)
 
 
 ### Bug Fixes
 
-* 🐛 validate() ([308ea9a](https://github.com///commit/308ea9a0489a6e99886dc94e1d7289a728bf9d99))
+* 🐛 validate() ([308ea9a](https://github.com/zumly/zumly/commit/308ea9a0489a6e99886dc94e1d7289a728bf9d99))
 
 ## [0.9.5](https://github.com/zumly/zumly/compare/v0.9.4...v0.9.5) (2020-07-13)
 
