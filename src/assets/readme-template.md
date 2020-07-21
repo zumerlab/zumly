@@ -142,7 +142,7 @@ const app = new Zumly({
   }, 
   // Customize transitions. Object. Optional
   transitions: {
-    // Effects for background views. Array. ['blur', 'sepia', 'sature']
+    // Effects for background views. Array. ['blur', 'sepia', 'saturate']
     effects: ['sepia'],
     // How new injected view is adapted. String. Default 'width'
     cover: 'height',
