@@ -97,9 +97,10 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
 ```js
 // Some views
 const hello = `
-<span class="z-view">
+<div class="z-view">
 H E L L O <br>
 W <span class="zoom-me" data-to="world">O</span> R L D!
+</div>
 `;
 
 const world = `
