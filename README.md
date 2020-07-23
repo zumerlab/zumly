@@ -59,7 +59,7 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
 
   // Or "https://unpkg.com/zumly@0.9.9/dist/zumly.mjs"
   
-<script>
+</script>
 ```
 
 ### UMD modules
