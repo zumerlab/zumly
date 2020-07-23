@@ -76,7 +76,7 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
 2. Add Zumly as UMD module: 
 ```html
 
-<script src="zumly/dist/zumly.umd.js"><script>
+<script src="zumly/dist/zumly.umd.js"></script>
 
 // Or "https://unpkg.com/zumly"
 
