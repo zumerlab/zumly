@@ -242,7 +242,7 @@ Zumly is on early stages of development.
 - Allow different template engines. Currently Zumly only accepts string literal templates.
 - Add lateral navigation for same zoom level elements.
 - Add a navegation widget.
-- Add programmatic navegation.
+- Add programmatic navigation.
 - Allow recalculate zoom position on resize events.
 
 
