@@ -243,6 +243,8 @@ Zumly is on early stages of development.
 - Add lateral navigation for same zoom level elements.
 - Add a navegation widget.
 - Add programmatic navigation.
+- Add preseted navigation.
+- Add router. [#3](https://github.com/zumly/zumly/issues/3)
 - Allow recalculate zoom position on resize events.
 
 

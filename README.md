@@ -58,7 +58,6 @@ Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `d
   import Zumly from "zumly/dist/zumly.mjs"
 
   // Or "https://unpkg.com/zumly@0.9.9/dist/zumly.mjs"
-  
 </script>
 ```
 
@@ -242,8 +241,10 @@ Zumly is on early stages of development.
 
 - Allow different template engines. Currently Zumly only accepts string literal templates.
 - Add lateral navigation for same zoom level elements.
-- Add a navigation widget.
+- Add a navegation widget.
 - Add programmatic navigation.
+- Add preseted navigation.
+- Add router. [#3](https://github.com/zumly/zumly/issues/3)
 - Allow recalculate zoom position on resize events.
 
 
