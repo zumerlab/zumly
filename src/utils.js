@@ -142,12 +142,24 @@ export async function renderView (el, canvas, views, init) {
     var viewName = null
     init ? viewName = el : viewName = el.dataset.to
     var newView = document.createElement('template')
-    // makes optional de 'render' function
-    typeof views[viewName] === 'object' && views[viewName].render !== undefined
-      ? newView.innerHTML = await views[viewName].render()
-      : newView.innerHTML = views[viewName]
+    
+    if(typeof views[viewName] === 'object' && views[viewName].render !== undefined) {      
+      // makes optional de 'render' function
+      newView.innerHTML = await views[viewName].render()
+    } else if(typeof views[viewName] === 'function') {
+      // view is a component constructor
+      let comp = new views[viewName]({target: newView})
+      //newView.innerHTML = comp.$$.root
+    } else {
+      // view is plain HTML
+      newView.innerHTML = views[viewName]
+    }
+    
 
-    const vv = newView.content.querySelector('.z-view')
+    let vv = newView.content.querySelector('.z-view')
+
+    
+    /*
     if (!init) {
       vv.classList.add('is-new-current-view')
       vv.classList.add('has-no-events')
@@ -158,6 +170,7 @@ export async function renderView (el, canvas, views, init) {
     }
     vv.style.transformOrigin = '0 0'
     vv.dataset.viewName = viewName
+    */
     var appendedView = await canvas.append(newView.content)
     // makes optional de 'mounted' hook
     if (typeof views[viewName] === 'object' && views[viewName].mounted !== undefined && typeof views[viewName].mounted() === 'function') await views[viewName].mounted()
