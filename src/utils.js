@@ -148,18 +148,16 @@ export async function renderView (el, canvas, views, init) {
       newView.innerHTML = await views[viewName].render()
     } else if(typeof views[viewName] === 'function') {
       // view is a component constructor
-      let comp = new views[viewName]({target: newView})
-      //newView.innerHTML = comp.$$.root
+      var newViewInner = document.createElement('div')
+      let comp = new views[viewName]({target: newViewInner})
+      newView.content.appendChild(newViewInner)      
     } else {
       // view is plain HTML
       newView.innerHTML = views[viewName]
     }
-    
 
     let vv = newView.content.querySelector('.z-view')
 
-    
-    /*
     if (!init) {
       vv.classList.add('is-new-current-view')
       vv.classList.add('has-no-events')
@@ -170,7 +168,7 @@ export async function renderView (el, canvas, views, init) {
     }
     vv.style.transformOrigin = '0 0'
     vv.dataset.viewName = viewName
-    */
+    
     var appendedView = await canvas.append(newView.content)
     // makes optional de 'mounted' hook
     if (typeof views[viewName] === 'object' && views[viewName].mounted !== undefined && typeof views[viewName].mounted() === 'function') await views[viewName].mounted()
