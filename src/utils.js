@@ -154,6 +154,7 @@ export async function renderView (el, canvas, views, init, componentContext) {
         context: componentContext,
         props: el.dataset
       })
+      newViewInner.classList.add('z-view')
       newView.content.appendChild(newViewInner)      
     } else {
       // view is plain HTML
