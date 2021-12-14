@@ -152,7 +152,7 @@ export class Zumly {
     // generated new view from activated .zoom-me element
     // generateNewView(el)
     this.tracing('renderView()')
-    await renderView(el, canvas, this.views, this.componentContext)
+    await renderView(el, canvas, this.views, false, this.componentContext)
     el.classList.add('zoomed')
     const coordenadasEl = el.getBoundingClientRect()
     // create new view in a template tag
