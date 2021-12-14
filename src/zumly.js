@@ -461,7 +461,19 @@ export class Zumly {
     element.removeEventListener('animationend', this._onZoomOutHandlerEnd)
     // current
     if (element.classList.contains(`zoom-current-view-${this.instance}`)) {
-      this.canvas.removeChild(element)
+      try {
+        this.canvas.removeChild(element)  
+      } catch(e) {
+        console.debug("Error when trying to remove element after zoom out. Trying to remove its parent instead...")
+        try {
+          this.canvas.removeChild(element.parentElement)  
+        } catch(e) {
+          console.debug("Error when trying to remove elemont after zoom out:", e)
+          console.debug("Element to remove was:", element)
+        }
+        
+      }
+      
       this.blockEvents = false
     }
     if (element.classList.contains(`zoom-previous-view-${this.instance}`)) {
