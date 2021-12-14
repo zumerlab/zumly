@@ -117,7 +117,7 @@ export class Zumly {
       // add instance style
       this.tracing('init()')
       prepareCSS(this.instance)
-      await renderView(this.initialView, this.canvas, this.views, 'init')
+      await renderView(this.initialView, this.canvas, this.views, 'init', this.componentContext)
       // add to storage. OPTIMIZAR
       this.storeViews({
         zoomLevel: this.storedViews.length,
@@ -152,7 +152,7 @@ export class Zumly {
     // generated new view from activated .zoom-me element
     // generateNewView(el)
     this.tracing('renderView()')
-    await renderView(el, canvas, this.views)
+    await renderView(el, canvas, this.views, this.componentContext)
     el.classList.add('zoomed')
     const coordenadasEl = el.getBoundingClientRect()
     // create new view in a template tag

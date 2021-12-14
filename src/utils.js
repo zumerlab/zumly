@@ -138,7 +138,7 @@ export function setCSSVariables (transition, currentStage, instance) {
   })
 }
 
-export async function renderView (el, canvas, views, init) {
+export async function renderView (el, canvas, views, init, componentContext) {
     var viewName = null
     init ? viewName = el : viewName = el.dataset.to
     var newView = document.createElement('template')
@@ -149,7 +149,7 @@ export async function renderView (el, canvas, views, init) {
     } else if(typeof views[viewName] === 'function') {
       // view is a component constructor
       var newViewInner = document.createElement('div')
-      let comp = new views[viewName]({target: newViewInner})
+      let comp = new views[viewName]({ target: newViewInner, context: componentContext })
       newView.content.appendChild(newViewInner)      
     } else {
       // view is plain HTML
@@ -202,6 +202,8 @@ export function checkParameters (parameters, instance) {
     validate(instance, 'views', parameters.views, 'object', { isRequired: true })
     // debug property. Boolean. Optional. Default false
     validate(instance, 'debug', parameters.debug, 'boolean', { defaultValue: false })
+    // Svelte component context
+    validate(instance, 'componentContext', parameters.componentContext, 'object', { isRequired: false, defaultValue: new Map() })
     // Check transtions
     if (parameters.transitions && typeof parameters.transitions === 'object') {
       // value exist; type, allowed, deafult
