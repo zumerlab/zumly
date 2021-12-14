@@ -149,7 +149,11 @@ export async function renderView (el, canvas, views, init, componentContext) {
     } else if(typeof views[viewName] === 'function') {
       // view is a component constructor
       var newViewInner = document.createElement('div')
-      let comp = new views[viewName]({ target: newViewInner, context: componentContext })
+      let comp = new views[viewName]({ 
+        target: newViewInner, 
+        context: componentContext,
+        props: el.dataset
+      })
       newView.content.appendChild(newViewInner)      
     } else {
       // view is plain HTML
