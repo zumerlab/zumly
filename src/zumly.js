@@ -117,7 +117,7 @@ export class Zumly {
       // add instance style
       this.tracing('init()')
       prepareCSS(this.instance)
-      await renderView(this.initialView, this.canvas, this.views, 'init')
+      await renderView(this.initialView, this.canvas, this.views, 'init', this.componentContext)
       // add to storage. OPTIMIZAR
       this.storeViews({
         zoomLevel: this.storedViews.length,
@@ -152,7 +152,7 @@ export class Zumly {
     // generated new view from activated .zoom-me element
     // generateNewView(el)
     this.tracing('renderView()')
-    await renderView(el, canvas, this.views)
+    await renderView(el, canvas, this.views, false, this.componentContext)
     el.classList.add('zoomed')
     const coordenadasEl = el.getBoundingClientRect()
     // create new view in a template tag
@@ -461,7 +461,19 @@ export class Zumly {
     element.removeEventListener('animationend', this._onZoomOutHandlerEnd)
     // current
     if (element.classList.contains(`zoom-current-view-${this.instance}`)) {
-      this.canvas.removeChild(element)
+      try {
+        this.canvas.removeChild(element)  
+      } catch(e) {
+        console.debug("Error when trying to remove element after zoom out. Trying to remove its parent instead...")
+        try {
+          this.canvas.removeChild(element.parentElement)  
+        } catch(e) {
+          console.debug("Error when trying to remove elemont after zoom out:", e)
+          console.debug("Element to remove was:", element)
+        }
+        
+      }
+      
       this.blockEvents = false
     }
     if (element.classList.contains(`zoom-previous-view-${this.instance}`)) {

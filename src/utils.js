@@ -138,16 +138,31 @@ export function setCSSVariables (transition, currentStage, instance) {
   })
 }
 
-export async function renderView (el, canvas, views, init) {
+export async function renderView (el, canvas, views, init, componentContext) {
     var viewName = null
     init ? viewName = el : viewName = el.dataset.to
     var newView = document.createElement('template')
-    // makes optional de 'render' function
-    typeof views[viewName] === 'object' && views[viewName].render !== undefined
-      ? newView.innerHTML = await views[viewName].render()
-      : newView.innerHTML = views[viewName]
+    
+    if(typeof views[viewName] === 'object' && views[viewName].render !== undefined) {      
+      // makes optional de 'render' function
+      newView.innerHTML = await views[viewName].render()
+    } else if(typeof views[viewName] === 'function') {
+      // view is a component constructor
+      var newViewInner = document.createElement('div')
+      let comp = new views[viewName]({ 
+        target: newViewInner, 
+        context: componentContext,
+        props: el.dataset
+      })
+      newViewInner.classList.add('z-view')
+      newView.content.appendChild(newViewInner)      
+    } else {
+      // view is plain HTML
+      newView.innerHTML = views[viewName]
+    }
 
-    const vv = newView.content.querySelector('.z-view')
+    let vv = newView.content.querySelector('.z-view')
+
     if (!init) {
       vv.classList.add('is-new-current-view')
       vv.classList.add('has-no-events')
@@ -158,6 +173,7 @@ export async function renderView (el, canvas, views, init) {
     }
     vv.style.transformOrigin = '0 0'
     vv.dataset.viewName = viewName
+    
     var appendedView = await canvas.append(newView.content)
     // makes optional de 'mounted' hook
     if (typeof views[viewName] === 'object' && views[viewName].mounted !== undefined && typeof views[viewName].mounted() === 'function') await views[viewName].mounted()
@@ -191,6 +207,8 @@ export function checkParameters (parameters, instance) {
     validate(instance, 'views', parameters.views, 'object', { isRequired: true })
     // debug property. Boolean. Optional. Default false
     validate(instance, 'debug', parameters.debug, 'boolean', { defaultValue: false })
+    // Svelte component context
+    validate(instance, 'componentContext', parameters.componentContext, 'object', { isRequired: false, defaultValue: new Map() })
     // Check transtions
     if (parameters.transitions && typeof parameters.transitions === 'object') {
       // value exist; type, allowed, deafult
