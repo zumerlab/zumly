@@ -1,0 +1,5 @@
+/*!
+ * zumly v0.9.11 
+ * Author Juan Martín Muda, @license MIT
+ * https://zumly.org
+ */.zumly-canvas{position:absolute;width:100%;height:100%;overflow:hidden;margin:0;padding:0;perspective:1000px;cursor:zoom-out}.zumly-canvas:focus{outline:none}.z-view{position:absolute}.z-view.is-current-view{cursor:default}.z-view.has-no-events,.z-view.is-last-view,.z-view.is-previous-view{pointer-events:none;user-select:none}.z-view.performance{will-change:transform,opacity,filter}.z-view.hide{opacity:0}.zoom-me{cursor:zoom-in}
