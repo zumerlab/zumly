@@ -73,16 +73,10 @@ function prepareCSS (instance) {
   }
   @keyframes zoom-${view}-${instance} {
     0% {
-      transform-origin: var(--${view}-transformOrigin-start-${instance});
       transform: var(--${view}-transform-start-${instance});
-      opacity: var(--${view}-opacity-start-${instance});
-      filter: var(--${view}-filter-start-${instance})
     }
     100% {
-      transform-origin: var(--${view}-transformOrigin-end-${instance});
       transform: var(--${view}-transform-end-${instance});
-      opacity: var(--${view}-opacity-end-${instance});
-      filter: var(--${view}-filter-end-${instance})
     }
   }
   `;
@@ -101,66 +95,64 @@ function setCSSVariables (transition, currentStage, instance) {
     if (transition === 'zoomOut' && view.stage !== undefined) {
       document.documentElement.style.setProperty(`--${view.name}-transform-start-${instance}`, view.stage.forwardState.transform);
       document.documentElement.style.setProperty(`--${view.name}-transform-end-${instance}`, view.stage.backwardState.transform);
-      document.documentElement.style.setProperty(`--${view.name}-transformOrigin-start-${instance}`, view.stage.forwardState.origin);
-      document.documentElement.style.setProperty(`--${view.name}-transformOrigin-end-${instance}`, view.stage.backwardState.origin);
-      document.documentElement.style.setProperty(`--${view.name}-opacity-start-${instance}`, 1);
-      document.documentElement.style.setProperty(`--${view.name}-filter-start-${instance}`, view.stage.forwardState.filter);
-      document.documentElement.style.setProperty(`--${view.name}-filter-end-${instance}`, view.stage.backwardState.filter);
+      
+     
       if (view.name === 'current-view') {
         document.documentElement.style.setProperty(`--zoom-duration-${instance}`, view.stage.backwardState.duration);
         document.documentElement.style.setProperty(`--zoom-ease-${instance}`, view.stage.backwardState.ease);
-        document.documentElement.style.setProperty(`--${view.name}-opacity-end-${instance}`, 0);
-        document.documentElement.style.setProperty(`--${view.name}-filter-start-${instance}`, 'none');
-        document.documentElement.style.setProperty(`--${view.name}-filter-end-${instance}`, 'none');
-      } else {
-        document.documentElement.style.setProperty(`--${view.name}-opacity-end-${instance}`, 1);
+       
       }
     }
     if (transition === 'zoomIn' && view.stage !== undefined) {
       document.documentElement.style.setProperty(`--${view.name}-transform-start-${instance}`, view.stage.backwardState.transform);
       document.documentElement.style.setProperty(`--${view.name}-transform-end-${instance}`, view.stage.forwardState.transform);
-      document.documentElement.style.setProperty(`--${view.name}-transformOrigin-start-${instance}`, view.stage.backwardState.origin);
-      document.documentElement.style.setProperty(`--${view.name}-transformOrigin-end-${instance}`, view.stage.forwardState.origin);
-      document.documentElement.style.setProperty(`--${view.name}-filter-start-${instance}`, view.stage.backwardState.filter);
-      document.documentElement.style.setProperty(`--${view.name}-filter-end-${instance}`, view.stage.forwardState.filter);
+      
+    
       if (view.name === 'current-view') {
         document.documentElement.style.setProperty(`--zoom-duration-${instance}`, view.stage.forwardState.duration);
         document.documentElement.style.setProperty(`--zoom-ease-${instance}`, view.stage.forwardState.ease);
-        document.documentElement.style.setProperty(`--${view.name}-opacity-start-${instance}`, 0);
-        document.documentElement.style.setProperty(`--${view.name}-filter-start-${instance}`, 'none');
-        document.documentElement.style.setProperty(`--${view.name}-filter-end-${instance}`, 'none');
-      } else {
-        document.documentElement.style.setProperty(`--${view.name}-opacity-start-${instance}`, 1);
-      }
-      document.documentElement.style.setProperty(`--${view.name}-opacity-end-${instance}`, 1);
     }
+  }
   });
 }
 
-async function renderView (el, canvas, views, init, router) {
+async function renderView (el, canvas, views, init, componentContext) {
     var viewName = null;
     init ? viewName = el : viewName = el.dataset.to;
     var newView = document.createElement('template');
-    // makes optional de 'render' function
-    typeof views[viewName] === 'object' && views[viewName].render !== undefined
-      ? newView.innerHTML = await views[viewName].render()
-      : newView.innerHTML = views[viewName];
-    // console.log('router' + router)
-    const vv = newView.content.querySelector('.z-view');
+    
+    if(typeof views[viewName] === 'object' && views[viewName].render !== undefined) {      
+      // makes optional de 'render' function
+      newView.innerHTML = await views[viewName].render();
+    } else if(typeof views[viewName] === 'function') {
+      // view is a component constructor
+      var newViewInner = document.createElement('div');
+      new views[viewName]({ 
+        target: newViewInner, 
+        context: componentContext,
+        props: el.dataset
+      });
+      newViewInner.classList.add('z-view');
+      newView.content.appendChild(newViewInner);      
+    } else {
+      // view is plain HTML
+      newView.innerHTML = views[viewName];
+    }
+
+    let vv = newView.content.querySelector('.z-view');
+
     if (!init) {
       vv.classList.add('is-new-current-view');
       vv.classList.add('has-no-events');
       vv.classList.add('hide');
       vv.classList.add('performance');
     } else {
-      // ESTO ESTA BIEN.... PERO SI DEFINO ROUTER, PARA CUALQUERA HACE ESTO. ERROR AHI.. FALA GO
-      console.log('RR' + router);
-      if (router) vv.classList.add('hide');
       vv.classList.add('is-current-view');
     }
     vv.style.transformOrigin = '0 0';
     vv.dataset.viewName = viewName;
-    var appendedView = await canvas.append(newView.content);
+    
+    await canvas.append(newView.content);
     // makes optional de 'mounted' hook
     if (typeof views[viewName] === 'object' && views[viewName].mounted !== undefined && typeof views[viewName].mounted() === 'function') await views[viewName].mounted();
 }
@@ -184,8 +176,6 @@ function checkParameters (parameters, instance) {
   // First check if options are provided
   if (parameters && typeof parameters === 'object') {
     assignProperty(instance, 'options', true);
-    // route property. String. Optional.
-    assignProperty(instance, 'route', parameters.route);
     // Then check its properties
     // mount property. String DOM element. Required
     validate(instance, 'mount', parameters.mount, 'string', { isRequired: true });
@@ -195,6 +185,8 @@ function checkParameters (parameters, instance) {
     validate(instance, 'views', parameters.views, 'object', { isRequired: true });
     // debug property. Boolean. Optional. Default false
     validate(instance, 'debug', parameters.debug, 'boolean', { defaultValue: false });
+    // Svelte component context
+    validate(instance, 'componentContext', parameters.componentContext, 'object', { isRequired: false, defaultValue: new Map() });
     // Check transtions
     if (parameters.transitions && typeof parameters.transitions === 'object') {
       // value exist; type, allowed, deafult
@@ -301,13 +293,15 @@ class Zumly {
   }
 
   tracing (data) {
-    if (data === 'ended') {
-      const parse = this.trace.map((task, index) => `${index === 0 ? `Instance ${this.instance}: ${task}` : `${task}`}`).join(' > ');
-      this.notify(parse);
-      this.trace = [];
-    } else {
-      this.trace.push(data);
-    }
+    if (this.debug) {
+      if (data === 'ended') {
+        const parse = this.trace.map((task, index) => `${index === 0 ? `Instance ${this.instance}: ${task}` : `${task}`}`).join(' > ');
+        this.notify(parse);
+        this.trace = [];
+      } else {
+        this.trace.push(data);
+      }
+    } 
   }
 
   /**
@@ -330,13 +324,11 @@ class Zumly {
   }
 
   async init () {
-    console.log(this);
-    if (this.options && !this.route) {
-      console.log(this.route);
+    if (this.options) {
       // add instance style
       this.tracing('init()');
       prepareCSS(this.instance);
-      await renderView(this.initialView, this.canvas, this.views, 'init');
+      await renderView(this.initialView, this.canvas, this.views, 'init', this.componentContext);
       // add to storage. OPTIMIZAR
       this.storeViews({
         zoomLevel: this.storedViews.length,
@@ -355,102 +347,6 @@ class Zumly {
         ? 'Debug is active, can be deactivate by setting \'debug: false\' when you define the instance.' : ''}
         More tips & docs at https://zumly.org`}`, 'welcome');
     }
-    // aca trabajo sobre las rutas
-    if (this.options && this.route) {
-      console.log(this.route);
-      const clearSlashes = path =>
-        path
-          .toString()
-          .replace(/\/$/, '')
-          .replace(/^\//, '');
-
-      const getFragment = () => {
-        let fragment = '';
-        {
-          // hacerlo facil con path
-         // fragment = clearSlashes(decodeURI(window.location.pathname + window.location.search))
-        // fragment = fragment.replace(/\?(.*)$/, '')
-        // fragment = root !== '/' ? fragment.replace(root, '') : fragment
-        fragment = window.location.pathname;
-        }
-        return clearSlashes(fragment)
-      };
-      
-      console.log(window.location);
-      console.log(window.history);
-      var aver = getFragment().split('/');
-      console.log(aver);
-      var rutas = aver.map((ruta, index)=> {
-          window.history.pushState({}, ruta, window.location.origin + '/'+ aver.slice(- index).join('/'));
-          return `[data-to='${ruta}']`
-       
-      }).slice(1, aver.length);
-      console.log(rutas);
-      // FALTA TEMA RENDER EN ZOOOMIN.
-      // FALTA TEMA TIMEPOS... NO DEBEN ESTAR ATADO A DURACION , DEBE ESTAR APARTE.
-      // add instance style
-      this.tracing('init(R)');
-      prepareCSS(this.instance);
-      await renderView(aver[0], this.canvas, this.views, 'init', this.route);
-      // add to storage. OPTIMIZAR
-      this.storeViews({
-        zoomLevel: this.storedViews.length,
-        views: [{
-          viewName: aver[0],
-          backwardState: {
-            origin: '0 0',
-            transform: ''
-          }
-        }]
-      });
-
-      // var rutas = ["[data-to='infiniteZoomingLevels']", "[data-to='looping']","[data-to='looping']","[data-to='looping']", "[data-to='looping']","[data-to='looping']","[data-to='looping']", "[data-to='looping']","[data-to='looping']","[data-to='looping']", "[data-to='looping']","[data-to='looping']","[data-to='looping']", "[data-to='looping']","[data-to='looping']","[data-to='looping']"]
-      const elementReady = (selector) => {
-        return new Promise((resolve, reject) => {
-            if (this.canvas.querySelector('.is-current-view')) {
-              let el = this.canvas.querySelector('.is-current-view').querySelector(selector);
-              if (el) resolve(el);
-            }
-        
-          new MutationObserver((mutation, observer) => {
-            // Query for elements matching the specified selector
-            Array.from(this.canvas.querySelectorAll('.z-view.is-current-view')).forEach((element) => {
-             if (element.querySelector(selector)) {
-              var pepe = element.querySelector(selector);
-              setTimeout(() => resolve(pepe), 0);
-
-              
-              observer.disconnect();
-            }
-           });
-          }).observe(this.canvas, {
-              childList: true,
-              subtree: true,
-              attributes: true
-            });
-        })
-      };
-
-      const delay = (selector) => new Promise(resolve => {
-          elementReady(selector).then(r => resolve(r));
-          }).then(r => this.zoomIn(r));
-       
-      const delayedLog = async (item) => {
-        // notice that we can await a function
-        // that returns a promise
-        await delay(item);
-      };
-      const processRoutes = async (array) => {
-        for (const item of array) {
-          await delayedLog(item);
-        }
-        console.log('Done!');
-        Array.from(this.canvas.querySelectorAll('.z-view')).forEach(el => {el.classList.remove('hide');} );
-      };
-
-      processRoutes(rutas);
-
-    }
   }
 
   /**
@@ -467,8 +363,7 @@ class Zumly {
     // generated new view from activated .zoom-me element
     // generateNewView(el)
     this.tracing('renderView()');
-    console.log(this.route);
-    await renderView(el, canvas, this.views, false, this.route);
+    await renderView(el, canvas, this.views, false, this.componentContext);
     el.classList.add('zoomed');
     const coordenadasEl = el.getBoundingClientRect();
     // create new view in a template tag
@@ -608,7 +503,7 @@ class Zumly {
     previousView.classList.add('performance');
     if (lastView !== null) lastView.classList.add('performance');
     //
-    if (!this.route) currentView.classList.remove('hide');
+    currentView.classList.remove('hide');
     currentView.addEventListener('animationstart', this._onZoomInHandlerStart);
     currentView.addEventListener('animationend', this._onZoomInHandlerEnd);
     previousView.addEventListener('animationend', this._onZoomInHandlerEnd);
@@ -775,7 +670,19 @@ class Zumly {
     element.removeEventListener('animationend', this._onZoomOutHandlerEnd);
     // current
     if (element.classList.contains(`zoom-current-view-${this.instance}`)) {
-      this.canvas.removeChild(element);
+      try {
+        this.canvas.removeChild(element);  
+      } catch(e) {
+        console.debug("Error when trying to remove element after zoom out. Trying to remove its parent instead...");
+        try {
+          this.canvas.removeChild(element.parentElement);  
+        } catch(e) {
+          console.debug("Error when trying to remove elemont after zoom out:", e);
+          console.debug("Element to remove was:", element);
+        }
+        
+      }
+      
       this.blockEvents = false;
     }
     if (element.classList.contains(`zoom-previous-view-${this.instance}`)) {
@@ -783,7 +690,7 @@ class Zumly {
       var transform = currentZoomLevel.views[1].backwardState.transform;
       element.classList.remove('performance');
       element.classList.remove(`zoom-previous-view-${this.instance}`);
-      element.style.transformOrigin = origin;
+      element.style.transformOrigin = `0 0`;
       element.style.transform = transform;
       element.style.filter = 'none';
       if (currentZoomLevel.views.length === 2) this.tracing('ended');
@@ -810,6 +717,7 @@ class Zumly {
     const element = event.target;
     var currentZoomLevel = this.currentStage;
     if (event.target.classList.contains('is-new-current-view')) {
+      this.blockEvents = false;
       var viewName = 'current-view';
       var transform = currentZoomLevel.views[0].forwardState.transform;
       var origin = currentZoomLevel.views[0].forwardState.origin;
@@ -833,8 +741,7 @@ class Zumly {
     element.style.transform = transform;
     element.style.filter = window.getComputedStyle(document.documentElement).getPropertyValue(`--${viewName}-filter-end-${this.instance}`);
     element.removeEventListener('animationend', this._onZoomInHandlerEnd);
-    this.blockEvents = false;
   }
 }
 
-export default Zumly;
+export { Zumly as default };

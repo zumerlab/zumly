@@ -8,6 +8,7 @@
   padding: 0;
   perspective: 1000px;
   cursor: zoom-out;
+  contain: strict;
 }
 
 .zumly-canvas:focus {
@@ -16,14 +17,11 @@
 
 .z-view {
   position: absolute;
+  contain: strict;
 }
 
 .z-view.is-current-view {
   cursor: default;
-}
-
-.z-view.is-new-current-view {
-
 }
 
 .z-view.is-previous-view, .z-view.is-last-view, .z-view.has-no-events  {
@@ -32,7 +30,7 @@
 }
 
 .z-view.performance {
-  will-change: transform, opacity, filter
+  will-change: transform, opacity;
 }
 
 .z-view.hide {
@@ -42,5 +40,3 @@
 .zoom-me {
   cursor: zoom-in;
 }
-
-.zoom-me > .zoomed {}

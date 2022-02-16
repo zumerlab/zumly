@@ -74,16 +74,10 @@ export function prepareCSS (instance) {
   }
   @keyframes zoom-${view}-${instance} {
     0% {
-      transform-origin: var(--${view}-transformOrigin-start-${instance});
       transform: var(--${view}-transform-start-${instance});
-      opacity: var(--${view}-opacity-start-${instance});
-      filter: var(--${view}-filter-start-${instance})
     }
     100% {
-      transform-origin: var(--${view}-transformOrigin-end-${instance});
       transform: var(--${view}-transform-end-${instance});
-      opacity: var(--${view}-opacity-end-${instance});
-      filter: var(--${view}-filter-end-${instance})
     }
   }
   `
@@ -102,39 +96,24 @@ export function setCSSVariables (transition, currentStage, instance) {
     if (transition === 'zoomOut' && view.stage !== undefined) {
       document.documentElement.style.setProperty(`--${view.name}-transform-start-${instance}`, view.stage.forwardState.transform)
       document.documentElement.style.setProperty(`--${view.name}-transform-end-${instance}`, view.stage.backwardState.transform)
-      document.documentElement.style.setProperty(`--${view.name}-transformOrigin-start-${instance}`, view.stage.forwardState.origin)
-      document.documentElement.style.setProperty(`--${view.name}-transformOrigin-end-${instance}`, view.stage.backwardState.origin)
-      document.documentElement.style.setProperty(`--${view.name}-opacity-start-${instance}`, 1)
-      document.documentElement.style.setProperty(`--${view.name}-filter-start-${instance}`, view.stage.forwardState.filter)
-      document.documentElement.style.setProperty(`--${view.name}-filter-end-${instance}`, view.stage.backwardState.filter)
+      
+     
       if (view.name === 'current-view') {
         document.documentElement.style.setProperty(`--zoom-duration-${instance}`, view.stage.backwardState.duration)
         document.documentElement.style.setProperty(`--zoom-ease-${instance}`, view.stage.backwardState.ease)
-        document.documentElement.style.setProperty(`--${view.name}-opacity-end-${instance}`, 0)
-        document.documentElement.style.setProperty(`--${view.name}-filter-start-${instance}`, 'none')
-        document.documentElement.style.setProperty(`--${view.name}-filter-end-${instance}`, 'none')
-      } else {
-        document.documentElement.style.setProperty(`--${view.name}-opacity-end-${instance}`, 1)
+       
       }
     }
     if (transition === 'zoomIn' && view.stage !== undefined) {
       document.documentElement.style.setProperty(`--${view.name}-transform-start-${instance}`, view.stage.backwardState.transform)
       document.documentElement.style.setProperty(`--${view.name}-transform-end-${instance}`, view.stage.forwardState.transform)
-      document.documentElement.style.setProperty(`--${view.name}-transformOrigin-start-${instance}`, view.stage.backwardState.origin)
-      document.documentElement.style.setProperty(`--${view.name}-transformOrigin-end-${instance}`, view.stage.forwardState.origin)
-      document.documentElement.style.setProperty(`--${view.name}-filter-start-${instance}`, view.stage.backwardState.filter)
-      document.documentElement.style.setProperty(`--${view.name}-filter-end-${instance}`, view.stage.forwardState.filter)
+      
+    
       if (view.name === 'current-view') {
         document.documentElement.style.setProperty(`--zoom-duration-${instance}`, view.stage.forwardState.duration)
         document.documentElement.style.setProperty(`--zoom-ease-${instance}`, view.stage.forwardState.ease)
-        document.documentElement.style.setProperty(`--${view.name}-opacity-start-${instance}`, 0)
-        document.documentElement.style.setProperty(`--${view.name}-filter-start-${instance}`, 'none')
-        document.documentElement.style.setProperty(`--${view.name}-filter-end-${instance}`, 'none')
-      } else {
-        document.documentElement.style.setProperty(`--${view.name}-opacity-start-${instance}`, 1)
-      }
-      document.documentElement.style.setProperty(`--${view.name}-opacity-end-${instance}`, 1)
     }
+  }
   })
 }
 

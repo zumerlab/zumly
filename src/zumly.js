@@ -84,13 +84,15 @@ export class Zumly {
   }
 
   tracing (data) {
-    if (data === 'ended') {
-      const parse = this.trace.map((task, index) => `${index === 0 ? `Instance ${this.instance}: ${task}` : `${task}`}`).join(' > ')
-      this.notify(parse)
-      this.trace = []
-    } else {
-      this.trace.push(data)
-    }
+    if (this.debug) {
+      if (data === 'ended') {
+        const parse = this.trace.map((task, index) => `${index === 0 ? `Instance ${this.instance}: ${task}` : `${task}`}`).join(' > ')
+        this.notify(parse)
+        this.trace = []
+      } else {
+        this.trace.push(data)
+      }
+    } 
   }
 
   /**
@@ -481,7 +483,7 @@ export class Zumly {
       var transform = currentZoomLevel.views[1].backwardState.transform
       element.classList.remove('performance')
       element.classList.remove(`zoom-previous-view-${this.instance}`)
-      element.style.transformOrigin = origin
+      element.style.transformOrigin = `0 0`
       element.style.transform = transform
       element.style.filter = 'none'
       if (currentZoomLevel.views.length === 2) this.tracing('ended')
