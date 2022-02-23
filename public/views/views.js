@@ -39,7 +39,9 @@ export const infiniteZoomingLevels = {
   </div>`
   },
   async mounted () {
+  
     const box = document.querySelector('#f2-1')
+    box.addEventListener('animationend', () => {
     var lens = box.querySelector('#lens')
     box.addEventListener('click', () => { lens.style.display = 'none' }, false)
     box.addEventListener('touchstart', () => { lens.style.display = 'none' }, { passive: true })
@@ -57,18 +59,19 @@ export const infiniteZoomingLevels = {
       duration: 400,
       delay: 1900
     })
-  }
+  })
+}
 }
 
 export const looping = {
 
   async render () {
-    return `<div class="z-view" style='height:300px; width:300px; position:absolute'>
+    return `<div class="z-view" id="v0" style='height:300px; width:300px; position:absolute'>
     <div class="description">
     ...and ever
       <svg fill="none" height="180" viewbox="140 0 400 550" width="160" style="position: absolute; top: 70px; left: 90px;" xmlns="http://www.w3.org/2000/svg">
         <g>
-            <path class='zoom-me' data-to="looping"  d="M333.889 9.54527C341.086 5.37583 349.973 5.41676 357.131 9.65228L563.79 131.934C570.819 136.093 575.115 143.667 575.077 151.834L573.958 395.051C573.92 403.218 569.554 410.752 562.488 414.846L354.711 535.22C347.515 539.389 338.627 539.348 331.469 535.113L124.81 412.831C117.781 408.673 113.485 401.098 113.523 392.931L114.643 149.714C114.68 141.547 119.046 134.013 126.113 129.919L333.889 9.54527Z" fill="transparent" id="hexagon" stroke="" stroke-width="7">
+            <path class='zoom-me' data-to="looping"  d="M333.889 9.54527C341.086 5.37583 349.973 5.41676 357.131 9.65228L563.79 131.934C570.819 136.093 575.115 143.667 575.077 151.834L573.958 395.051C573.92 403.218 569.554 410.752 562.488 414.846L354.711 535.22C347.515 539.389 338.627 539.348 331.469 535.113L124.81 412.831C117.781 408.673 113.485 401.098 113.523 392.931L114.643 149.714C114.68 141.547 119.046 134.013 126.113 129.919L333.889 9.54527Z" fill="transparent" id="hexagon" stroke="var(--blue)" stroke-width="7">
             </path>
         </g>
     </svg>
@@ -77,21 +80,14 @@ export const looping = {
   </div>`
   },
   async mounted () {
-    const previousHexagon = document.querySelector('.is-current-view > div > svg > g > #hexagon')
-    const actualHexagon = document.querySelector('.is-new-current-view > div > svg > g > #hexagon')
-    var color = window.getComputedStyle(previousHexagon).getPropertyValue('stroke')
-    setTimeout(() => {
-      color === 'rgb(209, 20, 93)' ? actualHexagon.style.stroke = 'var(--orange)'
-        : color === 'rgb(240, 149, 13)' ? actualHexagon.style.stroke = 'var(--yellow)'
-          : color === 'rgb(241, 246, 10)' ? actualHexagon.style.stroke = 'var(--green)'
-            : color === 'rgb(137, 197, 63)' ? actualHexagon.style.stroke = 'var(--blue)' : actualHexagon.style.stroke = 'var(--purple)'
-    }, 0)
+    document.querySelector('#v0').addEventListener('animationend', () => {
+  })
   }
 }
 
 export const multipleInstances = {
   async render () {
-    return `<div class="z-view" style="position: absolute; height:300px; width:300px;">
+    return `<div class="z-view" id="v1" style="position: absolute; height:300px; width:300px;">
      <div class="description">
      <svg class="instance" style="position: absolute; top: 60px; left: 20px" fill="none" height="130" viewbox="0 0 693 716" width="130" xmlns="http://www.w3.org/2000/svg">
         <g>
@@ -134,18 +130,20 @@ export const multipleInstances = {
 </div>`
   },
   async mounted () {
+    document.querySelector('#v1').addEventListener('animationend', () => {
     anime({
       targets: '.instance',
       opacity: [0, 1],
       scale: 1.1,
       delay: anime.stagger(400)
     })
+  })
   }
 }
 
 export const standaloneJSLibrary = {
   async render () {
-    return `<div class="z-view" style='position: absolute; height:300px; width:300px;'>
+    return `<div class="z-view" id="v2" style='position: absolute; height:300px; width:300px;'>
      <div class="description check">
      <svg id="js"  style="position: absolute; top: 100px; left: 80px" width="130" height="130" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
      <path d="M351.359 483.023C347.75 483.023 344.909 482.504 342.836 481.468V473.117C345.562 473.885 348.403 474.269 351.359 474.269C355.16 474.269 358.04 473.117 359.998 470.813C361.994 468.51 362.993 465.189 362.993 460.85V376.653H372.783V460.044C372.783 467.339 370.94 472.983 367.254 476.976C363.569 481.007 358.27 483.023 351.359 483.023Z" fill="black"/>
@@ -159,6 +157,7 @@ export const standaloneJSLibrary = {
 </div>`
   },
   async mounted () {
+    document.querySelector('#v2').addEventListener('animationend', () => {
     anime({
       targets: '#js',
       scale: 1.2,
@@ -171,12 +170,13 @@ export const standaloneJSLibrary = {
       delay: 1000,
       duration: 3000
     })
+  })
   }
 }
 
 export const uiAgnostic = {
   async render () {
-    return `<div class="z-view" style='position: absolute; height:300px; width:300px;'>
+    return `<div class="z-view" id="v3" style='position: absolute; height:300px; width:300px;'>
     <div class="description ui" style="background-image: url(./images/pattern.png); background-size: cover; font-weight: bold">
     <span class="framework" style="position: absolute; color: var(--purple); top: 90px; left: 20px;">Bootstrap</span>
     <span class="framework" style="position: absolute; color: var(--green); top: 115px; left: 180px">Materialize</span>
@@ -188,11 +188,13 @@ export const uiAgnostic = {
 </div>`
   },
   async mounted () {
+    document.querySelector('#v3').addEventListener('animationend', () => {
     anime({
       targets: '.framework',
       opacity: [0, 1],
       scale: 1.2,
       delay: anime.stagger(300)
     })
+  })
   }
 }

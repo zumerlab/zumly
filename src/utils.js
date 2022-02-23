@@ -54,13 +54,6 @@ function validate (instance, name, value, type, options = { isRequired: false, d
   }
 }
 
-export function shimIdleCallBack (cb) {
-  var start = Date.now()
-  return setTimeout(() => {
-    cb({ didTimeout: false, timeRemaining () { return Math.max(0, 50 - (Date.now() - start)) } }) // eslint-disable-line
-  }, 1)
-}
-
 export function prepareCSS (instance) {
   var instanceStyle = document.createElement('style')
   const views = ['current-view', 'previous-view', 'last-view']
@@ -118,6 +111,8 @@ export function setCSSVariables (transition, currentStage, instance) {
 }
 
 export async function renderView (el, canvas, views, init, componentContext) {
+  // TODO ESPERAR A QUE RENDER Y MOUNTED ESTEN TERMINADAS
+  // RETURN ELEMENT
     var viewName = null
     init ? viewName = el : viewName = el.dataset.to
     var newView = document.createElement('template')
@@ -128,7 +123,7 @@ export async function renderView (el, canvas, views, init, componentContext) {
     } else if(typeof views[viewName] === 'function') {
       // view is a component constructor
       var newViewInner = document.createElement('div')
-      let comp = new views[viewName]({ 
+      new views[viewName]({ 
         target: newViewInner, 
         context: componentContext,
         props: el.dataset
@@ -153,9 +148,13 @@ export async function renderView (el, canvas, views, init, componentContext) {
     vv.style.transformOrigin = '0 0'
     vv.dataset.viewName = viewName
     
-    var appendedView = await canvas.append(newView.content)
+    canvas.append(newView.content)
     // makes optional de 'mounted' hook
-    if (typeof views[viewName] === 'object' && views[viewName].mounted !== undefined && typeof views[viewName].mounted() === 'function') await views[viewName].mounted()
+    if (typeof views[viewName] === 'object' 
+    && views[viewName].mounted !== undefined 
+    && typeof views[viewName].mounted() === 'function') await views[viewName].mounted()
+
+    return init ? canvas.querySelector('.is-current-view') : canvas.querySelector('.is-new-current-view')
 }
 
 export function notification (debug, msg, type) {
