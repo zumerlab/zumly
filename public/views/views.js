@@ -41,7 +41,8 @@ export const infiniteZoomingLevels = {
   async mounted () {
   
     const box = document.querySelector('#f2-1')
-    box.addEventListener('animationend', () => {
+    box.addEventListener('zumly', () => {
+      console.log('yeah')
     var lens = box.querySelector('#lens')
     box.addEventListener('click', () => { lens.style.display = 'none' }, false)
     box.addEventListener('touchstart', () => { lens.style.display = 'none' }, { passive: true })
@@ -80,7 +81,7 @@ export const looping = {
   </div>`
   },
   async mounted () {
-    document.querySelector('#v0').addEventListener('animationend', () => {
+    document.querySelector('#v0').addEventListener('zumly', () => {
   })
   }
 }
@@ -88,7 +89,9 @@ export const looping = {
 export const multipleInstances = {
   async render () {
     return `<div class="z-view" id="v1" style="position: absolute; height:300px; width:300px;">
-     <div class="description">
+    <div class="description">
+    <span class='zoom-me' data-to="standaloneJSLibrary">...and ever </span>
+
      <svg class="instance" style="position: absolute; top: 60px; left: 20px" fill="none" height="130" viewbox="0 0 693 716" width="130" xmlns="http://www.w3.org/2000/svg">
         <g>
             <path d="M333.889 9.54527C341.086 5.37583 349.973 5.41676 357.131 9.65228L563.79 131.934C570.819 136.093 575.115 143.667 575.077 151.834L573.958 395.051C573.92 403.218 569.554 410.752 562.488 414.846L354.711 535.22C347.515 539.389 338.627 539.348 331.469 535.113L124.81 412.831C117.781 408.673 113.485 401.098 113.523 392.931L114.643 149.714C114.68 141.547 119.046 134.013 126.113 129.919L333.889 9.54527Z" fill="none" id="hexagon" stroke="var(--orange)" stroke-width="7">
@@ -130,7 +133,7 @@ export const multipleInstances = {
 </div>`
   },
   async mounted () {
-    document.querySelector('#v1').addEventListener('animationend', () => {
+    document.querySelector('#v1').addEventListener('zumly', () => {
     anime({
       targets: '.instance',
       opacity: [0, 1],
@@ -145,6 +148,7 @@ export const standaloneJSLibrary = {
   async render () {
     return `<div class="z-view" id="v2" style='position: absolute; height:300px; width:300px;'>
      <div class="description check">
+     <span class='zoom-me' data-to="multipleInstances">...and ever </span>
      <svg id="js"  style="position: absolute; top: 100px; left: 80px" width="130" height="130" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
      <path d="M351.359 483.023C347.75 483.023 344.909 482.504 342.836 481.468V473.117C345.562 473.885 348.403 474.269 351.359 474.269C355.16 474.269 358.04 473.117 359.998 470.813C361.994 468.51 362.993 465.189 362.993 460.85V376.653H372.783V460.044C372.783 467.339 370.94 472.983 367.254 476.976C363.569 481.007 358.27 483.023 351.359 483.023Z" fill="black"/>
      <path d="M442.698 438.448C442.698 445.858 440.01 451.636 434.635 455.782C429.26 459.929 421.965 462.002 412.751 462.002C402.768 462.002 395.09 460.716 389.715 458.144V448.699C393.17 450.158 396.933 451.31 401.002 452.154C405.072 452.999 409.103 453.421 413.096 453.421C419.623 453.421 424.538 452.193 427.84 449.735C431.141 447.24 432.792 443.784 432.792 439.369C432.792 436.451 432.197 434.071 431.007 432.228C429.855 430.347 427.897 428.619 425.133 427.045C422.407 425.471 418.241 423.685 412.636 421.689C404.803 418.886 399.198 415.565 395.819 411.726C392.479 407.886 390.809 402.876 390.809 396.695C390.809 390.206 393.247 385.042 398.123 381.203C402.999 377.363 409.449 375.444 417.473 375.444C425.843 375.444 433.541 376.979 440.567 380.051L437.515 388.574C430.565 385.656 423.808 384.197 417.243 384.197C412.06 384.197 408.009 385.311 405.091 387.538C402.173 389.764 400.714 392.855 400.714 396.81C400.714 399.728 401.252 402.127 402.327 404.008C403.402 405.851 405.206 407.56 407.74 409.134C410.313 410.67 414.229 412.378 419.489 414.26C428.319 417.408 434.386 420.787 437.688 424.396C441.028 428.005 442.698 432.689 442.698 438.448Z" fill="black"/>
@@ -157,7 +161,7 @@ export const standaloneJSLibrary = {
 </div>`
   },
   async mounted () {
-    document.querySelector('#v2').addEventListener('animationend', () => {
+    document.querySelector('#v2').addEventListener('zumly', () => {
     anime({
       targets: '#js',
       scale: 1.2,
@@ -188,7 +192,7 @@ export const uiAgnostic = {
 </div>`
   },
   async mounted () {
-    document.querySelector('#v3').addEventListener('animationend', () => {
+    document.querySelector('#v3').addEventListener('zumly', () => {
     anime({
       targets: '.framework',
       opacity: [0, 1],

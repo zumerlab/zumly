@@ -53,36 +53,7 @@ function validate (instance, name, value, type, options = { isRequired: false, d
   }
 }
 
-function setCSSVariables (transition, currentStage, instance) {
-  const viewStage = currentStage;
-  const current = viewStage.views[0];
-  const previous = viewStage.views[1];
-  const last = viewStage.views[2];
-  const views = [{ name: 'current-view', stage: current }, { name: 'previous-view', stage: previous }, { name: 'last-view', stage: last }];
-  views.map(view => {
-    if (transition === 'zoomOut' && view.stage !== undefined) {
-      document.documentElement.style.setProperty(`--${view.name}-transform-start-${instance}`, view.stage.forwardState.transform);
-      document.documentElement.style.setProperty(`--${view.name}-transform-end-${instance}`, view.stage.backwardState.transform);
-      
-     
-      if (view.name === 'current-view') {
-        document.documentElement.style.setProperty(`--zoom-duration-${instance}`, view.stage.backwardState.duration);
-        document.documentElement.style.setProperty(`--zoom-ease-${instance}`, view.stage.backwardState.ease);
-       
-      }
-    }
-    if (transition === 'zoomIn' && view.stage !== undefined) {
-      document.documentElement.style.setProperty(`--${view.name}-transform-start-${instance}`, view.stage.backwardState.transform);
-      document.documentElement.style.setProperty(`--${view.name}-transform-end-${instance}`, view.stage.forwardState.transform);
-      
-    
-      if (view.name === 'current-view') {
-        document.documentElement.style.setProperty(`--zoom-duration-${instance}`, view.stage.forwardState.duration);
-        document.documentElement.style.setProperty(`--zoom-ease-${instance}`, view.stage.forwardState.ease);
-    }
-  }
-  });
-}
+
 
 async function renderView (el, canvas, views, init, componentContext) {
   // TODO ESPERAR A QUE RENDER Y MOUNTED ESTEN TERMINADAS
@@ -183,8 +154,6 @@ function checkParameters (parameters, instance) {
   }
 }
 
-// window.requestIdleCallback = window.requestIdleCallback || shimIdleCallBack
-
 /**
  * Zumly
  * Powers your apps with a zoomable user interface (ZUI) taste.
@@ -203,8 +172,9 @@ class Zumly {
   *   home,
   *   contact,
   *   ...
-  *  }
-  *
+  *  },
+  * debug: false
+  * 
   */
   constructor (options) {
     // Internal state:
@@ -231,10 +201,6 @@ class Zumly {
     if (this.options) {
       // Event bindings:
       this._onZoom = this.onZoom.bind(this);
-      this._onZoomInHandlerStart = this.onZoomInHandlerStart.bind(this);
-      this._onZoomInHandlerEnd = this.onZoomInHandlerEnd.bind(this);
-      this._onZoomOutHandlerStart = this.onZoomOutHandlerStart.bind(this);
-      this._onZoomOutHandlerEnd = this.onZoomOutHandlerEnd.bind(this);
       this._onTouchStart = this.onTouchStart.bind(this);
       this._onTouchEnd = this.onTouchEnd.bind(this);
       this._onKeyUp = this.onKeyUp.bind(this);
@@ -301,7 +267,7 @@ class Zumly {
     if (this.options) {
       // add instance style
       this.tracing('init()');
-      // prepareCSS(this.instance)
+    //  prepareCSS(this.instance)
       await renderView(this.initialView, this.canvas, this.views, 'init', this.componentContext);
       // add to storage. OPTIMIZAR
       this.storeViews({
@@ -323,38 +289,138 @@ class Zumly {
     }
   }
 
+  setZoomLevelState (viewState, zoomLevel) {
+    let snapShoot = {
+      zoomLevel: zoomLevel,
+      views: []
+    };
+    viewState.forEach((view, index) => {
+      if (index < 3) {
+        var zoomViewState = {
+          viewName: view.view.dataset.viewName,
+          backwardState: {
+            origin: view.origin,
+            duration: view.duration,
+            ease: view.ease,
+            transform: view.transform[0]
+          },
+          forwardState: {
+            origin: view.origin,
+            duration: view.duration,
+            ease: view.ease,
+            transform: view.transform[1]
+          }
+        };
+      } else {
+        var zoomViewState = view;
+      }
+      snapShoot.views.push(zoomViewState);
+    });
+    this.storeViews(snapShoot);
+  }
+
+  setZoomTransition (viewState, mode) {
+    let ordinal = mode === 'in' ? 1 : 0;
+    if (mode === 'in') {
+      viewState.forEach((view, index) => {
+        if (index < 3) {
+          var animationStage = view.view.animate(
+            { transform: view.transform[ordinal] },
+            { duration: 1000, easing: view.ease});
+          
+            animationStage.pause();
+
+            viewState[0].view.classList.remove('hide');
+            this.blockEvents = true;
+            animationStage.play();
+          
+            animationStage.onfinish = event => {
+              viewState[index].view.classList.remove('performance');
+              viewState[index].view.classList.remove('has-no-events');
+              
+              if (index === 0) {
+                viewState[index].view.classList.remove('is-new-current-view');
+                viewState[index].view.classList.add('is-current-view');
+                this.blockEvents = false;
+                const zoomInFinished = new Event('zumly');
+                // Dispatch the event.
+                viewState[index].view.dispatchEvent(zoomInFinished);
+              }
+              
+              viewState[index].view.style.transformOrigin = view.origin;
+              viewState[index].view.style.transform = view.transform[ordinal];
+          };
+        }
+      });
+    } else {
+      viewState.forEach((view, index) => {
+        if (index < 3) {
+          var animationStage = view.view.animate(
+            { transform: view.transform[ordinal] },
+            { duration: 1000, easing: view.ease});
+          
+            animationStage.pause();
+
+            viewState[0].view.classList.remove('hide');
+            this.blockEvents = true;
+            animationStage.play();
+          
+            animationStage.onfinish = event => {
+              viewState[index].view.classList.remove('performance');
+              viewState[index].view.classList.remove('has-no-events');
+              
+              if (index === 0) {
+                viewState[index].view.classList.remove('is-new-current-view');
+                viewState[index].view.classList.add('is-current-view');
+                this.blockEvents = false;
+                const zoomInFinished = new Event('zumly');
+                // Dispatch the event.
+                viewState[index].view.dispatchEvent(zoomInFinished);
+              }
+              
+              viewState[index].view.style.transformOrigin = view.origin;
+              viewState[index].view.style.transform = view.transform[ordinal];
+          };
+        }
+      });
+    }
+  }
+
   /**
    * Main methods
    */
   async zoomIn (el) {
-    this.tracing('zoomIn()');
-    this.instance;
-    const canvas = this.canvas;
-    const coordenadasCanvas = canvas.getBoundingClientRect();
-    var offsetX = coordenadasCanvas.left;
-    var offsetY = coordenadasCanvas.top;
-    const preScale = this.storedPreviousScale[this.storedPreviousScale.length - 1];
-    // generated new view from activated .zoom-me element
-    // generateNewView(el)
-    this.tracing('renderView()');
-    
-    var currentView = await renderView(el, canvas, this.views, false, this.componentContext);
-
+   // RENDER
+    var currentView = await renderView(el, this.canvas, this.views, false, this.componentContext);
     if (currentView) {
-      el.classList.add('zoomed');
-      const coordenadasEl = el.getBoundingClientRect();
-      // create new view in a template tag
-      // select VIEWS from DOM
-      //var currentView = canvas.querySelector('.is-new-current-view')
+      // SELECCION DE ELEMENTOS
+      const canvas = this.canvas;
       var previousView = canvas.querySelector('.is-current-view');
       var lastView = canvas.querySelector('.is-previous-view');
-      var removeView = canvas.querySelector('.is-last-view');
-      if (removeView !== null) canvas.removeChild(removeView);
-      // do changes
-      const cc = currentView.getBoundingClientRect();
-      const scale = cc.width / coordenadasEl.width;
+      if (lastView !== null) {var removeView = canvas.querySelector('.is-last-view');}
+      // CLASES
+      el.classList.add('zoomed');
+      previousView.classList.add('is-previous-view');
+      previousView.classList.remove('is-current-view');
+      if (lastView !== null) {
+        lastView.classList.remove('is-previous-view');
+        lastView.classList.add('is-last-view');
+      }
+      // OBTENER MEDIDAS
+      const coordsCanvas = canvas.getBoundingClientRect();
+      const coordsEl = el.getBoundingClientRect();
+      const coordsCurrentView = currentView.getBoundingClientRect();
+      const coordsPreviousView = previousView.getBoundingClientRect();
+      if (lastView !== null && removeView !== null) removeView.remove();
+      // MEDIDAS AUXILIARES
+      var offsetX = coordsCanvas.left;
+      var offsetY = coordsCanvas.top;
+      const previousScale = this.storedPreviousScale[this.storedPreviousScale.length - 1];
+      // ELEMENTO ZOOMEABLE ACTIVO
+      // Obtengo coords del elemento zoomeable qie seran usadas para el estado inical de la vista nueva
+      const scale = coordsCurrentView.width / coordsEl.width;
       const scaleInv = 1 / scale;
-      const scaleh = cc.height / coordenadasEl.height;
+      const scaleh = coordsCurrentView.height / coordsEl.height;
       const scaleInvh = 1 / scaleh;
       // muy interesante featura... usar el zoom de acuardo a la h o w mayor y agra
       var duration = el.dataset.withDuration || this.duration;
@@ -362,183 +428,96 @@ class Zumly {
       this.effects[0];
       this.effects[1];
       var cover = this.cover;
-  
+
       if (cover === 'width') {
-        var laScala = scale;
-        var laScalaInv = scaleInv;
+        var coverScale = scale;
+        var coverScaleInv = scaleInv;
       } else if (cover === 'height') {
-        laScala = scaleh;
-        laScalaInv = scaleInvh;
+        coverScale = scaleh;
+        coverScaleInv = scaleInvh;
       }
-  
-      this.setPreviousScale(laScala);
-      var transformCurrentView0 = `translate(${coordenadasEl.x - offsetX + (coordenadasEl.width - cc.width * laScalaInv) / 2}px, ${coordenadasEl.y - offsetY + (coordenadasEl.height - cc.height * laScalaInv) / 2}px) scale(${laScalaInv})`;
-      currentView.style.transform = transformCurrentView0;
-      //
-      previousView.classList.add('is-previous-view');
-      previousView.classList.remove('is-current-view');
-      const coordenadasPreviousView = previousView.getBoundingClientRect();
-      // PREVIOUS VIEW EXACTAMENTE ONDE ESTANA ANTES COMO CURRENT
+      this.setPreviousScale(coverScale);
+      let currentX = coordsEl.x - offsetX + (coordsEl.width - coordsCurrentView.width * coverScaleInv) / 2;
+      let currentY = coordsEl.y - offsetY + (coordsEl.height - coordsCurrentView.height * coverScaleInv) / 2;
+      var transformCurrentView0 = `translate(${currentX}px, ${currentY}px) scale(${coverScaleInv})`;
+      
+      // Set previousView transform (ex CurrentView) 0
       var transformPreviousView0 = previousView.style.transform;
-      previousView.style.transformOrigin = `${coordenadasEl.x + coordenadasEl.width / 2 - coordenadasPreviousView.x}px ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px`;
-  
-      const x = coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + coordenadasPreviousView.x;
-      const y = coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + coordenadasPreviousView.y;
-  
-      const transformPreviousView1 = `translate(${x}px, ${y}px) scale(${laScala})`;
-      // PREVIOUS VIEW FINAL STAGE
+      // Set previousView transformOrigin
+      let previousOriginX = coordsEl.x + coordsEl.width / 2 - coordsPreviousView.x;
+      let previousOriginY = coordsEl.y + coordsEl.height / 2 - coordsPreviousView.y;
+      previousView.style.transformOrigin = `${previousOriginX}px ${previousOriginY}px`;
+     // Apply final estate
+      const previousX = coordsCanvas.width / 2 - coordsEl.width / 2 - coordsEl.x + coordsPreviousView.x;
+      const previousY = coordsCanvas.height / 2 - coordsEl.height / 2 - coordsEl.y + coordsPreviousView.y;
+      const transformPreviousView1 = `translate(${previousX}px, ${previousY}px) scale(${coverScale})`;
+      // Apply previousView transform 1
       previousView.style.transform = transformPreviousView1;
-      // ACA CAMBIA LA COSA, LEVANTO LAS COORDENADAS DEL ELEMENTO CLICLEADO QUE ESTBA DNRO DE PREVIOUS VIEW
-      var newcoordenadasEl = el.getBoundingClientRect();
-      // LO QUE DETERMINA LA POSICINES FONAL DEL CURRENT VIEW
-      var transformCurrentView1 = `translate(${newcoordenadasEl.x - offsetX + (newcoordenadasEl.width - cc.width) / 2}px, ${newcoordenadasEl.y - offsetY + (newcoordenadasEl.height - cc.height) / 2}px)`;
-  
+      // recapture El coords
+      var newCoordsEl = el.getBoundingClientRect();
+      // set CurrentView transform
+      var transformCurrentView1 = `translate(${newCoordsEl.x - offsetX + (newCoordsEl.width - coordsCurrentView.width) / 2}px, ${newCoordsEl.y - offsetY + (newCoordsEl.height - coordsCurrentView.height) / 2}px)`;
       if (lastView !== null) {
-        lastView.classList.remove('is-previous-view');
-        lastView.classList.add('is-last-view');
+        // Set lastView transform (ex previousView) 0
         var transformLastView0 = lastView.style.transform;
-        var newcoordenadasPV = previousView.getBoundingClientRect();
-        lastView.style.transform = `translate(${x - offsetX}px, ${y - offsetY}px) scale(${laScala * preScale})`;
-        const last = lastView.querySelector('.zoomed');
-        var coorLast = last.getBoundingClientRect();
-        lastView.style.transform = transformLastView0;
-        previousView.style.transform = transformPreviousView0;
-        var coorPrev = previousView.getBoundingClientRect();
-        var transformLastView1 = `translate(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x - offsetX + (newcoordenadasPV.width - coorLast.width) / 2}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y - offsetY +
-          (newcoordenadasPV.height - coorLast.height) / 2}px) scale(${laScala * preScale})`;
-      } else {
-        previousView.style.transform = transformPreviousView0;
-      }
+        // recapture previousView coords 
+        var newCoordsPreviousView = previousView.getBoundingClientRect();
+        // set last view final coords
+        lastView.style.transform = `translate(${previousX - offsetX}px, ${previousY - offsetY}px) scale(${coverScale * previousScale})`;
+        // get zoomed element inside lastview
+        const lastEl = lastView.querySelector('.zoomed');
+        var coordsLastViewEl = lastEl.getBoundingClientRect();
+        // set lastView final state
+        const lastX = coordsCanvas.width / 2 - coordsEl.width / 2 - coordsEl.x + (coordsPreviousView.x - coordsLastViewEl.x) + newCoordsPreviousView.x - offsetX + (newCoordsPreviousView.width - coordsLastViewEl.width) / 2;
+        const lastY = coordsCanvas.height / 2 - coordsEl.height / 2 - coordsEl.y + (coordsPreviousView.y - coordsLastViewEl.y) + newCoordsPreviousView.y - offsetY + (newCoordsPreviousView.height - coordsLastViewEl.height) / 2;
+        var transformLastView1 = `translate(${lastX}px, ${lastY}px) scale(${coverScale * previousScale})`;
+      } 
+      // Apply  initial states
+      requestAnimationFrame(() => {
+        currentView.style.transform = transformCurrentView0;
+       previousView.style.transform = transformPreviousView0;
+       if (lastView !== null) lastView.style.transform = transformLastView0;
+      });
+      
+  
       // arrays
-      var snapShoot = {
-        zoomLevel: this.storedViews.length,
-        views: []
-      };
-      const currentv = currentView ? {
-        viewName: currentView.dataset.viewName,
-        backwardState: {
-          origin: currentView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformCurrentView0
-        },
-        forwardState: {
-          origin: currentView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformCurrentView1
-        }
-      } : null;
-      const previousv = previousView ? {
-        viewName: previousView.dataset.viewName,
-        backwardState: {
-          origin: previousView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformPreviousView0
-        },
-        forwardState: {
-          origin: previousView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformPreviousView1
-        }
-      } : null;
-      const lastv = lastView ? {
-        viewName: lastView.dataset.viewName,
-        backwardState: {
+      var viewState = [];
+      viewState.push({
+        view: currentView,
+        origin: currentView.style.transformOrigin,
+        duration: duration,
+        ease: ease,
+        transform: [transformCurrentView0, transformCurrentView1]
+      },
+      {
+        view: previousView,
+        origin: previousView.style.transformOrigin,
+        duration: duration,
+        ease: ease,
+        transform: [transformPreviousView0, transformPreviousView1]
+      });
+      if (lastView) {
+        viewState.push({
+          view: lastView,
           origin: lastView.style.transformOrigin,
           duration: duration,
           ease: ease,
-          transform: transformLastView0
-        },
-        forwardState: {
-          origin: lastView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformLastView1
-        }
-      } : null;
-      const gonev = removeView ? { // ACA VA LA VISTA ENTERA FALTA REALIZAR UN ZOOM IGUAL ANTES DE SACARLA DE JUEGO
-        viewName: removeView
-      } : null;
-      if (currentv !== null) snapShoot.views.push(currentv);
-      if (previousv !== null) snapShoot.views.push(previousv);
-      if (lastv !== null) snapShoot.views.push(lastv);
-      if (gonev !== null) snapShoot.views.push(gonev);
-      this.storeViews(snapShoot);
+          transform: [transformLastView0, transformLastView1]
+        });
+      }
+      if (removeView) viewState.push({view: removeView});
+      var zoomLevel = this.storedViews.length;
+      this.setZoomLevelState(viewState, zoomLevel);
       this.currentStage = this.storedViews[this.storedViews.length - 1];
       // animation
-      this.tracing('setCSSVariables()');
-      // setCSSVariables('zoomIn', this.currentStage, this.instance)
-      // crea animation
-      // document.documentElement.style.setProperty(`--${view.name}-transform-start-${instance}`, view.stage.backwardState.transform)
-      // document.documentElement.style.setProperty(`--${view.name}-transform-end-${instance}`, view.stage.forwardState.transform)
-      var currentViewAnimation = currentView.animate(
-        [
-         { transform: transformCurrentView0 },
-         { transform: transformCurrentView1 },
-        ],
-        { duration: 1000, fill: 'forwards' }
-      );
-      
-      currentViewAnimation.pause();
-      
-      var previousViewAnimation = previousView.animate(
-        [
-          { transform: transformPreviousView0 },
-          { transform: transformPreviousView1 },
-         ],
-        { duration: 1000, fill: 'forwards' }
-      );
-     
-      previousViewAnimation.pause();
-     
-      if (lastView !== null) {
-        var lastViewAnimation = lastView.animate(
-          [
-            { transform: transformLastView0 },
-            { transform: transformLastView1 },
-           ],
-          { duration: 1000, fill: 'forwards' }
-        );
-      
-        lastViewAnimation.pause();
-      }
-      
-      //
-      currentView.classList.remove('hide');
-      // currentView.addEventListener('animationstart', this._onZoomInHandlerStart)
-      
-      // previousView.addEventListener('animationend', this._onZoomInHandlerEnd)
-      // if (lastView !== null) lastView.addEventListener('animationend', this._onZoomInHandlerEnd)
-      //
-      
-      // currentView.classList.add(`zoom-current-view-${instance}`)
-      // previousView.classList.add(`zoom-previous-view-${instance}`)
-     //  if (lastView !== null) lastView.classList.add(`zoom-last-view-${instance}`)
-
-      let playall = () => {
-        currentViewAnimation.addEventListener('finish', this._onZoomInHandlerEnd);
-        this.blockEvents = true;
-        if (lastView !== null) lastViewAnimation.play();
-        previousViewAnimation.play();
-        currentViewAnimation.play();
-        // previousViewAnimation.play()
-
-      };
-
-      playall();
-      
+      this.setZoomTransition(viewState, 'in');
     }
-
   }
 
   zoomOut () {
     this.tracing('zoomOut()');
     this.blockEvents = true;
     this.storedPreviousScale.pop();
-    var instance = this.instance;
     const canvas = this.canvas;
     this.currentStage = this.storedViews[this.storedViews.length - 1];
     const reAttachView = this.currentStage.views[3];
@@ -546,16 +525,11 @@ class Zumly {
     var previousView = canvas.querySelector('.is-previous-view');
     var lastView = canvas.querySelector('.is-last-view');
     //
-    this.tracing('setCSSVariables()');
-    setCSSVariables('zoomOut', this.currentStage, this.instance);
-    //
-    //
-    // currentView.classList.remove('performance')
-    //
+   
     previousView.querySelector('.zoomed').classList.remove('zoomed');
     previousView.classList.remove('is-previous-view');
     previousView.classList.add('is-current-view');
-    // previousView.classList.remove('performance')
+    previousView.classList.remove('performance');
     //
     if (lastView !== null) {
       lastView.classList.add('performance');
@@ -564,23 +538,59 @@ class Zumly {
       lastView.classList.remove('hide');
     }
     //
-    if (reAttachView !== undefined) {
-      // aca hay que 
-      canvas.prepend(reAttachView.viewName);
-      var newlastView = canvas.querySelector('.z-view:first-child');
-      newlastView.classList.add('hide');
+    var currentViewAnimation = currentView.animate(
+       { transform: this.currentStage.views[0].backwardState.transform },
+      { duration: 1000}
+    );
+    if (lastView !== null) {
+      var lastViewAnimation = lastView.animate(
+        [ { transform: this.currentStage.views[2].forwardState.transform },
+          { transform: this.currentStage.views[2].backwardState.transform }
+         ],
+        { duration: 1000 }
+      );
+      var previousViewAnimation = previousView.animate(
+        { transform: this.currentStage.views[1].backwardState.transform },
+        { duration: 1000}
+      );
+    } else {
+      previousViewAnimation = previousView.animate(
+        { transform: 'translate(0, 0)' },
+        { duration: 1000}
+      );
     }
-    //
-    currentView.addEventListener('animationstart', this._onZoomOutHandlerStart);
-    currentView.addEventListener('animationend', this._onZoomOutHandlerEnd);
-    previousView.addEventListener('animationend', this._onZoomOutHandlerEnd);
-    if (lastView !== null) lastView.addEventListener('animationend', this._onZoomOutHandlerEnd);
-    //
-    currentView.classList.add(`zoom-current-view-${instance}`);
-    previousView.classList.add(`zoom-previous-view-${instance}`);
-    if (lastView !== null) lastView.classList.add(`zoom-last-view-${instance}`);
-
-    this.storedViews.pop();
+    currentViewAnimation.pause();
+    previousViewAnimation.pause();
+    if (lastView !== null) lastViewAnimation.pause();
+    let playall = () => {
+      this.blockEvents = true;
+      if (lastView !== null) lastViewAnimation.play();
+      previousViewAnimation.play();
+      currentViewAnimation.play();
+      this.storedViews.pop();
+    };
+    playall();
+    currentViewAnimation.onfinish = event => {
+      currentView.remove();
+      this.blockEvents = false;
+      if (reAttachView !== undefined) {    
+        canvas.prepend(reAttachView.view);
+        var newlastView = canvas.querySelector('.z-view:first-child');
+        newlastView.classList.add('hide');
+      }
+    };
+    previousViewAnimation.onfinish = event => {
+      previousView.classList.remove('performance');
+      previousView.style.transformOrigin = '0 0';
+      previousView.style.transform = this.currentStage.views[1].backwardState.transform;
+    };
+    if (lastView !== null) {
+      lastViewAnimation.onfinish = event => {
+      lastView.classList.remove('performance');
+      lastView.style.transformOrigin = this.currentStage.views[2].backwardState.origin;
+      lastView.style.transform = this.currentStage.views[2].backwardState.transform;
+      };
+    }
   }
 
   /**
@@ -642,7 +652,6 @@ class Zumly {
       this.touchendX = event.changedTouches[0].screenX;
       this.touchendY = event.changedTouches[0].screenY;
       this.handleGesture(event);
-      // event.preventDefault()
     }
   }
 
@@ -677,87 +686,6 @@ class Zumly {
       this.tracing('tap');
       this.zoomOut();
     }
-  }
-
-  onZoomOutHandlerStart (event) {
-    this.tracing('onZoomOutHandlerStart()');
-  }
-
-  onZoomOutHandlerEnd (event) {
-    this.tracing('onZoomOutHandlerEnd()');
-    const element = event.target;
-    var currentZoomLevel = this.currentStage;
-    element.removeEventListener('finish', this._onZoomOutHandlerEnd);
-    // current
-    if (element.classList.contains(`zoom-current-view-${this.instance}`)) {
-      try {
-        this.canvas.removeChild(element);  
-      } catch(e) {
-        console.debug("Error when trying to remove element after zoom out. Trying to remove its parent instead...");
-        try {
-          this.canvas.removeChild(element.parentElement);  
-        } catch(e) {
-          console.debug("Error when trying to remove elemont after zoom out:", e);
-          console.debug("Element to remove was:", element);
-        }
-        
-      }
-      
-      this.blockEvents = false;
-    }
-    if (element.classList.contains(`zoom-previous-view-${this.instance}`)) {
-      var origin = currentZoomLevel.views[1].backwardState.origin;
-      var transform = currentZoomLevel.views[1].backwardState.transform;
-      element.classList.remove('performance');
-      element.classList.remove(`zoom-previous-view-${this.instance}`);
-      element.style.transformOrigin = `0 0`;
-      element.style.transform = transform;
-      //element.style.filter = 'none'
-      if (currentZoomLevel.views.length === 2) this.tracing('ended');
-    }
-    if (element.classList.contains(`zoom-last-view-${this.instance}`)) {
-      origin = currentZoomLevel.views[2].backwardState.origin;
-      transform = currentZoomLevel.views[2].backwardState.transform;
-      element.classList.remove('performance');
-      element.classList.remove(`zoom-last-view-${this.instance}`);
-      element.style.transformOrigin = origin;
-      element.style.transform = transform;
-      if (currentZoomLevel.views.length > 2) this.tracing('ended');
-    }
-  }
-
-  onZoomInHandlerStart (event) {
-    this.tracing('onZoomInHandlerStart()');
-  }
-
-  onZoomInHandlerEnd (event) {
-    console.log('PUTO', event);
-    this.tracing('onZoomInHandlerEnd()');
-    // current view
-    var cv = event.target.effect.target;
-    var pv = this.canvas.querySelector('.is-previous-view');
-    var lv = this.canvas.querySelector('.is-last-view');
-    var currentZoomLevel = this.currentStage;
-    this.blockEvents = false;
-    cv.classList.remove('is-new-current-view');
-    cv.classList.add('is-current-view');
-    cv.classList.remove('has-no-events');
-    let animations = document.getAnimations();
-    animations.forEach(a => a.commitStyles());
-    console.log(animations);
-    document.getAnimations()[0].removeEventListener('finish', this._onZoomInHandlerEnd);
-
-    // cv.style.transformOrigin = currentZoomLevel.views[0].forwardState.origin
-    cv.style.transform = currentZoomLevel.views[0].forwardState.transform;
-    if (pv) {
-    //  pv.style.transformOrigin = currentZoomLevel.views[1].forwardState.origin
-      pv.style.transform = currentZoomLevel.views[1].forwardState.transform;
-    }
-    if (lv) {
-   //   lv.style.transformOrigin = currentZoomLevel.views[2].forwardState.origin
-      lv.style.transform = currentZoomLevel.views[2].forwardState.transform;
-    } 
-    // event.removeEventListener('finish', this._onZoomInHandlerEnd)
   }
 }
 
