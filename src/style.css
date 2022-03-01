@@ -29,9 +29,6 @@
   user-select: none;
 }
 
-.z-view.performance {
-  will-change: transform, opacity;
-}
 
 .z-view.hide {
   opacity: 0
