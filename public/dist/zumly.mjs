@@ -330,9 +330,9 @@ class Zumly {
               { transform: view.transform[1] }
             ],
             { duration: 1000, easing: view.ease}
-          );       
+          );
+          viewState[0].view.classList.remove('hide');       
           animationStage.pause();
-          viewState[0].view.classList.remove('hide');
           animationStage.onfinish = event => {
             viewState[index].view.classList.remove('performance');
             viewState[index].view.classList.remove('has-no-events');
@@ -530,21 +530,33 @@ class Zumly {
     }
     //
     var currentViewAnimation = currentView.animate(
-      { transform: this.currentStage.views[0].backwardState.transform },
+      [
+        { transform: this.currentStage.views[0].forwardState.transform },
+        { transform: this.currentStage.views[0].backwardState.transform }
+      ],
       { duration: 1000, easing: this.currentStage.views[0].ease }
     );
     if (lastView !== null) {
       var lastViewAnimation = lastView.animate(
-        { transform: this.currentStage.views[2].backwardState.transform },
+        [
+          { transform: this.currentStage.views[2].forwardState.transform },
+          { transform: this.currentStage.views[2].backwardState.transform }
+        ],
         { duration: 1000, easing: this.currentStage.views[2].ease  }
       );
       var previousViewAnimation = previousView.animate(
-        { transform: this.currentStage.views[1].backwardState.transform },
+        [
+          { transform: this.currentStage.views[1].forwardState.transform },
+          { transform: this.currentStage.views[1].backwardState.transform }
+        ],
         { duration: 1000, easing: this.currentStage.views[1].ease }
       );
     } else {
       previousViewAnimation = previousView.animate(
-        { transform: 'translate(0, 0)' },
+        [
+          { transform: this.currentStage.views[1].forwardState.transform },
+          { transform: 'translate(0, 0)' }
+        ],
         { duration: 1000, easing: this.currentStage.views[1].ease }
       );
     }
