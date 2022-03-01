@@ -355,68 +355,58 @@
       this.storeViews(snapShoot);
     }
 
-    setZoomTransition (viewState, mode) {
+    setZoomTransition (viewState, mode, viewToRemove) {
       let ordinal = mode === 'in' ? 1 : 0;
       if (mode === 'in') {
+        this.blockEvents = true;
         viewState.forEach((view, index) => {
           if (index < 3) {
             var animationStage = view.view.animate(
               { transform: view.transform[ordinal] },
-              { duration: 1000, easing: view.ease});
-            
-              animationStage.pause();
-
-              viewState[0].view.classList.remove('hide');
-              this.blockEvents = true;
-              animationStage.play();
-            
-              animationStage.onfinish = event => {
-                viewState[index].view.classList.remove('performance');
-                viewState[index].view.classList.remove('has-no-events');
-                
-                if (index === 0) {
-                  viewState[index].view.classList.remove('is-new-current-view');
-                  viewState[index].view.classList.add('is-current-view');
-                  this.blockEvents = false;
-                  const zoomInFinished = new Event('zumly');
-                  // Dispatch the event.
-                  viewState[index].view.dispatchEvent(zoomInFinished);
-                }
-                
-                viewState[index].view.style.transformOrigin = view.origin;
-                viewState[index].view.style.transform = view.transform[ordinal];
+              { duration: 1000, easing: view.ease}
+            );       
+            animationStage.pause();
+            viewState[0].view.classList.remove('hide');
+            animationStage.onfinish = event => {
+              viewState[index].view.classList.remove('performance');
+              viewState[index].view.classList.remove('has-no-events');
+              
+              if (index === 0) {
+                viewState[index].view.classList.remove('is-new-current-view');
+                viewState[index].view.classList.add('is-current-view');
+                this.blockEvents = false;
+                const zoomInFinished = new Event('zumly');
+                // Dispatch the event.
+                viewState[index].view.dispatchEvent(zoomInFinished);
+              }
+              
+              viewState[index].view.style.transformOrigin = view.origin;
+              viewState[index].view.style.transform = view.transform[ordinal];
             };
+            animationStage.play();
           }
         });
       } else {
-        viewState.forEach((view, index) => {
+        viewState.forEach((anim, index) => {
+          this.blockEvents = true;
           if (index < 3) {
-            var animationStage = view.view.animate(
-              { transform: view.transform[ordinal] },
-              { duration: 1000, easing: view.ease});
-            
-              animationStage.pause();
-
-              viewState[0].view.classList.remove('hide');
-              this.blockEvents = true;
-              animationStage.play();
-            
-              animationStage.onfinish = event => {
-                viewState[index].view.classList.remove('performance');
-                viewState[index].view.classList.remove('has-no-events');
-                
-                if (index === 0) {
-                  viewState[index].view.classList.remove('is-new-current-view');
-                  viewState[index].view.classList.add('is-current-view');
-                  this.blockEvents = false;
-                  const zoomInFinished = new Event('zumly');
-                  // Dispatch the event.
-                  viewState[index].view.dispatchEvent(zoomInFinished);
+            anim.pause();
+            anim.onfinish = event => {
+              if (index === 0) {
+                anim.effect.target.remove();
+                this.blockEvents = false;
+                if (viewToRemove) {    
+                  this.canvas.prepend(viewToRemove.view);
+                  var newlastView = this.canvas.querySelector('.z-view:first-child');
+                  newlastView.classList.add('hide');
                 }
-                
-                viewState[index].view.style.transformOrigin = view.origin;
-                viewState[index].view.style.transform = view.transform[ordinal];
+              } else {
+                anim.effect.target.classList.remove('performance');
+                anim.effect.target.style.transformOrigin = index === 1 ? '0 0' : this.currentStage.views[index].backwardState.origin;
+                anim.effect.target.style.transform = this.currentStage.views[index].backwardState.transform;
+              }
             };
+            anim.play();
           }
         });
       }
@@ -561,7 +551,6 @@
       var previousView = canvas.querySelector('.is-previous-view');
       var lastView = canvas.querySelector('.is-last-view');
       //
-     
       previousView.querySelector('.zoomed').classList.remove('zoomed');
       previousView.classList.remove('is-previous-view');
       previousView.classList.add('is-current-view');
@@ -575,58 +564,29 @@
       }
       //
       var currentViewAnimation = currentView.animate(
-         { transform: this.currentStage.views[0].backwardState.transform },
-        { duration: 1000}
+        { transform: this.currentStage.views[0].backwardState.transform },
+        { duration: 1000, easing: this.currentStage.views[0].ease }
       );
       if (lastView !== null) {
         var lastViewAnimation = lastView.animate(
-          [ { transform: this.currentStage.views[2].forwardState.transform },
-            { transform: this.currentStage.views[2].backwardState.transform }
-           ],
-          { duration: 1000 }
+          { transform: this.currentStage.views[2].backwardState.transform },
+          { duration: 1000, easing: this.currentStage.views[2].ease  }
         );
         var previousViewAnimation = previousView.animate(
           { transform: this.currentStage.views[1].backwardState.transform },
-          { duration: 1000}
+          { duration: 1000, easing: this.currentStage.views[1].ease }
         );
       } else {
         previousViewAnimation = previousView.animate(
           { transform: 'translate(0, 0)' },
-          { duration: 1000}
+          { duration: 1000, easing: this.currentStage.views[1].ease }
         );
       }
-      currentViewAnimation.pause();
-      previousViewAnimation.pause();
-      if (lastView !== null) lastViewAnimation.pause();
-      let playall = () => {
-        this.blockEvents = true;
-        if (lastView !== null) lastViewAnimation.play();
-        previousViewAnimation.play();
-        currentViewAnimation.play();
-        this.storedViews.pop();
-      };
-      playall();
-      currentViewAnimation.onfinish = event => {
-        currentView.remove();
-        this.blockEvents = false;
-        if (reAttachView !== undefined) {    
-          canvas.prepend(reAttachView.view);
-          var newlastView = canvas.querySelector('.z-view:first-child');
-          newlastView.classList.add('hide');
-        }
-      };
-      previousViewAnimation.onfinish = event => {
-        previousView.classList.remove('performance');
-        previousView.style.transformOrigin = '0 0';
-        previousView.style.transform = this.currentStage.views[1].backwardState.transform;
-      };
-      if (lastView !== null) {
-        lastViewAnimation.onfinish = event => {
-        lastView.classList.remove('performance');
-        lastView.style.transformOrigin = this.currentStage.views[2].backwardState.origin;
-        lastView.style.transform = this.currentStage.views[2].backwardState.transform;
-        };
-      }
+      let viewState = [];
+      viewState.push(currentViewAnimation, previousViewAnimation);
+      if (lastViewAnimation) viewState.push(lastViewAnimation);
+      this.storedViews.pop();
+      this.setZoomTransition(viewState, 'out', reAttachView);
     }
 
     /**
