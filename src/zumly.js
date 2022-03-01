@@ -166,13 +166,15 @@ export class Zumly {
   }
 
   setZoomTransition (viewState, mode, viewToRemove) {
-    let ordinal = mode === 'in' ? 1 : 0
     if (mode === 'in') {
       this.blockEvents = true
       viewState.forEach((view, index) => {
         if (index < 3) {
           var animationStage = view.view.animate(
-            { transform: view.transform[ordinal] },
+            [
+              { transform: view.transform[0] },
+              { transform: view.transform[1] }
+            ],
             { duration: 1000, easing: view.ease}
           )       
           animationStage.pause()
@@ -191,7 +193,7 @@ export class Zumly {
             }
             
             viewState[index].view.style.transformOrigin = view.origin
-            viewState[index].view.style.transform = view.transform[ordinal]
+            viewState[index].view.style.transform = view.transform[1]
           }
           animationStage.play()
         }
