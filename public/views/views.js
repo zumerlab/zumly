@@ -41,8 +41,14 @@ export const infiniteZoomingLevels = {
   async mounted () {
   
     const box = document.querySelector('#f2-1')
-    box.addEventListener('zumly', () => {
-      console.log('yeah')
+    box.addEventListener('zoom-out-started', () => console.log('inicio atras'), false)
+    box.addEventListener('zoom-out-finished', () => console.log('fin atras'), false)
+    box.addEventListener('zoom-in-started', () => console.log('inicio'))
+    box.addEventListener('zoom-in-finished', () => {
+      console.log('fin')
+      
+ 
+  
     var lens = box.querySelector('#lens')
     box.addEventListener('click', () => { lens.style.display = 'none' }, false)
     box.addEventListener('touchstart', () => { lens.style.display = 'none' }, { passive: true })
@@ -60,8 +66,8 @@ export const infiniteZoomingLevels = {
       duration: 400,
       delay: 1900
     })
-  })
-}
+    }, false)
+  }
 }
 
 export const looping = {
@@ -81,7 +87,7 @@ export const looping = {
   </div>`
   },
   async mounted () {
-    document.querySelector('#v0').addEventListener('zumly', () => {
+    document.querySelector('#v0').addEventListener('zoom-in-finished', () => {
   })
   }
 }
@@ -133,7 +139,7 @@ export const multipleInstances = {
 </div>`
   },
   async mounted () {
-    document.querySelector('#v1').addEventListener('zumly', () => {
+    document.querySelector('#v1').addEventListener('zoom-in-finished', () => {
     anime({
       targets: '.instance',
       opacity: [0, 1],
@@ -156,12 +162,12 @@ export const standaloneJSLibrary = {
      <path d="M121.065 277.624C121.065 288.502 124.158 296.394 130.344 301.3C136.636 306.206 145.808 308.765 157.859 308.979V331.375C137.596 331.162 121.918 326.523 110.827 317.457C99.7352 308.392 94.1895 295.648 94.1895 279.224V230.752C94.1895 219.66 90.83 211.768 84.1111 207.076C77.3922 202.276 67.6338 199.877 54.8359 199.877V177.32C68.7003 177.107 78.7253 174.548 84.911 169.642C91.0966 164.736 94.1895 157.164 94.1895 146.925V97.9735C94.1895 81.4429 99.9485 68.5917 111.467 59.4198C122.985 50.248 138.449 45.6621 157.859 45.6621V67.8984C133.33 68.5383 121.065 79.1499 121.065 99.7332V146.925C121.065 169.855 109.174 183.399 85.3909 187.559V189.478C109.174 193.638 121.065 207.182 121.065 230.112V277.624Z" fill="black"/>
      <path d="M422.935 187.559C399.153 183.399 387.261 169.855 387.261 146.925V99.7332C387.261 79.1499 375.157 68.5383 350.947 67.8984V45.6621C370.571 45.6621 385.981 50.3013 397.18 59.5798C408.484 68.8583 414.137 81.6562 414.137 97.9735V146.925C414.137 157.27 417.283 164.896 423.575 169.802C429.868 174.601 439.946 177.107 453.81 177.32V199.877C440.799 199.877 430.934 202.276 424.215 207.076C417.496 211.768 414.137 219.66 414.137 230.752V279.224C414.137 295.541 408.644 308.232 397.659 317.297C386.781 326.469 371.211 331.162 350.947 331.375V308.979C362.785 308.765 371.797 306.206 377.983 301.3C384.168 296.394 387.261 288.502 387.261 277.624V230.112C387.261 217.954 390.194 208.675 396.06 202.276C401.925 195.877 410.884 191.611 422.935 189.478V187.559Z" fill="black"/>
      </svg>
-     <span id="label" style="position: absolute; top: 250px; left: 10px; font-size: smaller; font-weight: 300">* <strong>Svelte</strong> and <strong>Vue</strong> web-components work with Zumly!</span>
+     <span id="label" style="position: absolute; top: 250px; left: 10px; font-size: smaller; font-weight: 300">* <strong>Svelte</strong> and <strong>Vue</strong> web-components work with zoom-in-finished!</span>
      </div>
 </div>`
   },
   async mounted () {
-    document.querySelector('#v2').addEventListener('zumly', () => {
+    document.querySelector('#v2').addEventListener('zoom-in-finished', () => {
     anime({
       targets: '#js',
       scale: 1.2,
@@ -192,7 +198,7 @@ export const uiAgnostic = {
 </div>`
   },
   async mounted () {
-    document.querySelector('#v3').addEventListener('zumly', () => {
+    document.querySelector('#v3').addEventListener('zoom-in-finished', () => {
     anime({
       targets: '.framework',
       opacity: [0, 1],

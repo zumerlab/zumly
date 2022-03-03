@@ -1,60 +1,3 @@
-function checkArray (array) {
-  // remove duplicates and map
-  if (array !== undefined && array[0].toLowerCase() === 'none') {
-    return true
-  }
-  if (array !== undefined && array.length > 0) {
-    const unique = array => [...new Set(array)];
-    const lowerArray = array.map(e => e.toLowerCase());
-    return unique(lowerArray).every(value => ['blur', 'sepia', 'saturate'].indexOf(value) !== -1)
-  }
-}
-
-function setFx (values) {
-  var start = '';
-  var end = '';
-  if (values !== undefined) {
-    values.map(effect => {
-      start += `${effect.toLowerCase() === 'blur' ? 'blur(0px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(0) ' : effect.toLowerCase() === 'saturate' ? 'saturate(0) ' : 'none'}`;
-      end += `${effect.toLowerCase() === 'blur' ? 'blur(0.8px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(5) ' : effect.toLowerCase() === 'saturate' ? 'saturate(8) ' : 'none'}`;
-    });
-    return [start, end]
-  }
-}
-function assignProperty (instance, propertiesToAdd, value) {
-  instance[propertiesToAdd] = value;
-}
-
-function validate (instance, name, value, type, options = { isRequired: false, defaultValue: 0, allowedValues: 0, hasValidation: 0, hasAssignFunction: 0 }) {
-  var msg = `'${name}' property is required when instance is defined`;
-  var msg1 = `'${name}' property has problems`;
-  var checkValue = value !== undefined;
-  var checkDefault = options.defaultValue !== undefined;
-  var checkCustomValidation = options.hasValidation !== undefined;
-  var checkCustomAssign = options.hasAssignFunction !== undefined;
-  if (type === 'string' || type === 'object' || type === 'boolean') {
-    var checkTypeof = typeof value === type; // eslint-disable-line
-    // value = checkTypeof && type === 'string' ? value.toLowerCase() : value
-  } else if (type === 'array') {
-    checkTypeof = Array.isArray(value);
-  }
-  if (options.isRequired) {
-    checkValue && checkTypeof ? assignProperty(instance, name, value) : notification(false, msg, 'error');
-  }
-  if (checkDefault && !checkCustomValidation && !checkCustomAssign) {
-    checkValue && checkTypeof ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg1, 'error');
-  }
-  if (checkCustomValidation && checkDefault && !checkCustomAssign) {
-    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg1, 'error');
-  }
-  // console.log(name, checkCustomValidation, checkDefault, checkCustomAssign)
-  if (checkCustomValidation && checkDefault && checkCustomAssign) {
-    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, options.hasAssignFunction) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg1, 'error');
-  }
-}
-
-
-
 async function renderView (el, canvas, views, init, componentContext) {
   // TODO ESPERAR A QUE RENDER Y MOUNTED ESTEN TERMINADAS
   // RETURN ELEMENT
@@ -117,41 +60,43 @@ function notification (debug, msg, type) {
   }
 }
 
-function checkParameters (parameters, instance) {
-  // First check if options are provided
-  if (parameters && typeof parameters === 'object') {
-    assignProperty(instance, 'options', true);
-    // Then check its properties
-    // mount property. String DOM element. Required
-    validate(instance, 'mount', parameters.mount, 'string', { isRequired: true });
-    // initialView property. Strng view name. Required
-    validate(instance, 'initialView', parameters.initialView, 'string', { isRequired: true });
-    // views property. Object with views. Required
-    validate(instance, 'views', parameters.views, 'object', { isRequired: true });
-    // debug property. Boolean. Optional. Default false
-    validate(instance, 'debug', parameters.debug, 'boolean', { defaultValue: false });
-    // Svelte component context
-    validate(instance, 'componentContext', parameters.componentContext, 'object', { isRequired: false, defaultValue: new Map() });
-    // Check transtions
-    if (parameters.transitions && typeof parameters.transitions === 'object') {
-      // value exist; type, allowed, deafult
-      validate(instance, 'cover', parameters.transitions.cover, 'string', { defaultValue: 'width', hasValidation: () => { ['height', 'width'].indexOf(parameters.transitions.cover.toLowerCase()) !== -1; } }); // eslint-disable-line
-      // value, type, , default
-      validate(instance, 'duration', parameters.transitions.duration, 'string', { defaultValue: '1s' });
-      // value, type, ,default
-      validate(instance, 'ease', parameters.transitions.ease, 'string', { defaultValue: 'ease-in-out' });
-      // value, type, custom validation, custom asignament, default
-      validate(instance, 'effects', parameters.transitions.effects, 'array', { defaultValue: ['none', 'none'], hasValidation: checkArray(parameters.transitions.effects), hasAssignFunction: setFx(parameters.transitions.effects) });
-    } else {
-      // assign deafult values
-      assignProperty(instance, 'cover', 'width');
-      assignProperty(instance, 'duration', '1s');
-      assignProperty(instance, 'ease', 'ease-in-out');
-      assignProperty(instance, 'effects', ['none', 'none']);
-    }
-  } else {
-    notification(false, '\'options\' object has to be provided when instance is defined', 'error');
-  }
+function validateUserSettings (parameters) {
+  var schema = {
+    initialView: value => typeof value === 'string',
+    views: value => typeof value === 'object',
+    componentContext: value => typeof value === 'object',
+    zoom_duration: value => parseInt(value) === Number(value) && value >= 0,
+    zoom_ease: value => typeof value === 'string',
+    zoom_cover: value => typeof value === 'string',
+    zoom_effects: value =>  Array.isArray(value),
+    debug: value => typeof value === 'boolean',
+    mount: value => typeof value === 'string'
+  };
+
+  schema.initialView.required = true;
+  schema.mount.required = true;
+  schema.views.required = true;
+
+  var validator = (object, schema) => Object
+    .entries(schema)
+    .map(([key, val]) => [key,
+      !val.required && !object.hasOwnProperty(key) ? 'valid_true' :
+      val.required && object.hasOwnProperty(key) ? 'valid_' + val(object[key]) :
+      !val.required && object.hasOwnProperty(key) ? 'valid_' + val(object[key]) : 
+      'required_true'])
+    .map(([key, response]) => {
+      let data = response === 'valid_false' ? 'invalid' :
+      response === 'required_true' ? 'required' : false;
+      var response;
+      if (data) {
+        notification(false, `User settings: ${key} is ${data}.`, 'error');
+        response = 'invalid';
+      } else { response = 'valid'; }
+      return response
+      })
+    .find(el => el === 'invalid');
+  
+  return validator(parameters, schema) !== undefined ? false : true
 }
 
 /**
@@ -163,7 +108,7 @@ class Zumly {
   /**
   * Creates a Zumly instance
   * @constructor
-  * @params {Objet} options
+  * @params {Object} settings
   * @example
   *  new Zumly({
   *  mount: '.mount',
@@ -176,29 +121,38 @@ class Zumly {
   * debug: false
   * 
   */
-  constructor (options) {
+  constructor (settings) {
     // Internal state:
-    // Register global instances of Zumly
-    this.instance = Zumly.counter;
-    // Store snapshots of each zoom transition
-    this.storedViews = [];
-    // Show current zoom level properties
-    this.currentStage = null;
-    // Store the scale of previous zoom transition
-    this.storedPreviousScale = [1];
-    // Array of events useful for debugging
-    this.trace = [];
-    // Deactive events during transtions
-    this.blockEvents = false;
-    // Initial values for gesture events
-    this.touchstartX = 0;
-    this.touchstartY = 0;
-    this.touchendX = 0;
-    this.touchendY = 0;
-    this.touching = false;
-    // Check if user options exist
-    checkParameters(options, this);
-    if (this.options) {
+    // Usser settings available properties
+    // Check if user settings exist
+    this.validated = validateUserSettings(settings);
+    if (this.validated) {
+      // set user properties
+      this.initialView = settings.initialView;
+      this.views = settings.views || {};
+      this.componentContext = settings.componentContext || null;
+      this.duration = settings.zoom_duration || 1000;
+      this.ease =  settings.zoom_ease  || 'ease-in-out';
+      this.debug =  settings.debug || false;
+      this.cover =  settings.zoom_cover || 'width';
+      this.effects =  settings.zoom_effects || ['none', 'none'];
+      this.canvas = document.querySelector(settings.mount);
+      // Register global instances of Zumly
+      this.instance = Zumly.counter;
+      // Store snapshots of each zoom transition
+      this.storedViews = [];
+      // Show current zoom level properties
+      this.currentStage = null;
+      // Store the scale of previous zoom transition
+      this.storedPreviousScale = [1];
+      // Deactive events during transtions
+      this.blockEvents = false;
+      // Initial values for gesture events
+      this.touchstartX = 0;
+      this.touchstartY = 0;
+      this.touchendX = 0;
+      this.touchendY = 0;
+      this.touching = false;
       // Event bindings:
       this._onZoom = this.onZoom.bind(this);
       this._onTouchStart = this.onTouchStart.bind(this);
@@ -206,7 +160,6 @@ class Zumly {
       this._onKeyUp = this.onKeyUp.bind(this);
       this._onWeel = this.onWeel.bind(this);
       // Prepare the instance:
-      this.canvas = document.querySelector(this.mount);
       this.canvas.setAttribute('tabindex', 0);
       this.canvas.addEventListener('mouseup', this._onZoom, false);
       this.canvas.addEventListener('touchend', this._onZoom, false);
@@ -214,8 +167,6 @@ class Zumly {
       this.canvas.addEventListener('touchend', this._onTouchEnd, false);
       this.canvas.addEventListener('keyup', this._onKeyUp, false);
       this.canvas.addEventListener('wheel', this._onWeel, { passive: true });
-    } else {
-      this.notify('is unable to start: no {options} have been passed to the Zumly\'s instance.', 'error');
     }
   }
 
@@ -223,25 +174,11 @@ class Zumly {
    * Helpers
    */
   storeViews (data) {
-    this.tracing('storedViews()');
     this.storedViews.push(data);
   }
 
   setPreviousScale (scale) {
-    this.tracing('setPreviousScale()');
     this.storedPreviousScale.push(scale);
-  }
-
-  tracing (data) {
-    if (this.debug) {
-      if (data === 'ended') {
-        const parse = this.trace.map((task, index) => `${index === 0 ? `Instance ${this.instance}: ${task}` : `${task}`}`).join(' > ');
-        this.notify(parse);
-        this.trace = [];
-      } else {
-        this.trace.push(data);
-      }
-    } 
   }
 
   /**
@@ -264,10 +201,7 @@ class Zumly {
   }
 
   async init () {
-    if (this.options) {
-      // add instance style
-      this.tracing('init()');
-    //  prepareCSS(this.instance)
+    if (this.validated) {
       await renderView(this.initialView, this.canvas, this.views, 'init', this.componentContext);
       // add to storage. OPTIMIZAR
       this.storeViews({
@@ -281,11 +215,13 @@ class Zumly {
         }]
       });
       //
-      this.notify(`${this.instance > 1
-        ? `instance nº ${this.instance} is active.`
-        : `is running! Instance nº ${this.instance} is active. ${this.debug
-        ? 'Debug is active, can be deactivate by setting \'debug: false\' when you define the instance.' : ''}
-        More tips & docs at https://zumly.org`}`, 'welcome');
+      this.notify(`${this.instance > 1 ? 
+      `instance nº ${this.instance} is active.\n` : 
+      `is running! Instance nº ${this.instance} is active.\n`}`, 'welcome');
+      if (this.debug) {
+        this.notify(`Debug is active, can be deactivate by setting \'debug: false\' when you define the instance.\n'`, 'welcome');
+        this.notify(`More tips & docs at https://zumly.org`, 'welcome');
+      }
     }
   }
 
@@ -312,7 +248,7 @@ class Zumly {
           }
         };
       } else {
-        var zoomViewState = view;
+        zoomViewState = view;
       }
       snapShoot.views.push(zoomViewState);
     });
@@ -321,7 +257,10 @@ class Zumly {
 
   setZoomTransition (viewState, mode, viewToRemove) {
     if (mode === 'in') {
+      // Just before first animation has started, fires an event
       this.blockEvents = true;
+      const zoomInStarted = new Event('zoom-in-started');
+      viewState[0].view.dispatchEvent(zoomInStarted);
       viewState.forEach((view, index) => {
         if (index < 3) {
           var animationStage = view.view.animate(
@@ -334,42 +273,50 @@ class Zumly {
           viewState[0].view.classList.remove('hide');       
           animationStage.pause();
           animationStage.onfinish = event => {
+
+            if (index === 0) {
+              this.blockEvents = false;
+              viewState[index].view.classList.replace('is-new-current-view', 'is-current-view');
+            }
             viewState[index].view.classList.remove('performance');
             viewState[index].view.classList.remove('has-no-events');
-            
-            if (index === 0) {
-              viewState[index].view.classList.remove('is-new-current-view');
-              viewState[index].view.classList.add('is-current-view');
-              this.blockEvents = false;
-              const zoomInFinished = new Event('zumly');
-              // Dispatch the event.
-              viewState[index].view.dispatchEvent(zoomInFinished);
-            }
-            
             viewState[index].view.style.transformOrigin = view.origin;
             viewState[index].view.style.transform = view.transform[1];
+            // After last animation finished, fires an event
+            if (index === viewState.length - 1) {
+              
+              const zoomInFinished = new Event('zoom-in-finished');
+              viewState[0].view.dispatchEvent(zoomInFinished);
+            }
           };
           animationStage.play();
         }
       });
     } else {
+      this.blockEvents = true;
+      const zoomOutStarted = new Event('zoom-out-started');
+      viewState[0].effect.target.dispatchEvent(zoomOutStarted);
       viewState.forEach((anim, index) => {
-        this.blockEvents = true;
         if (index < 3) {
           anim.pause();
           anim.onfinish = event => {
             if (index === 0) {
               anim.effect.target.remove();
+            }  
+            if (index > 0) {
+              anim.effect.target.classList.remove('performance');
+              anim.effect.target.style.transformOrigin = index === 1 ? '0 0' : this.currentStage.views[index].backwardState.origin;
+              anim.effect.target.style.transform = this.currentStage.views[index].backwardState.transform;
+            }
+            if (index === viewState.length - 1) {
               this.blockEvents = false;
               if (viewToRemove) {    
                 this.canvas.prepend(viewToRemove.view);
                 var newlastView = this.canvas.querySelector('.z-view:first-child');
                 newlastView.classList.add('hide');
               }
-            } else {
-              anim.effect.target.classList.remove('performance');
-              anim.effect.target.style.transformOrigin = index === 1 ? '0 0' : this.currentStage.views[index].backwardState.origin;
-              anim.effect.target.style.transform = this.currentStage.views[index].backwardState.transform;
+              const zoomOutFinished = new Event('zoom-out-finished');
+              viewState[0].effect.target.dispatchEvent(zoomOutFinished);
             }
           };
           anim.play();
@@ -392,12 +339,8 @@ class Zumly {
       if (lastView !== null) {var removeView = canvas.querySelector('.is-last-view');}
       // CLASES
       el.classList.add('zoomed');
-      previousView.classList.add('is-previous-view');
-      previousView.classList.remove('is-current-view');
-      if (lastView !== null) {
-        lastView.classList.remove('is-previous-view');
-        lastView.classList.add('is-last-view');
-      }
+      previousView.classList.replace('is-current-view', 'is-previous-view');
+      if (lastView !== null) lastView.classList.replace('is-previous-view', 'is-last-view');
       // OBTENER MEDIDAS
       const coordsCanvas = canvas.getBoundingClientRect();
       const coordsEl = el.getBoundingClientRect();
@@ -420,7 +363,6 @@ class Zumly {
       this.effects[0];
       this.effects[1];
       var cover = this.cover;
-
       if (cover === 'width') {
         var coverScale = scale;
         var coverScaleInv = scaleInv;
@@ -432,14 +374,13 @@ class Zumly {
       let currentX = coordsEl.x - offsetX + (coordsEl.width - coordsCurrentView.width * coverScaleInv) / 2;
       let currentY = coordsEl.y - offsetY + (coordsEl.height - coordsCurrentView.height * coverScaleInv) / 2;
       var transformCurrentView0 = `translate(${currentX}px, ${currentY}px) scale(${coverScaleInv})`;
-      
       // Set previousView transform (ex CurrentView) 0
       var transformPreviousView0 = previousView.style.transform;
       // Set previousView transformOrigin
       let previousOriginX = coordsEl.x + coordsEl.width / 2 - coordsPreviousView.x;
       let previousOriginY = coordsEl.y + coordsEl.height / 2 - coordsPreviousView.y;
       previousView.style.transformOrigin = `${previousOriginX}px ${previousOriginY}px`;
-     // Apply final estate
+      // Apply final estate
       const previousX = coordsCanvas.width / 2 - coordsEl.width / 2 - coordsEl.x + coordsPreviousView.x;
       const previousY = coordsCanvas.height / 2 - coordsEl.height / 2 - coordsEl.y + coordsPreviousView.y;
       const transformPreviousView1 = `translate(${previousX}px, ${previousY}px) scale(${coverScale})`;
@@ -467,11 +408,9 @@ class Zumly {
       // Apply  initial states
       requestAnimationFrame(() => {
         currentView.style.transform = transformCurrentView0;
-       previousView.style.transform = transformPreviousView0;
-       if (lastView !== null) lastView.style.transform = transformLastView0;
+        previousView.style.transform = transformPreviousView0;
+        if (lastView !== null) lastView.style.transform = transformLastView0;
       });
-      
-  
       // arrays
       var viewState = [];
       viewState.push({
@@ -502,12 +441,12 @@ class Zumly {
       this.setZoomLevelState(viewState, zoomLevel);
       this.currentStage = this.storedViews[this.storedViews.length - 1];
       // animation
+      // usar solo el currentStage.
       this.setZoomTransition(viewState, 'in');
     }
   }
 
   zoomOut () {
-    this.tracing('zoomOut()');
     this.blockEvents = true;
     this.storedPreviousScale.pop();
     const canvas = this.canvas;
@@ -518,14 +457,12 @@ class Zumly {
     var lastView = canvas.querySelector('.is-last-view');
     //
     previousView.querySelector('.zoomed').classList.remove('zoomed');
-    previousView.classList.remove('is-previous-view');
-    previousView.classList.add('is-current-view');
+    previousView.classList.replace('is-previous-view', 'is-current-view');
     previousView.classList.remove('performance');
     //
     if (lastView !== null) {
       lastView.classList.add('performance');
-      lastView.classList.add('is-previous-view');
-      lastView.classList.remove('is-last-view');
+      lastView.classList.replace('is-last-view', 'is-previous-view');
       lastView.classList.remove('hide');
     }
     //
@@ -564,27 +501,24 @@ class Zumly {
     viewState.push(currentViewAnimation, previousViewAnimation);
     if (lastViewAnimation) viewState.push(lastViewAnimation);
     this.storedViews.pop();
+    // usar solo currentStage
     this.setZoomTransition(viewState, 'out', reAttachView);
   }
-
   /**
    * Event hangling
    */
   onZoom (event) {
     if (this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null && !this.touching) {
-      this.tracing('onZoom()');
       event.stopPropagation();
       this.zoomOut();
     }
     if (!this.blockEvents && event.target.classList.contains('zoom-me') && !this.touching) {
-      this.tracing('onZoom()');
       event.stopPropagation();
       this.zoomIn(event.target);
     }
   }
 
   onKeyUp (event) {
-    this.tracing('onKeyUp()');
     // Possible conflict with usar inputs
     if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
       event.preventDefault();
@@ -601,20 +535,12 @@ class Zumly {
   }
 
   onWeel (event) {
-    // inertia need to be fixed
-    if (!this.blockEvents) {
-      this.tracing('onWeel()');
-      if (event.deltaY < 0) ;
-      if (event.deltaY > 0) {
-        if (this.storedViews.length > 1 && !this.blockEvents) {
-          this.zoomOut();
-        }
-      }
-    }
+    // Inertia may need to be fixed
+    if (!this.blockEvents && event.deltaY > 0 && this.storedViews.length > 1 && !this.blockEvents) 
+      this.zoomOut();
   }
 
   onTouchStart (event) {
-    this.tracing('onTouchStart()');
     this.touching = true;
     this.touchstartX = event.changedTouches[0].screenX;
     this.touchstartY = event.changedTouches[0].screenY;
@@ -622,7 +548,6 @@ class Zumly {
 
   onTouchEnd (event) {
     if (!this.blockEvents) {
-      this.tracing('onTouchEnd()');
       this.touchendX = event.changedTouches[0].screenX;
       this.touchendY = event.changedTouches[0].screenY;
       this.handleGesture(event);
@@ -631,33 +556,28 @@ class Zumly {
 
   handleGesture (event) {
     event.stopPropagation();
-    this.tracing('handleGesture()');
     if (this.touchendX < this.touchstartX - 30) {
       if (this.storedViews.length > 1 && !this.blockEvents) {
-        this.tracing('swipe left');
         this.zoomOut();
       } else {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe left", 'warn');
       }
     }
     if (this.touchendY < this.touchstartY - 10) {
-      if (this.storedViews.length > 1 && !this.blockEvents) {
-        this.tracing('swipe up');
-        // Disabled. In near future enable if Zumly is full screen
-        // this.zoomOut()
-      } else {
+      if (this.storedViews.length > 1 && !this.blockEvents) ; else {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe up", 'warn');
       }
     }
-    if (this.touchendY === this.touchstartY && !this.blockEvents && event.target.classList.contains('zoom-me') && this.touching) {
+    if (this.touchendY === this.touchstartY && !this.blockEvents &&
+      event.target.classList.contains('zoom-me') && this.touching) {
       this.touching = false;
-      this.tracing('tap');
       event.preventDefault();
       this.zoomIn(event.target);
     }
-    if (this.touchendY === this.touchstartY && this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null && this.touching) {
+    if (this.touchendY === this.touchstartY && this.storedViews.length > 1 && 
+      !this.blockEvents && !event.target.classList.contains('zoom-me') && 
+      event.target.closest('.is-current-view') === null && this.touching) {
       this.touching = false;
-      this.tracing('tap');
       this.zoomOut();
     }
   }
