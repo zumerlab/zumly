@@ -68,6 +68,8 @@ export class Zumly {
       this.canvas.addEventListener('touchend', this._onTouchEnd, false)
       this.canvas.addEventListener('keyup', this._onKeyUp, false)
       this.canvas.addEventListener('wheel', this._onWeel, { passive: true })
+     // auto execute
+      this.init()
     }
   }
 
