@@ -117,7 +117,7 @@
             }
           })
 
-          app.init()
+        //  app.init()
 
           // escuchar el zoomlevel y activar el bye
           var left = document.querySelector('.keys.left')
@@ -144,6 +144,40 @@
               } 
             }, 1100);
           }, false)
+          const clearSlashes = path =>
+        path
+          .toString()
+          .replace(/\/$/, '')
+          .replace(/^\//, '')
+
+      const getFragment = () => {
+        var mode = 's'
+        var root = '/'
+        let fragment = ''
+        if (mode === 'history') {
+          // hacerlo facil con path
+         // fragment = clearSlashes(decodeURI(window.location.pathname + window.location.search))
+        // fragment = fragment.replace(/\?(.*)$/, '')
+        // fragment = root !== '/' ? fragment.replace(root, '') : fragment
+        fragment = window.location.pathname
+        }
+        else {
+          const match = window.location.href.match(/#(.*)$/)
+          fragment = match ? match[1] : ''
+        }
+        return clearSlashes(fragment)
+      }
+      
+      console.log(window.location)
+      console.log(window.history)
+      var aver = getFragment().split('/')
+      console.log(aver)
+      var rutas = aver.map((ruta, index)=> {
+          window.history.pushState({}, ruta, window.location.origin + '/'+ aver.slice(- index).join('/'));
+          return `[data-to='${ruta}']`
+       
+      }).slice(1, aver.length)
+      console.log(rutas)
         </script>
     </body>
 </html>

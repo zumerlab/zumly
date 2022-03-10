@@ -29,7 +29,6 @@ export async function renderView (el, canvas, views, init, componentContext) {
       vv.classList.add('is-new-current-view')
       vv.classList.add('has-no-events')
       vv.classList.add('hide')
-      vv.classList.add('performance')
     } else {
       vv.classList.add('is-current-view')
     }
