@@ -8,7 +8,6 @@
   padding: 0;
   perspective: 1000px;
   cursor: zoom-out;
-  contain: strict;
 }
 
 .zumly-canvas:focus {
@@ -17,7 +16,7 @@
 
 .z-view {
   position: absolute;
-  contain: strict;
+  contain: layout;
   will-change: transform, opacity;
 }
 

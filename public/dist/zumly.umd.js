@@ -31,7 +31,7 @@
     }
   }
 
-  var css_248z = "\n.zumly-canvas {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  perspective: 1000px;\n  cursor: zoom-out;\n  contain: strict;\n}\n\n.zumly-canvas:focus {\n  outline: none;\n}\n\n.z-view {\n  position: absolute;\n  contain: strict;\n  will-change: transform, opacity;\n}\n\n.z-view.is-current-view {\n  cursor: default;\n}\n\n.z-view.is-previous-view, .z-view.is-last-view, .z-view.has-no-events  {\n  pointer-events: none;\n  user-select: none;\n}\n\n.z-view.hide {\n  opacity: 0\n}\n\n.zoom-me {\n  cursor: zoom-in;\n}\n";
+  var css_248z = "\n.zumly-canvas {\n  position: absolute;\n  width: 100%;\n  height: 100%;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  perspective: 1000px;\n  cursor: zoom-out;\n}\n\n.zumly-canvas:focus {\n  outline: none;\n}\n\n.z-view {\n  position: absolute;\n  contain: layout;\n  will-change: transform, opacity;\n}\n\n.z-view.is-current-view {\n  cursor: default;\n}\n\n.z-view.is-previous-view, .z-view.is-last-view, .z-view.has-no-events  {\n  pointer-events: none;\n  user-select: none;\n}\n\n.z-view.hide {\n  opacity: 0\n}\n\n.zoom-me {\n  cursor: zoom-in;\n}\n";
   styleInject(css_248z);
 
   async function renderView (el, canvas, views, init, componentContext) {
