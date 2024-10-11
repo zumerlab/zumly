@@ -1,17 +1,41 @@
 import {prepareCSS, setCSSVariables, renderView, notification, checkParameters } from './utils.js'
 
-// window.requestIdleCallback = window.requestIdleCallback || shimIdleCallBack
-
 /**
  * Zumly
  * Powers your apps with a zoomable user interface (ZUI) taste.
  * @class
  */
+
+/**
+ * TO_DO:
+ * 1. Eliminar instancias porque no son necesarias dado que
+ * las css var toman su propio valor en el elementos.
+ * 
+ * 2. Pensar en una forma de actualizar current view coords cuando hay un cambio en view port 
+ * que afecta a las vistas previas. Quizas on Observe sobre los valores css vars de las prev, que actualize a la
+ * current view ??. O,
+ * un observe atado a getCLientBoundingRect() de las previas que dispare el recalculo en vivo de la current.
+ * O sea, ZoomIn, puede que dividirse estre zoomIn y uptadeCoords o algo asi
+ * 
+ * 3. Los events aparte pls
+ * 
+ * 4. trace aparte pls
+ * 
+ * 5. Agregar opciones para:
+ * 5.1. ocultar/mostrar triggered zoom element
+ * 5.2. render view before zoom, placeholder, render after
+ * 
+ * 6. Agregar same level navigation
+ * 
+ * 7. Armar un WC para navegacion tipo mapa
+ * 
+*/
+
 export class Zumly {
   /**
   * Creates a Zumly instance
   * @constructor
-  * @params {Objet} options
+  * @params {Object} options
   * @example
   *  new Zumly({
   *  mount: '.mount',
@@ -136,7 +160,7 @@ export class Zumly {
         ? `instance nº ${this.instance} is active.`
         : `is running! Instance nº ${this.instance} is active. ${this.debug
         ? 'Debug is active, can be deactivate by setting \'debug: false\' when you define the instance.' : ''}
-        More tips & docs at https://zumly.org`}`, 'welcome')
+        More tips & docs at https://github.com/zumerlab/zumly`}`, 'welcome')
     }
   }
 
