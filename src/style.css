@@ -29,14 +29,75 @@
   user-select: none;
 }
 
-.z-view.performance {
+.z-view {
   will-change: transform, opacity;
+  content-visibility: auto;
 }
 
 .z-view.hide {
-  opacity: 0
+  opacity: 0;
+  content-visibility: hidden;
 }
 
 .zoom-me {
   cursor: zoom-in;
+}
+
+.zoom-current-view-reverse {
+  animation-name: zoom-current-view;
+  animation-duration: var(--zoom-duration);
+  animation-timing-function: var(--zoom-ease);
+  animation-direction: reverse;
+}
+.zoom-current-view {
+  animation-name: zoom-current-view;
+  animation-duration: var(--zoom-duration);
+  animation-timing-function: var(--zoom-ease);
+}
+@keyframes zoom-current-view {
+  0% {
+    transform: var(--current-view-transform-start);
+  }
+  100% {
+    transform: var(--current-view-transform-end);
+  }
+}
+
+.zoom-previous-view {
+  animation-name: zoom-previous-view;
+  animation-duration: var(--zoom-duration);
+  animation-timing-function: var(--zoom-ease);
+}
+.zoom-previous-view-reverse {
+  animation-name: zoom-previous-view;
+  animation-duration: var(--zoom-duration);
+  animation-timing-function: var(--zoom-ease);
+  animation-direction: reverse;
+}
+@keyframes zoom-previous-view {
+  0% {
+    transform: var(--previous-view-transform-start);
+  }
+  100% {
+    transform: var(--previous-view-transform-end);
+  }
+}
+.zoom-last-view-reverse {
+  animation-name: zoom-last-view;
+  animation-duration: var(--zoom-duration);
+  animation-timing-function: var(--zoom-ease);
+  animation-direction: reverse;
+}
+.zoom-last-view {
+  animation-name: zoom-last-view;
+  animation-duration: var(--zoom-duration);
+  animation-timing-function: var(--zoom-ease);
+}
+@keyframes zoom-last-view {
+  0% {
+    transform: var(--last-view-transform-start);
+  }
+  100% {
+    transform: var(--last-view-transform-end);
+  }
 }

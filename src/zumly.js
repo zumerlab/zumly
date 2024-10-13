@@ -1,4 +1,4 @@
-import {prepareCSS, setCSSVariables, renderView, notification, checkParameters } from './utils.js'
+import {renderView, notification, checkParameters } from './utils.js'
 
 /**
  * Zumly
@@ -6,30 +6,6 @@ import {prepareCSS, setCSSVariables, renderView, notification, checkParameters }
  * @class
  */
 
-/**
- * TO_DO:
- * 1. Eliminar instancias porque no son necesarias dado que
- * las css var toman su propio valor en el elementos.
- * 
- * 2. Pensar en una forma de actualizar current view coords cuando hay un cambio en view port 
- * que afecta a las vistas previas. Quizas on Observe sobre los valores css vars de las prev, que actualize a la
- * current view ??. O,
- * un observe atado a getCLientBoundingRect() de las previas que dispare el recalculo en vivo de la current.
- * O sea, ZoomIn, puede que dividirse estre zoomIn y uptadeCoords o algo asi
- * 
- * 3. Los events aparte pls
- * 
- * 4. trace aparte pls
- * 
- * 5. Agregar opciones para:
- * 5.1. ocultar/mostrar triggered zoom element
- * 5.2. render view before zoom, placeholder, render after
- * 
- * 6. Agregar same level navigation
- * 
- * 7. Armar un WC para navegacion tipo mapa
- * 
-*/
 
 export class Zumly {
   /**
@@ -49,14 +25,14 @@ export class Zumly {
   */
   constructor (options) {
     // Internal state:
-    // Register global instances of Zumly
-    this.instance = Zumly.counter
     // Store snapshots of each zoom transition
     this.storedViews = []
     // Show current zoom level properties
     this.currentStage = null
     // Store the scale of previous zoom transition
     this.storedPreviousScale = [1]
+    // Debugging?
+    this.debug = false
     // Array of events useful for debugging
     this.trace = []
     // Deactive events during transtions
@@ -100,6 +76,7 @@ export class Zumly {
   storeViews (data) {
     this.tracing('storedViews()')
     this.storedViews.push(data)
+    console.log(data)
   }
 
   setPreviousScale (scale) {
@@ -119,14 +96,6 @@ export class Zumly {
     } 
   }
 
-  /**
-   * Private methods
-   */
-  static get counter () {
-    Zumly._counter = (Zumly._counter || 0) + 1
-    return Zumly._counter
-  }
-
   notify (msg, type) {
     return notification(this.debug, msg, type)
   }
@@ -142,7 +111,7 @@ export class Zumly {
     if (this.options) {
       // add instance style
       this.tracing('init()')
-      prepareCSS(this.instance)
+      //prepareCSS(this.instance)
       await renderView(this.initialView, this.canvas, this.views, 'init', this.componentContext)
       // add to storage. OPTIMIZAR
       this.storeViews({
@@ -155,12 +124,6 @@ export class Zumly {
           }
         }]
       })
-      //
-      this.notify(`${this.instance > 1
-        ? `instance nº ${this.instance} is active.`
-        : `is running! Instance nº ${this.instance} is active. ${this.debug
-        ? 'Debug is active, can be deactivate by setting \'debug: false\' when you define the instance.' : ''}
-        More tips & docs at https://github.com/zumerlab/zumly`}`, 'welcome')
     }
   }
 
@@ -169,7 +132,6 @@ export class Zumly {
    */
   async zoomIn (el) {
     this.tracing('zoomIn()')
-    var instance = this.instance
     const canvas = this.canvas
     const coordenadasCanvas = canvas.getBoundingClientRect()
     var offsetX = coordenadasCanvas.left
@@ -190,6 +152,10 @@ export class Zumly {
       var previousView = canvas.querySelector('.is-current-view')
       var lastView = canvas.querySelector('.is-previous-view')
       var removeView = canvas.querySelector('.is-last-view')
+      currentView.style.contentVisibility = 'hidden';
+      previousView.style.contentVisibility = 'hidden';
+      if (lastView !== null) lastView.style.contentVisibility = 'hidden';
+      if (removeView !== null) removeView.style.contentVisibility = 'hidden';
       if (removeView !== null) canvas.removeChild(removeView)
       // do changes
       const cc = currentView.getBoundingClientRect()
@@ -216,10 +182,10 @@ export class Zumly {
       var transformCurrentView0 = `translate(${coordenadasEl.x - offsetX + (coordenadasEl.width - cc.width * laScalaInv) / 2}px, ${coordenadasEl.y - offsetY + (coordenadasEl.height - cc.height * laScalaInv) / 2}px) scale(${laScalaInv})`
       currentView.style.transform = transformCurrentView0
       //
-      previousView.classList.add('is-previous-view')
-      previousView.classList.remove('is-current-view')
+      previousView.classList.replace('is-current-view', 'is-previous-view')
       const coordenadasPreviousView = previousView.getBoundingClientRect()
       // PREVIOUS VIEW EXACTAMENTE ONDE ESTANA ANTES COMO CURRENT
+      // usar . style. setProperty('--demo-color-change', '#f44336')//
       var transformPreviousView0 = previousView.style.transform
       previousView.style.transformOrigin = `${coordenadasEl.x + coordenadasEl.width / 2 - coordenadasPreviousView.x}px ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px`
   
@@ -235,8 +201,7 @@ export class Zumly {
       var transformCurrentView1 = `translate(${newcoordenadasEl.x - offsetX + (newcoordenadasEl.width - cc.width) / 2}px, ${newcoordenadasEl.y - offsetY + (newcoordenadasEl.height - cc.height) / 2}px)`
   
       if (lastView !== null) {
-        lastView.classList.remove('is-previous-view')
-        lastView.classList.add('is-last-view')
+        lastView.classList.replace('is-previous-view', 'is-last-view')
         var transformLastView0 = lastView.style.transform
         var newcoordenadasPV = previousView.getBoundingClientRect()
         lastView.style.transform = `translate(${x - offsetX}px, ${y - offsetY}px) scale(${laScala * preScale})`
@@ -311,9 +276,6 @@ export class Zumly {
       this.currentStage = this.storedViews[this.storedViews.length - 1]
       // animation
       this.tracing('setCSSVariables()')
-      setCSSVariables('zoomIn', this.currentStage, this.instance)
-      previousView.classList.add('performance')
-      if (lastView !== null) lastView.classList.add('performance')
       //
       currentView.classList.remove('hide')
       currentView.addEventListener('animationstart', this._onZoomInHandlerStart)
@@ -321,10 +283,28 @@ export class Zumly {
       previousView.addEventListener('animationend', this._onZoomInHandlerEnd)
       if (lastView !== null) lastView.addEventListener('animationend', this._onZoomInHandlerEnd)
       //
+      currentView.style.setProperty('--zoom-duration', duration)
+      currentView.style.setProperty('--zoom-ease', ease)
+      currentView.style.setProperty('--current-view-transform-start', transformCurrentView0)
+      currentView.style.setProperty('--current-view-transform-end', transformCurrentView1)
+
+      previousView.style.setProperty('--zoom-duration', duration)
+      previousView.style.setProperty('--zoom-ease', ease)
+      previousView.style.setProperty('--previous-view-transform-start', transformPreviousView0)
+      previousView.style.setProperty('--previous-view-transform-end', transformPreviousView1)
+      if (lastView !== null)  {
+        lastView.style.setProperty('--zoom-duration', duration)
+        lastView.style.setProperty('--zoom-ease', ease)
+        lastView.style.setProperty('--last-view-transform-start', transformLastView0)
+        lastView.style.setProperty('--last-view-transform-end', transformLastView1)
+      }
       
-      currentView.classList.add(`zoom-current-view-${instance}`)
-      previousView.classList.add(`zoom-previous-view-${instance}`)
-      if (lastView !== null) lastView.classList.add(`zoom-last-view-${instance}`)
+      currentView.style.contentVisibility = 'auto';
+      previousView.style.contentVisibility = 'auto';
+      if (lastView !== null) lastView.style.contentVisibility = 'auto';
+      currentView.classList.add(`zoom-current-view`)
+      previousView.classList.add(`zoom-previous-view`)
+      if (lastView !== null) lastView.classList.add(`zoom-last-view`)
       
     }
 
@@ -334,7 +314,7 @@ export class Zumly {
     this.tracing('zoomOut()')
     this.blockEvents = true
     this.storedPreviousScale.pop()
-    var instance = this.instance
+    //var instance = this.instance
     const canvas = this.canvas
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     const reAttachView = this.currentStage.views[3]
@@ -343,20 +323,13 @@ export class Zumly {
     var lastView = canvas.querySelector('.is-last-view')
     //
     this.tracing('setCSSVariables()')
-    setCSSVariables('zoomOut', this.currentStage, this.instance)
-    //
-    //
-    // currentView.classList.remove('performance')
-    //
+   
     previousView.querySelector('.zoomed').classList.remove('zoomed')
-    previousView.classList.remove('is-previous-view')
-    previousView.classList.add('is-current-view')
-    // previousView.classList.remove('performance')
-    //
+    previousView.classList.replace('is-previous-view','is-current-view')
+    
+    
     if (lastView !== null) {
-      lastView.classList.add('performance')
-      lastView.classList.add('is-previous-view')
-      lastView.classList.remove('is-last-view')
+      lastView.classList.replace('is-last-view','is-previous-view')
       lastView.classList.remove('hide')
     }
     //
@@ -364,6 +337,7 @@ export class Zumly {
       // aca hay que 
       canvas.prepend(reAttachView.viewName)
       var newlastView = canvas.querySelector('.z-view:first-child')
+      newlastView.style.contentVisibility = 'auto'
       newlastView.classList.add('hide')
     }
     //
@@ -372,9 +346,10 @@ export class Zumly {
     previousView.addEventListener('animationend', this._onZoomOutHandlerEnd)
     if (lastView !== null) lastView.addEventListener('animationend', this._onZoomOutHandlerEnd)
     //
-    currentView.classList.add(`zoom-current-view-${instance}`)
-    previousView.classList.add(`zoom-previous-view-${instance}`)
-    if (lastView !== null) lastView.classList.add(`zoom-last-view-${instance}`)
+
+    currentView.classList.add(`zoom-current-view-reverse`)
+    previousView.classList.add(`zoom-previous-view-reverse`)
+    if (lastView !== null) lastView.classList.add(`zoom-last-view-reverse`)
 
     this.storedViews.pop()
   }
@@ -489,7 +464,7 @@ export class Zumly {
     var currentZoomLevel = this.currentStage
     element.removeEventListener('animationend', this._onZoomOutHandlerEnd)
     // current
-    if (element.classList.contains(`zoom-current-view-${this.instance}`)) {
+    if (element.classList.contains(`zoom-current-view-reverse`)) {
       try {
         this.canvas.removeChild(element)  
       } catch(e) {
@@ -505,21 +480,19 @@ export class Zumly {
       
       this.blockEvents = false
     }
-    if (element.classList.contains(`zoom-previous-view-${this.instance}`)) {
+    if (element.classList.contains(`zoom-previous-view-reverse`)) {
       var origin = currentZoomLevel.views[1].backwardState.origin
       var transform = currentZoomLevel.views[1].backwardState.transform
-      element.classList.remove('performance')
-      element.classList.remove(`zoom-previous-view-${this.instance}`)
+      element.classList.remove(`zoom-previous-view-reverse`)
       element.style.transformOrigin = `0 0`
       element.style.transform = transform
       //element.style.filter = 'none'
       if (currentZoomLevel.views.length === 2) this.tracing('ended')
     }
-    if (element.classList.contains(`zoom-last-view-${this.instance}`)) {
+    if (element.classList.contains(`zoom-last-view-reverse`)) {
       origin = currentZoomLevel.views[2].backwardState.origin
       transform = currentZoomLevel.views[2].backwardState.transform
-      element.classList.remove('performance')
-      element.classList.remove(`zoom-last-view-${this.instance}`)
+      element.classList.remove(`zoom-last-view-reverse`)
       element.style.transformOrigin = origin
       element.style.transform = transform
       if (currentZoomLevel.views.length > 2) this.tracing('ended')
@@ -541,8 +514,8 @@ export class Zumly {
       var viewName = 'current-view'
       var transform = currentZoomLevel.views[0].forwardState.transform
       var origin = currentZoomLevel.views[0].forwardState.origin
-      element.classList.remove('is-new-current-view')
-      element.classList.add('is-current-view')
+      element.classList.replace('is-new-current-view', 'is-current-view')
+
     } else if (event.target.classList.contains('is-previous-view')) {
       viewName = 'previous-view'
       transform = currentZoomLevel.views[1].forwardState.transform
@@ -554,9 +527,7 @@ export class Zumly {
       origin = currentZoomLevel.views[2].forwardState.origin
       if (currentZoomLevel.views.length > 2) this.tracing('ended')
     }
-    element.classList.remove('performance')
-    element.classList.remove(`zoom-${viewName}-${this.instance}`)
-    element.classList.remove('has-no-events')
+    element.classList.remove(`zoom-${viewName}`, 'has-no-events')
     element.style.transformOrigin = origin
     element.style.transform = transform
     // element.style.filter = window.getComputedStyle(document.documentElement).getPropertyValue(`--${viewName}-filter-end-${this.instance}`)

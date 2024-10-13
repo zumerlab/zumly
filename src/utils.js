@@ -54,62 +54,6 @@ function validate (instance, name, value, type, options = { isRequired: false, d
   }
 }
 
-export function prepareCSS (instance) {
-  var instanceStyle = document.createElement('style')
-  const views = ['current-view', 'previous-view', 'last-view']
-  let result = ''
-  views.map(view => {
-    result += `
-  .zoom-${view}-${instance} {
-    animation-name: zoom-${view}-${instance};
-    animation-duration: var(--zoom-duration-${instance});
-    animation-timing-function: var(--zoom-ease-${instance});
-  }
-  @keyframes zoom-${view}-${instance} {
-    0% {
-      transform: var(--${view}-transform-start-${instance});
-    }
-    100% {
-      transform: var(--${view}-transform-end-${instance});
-    }
-  }
-  `
-  })
-  instanceStyle.innerHTML = result
-  document.head.appendChild(instanceStyle)
-}
-
-export function setCSSVariables (transition, currentStage, instance) {
-  const viewStage = currentStage
-  const current = viewStage.views[0]
-  const previous = viewStage.views[1]
-  const last = viewStage.views[2]
-  const views = [{ name: 'current-view', stage: current }, { name: 'previous-view', stage: previous }, { name: 'last-view', stage: last }]
-  views.map(view => {
-    if (transition === 'zoomOut' && view.stage !== undefined) {
-      document.documentElement.style.setProperty(`--${view.name}-transform-start-${instance}`, view.stage.forwardState.transform)
-      document.documentElement.style.setProperty(`--${view.name}-transform-end-${instance}`, view.stage.backwardState.transform)
-      
-     
-      if (view.name === 'current-view') {
-        document.documentElement.style.setProperty(`--zoom-duration-${instance}`, view.stage.backwardState.duration)
-        document.documentElement.style.setProperty(`--zoom-ease-${instance}`, view.stage.backwardState.ease)
-       
-      }
-    }
-    if (transition === 'zoomIn' && view.stage !== undefined) {
-      document.documentElement.style.setProperty(`--${view.name}-transform-start-${instance}`, view.stage.backwardState.transform)
-      document.documentElement.style.setProperty(`--${view.name}-transform-end-${instance}`, view.stage.forwardState.transform)
-      
-    
-      if (view.name === 'current-view') {
-        document.documentElement.style.setProperty(`--zoom-duration-${instance}`, view.stage.forwardState.duration)
-        document.documentElement.style.setProperty(`--zoom-ease-${instance}`, view.stage.forwardState.ease)
-    }
-  }
-  })
-}
-
 export async function renderView (el, canvas, views, init, componentContext) {
   // TODO ESPERAR A QUE RENDER Y MOUNTED ESTEN TERMINADAS
   // RETURN ELEMENT
@@ -141,7 +85,6 @@ export async function renderView (el, canvas, views, init, componentContext) {
       vv.classList.add('is-new-current-view')
       vv.classList.add('has-no-events')
       vv.classList.add('hide')
-      vv.classList.add('performance')
     } else {
       vv.classList.add('is-current-view')
     }
