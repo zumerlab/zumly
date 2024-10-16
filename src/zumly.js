@@ -219,9 +219,26 @@ export class Zumly {
         var zoomedElementBounds = zoomedElement.getBoundingClientRect()
         previousToLastView.style.transform = previousToLastViewTransformStart
         currentToPreviousView.style.transform = currentToPreviousViewTransformStart
-        var reDoCurrentToPreviousViewBounds = currentToPreviousView.getBoundingClientRect()
-        let x4 = canvasBounds.width / 2 - triggeredElementBounds.width / 2 - triggeredElementBounds.x + (reDoCurrentToPreviousViewBounds.x - zoomedElementBounds.x) + reDoCurrentToPreviousViewBounds.x - canvasOffsetX + (reDoCurrentToPreviousViewBounds.width - zoomedElementBounds.width) / 2
-        let y4 = canvasBounds.height / 2 - triggeredElementBounds.height / 2 - triggeredElementBounds.y + (reDoCurrentToPreviousViewBounds.y - zoomedElementBounds.y) + reDoCurrentToPreviousViewBounds.y - canvasOffsetY +
+        var reReDoCurrentToPreviousViewBounds = currentToPreviousView.getBoundingClientRect()
+       
+        let x4 = 
+        canvasBounds.width / 2 
+        - 
+        triggeredElementBounds.width / 2 
+        - 
+        triggeredElementBounds.x 
+        + 
+        (reReDoCurrentToPreviousViewBounds.x - zoomedElementBounds.x) 
+        +
+         reDoCurrentToPreviousViewBounds.x
+          - 
+          canvasOffsetX 
+          + 
+          (reDoCurrentToPreviousViewBounds.width 
+            - 
+            zoomedElementBounds.width) / 2
+        
+        let y4 = canvasBounds.height / 2 - triggeredElementBounds.height / 2 - triggeredElementBounds.y + (reReDoCurrentToPreviousViewBounds.y - zoomedElementBounds.y) + reDoCurrentToPreviousViewBounds.y - canvasOffsetY +
         (reDoCurrentToPreviousViewBounds.height - zoomedElementBounds.height) / 2
         var previousToLastViewTransformEnd = `translate(${x4}px, ${y4}px) scale(${computedScale * previousStoredScale})`
       } else {
