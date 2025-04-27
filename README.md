@@ -12,6 +12,11 @@
   <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg"></a>
 </p>
 
+## Status
+
+Zumly is being developed from strach (again :)). The code in this current branch is outdated.
+
+
 ## Overview
 
 Zumly is a frontend library for creating zoomable user interfaces ([ZUI](https://en.wikipedia.org/wiki/Zooming_user_interface)). Instead of hyperlinks and windows, Zumly uses zooming as a metaphor for browsing through information. This way it offers an infinite virtual canvas in which elements can be zoomed themselves to reveal further details. 
