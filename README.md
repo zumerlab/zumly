@@ -14,7 +14,7 @@
 
 ## Status
 
-Zumly is being developed from strach (again :)). The code in this current branch is outdated.
+Zumly is being developed from strach (again :)). The code in this repo is outdated. 
 
 
 ## Overview
