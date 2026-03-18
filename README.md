@@ -14,7 +14,7 @@
 
 ## Status
 
-Zumly is under active development. The library is usable in production with a stable core API; view preloading, prefetch on hover, and multiple view sources (HTML, URL, async functions, web components) are supported. See [docs/MEJORAS.md](docs/MEJORAS.md) for improvement topics and roadmap.
+Zumly is under active development. The library is usable in production with a stable core API; view preloading, prefetch on hover, and multiple view sources (HTML, URL, async functions, web components) are supported. See [docs/roadMap.md](docs/roadMap.md) for improvement topics and roadmap.
 
 ## Overview
 
@@ -193,7 +193,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 - Router integration (e.g. URL sync)
 - Recalculate zoom on window resize
 
-Details and more topics: [docs/MEJORAS.md](docs/MEJORAS.md).
+Details and more topics: [docs/roadMap.md](docs/roadMap.md).
 
 ## Community
 
