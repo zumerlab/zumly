@@ -1,16 +1,4 @@
 
-function checkArray (array) {
-  // remove duplicates and map
-  if (array !== undefined && array[0].toLowerCase() === 'none') {
-    return true
-  }
-  if (array !== undefined && array.length > 0) {
-    const unique = array => [...new Set(array)]
-    const lowerArray = array.map(e => e.toLowerCase())
-    return unique(lowerArray).every(value => ['blur', 'sepia', 'saturate'].indexOf(value) !== -1)
-  }
-}
-
 function setFx (values) {
   var start = ''
   var end = ''
@@ -20,37 +8,6 @@ function setFx (values) {
       end += `${effect.toLowerCase() === 'blur' ? 'blur(0.8px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(5) ' : effect.toLowerCase() === 'saturate' ? 'saturate(8) ' : 'none'}`
     })
     return [start, end]
-  }
-}
-function assignProperty (instance, propertiesToAdd, value) {
-  instance[propertiesToAdd] = value
-}
-
-function validate (instance, name, value, type, options = { isRequired: false, defaultValue: 0, allowedValues: 0, hasValidation: 0, hasAssignFunction: 0 }) {
-  var msg = `'${name}' property is required when instance is defined`
-  var msg1 = `'${name}' property has problems`
-  var checkValue = value !== undefined
-  var checkDefault = options.defaultValue !== undefined
-  var checkCustomValidation = options.hasValidation !== undefined
-  var checkCustomAssign = options.hasAssignFunction !== undefined
-  if (type === 'string' || type === 'object' || type === 'boolean') {
-    var checkTypeof = typeof value === type // eslint-disable-line
-    // value = checkTypeof && type === 'string' ? value.toLowerCase() : value
-  } else if (type === 'array') {
-    checkTypeof = Array.isArray(value)
-  }
-  if (options.isRequired) {
-    checkValue && checkTypeof ? assignProperty(instance, name, value) : notification(false, msg, 'error')
-  }
-  if (checkDefault && !checkCustomValidation && !checkCustomAssign) {
-    checkValue && checkTypeof ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg1, 'error')
-  }
-  if (checkCustomValidation && checkDefault && !checkCustomAssign) {
-    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, value) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg1, 'error')
-  }
-  // console.log(name, checkCustomValidation, checkDefault, checkCustomAssign)
-  if (checkCustomValidation && checkDefault && checkCustomAssign) {
-    checkValue && checkTypeof && options.hasValidation ? assignProperty(instance, name, options.hasAssignFunction) : value === undefined ? assignProperty(instance, name, options.defaultValue) : notification(false, msg1, 'error')
   }
 }
 
@@ -142,40 +99,66 @@ export function notification (debug, msg, type) {
 }
 
 export function checkParameters (parameters, instance) {
-  // First check if options are provided
-  if (parameters && typeof parameters === 'object') {
-    assignProperty(instance, 'options', true)
-    // Then check its properties
-    // mount property. String DOM element. Required
-    validate(instance, 'mount', parameters.mount, 'string', { isRequired: true })
-    // initialView property. Strng view name. Required
-    validate(instance, 'initialView', parameters.initialView, 'string', { isRequired: true })
-    // views property. Object with views. Required
-    validate(instance, 'views', parameters.views, 'object', { isRequired: true })
-    // preload property. Array of view names to resolve on init. Optional.
-    validate(instance, 'preload', parameters.preload, 'array', { isRequired: false, defaultValue: [] })
-    // debug property. Boolean. Optional. Default false
-    validate(instance, 'debug', parameters.debug, 'boolean', { defaultValue: false })
-    // Svelte component context
-    validate(instance, 'componentContext', parameters.componentContext, 'object', { isRequired: false, defaultValue: new Map() })
-    // Check transtions
-    if (parameters.transitions && typeof parameters.transitions === 'object') {
-      // value exist; type, allowed, deafult
-      validate(instance, 'cover', parameters.transitions.cover, 'string', { defaultValue: 'width', hasValidation: () => { ['height', 'width'].indexOf(parameters.transitions.cover.toLowerCase()) !== -1 } }) // eslint-disable-line
-      // value, type, , default
-      validate(instance, 'duration', parameters.transitions.duration, 'string', { defaultValue: '1s' })
-      // value, type, ,default
-      validate(instance, 'ease', parameters.transitions.ease, 'string', { defaultValue: 'ease-in-out' })
-      // value, type, custom validation, custom asignament, default
-      validate(instance, 'effects', parameters.transitions.effects, 'array', { defaultValue: ['none', 'none'], hasValidation: checkArray(parameters.transitions.effects), hasAssignFunction: setFx(parameters.transitions.effects) })
-    } else {
-      // assign deafult values
-      assignProperty(instance, 'cover', 'width')
-      assignProperty(instance, 'duration', '1s')
-      assignProperty(instance, 'ease', 'ease-in-out')
-      assignProperty(instance, 'effects', ['none', 'none'])
-    }
-  } else {
+  // Minimal, explicit normalization with safe defaults.
+  // Strictness: invalid values warn/error and fall back to safe defaults.
+  if (!parameters || typeof parameters !== 'object') {
     notification(false, '\'options\' object has to be provided when instance is defined', 'error')
+    return
+  }
+
+  instance.options = true
+
+  // Required
+  if (typeof parameters.mount === 'string') instance.mount = parameters.mount
+  else notification(false, '\'mount\' must be a string selector', 'error')
+
+  if (typeof parameters.initialView === 'string') instance.initialView = parameters.initialView
+  else notification(false, '\'initialView\' must be a string', 'error')
+
+  if (parameters.views && typeof parameters.views === 'object') instance.views = parameters.views
+  else notification(false, '\'views\' must be an object', 'error')
+
+  // Optional
+  instance.preload = Array.isArray(parameters.preload) ? parameters.preload : []
+  instance.debug = typeof parameters.debug === 'boolean' ? parameters.debug : false
+  instance.componentContext = (parameters.componentContext && typeof parameters.componentContext === 'object') ? parameters.componentContext : new Map()
+
+  // Transitions normalization
+  const t = parameters.transitions && typeof parameters.transitions === 'object' ? parameters.transitions : null
+
+  const coverIn = t && t.cover
+  const coverLower = typeof coverIn === 'string' ? coverIn.toLowerCase() : null
+  const coverOk = coverLower === 'width' || coverLower === 'height'
+  instance.cover = coverOk ? coverLower : 'width'
+  if (!coverOk && t && coverIn !== undefined) {
+    notification(false, '\'transitions.cover\' must be either \"width\" or \"height\". Falling back to \"width\".', 'warn')
+  }
+
+  instance.duration = (t && typeof t.duration === 'string') ? t.duration : '1s'
+  instance.ease = (t && typeof t.ease === 'string') ? t.ease : 'ease-in-out'
+
+  // Effects: used by setFx() to produce filter start/end strings.
+  // If transitions.effects is missing/invalid -> ['none','none'].
+  if (!t || t.effects === undefined) {
+    instance.effects = ['none', 'none']
+  } else {
+    const effectsInput = t.effects
+    if (!Array.isArray(effectsInput) || effectsInput.length === 0 || !effectsInput.every(e => typeof e === 'string')) {
+      notification(false, '\'transitions.effects\' must be an array of strings: blur|sepia|saturate (or [\"none\",...]). Falling back to [\"none\",\"none\"].', 'warn')
+      instance.effects = ['none', 'none']
+    } else {
+      const effectsLower = effectsInput.map(e => e.toLowerCase())
+      const firstIsNone = effectsLower[0] === 'none'
+      const allowed = ['blur', 'sepia', 'saturate']
+      const valid = firstIsNone || [...new Set(effectsLower)].every(v => allowed.indexOf(v) !== -1)
+      if (!valid) {
+        notification(false, '\'transitions.effects\' contains invalid values. Falling back to [\"none\",\"none\"].', 'warn')
+        instance.effects = ['none', 'none']
+      } else {
+        instance.effects = setFx(effectsLower)
+        // setFx() can return undefined only if effectsLower is undefined (we guard above).
+        if (!instance.effects) instance.effects = ['none', 'none']
+      }
+    }
   }
 }

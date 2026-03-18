@@ -182,9 +182,14 @@ export class Zumly {
       var filterOut = this.effects[1]
       var cover = this.cover
   
+      // Ensure both branches initialize the same variables.
+      // Without this, `cover: 'height'` can end up writing to undeclared globals.
+      var laScala
+      var laScalaInv
+
       if (cover === 'width') {
-        var laScala = scale
-        var laScalaInv = scaleInv
+        laScala = scale
+        laScalaInv = scaleInv
       } else if (cover === 'height') {
         laScala = scaleh
         laScalaInv = scaleInvh

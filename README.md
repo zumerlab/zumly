@@ -44,7 +44,7 @@ Download the built files from [unpkg.com/zumly](https://unpkg.com/zumly/) (see t
 
 ## Setup
 
-### ES modules
+### Browser bundle (global)
 
 1. Add the CSS in your `<head>`:
 
@@ -53,24 +53,10 @@ Download the built files from [unpkg.com/zumly](https://unpkg.com/zumly/) (see t
 <!-- or https://unpkg.com/zumly@0.9.11/dist/zumly.css -->
 ```
 
-2. Import Zumly as an ES module:
+2. Load the JS bundle (it exposes `window.Zumly`):
 
 ```html
-<script type="module">
-  import Zumly from "zumly/dist/zumly.mjs"
-  // or "https://unpkg.com/zumly@0.9.11/dist/zumly.mjs"
-</script>
-```
-
-### UMD
-
-1. Add the CSS in your `<head>` (same as above).
-
-2. Load the UMD bundle:
-
-```html
-<script src="zumly/dist/zumly.umd.js"></script>
-<!-- or https://unpkg.com/zumly -->
+<script src="zumly/dist/zumly.js"></script>
 ```
 
 ## Hello World
@@ -127,7 +113,7 @@ await app.init();
 ```js
 transitions: {
   effects: ['blur', 'sepia', 'saturate'],  // background view effects
-  cover: 'width',   // or 'height' — how the new view fills the trigger
+  cover: 'width',   // or 'height' — how the previous view scales to cover the trigger
   duration: '1s',
   ease: 'ease-in-out',
 }

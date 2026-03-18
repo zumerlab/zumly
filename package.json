@@ -23,10 +23,11 @@
   ],
   "main": "dist/zumly.js",
   "scripts": {
-    "compile": "npx @zumerbox/build -n zumly -j src/entry.js -s src/style.css",
+    "compile": "node esbuild.config.mjs",
     "build": "npm run compile && npm pack",
     "dev": "npm run compile && npx serve public -p 9090",
     "test": "npx vitest run --browser.headless --reporter=verbose",
+    "test:unit": "npx vitest run __tests__/utils.test.js --reporter=verbose",
     "test:coverage": "npx vitest run --browser.headless --coverage",
     "test:install-browsers": "npx playwright install chromium",
     "bump": "npx @zumerbox/bump && npx @zumerbox/changelog",
@@ -37,6 +38,7 @@
     "README.md"
   ],
   "devDependencies": {
+    "esbuild": "^0.24.0",
     "@vitest/browser": "^3.1.2",
     "@vitest/coverage-v8": "^3.1.2",
     "playwright": "^1.52.0",
