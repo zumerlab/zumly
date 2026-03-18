@@ -216,6 +216,14 @@ This will regenerate the build files each time a source file is changed and serv
 
 ### Running tests
 
+Tests use [Vitest](https://vitest.dev/) with browser (Playwright), same as [SnapDOM](https://github.com/zumerlab/snapdom). The first time (or after updating Playwright), install the browser:
+
+```sh
+npm run test:install-browsers
+```
+
+Then run tests:
+
 ```sh
 npm run test
 

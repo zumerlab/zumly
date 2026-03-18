@@ -54,50 +54,76 @@ function validate (instance, name, value, type, options = { isRequired: false, d
   }
 }
 
+/**
+ * Prepare a resolved view node and insert it into the canvas.
+ * Used when ViewPrefetcher is in use. Ensures .z-view, dataset.viewName, classes, and mounted().
+ * @returns {Promise<HTMLElement>} The inserted node.
+ */
+export async function prepareAndInsertView (node, viewName, canvas, isInit, views, componentContext) {
+  if (!node || !node.classList) {
+    const wrap = document.createElement('div')
+    wrap.classList.add('z-view')
+    if (node) wrap.appendChild(node)
+    node = wrap
+  } else if (!node.classList.contains('z-view')) {
+    node.classList.add('z-view')
+  }
+  node.dataset.viewName = viewName
+  node.style.transformOrigin = '0 0'
+  if (isInit) {
+    node.classList.add('is-current-view')
+  } else {
+    node.classList.add('is-new-current-view', 'has-no-events', 'hide')
+  }
+  canvas.append(node)
+  if (typeof views[viewName] === 'object' && typeof views[viewName].mounted === 'function') {
+    await views[viewName].mounted()
+  }
+  return node
+}
+
+/**
+ * @deprecated Prefer ViewPrefetcher.get() + prepareAndInsertView(). Kept for backward compatibility.
+ */
 export async function renderView (el, canvas, views, init, componentContext) {
-  // TODO ESPERAR A QUE RENDER Y MOUNTED ESTEN TERMINADAS
-  // RETURN ELEMENT
-    var viewName = null
-    init ? viewName = el : viewName = el.dataset.to
-    var newView = document.createElement('template')
-    
-    if(typeof views[viewName] === 'object' && views[viewName].render !== undefined) {      
-      // makes optional de 'render' function
-      newView.innerHTML = await views[viewName].render()
-    } else if(typeof views[viewName] === 'function') {
-      // view is a component constructor
-      var newViewInner = document.createElement('div')
-      new views[viewName]({ 
-        target: newViewInner, 
-        context: componentContext,
-        props: el.dataset
-      })
-      newViewInner.classList.add('z-view')
-      newView.content.appendChild(newViewInner)      
-    } else {
-      // view is plain HTML
-      newView.innerHTML = views[viewName]
-    }
+  var viewName = null
+  init ? viewName = el : viewName = el.dataset.to
+  var newView = document.createElement('template')
 
-    let vv = newView.content.querySelector('.z-view')
+  if (typeof views[viewName] === 'object' && views[viewName].render !== undefined) {
+    newView.innerHTML = await views[viewName].render()
+  } else if (typeof views[viewName] === 'function') {
+    var newViewInner = document.createElement('div')
+    new views[viewName]({
+      target: newViewInner,
+      context: componentContext,
+      props: el.dataset
+    })
+    newViewInner.classList.add('z-view')
+    newView.content.appendChild(newViewInner)
+  } else {
+    newView.innerHTML = views[viewName]
+  }
 
-    if (!init) {
-      vv.classList.add('is-new-current-view')
-      vv.classList.add('has-no-events')
-      vv.classList.add('hide')
-    } else {
-      vv.classList.add('is-current-view')
-    }
-    vv.style.transformOrigin = '0 0'
-    vv.dataset.viewName = viewName
-    
-    canvas.append(newView.content)
-    // makes optional de 'mounted' hook
-    if (typeof views[viewName] === 'object' 
-    && views[viewName].mounted !== undefined 
-    && typeof views[viewName].mounted() === 'function') await views[viewName].mounted()
+  let vv = newView.content.querySelector('.z-view')
+  if (!vv) vv = newView.content.firstElementChild
+  if (!vv) throw new Error(`Zumly: view "${viewName}" produced no element`)
 
-    return init ? canvas.querySelector('.is-current-view') : canvas.querySelector('.is-new-current-view')
+  if (!vv.classList.contains('z-view')) vv.classList.add('z-view')
+  if (!init) {
+    vv.classList.add('is-new-current-view', 'has-no-events', 'hide')
+  } else {
+    vv.classList.add('is-current-view')
+  }
+  vv.style.transformOrigin = '0 0'
+  vv.dataset.viewName = viewName
+
+  canvas.append(newView.content)
+  if (typeof views[viewName] === 'object' && typeof views[viewName].mounted === 'function') {
+    await views[viewName].mounted()
+  }
+
+  return init ? canvas.querySelector('.is-current-view') : canvas.querySelector('.is-new-current-view')
 }
 
 export function notification (debug, msg, type) {
@@ -126,6 +152,8 @@ export function checkParameters (parameters, instance) {
     validate(instance, 'initialView', parameters.initialView, 'string', { isRequired: true })
     // views property. Object with views. Required
     validate(instance, 'views', parameters.views, 'object', { isRequired: true })
+    // preload property. Array of view names to resolve on init. Optional.
+    validate(instance, 'preload', parameters.preload, 'array', { isRequired: false, defaultValue: [] })
     // debug property. Boolean. Optional. Default false
     validate(instance, 'debug', parameters.debug, 'boolean', { defaultValue: false })
     // Svelte component context

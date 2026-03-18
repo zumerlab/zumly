@@ -1,4 +1,5 @@
-import {renderView, notification, checkParameters } from './utils.js'
+import { renderView, prepareAndInsertView, notification, checkParameters } from './utils.js'
+import { ViewPrefetcher } from './view-prefetcher.js'
 
 /**
  * Zumly
@@ -56,6 +57,8 @@ export class Zumly {
       this._onTouchEnd = this.onTouchEnd.bind(this)
       this._onKeyUp = this.onKeyUp.bind(this)
       this._onWeel = this.onWeel.bind(this)
+      // View prefetcher (preload, hover, scan)
+      this.prefetcher = new ViewPrefetcher(this.views)
       // Prepare the instance:
       this.canvas = document.querySelector(this.mount)
       this.canvas.setAttribute('tabindex', 0)
@@ -65,6 +68,11 @@ export class Zumly {
       this.canvas.addEventListener('touchend', this._onTouchEnd, false)
       this.canvas.addEventListener('keyup', this._onKeyUp, false)
       this.canvas.addEventListener('wheel', this._onWeel, { passive: true })
+      this.canvas.addEventListener('mouseover', this._onPrefetchHover = (e) => {
+        if (e.target.classList.contains('zoom-me') && e.target.dataset.to) {
+          this.prefetcher.prefetchOnHover(e.target.dataset.to, { trigger: e.target, ...e.target.dataset })
+        }
+      }, { passive: true })
     } else {
       this.notify('is unable to start: no {options} have been passed to the Zumly\'s instance.', 'error')
     }
@@ -76,7 +84,9 @@ export class Zumly {
   storeViews (data) {
     this.tracing('storedViews()')
     this.storedViews.push(data)
-    console.log(data)
+    if (this.debug) {
+      console.debug('Zumly storedViews', data) // eslint-disable-line no-console
+    }
   }
 
   setPreviousScale (scale) {
@@ -109,11 +119,13 @@ export class Zumly {
 
   async init () {
     if (this.options) {
-      // add instance style
       this.tracing('init()')
-      //prepareCSS(this.instance)
-      await renderView(this.initialView, this.canvas, this.views, 'init', this.componentContext)
-      // add to storage. OPTIMIZAR
+      if (this.preload && this.preload.length) {
+        await this.prefetcher.preloadEager(this.preload, null)
+      }
+      const node = await this.prefetcher.get(this.initialView, null)
+      const currentView = await prepareAndInsertView(node, this.initialView, this.canvas, true, this.views, this.componentContext)
+      this.prefetcher.scanAndPrefetch(currentView, null)
       this.storeViews({
         zoomLevel: this.storedViews.length,
         views: [{
@@ -137,11 +149,11 @@ export class Zumly {
     var offsetX = coordenadasCanvas.left
     var offsetY = coordenadasCanvas.top
     const preScale = this.storedPreviousScale[this.storedPreviousScale.length - 1]
-    // generated new view from activated .zoom-me element
-    // generateNewView(el)
-    this.tracing('renderView()')
-    
-    var currentView = await renderView(el, canvas, this.views, false, this.componentContext)
+    this.tracing('getView()')
+    const context = { trigger: el, target: document.createElement('div'), context: this.componentContext, props: Object.assign({}, el.dataset) }
+    const node = await this.prefetcher.get(el.dataset.to, context)
+    this.prefetcher.scanAndPrefetch(node, context)
+    var currentView = await prepareAndInsertView(node, el.dataset.to, canvas, false, this.views, this.componentContext)
 
     if (currentView) {
       el.classList.add('zoomed')
@@ -165,7 +177,7 @@ export class Zumly {
       const scaleInvh = 1 / scaleh
       // muy interesante featura... usar el zoom de acuardo a la h o w mayor y agra
       var duration = el.dataset.withDuration || this.duration
-      var ease = el.dataset.withEease || this.ease
+      var ease = el.dataset.withEase || this.ease
       var filterIn = this.effects[0]
       var filterOut = this.effects[1]
       var cover = this.cover
@@ -312,33 +324,38 @@ export class Zumly {
 
   zoomOut () {
     this.tracing('zoomOut()')
-    this.blockEvents = true
-    this.storedPreviousScale.pop()
-    //var instance = this.instance
     const canvas = this.canvas
-    this.currentStage = this.storedViews[this.storedViews.length - 1]
-    const reAttachView = this.currentStage.views[3]
     var currentView = canvas.querySelector('.is-current-view')
     var previousView = canvas.querySelector('.is-previous-view')
+    if (!currentView || !previousView) {
+      this.notify('zoomOut: current or previous view not found (animation may still be running)', 'warn')
+      return
+    }
+    this.blockEvents = true
+    this.storedPreviousScale.pop()
+    this.currentStage = this.storedViews[this.storedViews.length - 1]
+    const reAttachView = this.currentStage.views[3]
     var lastView = canvas.querySelector('.is-last-view')
     //
     this.tracing('setCSSVariables()')
-   
-    previousView.querySelector('.zoomed').classList.remove('zoomed')
-    previousView.classList.replace('is-previous-view','is-current-view')
+
+    const zoomedEl = previousView.querySelector('.zoomed')
+    if (zoomedEl) zoomedEl.classList.remove('zoomed')
+    previousView.classList.replace('is-previous-view', 'is-current-view')
     
     
     if (lastView !== null) {
       lastView.classList.replace('is-last-view','is-previous-view')
       lastView.classList.remove('hide')
     }
-    //
-    if (reAttachView !== undefined) {
-      // aca hay que 
+    // Reattach the view that was removed at 4+ levels (stored as node in snapshot)
+    if (reAttachView !== undefined && reAttachView.viewName instanceof Node) {
       canvas.prepend(reAttachView.viewName)
       var newlastView = canvas.querySelector('.z-view:first-child')
-      newlastView.style.contentVisibility = 'auto'
-      newlastView.classList.add('hide')
+      if (newlastView) {
+        newlastView.style.contentVisibility = 'auto'
+        newlastView.classList.add('hide')
+      }
     }
     //
     currentView.addEventListener('animationstart', this._onZoomOutHandlerStart)

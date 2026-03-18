@@ -2,6 +2,7 @@
   "name": "zumly",
   "version": "0.9.11",
   "description": "Javascript library for building zooming user interfaces",
+  "type": "module",
   "author": "Juan Martin Muda - Zumerlab",
   "license": "MIT",
   "homepage": "https://zumerlab.github.io/zumly-docs",
@@ -24,11 +25,21 @@
   "scripts": {
     "compile": "npx @zumerbox/build -n zumly -j src/entry.js -s src/style.css",
     "build": "npm run compile && npm pack",
+    "dev": "npm run compile && npx serve public -p 9090",
+    "test": "npx vitest run --browser.headless --reporter=verbose",
+    "test:coverage": "npx vitest run --browser.headless --coverage",
+    "test:install-browsers": "npx playwright install chromium",
     "bump": "npx @zumerbox/bump && npx @zumerbox/changelog",
     "prebuild": "git add CHANGELOG.md && git commit -m \"Bumped version\" && git push --follow-tags"
   },
   "files": [
     "dist",
     "README.md"
-  ]
+  ],
+  "devDependencies": {
+    "@vitest/browser": "^3.1.2",
+    "@vitest/coverage-v8": "^3.1.2",
+    "playwright": "^1.52.0",
+    "vitest": "^3.1.2"
+  }
 }
