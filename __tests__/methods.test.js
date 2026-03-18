@@ -78,19 +78,13 @@ describe('Zumly methods', () => {
       mount: '.first',
       initialView: 'homeView',
       views: { homeView, newView },
-      transitions: { duration: '0s', ease: 'linear' },
+      transitions: { driver: 'none', duration: '0s', ease: 'linear' },
     })
     await app.init()
     const trigger = app.canvas.querySelector('.zoom-me')
     await app.zoomIn(trigger)
-    // In headless, animationend may not fire; simulate post-zoom state so zoomOut can run
-    const newCurrent = app.canvas.querySelector('.is-new-current-view')
-    if (newCurrent) {
-      newCurrent.classList.replace('is-new-current-view', 'is-current-view')
-      newCurrent.classList.remove('zoom-current-view', 'has-no-events')
-    }
-    app.blockEvents = false
     const len = app.storedViews.length
+    expect(len).toBe(2)
     app.zoomOut()
     expect(app.storedViews.length).toBe(len - 1)
   })

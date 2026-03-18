@@ -1,5 +1,6 @@
 import { renderView, prepareAndInsertView, notification, checkParameters } from './utils.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
+import { getDriver } from './drivers/index.js'
 
 /**
  * Zumly
@@ -47,12 +48,9 @@ export class Zumly {
     // Check if user options exist
     checkParameters(options, this)
     if (this.options) {
+      this.transitionDriver = getDriver(this.transitionDriver)
       // Event bindings:
       this._onZoom = this.onZoom.bind(this)
-      this._onZoomInHandlerStart = this.onZoomInHandlerStart.bind(this)
-      this._onZoomInHandlerEnd = this.onZoomInHandlerEnd.bind(this)
-      this._onZoomOutHandlerStart = this.onZoomOutHandlerStart.bind(this)
-      this._onZoomOutHandlerEnd = this.onZoomOutHandlerEnd.bind(this)
       this._onTouchStart = this.onTouchStart.bind(this)
       this._onTouchEnd = this.onTouchEnd.bind(this)
       this._onKeyUp = this.onKeyUp.bind(this)
@@ -291,38 +289,21 @@ export class Zumly {
       if (gonev !== null) snapShoot.views.push(gonev)
       this.storeViews(snapShoot)
       this.currentStage = this.storedViews[this.storedViews.length - 1]
-      // animation
       this.tracing('setCSSVariables()')
-      //
-      currentView.classList.remove('hide')
-      currentView.addEventListener('animationstart', this._onZoomInHandlerStart)
-      currentView.addEventListener('animationend', this._onZoomInHandlerEnd)
-      previousView.addEventListener('animationend', this._onZoomInHandlerEnd)
-      if (lastView !== null) lastView.addEventListener('animationend', this._onZoomInHandlerEnd)
-      //
-      currentView.style.setProperty('--zoom-duration', duration)
-      currentView.style.setProperty('--zoom-ease', ease)
-      currentView.style.setProperty('--current-view-transform-start', transformCurrentView0)
-      currentView.style.setProperty('--current-view-transform-end', transformCurrentView1)
-
-      previousView.style.setProperty('--zoom-duration', duration)
-      previousView.style.setProperty('--zoom-ease', ease)
-      previousView.style.setProperty('--previous-view-transform-start', transformPreviousView0)
-      previousView.style.setProperty('--previous-view-transform-end', transformPreviousView1)
-      if (lastView !== null)  {
-        lastView.style.setProperty('--zoom-duration', duration)
-        lastView.style.setProperty('--zoom-ease', ease)
-        lastView.style.setProperty('--last-view-transform-start', transformLastView0)
-        lastView.style.setProperty('--last-view-transform-end', transformLastView1)
+      this.blockEvents = true
+      const spec = {
+        type: 'zoomIn',
+        currentView,
+        previousView,
+        lastView,
+        currentStage: this.currentStage,
+        duration,
+        ease
       }
-      
-      currentView.style.contentVisibility = 'auto';
-      previousView.style.contentVisibility = 'auto';
-      if (lastView !== null) lastView.style.contentVisibility = 'auto';
-      currentView.classList.add(`zoom-current-view`)
-      previousView.classList.add(`zoom-previous-view`)
-      if (lastView !== null) lastView.classList.add(`zoom-last-view`)
-      
+      this.transitionDriver.runTransition(spec, () => {
+        this.blockEvents = false
+        this.tracing('ended')
+      })
     }
 
   }
@@ -362,17 +343,23 @@ export class Zumly {
         newlastView.classList.add('hide')
       }
     }
-    //
-    currentView.addEventListener('animationstart', this._onZoomOutHandlerStart)
-    currentView.addEventListener('animationend', this._onZoomOutHandlerEnd)
-    previousView.addEventListener('animationend', this._onZoomOutHandlerEnd)
-    if (lastView !== null) lastView.addEventListener('animationend', this._onZoomOutHandlerEnd)
-    //
 
-    currentView.classList.add(`zoom-current-view-reverse`)
-    previousView.classList.add(`zoom-previous-view-reverse`)
-    if (lastView !== null) lastView.classList.add(`zoom-last-view-reverse`)
-
+    const duration = this.currentStage.views[0]?.forwardState?.duration ?? this.duration
+    const ease = this.currentStage.views[0]?.forwardState?.ease ?? this.ease
+    const spec = {
+      type: 'zoomOut',
+      currentView,
+      previousView,
+      lastView,
+      currentStage: this.currentStage,
+      duration,
+      ease,
+      canvas
+    }
+    this.transitionDriver.runTransition(spec, () => {
+      this.blockEvents = false
+      this.tracing('ended')
+    })
     this.storedViews.pop()
   }
 
@@ -474,85 +461,4 @@ export class Zumly {
     }
   }
 
-  onZoomOutHandlerStart (event) {
-    this.tracing('onZoomOutHandlerStart()')
-    this.blockEvents = true
-    event.target.removeEventListener('animationstart', this._onZoomOutHandlerStart)
-  }
-
-  onZoomOutHandlerEnd (event) {
-    this.tracing('onZoomOutHandlerEnd()')
-    const element = event.target
-    var currentZoomLevel = this.currentStage
-    element.removeEventListener('animationend', this._onZoomOutHandlerEnd)
-    // current
-    if (element.classList.contains(`zoom-current-view-reverse`)) {
-      try {
-        this.canvas.removeChild(element)  
-      } catch(e) {
-        console.debug("Error when trying to remove element after zoom out. Trying to remove its parent instead...")
-        try {
-          this.canvas.removeChild(element.parentElement)  
-        } catch(e) {
-          console.debug("Error when trying to remove elemont after zoom out:", e)
-          console.debug("Element to remove was:", element)
-        }
-        
-      }
-      
-      this.blockEvents = false
-    }
-    if (element.classList.contains(`zoom-previous-view-reverse`)) {
-      var origin = currentZoomLevel.views[1].backwardState.origin
-      var transform = currentZoomLevel.views[1].backwardState.transform
-      element.classList.remove(`zoom-previous-view-reverse`)
-      element.style.transformOrigin = `0 0`
-      element.style.transform = transform
-      //element.style.filter = 'none'
-      if (currentZoomLevel.views.length === 2) this.tracing('ended')
-    }
-    if (element.classList.contains(`zoom-last-view-reverse`)) {
-      origin = currentZoomLevel.views[2].backwardState.origin
-      transform = currentZoomLevel.views[2].backwardState.transform
-      element.classList.remove(`zoom-last-view-reverse`)
-      element.style.transformOrigin = origin
-      element.style.transform = transform
-      if (currentZoomLevel.views.length > 2) this.tracing('ended')
-    }
-  }
-
-  onZoomInHandlerStart (event) {
-    this.tracing('onZoomInHandlerStart()')
-    this.blockEvents = true
-    event.target.removeEventListener('animationstart', this._onZoomInHandlerStart)
-  }
-
-  onZoomInHandlerEnd (event) {
-    this.tracing('onZoomInHandlerEnd()')
-    const element = event.target
-    var currentZoomLevel = this.currentStage
-    if (event.target.classList.contains('is-new-current-view')) {
-      this.blockEvents = false
-      var viewName = 'current-view'
-      var transform = currentZoomLevel.views[0].forwardState.transform
-      var origin = currentZoomLevel.views[0].forwardState.origin
-      element.classList.replace('is-new-current-view', 'is-current-view')
-
-    } else if (event.target.classList.contains('is-previous-view')) {
-      viewName = 'previous-view'
-      transform = currentZoomLevel.views[1].forwardState.transform
-      origin = currentZoomLevel.views[1].forwardState.origin
-      if (currentZoomLevel.views.length === 2) this.tracing('ended')
-    } else {
-      viewName = 'last-view'
-      transform = currentZoomLevel.views[2].forwardState.transform
-      origin = currentZoomLevel.views[2].forwardState.origin
-      if (currentZoomLevel.views.length > 2) this.tracing('ended')
-    }
-    element.classList.remove(`zoom-${viewName}`, 'has-no-events')
-    element.style.transformOrigin = origin
-    element.style.transform = transform
-    // element.style.filter = window.getComputedStyle(document.documentElement).getPropertyValue(`--${viewName}-filter-end-${this.instance}`)
-    element.removeEventListener('animationend', this._onZoomInHandlerEnd)
-  }
 }

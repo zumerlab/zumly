@@ -112,11 +112,32 @@ await app.init();
 
 ```js
 transitions: {
+  driver: 'css',   // 'css' (default) | 'waapi' | 'none' or custom function(spec, onComplete)
   effects: ['blur', 'sepia', 'saturate'],  // background view effects
   cover: 'width',   // or 'height' — how the previous view scales to cover the trigger
   duration: '1s',
   ease: 'ease-in-out',
 }
+```
+
+**Transition drivers:** Zoom animations are handled by a pluggable driver so you can swap the implementation without changing app logic.
+
+| Driver | Description |
+|--------|-------------|
+| `'css'` (default) | CSS keyframes and `animationend`; uses `zumly.css` variables. |
+| `'waapi'` | Web Animations API (`element.animate()`). |
+| `'none'` | No animation; applies final state immediately. Useful for tests or instant UX. |
+| `function(spec, onComplete)` | Custom driver. Receives a transition spec and must call `onComplete()` when done. |
+
+Example with instant transitions (e.g. for tests):
+
+```js
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, detail },
+  transitions: { driver: 'none', duration: '0s' },
+});
 ```
 
 **Zoomable elements:**

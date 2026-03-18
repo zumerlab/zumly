@@ -35,22 +35,61 @@
       .muted {
         opacity: 0.8;
       }
+      .driver-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        padding: 10px 16px;
+        background: rgba(11, 16, 32, 0.95);
+        border-bottom: 1px solid rgba(226, 186, 26, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .driver-bar label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        color: #e8ecff;
+      }
+      .driver-bar input[type="radio"] {
+        accent-color: rgba(226, 186, 26, 1);
+      }
+      #demo-container {
+        position: absolute;
+        top: 52px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
     </style>
   </head>
   <body>
-    <div class="example zumly-canvas"></div>
+    <div class="driver-bar">
+      <span class="muted">Transition driver:</span>
+      <label><input type="radio" name="driver" value="css" checked> CSS</label>
+      <label><input type="radio" name="driver" value="waapi"> WAAPI</label>
+      <label><input type="radio" name="driver" value="none"> None</label>
+    </div>
+    <div id="demo-container">
+      <div class="example zumly-canvas"></div>
+    </div>
 
     <script src="/dist/zumly.js"></script>
     <script>
       const ZumlyLib = window.Zumly || globalThis.Zumly
       if (typeof ZumlyLib !== 'function') {
-        throw new Error(`Zumly constructor not found. window.Zumly is: ${String(window.Zumly)}`)
+        throw new Error('Zumly constructor not found.')
       }
 
       const hello = `
         <div class="z-view view" data-name="hello" style="width: 600px; height: 250px">
           <h1>Zumly demo</h1>
-          <p class="muted">Click the card to zoom into the next view.</p>
+          <p class="muted">Click the card to zoom. Switch driver in the bar above.</p>
           <div class="card zoom-me" data-to="world" data-to-cover="height">Zoom to World</div>
         </div>
       `
@@ -63,16 +102,41 @@
         </div>
       `
 
-      const app = new ZumlyLib({
-        mount: '.example',
-        initialView: 'hello',
-        preload: ['world'],
-        views: { hello, world },
-        transitions: { duration: '700ms', ease: 'ease-in-out', cover: 'height' },
-        debug: false,
+      const container = document.getElementById('demo-container')
+
+      function getDriver () {
+        const r = document.querySelector('input[name="driver"]:checked')
+        return r ? r.value : 'css'
+      }
+
+      function startApp () {
+        const driver = getDriver()
+        container.innerHTML = ''
+        const canvas = document.createElement('div')
+        canvas.className = 'example zumly-canvas'
+        container.appendChild(canvas)
+
+        const app = new ZumlyLib({
+          mount: '.example',
+          initialView: 'hello',
+          preload: ['world'],
+          views: { hello, world },
+          transitions: {
+            driver: driver,
+            duration: driver === 'none' ? '0s' : '700ms',
+            ease: 'ease-in-out',
+            cover: 'height',
+          },
+          debug: false,
+        })
+        app.init()
+      }
+
+      document.querySelectorAll('input[name="driver"]').forEach((radio) => {
+        radio.addEventListener('change', startApp)
       })
 
-      app.init()
+      startApp()
     </script>
   </body>
 </html>

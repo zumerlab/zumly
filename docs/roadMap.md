@@ -88,12 +88,12 @@ This removes freedom to use other animation systems or no animation.
 - **Alternative drivers** (pluggable via e.g. `transitions.driver`): **CSS** (default), **WAAPI** (`element.animate()` per view, then `onComplete`), **none** (set final transforms immediately + `onComplete`), or **custom** function `(spec, onComplete) => void`.
 - **Spec shape**: e.g. `{ type: 'zoomIn'|'zoomOut', currentView, previousView, lastView, currentStage, duration, ease }` with `currentStage.views[i].forwardState`/`backwardState` (transform, origin). Driver applies from/to and calls `onComplete()` when done.
 
-**Implementation steps**
+**Implementation steps** (done)
 
-1. Extract "set CSS vars + add classes" and "animationend cleanup" into e.g. `drivers/css-transition.js` with `runTransition(spec, onComplete)`.
-2. In `zumly.js`, after building the snapshot, call `this.transitionDriver.runTransition(spec, onComplete)` instead of inlining CSS/events.
-3. Add `transitions.driver: 'css' | 'waapi' | 'none'` or a custom function.
-4. Implement WAAPI and "none" drivers; keep CSS as default.
+1. ~~Extract "set CSS vars + add classes" and "animationend cleanup" into e.g. `drivers/css-transition.js` with `runTransition(spec, onComplete)`.~~ **Done:** `src/drivers/css-transition.js`.
+2. ~~In `zumly.js`, after building the snapshot, call `this.transitionDriver.runTransition(spec, onComplete)` instead of inlining CSS/events.~~ **Done.**
+3. ~~Add `transitions.driver: 'css' | 'waapi' | 'none'` or a custom function.~~ **Done:** `utils.checkParameters` normalizes `transitions.driver`; `getDriver()` in `src/drivers/index.js` returns the driver.
+4. ~~Implement WAAPI and "none" drivers; keep CSS as default.~~ **Done:** `src/drivers/waapi-transition.js`, `src/drivers/none-transition.js`.
 5. Optionally support per-trigger override (e.g. `data-driver="none"`) later.
 
 ---

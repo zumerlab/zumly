@@ -161,4 +161,20 @@ export function checkParameters (parameters, instance) {
       }
     }
   }
+
+  // Transition driver: 'css' | 'waapi' | 'none' or custom function(spec, onComplete)
+  const driverIn = t && t.driver
+  const driverStr = typeof driverIn === 'string' ? driverIn.toLowerCase() : null
+  const driverFn = typeof driverIn === 'function' ? driverIn : null
+  if (driverStr !== null) {
+    const allowed = ['css', 'waapi', 'none']
+    instance.transitionDriver = allowed.includes(driverStr) ? driverStr : 'css'
+    if (!allowed.includes(driverStr)) {
+      notification(false, `'transitions.driver' must be "css", "waapi", "none", or a function. Got "${driverIn}". Falling back to "css".`, 'warn')
+    }
+  } else if (driverFn !== null) {
+    instance.transitionDriver = driverFn
+  } else {
+    instance.transitionDriver = 'css'
+  }
 }
