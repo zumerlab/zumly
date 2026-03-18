@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Zumly is a Javascript library for building zooming user interfaces. Create zooming experiences using web standards.
+  Zumly is a JavaScript library for building zooming user interfaces. Create zooming experiences using web standards.
 </p>
 
 <p align="center">
@@ -14,18 +14,18 @@
 
 ## Status
 
-Zumly is being developed from strach (again :)). The code in this repo is outdated. 
-
+Zumly is under active development. The library is usable in production with a stable core API; view preloading, prefetch on hover, and multiple view sources (HTML, URL, async functions, web components) are supported. See [docs/MEJORAS.md](docs/MEJORAS.md) for improvement topics and roadmap.
 
 ## Overview
 
-Zumly is a frontend library for creating zoomable user interfaces ([ZUI](https://en.wikipedia.org/wiki/Zooming_user_interface)). Instead of hyperlinks and windows, Zumly uses zooming as a metaphor for browsing through information. This way it offers an infinite virtual canvas in which elements can be zoomed themselves to reveal further details. 
+Zumly is a frontend library for creating **zoomable user interfaces** ([ZUI](https://en.wikipedia.org/wiki/Zooming_user_interface)). Instead of hyperlinks and windows, Zumly uses zooming as the main way to move through information: an infinite virtual canvas where you zoom into elements to reveal more detail.
 
-To be more flexible Zumly is primarily focused on zooming transitions without caring about visual design. Most CSS frameworks or custom designs work with Zumly.
+The library focuses on **zoom transitions** and stays **UI-agnostic**—you bring your own CSS and layout. Any design system or custom styling works with Zumly.
 
 ## Installation
 
 ### NPM
+
 ```sh
 npm install zumly
 
@@ -34,242 +34,189 @@ npm install zumly
 yarn add zumly
 ```
 
-### Content delivery networks (CDN)
-Include https://unpkg.com/zumly in your project in a `<script>` tag. 
+### CDN
 
+Include Zumly in your project via a `<script>` tag from [unpkg.com/zumly](https://unpkg.com/zumly).
 
 ### Direct download
 
-Download Zumly files from [unpkg.com](https://unpkg.com/zumly/). Files are in `dist` folder.
-
+Download the built files from [unpkg.com/zumly](https://unpkg.com/zumly/) (see the `dist` folder).
 
 ## Setup
 
+### ES modules
 
-### ES6 modules
+1. Add the CSS in your `<head>`:
 
-1. Add CSS inside `<head>` tag: 
 ```html
-
 <link rel="stylesheet" href="zumly/dist/zumly.css">
-
-<!-- Or "https://unpkg.com/zumly@0.9.11/dist/zumly.css" -->
-
+<!-- or https://unpkg.com/zumly@0.9.11/dist/zumly.css -->
 ```
 
-2. Add Zumly as ES6 module: 
+2. Import Zumly as an ES module:
+
 ```html
 <script type="module">
   import Zumly from "zumly/dist/zumly.mjs"
-
-  // Or "https://unpkg.com/zumly@0.9.11/dist/zumly.mjs"
+  // or "https://unpkg.com/zumly@0.9.11/dist/zumly.mjs"
 </script>
 ```
 
-### UMD modules
+### UMD
 
-1. Add Zumly CSS Styles inside `<head>` tag: 
+1. Add the CSS in your `<head>` (same as above).
+
+2. Load the UMD bundle:
+
 ```html
-
-<link rel="stylesheet" href="zumly/dist/zumly.css">
-
-<!-- Or "https://unpkg.com/zumly@0.9.11/dist/zumly.css" -->
-
-```
-
-2. Add Zumly as UMD module: 
-```html
-
 <script src="zumly/dist/zumly.umd.js"></script>
-
-// Or "https://unpkg.com/zumly"
-
+<!-- or https://unpkg.com/zumly -->
 ```
-
 
 ## Hello World
 
-1. Create a container for your Zumly app with `.zumly-canvas`: 
+1. Add a container with the class `zumly-canvas`:
 
 ```html
-
 <div class="example zumly-canvas"></div>
-
 ```
 
-2. Inside `script` tag write this code:
+2. Create your views and start Zumly:
 
 ```js
-// Some views
 const hello = `
 <div class="z-view">
-H E L L O <br>
-W <span class="zoom-me" data-to="world">O</span> R L D!
+  H E L L O <br>
+  W <span class="zoom-me" data-to="world">O</span> R L D!
 </div>
 `;
 
 const world = `
 <div class="z-view">
-<img src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/world.png"/>
+  <img src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/world.png" alt="World">
 </div>
 `;
 
-// Zumly instance
 const app = new Zumly({
   mount: '.example',
   initialView: 'hello',
-  views: {
-    hello,
-    world
-  }
-})
+  views: { hello, world },
+});
 
-app.init()
-
+await app.init();
 ```
 
-- See this example live at [codePen](https://codepen.io/zumly/pen/gOPQovd)
+- Live example: [CodePen](https://codepen.io/zumly/pen/gOPQovd)
 
-### Zumly options
+### Options
 
-1. The Zumly instance:
+**Zumly constructor:**
+
+| Option | Type | Required | Description |
+|--------|------|----------|-------------|
+| `mount` | string | Yes | CSS selector for the canvas element (must have class `zumly-canvas`). |
+| `initialView` | string | Yes | Name of the first view to show. |
+| `views` | object | Yes | Map of view names to view sources (see View sources below). |
+| `preload` | string[] | No | View names to resolve and cache when the app initializes. |
+| `transitions` | object | No | Duration, ease, cover, and effects for zoom transitions. |
+| `debug` | boolean | No | Enable debug messages (default: `false`). |
+| `componentContext` | object | No | Context passed to component-style views. |
+
+**Transitions (optional):**
 
 ```js
-const app = new Zumly({
-  // Mount DOM Element. String. Required
-  mount: '.className',
-  // First rendered view name. String. Required
-  initialView: 'viewName',
-  // Store all views. Object. Required
-  views: {
-    view1,
-    view2,
-    . . .
-  }, 
-  // Customize transitions. Object. Optional
-  transitions: {
-    // Effects for background views. Array. ['blur', 'sepia', 'saturate']
-    effects: ['sepia'],
-    // How new injected view is adapted. String. Default 'width'
-    cover: 'height',
-    // Transition duration. String. Default '1s'
-    duration: '1300ms' ,
-    // Transition ease. String. Default 'ease-in-out'
-    ease: 'cubic-bezier(0.25,0.1,0.25,1)'
-  },
-  // Activate debug notifications. Boolean. Default false
-  debug: true
-})
-// Initialize instance
-app.init()
+transitions: {
+  effects: ['blur', 'sepia', 'saturate'],  // background view effects
+  cover: 'width',   // or 'height' — how the new view fills the trigger
+  duration: '1s',
+  ease: 'ease-in-out',
+}
 ```
 
-2. Options for each zoomable element:
+**Zoomable elements:**
 
-- Add `z-view` class in you view container:
-
-```html
-
-<div class="z-view"></div>
-
-```
-
-- Add `zoom-me` class to an HTML element to make it zoomable and add `data-to` attribute with the name of the target view
+- Give the view root the class `z-view`.
+- Add class `zoom-me` and `data-to="viewName"` to the element that triggers zoom-in.
+- Optional per-trigger: `data-with-duration`, `data-with-ease`.
 
 ```html
-
-<div class="zoom-me" data-to="anotherView">Zoom me!</div>
-
-```
-
-- Each zooming transition can be customized by adding some `data-` attributes:
-
-```html
-
-<div class="zoom-me" data-to="anotherView" data-with-duration="2s" data-with-ease="ease-in">
-  Zoom me!
+<div class="z-view">
+  <div class="zoom-me" data-to="detail" data-with-duration="2s" data-with-ease="ease-in">
+    Zoom in
+  </div>
 </div>
-
 ```
 
-## Development 
+### View sources
 
-### Developer environment requirements
+Views can be:
 
-To run this project, you will need:
+- **HTML string** — static markup.
+- **Async function** — `(context) => string | Promise<string>` or return an `HTMLElement`.
+- **Object with `render()`** — `{ render(): string | Promise<string>, mounted?(): void }`.
+- **URL** — path or full URL to an HTML file (fetched and cached).
+- **Web component tag name** — string containing a hyphen (e.g. `'my-view'`); the custom element is created after it is defined.
 
-- Node.js >= v10.5.0
+Preloading: use `preload: ['viewA', 'viewB']` to resolve those views on init. Hovering over a `zoom-me` trigger prefetches its target view; when a view becomes current, its `zoom-me` targets are prefetched in the background.
 
-### Dev mode
+## Development
 
-When developing you can run:
+### Requirements
+
+- Node.js >= 18 (or 16+ with ES module support)
+
+### Commands
 
 ```sh
+# Build the library
+npm run compile
+
+# Build and serve the demo at http://localhost:9090
 npm run dev
 
-# or
-
-yarn dev
-```
-
-This will regenerate the build files each time a source file is changed and serve on http://localhost:9090
-
-### Running tests
-
-Tests use [Vitest](https://vitest.dev/) with browser (Playwright), same as [SnapDOM](https://github.com/zumerlab/snapdom). The first time (or after updating Playwright), install the browser:
-
-```sh
+# Run tests (Vitest + Playwright). Install browsers first:
 npm run test:install-browsers
-```
-
-Then run tests:
-
-```sh
 npm run test
 
-# or
+# Run tests with coverage
+npm run test:coverage
 
-yarn test
+# Build and pack for publish
+npm run build
 ```
+
+Tests use [Vitest](https://vitest.dev/) with the browser provider ([Playwright](https://playwright.dev/)), same setup as [SnapDOM](https://github.com/zumerlab/snapdom). Run `npm run test:install-browsers` once (or after upgrading Playwright) to install Chromium.
 
 ### Building
 
 ```sh
-npm run build
-
-# or
-
-yarn build
+npm run compile
 ```
+
+Output is in the `dist/` folder.
 
 ## Changelog
 
-Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
-### Status: beta
+## Roadmap
 
-Zumly is on early stages of development.
+- Additional view/template adapters
+- Lateral navigation (same zoom level)
+- Navigation widget and programmatic navigation
+- Router integration (e.g. URL sync)
+- Recalculate zoom on window resize
 
-### Roadmap
+Details and more topics: [docs/MEJORAS.md](docs/MEJORAS.md).
 
-- Allow different template engines. Currently Zumly only accepts string literal templates.
-- Add lateral navigation for same zoom level elements.
-- Add a navegation widget.
-- Add programmatic navigation.
-- Add preseted navigation.
-- Add router. [#3](https://github.com/zumly/zumly/issues/3)
-- Allow recalculate zoom position on resize events.
-
-
-## Stay in touch
+## Community
 
 - [Telegram group](https://t.me/ZumlyCommunity)
 
-## Original idea
+## Origin
 
-Zumly is a new approach based on another library I made, [Zircle UI](https://github.com/zircleUI/zircleUI)
+Zumly is a reimagined, framework-agnostic zoom engine inspired by [Zircle UI](https://github.com/zircleUI/zircleUI). It can be used together with [Orbit](https://github.com/zumerlab/orbit) for radial layouts.
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE) for more information.
-
+MIT. See [LICENSE](LICENSE).
