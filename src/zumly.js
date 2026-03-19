@@ -83,11 +83,13 @@ export class Zumly {
     this.canvas.addEventListener('touchend', this._onTouchEnd, false)
     this.canvas.addEventListener('keyup', this._onKeyUp, false)
     this.canvas.addEventListener('wheel', this._onWeel, { passive: true })
-    this.canvas.addEventListener('mouseover', this._onPrefetchHover = (e) => {
+    this._onPrefetchTrigger = (e) => {
       if (e.target.classList.contains('zoom-me') && e.target.dataset.to) {
-        this.prefetcher.prefetchOnHover(e.target.dataset.to, { trigger: e.target, ...e.target.dataset })
+        this.prefetcher.prefetch(e.target.dataset.to, { trigger: e.target, ...e.target.dataset })
       }
-    }, { passive: true })
+    }
+    this.canvas.addEventListener('mouseover', this._onPrefetchTrigger, { passive: true })
+    this.canvas.addEventListener('focusin', this._onPrefetchTrigger, { passive: true })
   }
 
   /**

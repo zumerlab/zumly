@@ -1,7 +1,7 @@
 /**
  * ViewPrefetcher — orchestrates view resolution (step 1 of the rendering pipeline) and caching.
  * Returns raw DOM nodes; callers use prepareAndInsertView() for normalize + insert + mounted().
- * Strategies: (A) eager on init, (B) on hover over .zoom-me, (C) scan on view activation.
+ * Strategies: (A) eager on init, (B) on hover/focus over .zoom-me, (C) scan on view activation.
  *
  * CACHING POLICY:
  * - Static HTML string views: cached indefinitely (no TTL). Result is cloned on each get().
@@ -98,12 +98,18 @@ export class ViewPrefetcher {
   }
 
   /**
-   * Prefetch on hover: resolve and cache in background (call from mouseover/focus).
+   * Prefetch a view in background (call from mouseover, focusin, or scan).
+   * get() deduplicates: cached or in-flight requests avoid duplicate work.
    * @param {string} source - View name.
    * @param {object} [context=null]
    */
-  prefetchOnHover (source, context = null) {
+  prefetch (source, context = null) {
     this.get(source, context).catch(() => {})
+  }
+
+  /** @deprecated Use prefetch() instead. Kept for backward compatibility. */
+  prefetchOnHover (source, context = null) {
+    this.prefetch(source, context)
   }
 
   /**
@@ -116,7 +122,7 @@ export class ViewPrefetcher {
     const triggers = node.querySelectorAll('.zoom-me[data-to]')
     triggers.forEach(el => {
       const to = el.dataset.to
-      if (to) this.prefetchOnHover(to, context)
+      if (to) this.prefetch(to, context)
     })
   }
 }
