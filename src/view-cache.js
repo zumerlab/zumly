@@ -34,8 +34,18 @@ export class ViewCache {
     return entry.node.cloneNode(true)
   }
 
+  /**
+   * @param {string} key
+   * @returns {boolean} True if entry exists and is not expired. Does not clone.
+   */
   has (key) {
-    return this.get(key) !== null
+    const entry = this.#store.get(key)
+    if (!entry) return false
+    if (entry.expires !== null && Date.now() > entry.expires) {
+      this.#store.delete(key)
+      return false
+    }
+    return true
   }
 
   invalidate (key) {

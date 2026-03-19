@@ -116,16 +116,46 @@ describe('ViewPrefetcher caching', () => {
 })
 
 describe('ViewCache', () => {
-  it('returns clone on get', () => {
+  it('returns clone on get, not the exact original node', () => {
     const cache = new ViewCache()
     const node = document.createElement('div')
     node.textContent = 'x'
     cache.set('k', node)
-    const a = cache.get('k')
-    const b = cache.get('k')
-    expect(a).not.toBe(b)
-    expect(a.textContent).toBe('x')
-    expect(b.textContent).toBe('x')
+    const got = cache.get('k')
+    expect(got).not.toBe(node)
+    expect(got.textContent).toBe('x')
+    const got2 = cache.get('k')
+    expect(got2).not.toBe(got)
+    expect(got2.textContent).toBe('x')
+  })
+
+  it('has() returns true for valid entries and false for expired ones', async () => {
+    const cache = new ViewCache()
+    const div = document.createElement('div')
+    div.textContent = 'valid'
+    cache.set('valid', div)
+    cache.set('expiring', div, 20)
+
+    expect(cache.has('valid')).toBe(true)
+    expect(cache.has('expiring')).toBe(true)
+    expect(cache.has('missing')).toBe(false)
+
+    await new Promise(r => setTimeout(r, 30))
+    expect(cache.has('valid')).toBe(true)
+    expect(cache.has('expiring')).toBe(false)
+  })
+
+  it('invalidate() removes an entry cleanly', () => {
+    const cache = new ViewCache()
+    const node = document.createElement('div')
+    node.textContent = 'x'
+    cache.set('k', node)
+    expect(cache.has('k')).toBe(true)
+    expect(cache.get('k')).not.toBeNull()
+
+    cache.invalidate('k')
+    expect(cache.has('k')).toBe(false)
+    expect(cache.get('k')).toBeNull()
   })
 
   it('expires URL-backed view after TTL', async () => {
