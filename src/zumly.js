@@ -1,4 +1,4 @@
-import { renderView, prepareAndInsertView, notification, checkParameters } from './utils.js'
+import { prepareAndInsertView, notification, checkParameters } from './utils.js'
 import {
   computeCoverScale,
   computeCurrentViewStartTransform,

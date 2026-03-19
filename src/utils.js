@@ -1,3 +1,15 @@
+/**
+ * VIEW RENDERING PIPELINE (official contract)
+ * ------------------------------------------
+ * 1. Resolve: ViewResolver.resolve(source, context) → DOM node
+ * 2. Normalize: ensure node has .z-view (wrap or add class)
+ * 3. Insert: set dataset.viewName, classes (is-current-view / is-new-current-view), append to canvas
+ * 4. Mounted: call views[viewName].mounted() only AFTER insertion
+ *
+ * The engine uses ViewPrefetcher.get() for resolution and prepareAndInsertView() for steps 2–4.
+ */
+
+import { ViewResolver } from './view-resolver.js'
 
 function setFx (values) {
   var start = ''
@@ -13,8 +25,16 @@ function setFx (values) {
 
 /**
  * Prepare a resolved view node and insert it into the canvas.
- * Used when ViewPrefetcher is in use. Ensures .z-view, dataset.viewName, classes, and mounted().
- * @returns {Promise<HTMLElement>} The inserted node.
+ * Steps 2–4 of the pipeline: normalize .z-view, set classes, append, then mounted().
+ * Contract: mounted() is invoked only after the node is in the canvas.
+ *
+ * @param {HTMLElement} node - Resolved view node from ViewResolver / ViewPrefetcher.get()
+ * @param {string} viewName - View name (key in views)
+ * @param {HTMLElement} canvas - Mount element
+ * @param {boolean} isInit - True for initial view, false for zoom-in
+ * @param {object} views - Views map
+ * @param {object} componentContext - Passed to object views
+ * @returns {Promise<HTMLElement>} The inserted node (with .z-view, dataset, classes applied)
  */
 export async function prepareAndInsertView (node, viewName, canvas, isInit, views, componentContext) {
   if (!node || !node.classList) {
@@ -40,47 +60,27 @@ export async function prepareAndInsertView (node, viewName, canvas, isInit, view
 }
 
 /**
- * @deprecated Prefer ViewPrefetcher.get() + prepareAndInsertView(). Kept for backward compatibility.
+ * @deprecated Use ViewPrefetcher.get() + prepareAndInsertView() instead.
+ * This wrapper delegates to ViewResolver + prepareAndInsertView for backward compatibility.
+ *
+ * @param {HTMLElement|string} el - Trigger element (zoom) or view name string (init)
+ * @param {HTMLElement} canvas - Mount element
+ * @param {object} views - Views map
+ * @param {boolean} init - True for initial view
+ * @param {object} componentContext - Passed to object/function views
+ * @returns {Promise<HTMLElement>} The inserted node
  */
 export async function renderView (el, canvas, views, init, componentContext) {
-  var viewName = null
-  init ? viewName = el : viewName = el.dataset.to
-  var newView = document.createElement('template')
-
-  if (typeof views[viewName] === 'object' && views[viewName].render !== undefined) {
-    newView.innerHTML = await views[viewName].render()
-  } else if (typeof views[viewName] === 'function') {
-    var newViewInner = document.createElement('div')
-    new views[viewName]({
-      target: newViewInner,
-      context: componentContext,
-      props: el.dataset
-    })
-    newViewInner.classList.add('z-view')
-    newView.content.appendChild(newViewInner)
-  } else {
-    newView.innerHTML = views[viewName]
+  const viewName = init ? el : el.dataset.to
+  const context = init ? null : {
+    trigger: el,
+    target: document.createElement('div'),
+    context: componentContext,
+    props: Object.assign({}, el.dataset)
   }
-
-  let vv = newView.content.querySelector('.z-view')
-  if (!vv) vv = newView.content.firstElementChild
-  if (!vv) throw new Error(`Zumly: view "${viewName}" produced no element`)
-
-  if (!vv.classList.contains('z-view')) vv.classList.add('z-view')
-  if (!init) {
-    vv.classList.add('is-new-current-view', 'has-no-events', 'hide')
-  } else {
-    vv.classList.add('is-current-view')
-  }
-  vv.style.transformOrigin = '0 0'
-  vv.dataset.viewName = viewName
-
-  canvas.append(newView.content)
-  if (typeof views[viewName] === 'object' && typeof views[viewName].mounted === 'function') {
-    await views[viewName].mounted()
-  }
-
-  return init ? canvas.querySelector('.is-current-view') : canvas.querySelector('.is-new-current-view')
+  const resolver = new ViewResolver(views)
+  const node = await resolver.resolve(viewName, context)
+  return prepareAndInsertView(node, viewName, canvas, init, views, componentContext)
 }
 
 export function notification (debug, msg, type) {

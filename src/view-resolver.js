@@ -1,7 +1,8 @@
 /**
- * ViewResolver — detects view source type and resolves to a single DOM element.
+ * ViewResolver — step 1 of the view rendering pipeline: resolves a view source to a DOM element.
  * Used by ViewPrefetcher. Prioritizes "name" (key in views) so hyphenated
  * view names like 'my-dashboard' are not mistaken for web components.
+ * Does NOT add .z-view, insert, or call mounted(); that is done by prepareAndInsertView().
  */
 
 export class ViewResolver {

@@ -1,5 +1,78 @@
-import { describe, it, expect, vi } from 'vitest'
-import { checkParameters } from '../src/utils.js'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { checkParameters, prepareAndInsertView, renderView } from '../src/utils.js'
+
+describe('utils.prepareAndInsertView()', () => {
+  let canvas
+  let views
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="canvas"></div>'
+    canvas = document.getElementById('canvas')
+    views = { home: '<div class="z-view"><p>Home</p></div>' }
+  })
+
+  it('adds .z-view if node does not have it', async () => {
+    const node = document.createElement('div')
+    node.innerHTML = '<span>content</span>'
+    expect(node.classList.contains('z-view')).toBe(false)
+
+    const result = await prepareAndInsertView(node, 'home', canvas, true, views, new Map())
+    expect(result.classList.contains('z-view')).toBe(true)
+    expect(canvas.contains(result)).toBe(true)
+  })
+
+  it('keeps .z-view when node already has it', async () => {
+    const node = document.createElement('div')
+    node.classList.add('z-view')
+    node.innerHTML = '<p>content</p>'
+
+    const result = await prepareAndInsertView(node, 'home', canvas, true, views, new Map())
+    expect(result.classList.contains('z-view')).toBe(true)
+    expect(result).toBe(node)
+  })
+
+  it('calls mounted() only after insertion into canvas', async () => {
+    const insertedBeforeMounted = []
+    const node = document.createElement('div')
+    node.classList.add('z-view')
+    views.home = {
+      render: () => '<div class="z-view"></div>',
+      mounted () {
+        insertedBeforeMounted.push(canvas.contains(node))
+      }
+    }
+
+    await prepareAndInsertView(node, 'home', canvas, true, views, new Map())
+    expect(insertedBeforeMounted).toEqual([true])
+  })
+})
+
+describe('utils.renderView()', () => {
+  let canvas
+  let views
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="canvas"></div>'
+    canvas = document.getElementById('canvas')
+    views = { home: '<div class="card">Home</div>' }
+  })
+
+  it('is deprecated and delegates to ViewResolver + prepareAndInsertView', async () => {
+    const result = await renderView('home', canvas, views, true, new Map())
+    expect(result).toBeTruthy()
+    expect(result.classList.contains('z-view')).toBe(true)
+    expect(result.dataset.viewName).toBe('home')
+    expect(canvas.querySelector('.z-view')).toBe(result)
+  })
+
+  it('produces correct classes and dataset consistent with pipeline', async () => {
+    const result = await renderView('home', canvas, views, true, new Map())
+    expect(result.classList.contains('z-view')).toBe(true)
+    expect(result.dataset.viewName).toBe('home')
+    expect(result.classList.contains('is-current-view')).toBe(true)
+    expect(canvas.contains(result)).toBe(true)
+  })
+})
 
 describe('utils.checkParameters()', () => {
   it('applies defaults when transitions are missing', () => {

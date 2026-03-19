@@ -1,5 +1,6 @@
 /**
- * ViewPrefetcher — orchestrates view resolution and caching.
+ * ViewPrefetcher — orchestrates view resolution (step 1 of the rendering pipeline) and caching.
+ * Returns raw DOM nodes; callers use prepareAndInsertView() for normalize + insert + mounted().
  * Strategies: (A) eager on init, (B) on hover over .zoom-me, (C) scan on view activation.
  */
 
