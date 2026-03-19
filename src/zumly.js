@@ -11,6 +11,7 @@ import {
 import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetachedNode, INDEX_CURRENT, INDEX_PREVIOUS, INDEX_LAST } from './snapshots.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
 import { getDriver } from './drivers/index.js'
+import { applyResizeCorrection } from './resize-correction.js'
 
 /**
  * Zumly
@@ -57,6 +58,11 @@ export class Zumly {
     this.touching = false
     /** Lateral history: view names at current depth. back() pops before zoomOut. Cleared on depth change. */
     this.lateralHistory = []
+    /** Canvas size tracking for resize correction. */
+    this._lastCanvasWidth = 0
+    this._lastCanvasHeight = 0
+    /** Pending resize correction when resize occurred during transition. */
+    this._pendingResizeCorrection = false
     // Check if user options exist and are valid
     checkParameters(options, this)
     if (!this.isValid) {
@@ -92,6 +98,15 @@ export class Zumly {
     }
     this.canvas.addEventListener('mouseover', this._onPrefetchTrigger, { passive: true })
     this.canvas.addEventListener('focusin', this._onPrefetchTrigger, { passive: true })
+    this._onResize = this._handleResize.bind(this)
+    this._resizeDebounceTimer = null
+    this._RESIZE_DEBOUNCE_MS = 80
+    window.addEventListener('resize', this._onResize, { passive: true })
+    if (typeof ResizeObserver !== 'undefined') {
+      const resizeObs = new ResizeObserver(() => this._handleResize())
+      resizeObs.observe(this.canvas)
+      this._resizeObserver = resizeObs
+    }
   }
 
   /**
@@ -124,6 +139,50 @@ export class Zumly {
 
   notify (msg, type) {
     return notification(this.debug, msg, type)
+  }
+
+  _recordCanvasSize () {
+    if (!this.canvas) return
+    const r = this.canvas.getBoundingClientRect()
+    this._lastCanvasWidth = r.width
+    this._lastCanvasHeight = r.height
+  }
+
+  _handleResize () {
+    if (this._resizeDebounceTimer) clearTimeout(this._resizeDebounceTimer)
+    this._resizeDebounceTimer = setTimeout(() => {
+      this._resizeDebounceTimer = null
+      if (!this.isValid || !this.canvas || this._lastCanvasWidth === 0) return
+      const r = this.canvas.getBoundingClientRect()
+      const newW = r.width
+      const newH = r.height
+      if (newW === this._lastCanvasWidth && newH === this._lastCanvasHeight) return
+      if (this.blockEvents) {
+        this._pendingResizeCorrection = true
+        return
+      }
+      applyResizeCorrection(this, this._lastCanvasWidth, this._lastCanvasHeight, newW, newH)
+      this._lastCanvasWidth = newW
+      this._lastCanvasHeight = newH
+    }, this._RESIZE_DEBOUNCE_MS)
+  }
+
+  _onTransitionComplete () {
+    if (this._pendingResizeCorrection && !this.blockEvents) {
+      this._pendingResizeCorrection = false
+      const r = this.canvas?.getBoundingClientRect()
+      if (r && this._lastCanvasWidth > 0) {
+        const newW = r.width
+        const newH = r.height
+        if (newW !== this._lastCanvasWidth || newH !== this._lastCanvasHeight) {
+          applyResizeCorrection(this, this._lastCanvasWidth, this._lastCanvasHeight, newW, newH)
+        }
+        this._lastCanvasWidth = newW
+        this._lastCanvasHeight = newH
+      }
+    } else {
+      this._recordCanvasSize()
+    }
   }
 
   /**
@@ -245,6 +304,7 @@ export class Zumly {
         }]
       })
     this.currentStage = this.storedViews[this.storedViews.length - 1]
+    this._recordCanvasSize()
   }
 
   /**
@@ -386,6 +446,7 @@ export class Zumly {
     }
     this.transitionDriver.runTransition(spec, () => {
       this.blockEvents = false
+      this._onTransitionComplete()
       this.tracing('ended')
     })
   }
@@ -521,6 +582,7 @@ export class Zumly {
     }
     this.transitionDriver.runTransition(spec, () => {
       this.blockEvents = false
+      this._onTransitionComplete()
       this.tracing('ended')
     })
   }
@@ -587,6 +649,7 @@ export class Zumly {
     }
     this.transitionDriver.runTransition(spec, () => {
       this.blockEvents = false
+      this._onTransitionComplete()
       this.tracing('ended')
     })
     this.storedViews.pop()

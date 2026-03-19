@@ -126,7 +126,7 @@ This removes freedom to use other animation systems or no animation.
 ### Navigation and product
 - ~~**Programmatic**~~ **Done**: `zoomTo(viewName)`, `back()`, `getCurrentViewName()`, `getZoomLevel()`.
 - **Router**: sync URL with level/view (hash or history) so deep views can be shared; depends on state model.
-- **Resize**: recompute transforms or at least scales when canvas size changes; currently no listener.
+- ~~**Resize**~~ **Done**: cheap resize correction via translate/origin scaling; scale preserved; deferred when transitioning.
 
 ### Accessibility and SEO
 - **Focus**: on zoom in/out, manage focus (which element should receive focus).

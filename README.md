@@ -199,9 +199,9 @@ Each entry in `views` is a **view source**. The resolver detects the type and re
 
 ### Limitations and non-goals
 
-- **No lateral navigation:** Zoom in/out only; no slide or same-level navigation.
+- **Lateral navigation:** Supported via `goTo(name, { mode: 'lateral' })` and `back()`.
 - **No router/URL sync:** Deep views are not reflected in the URL; no built-in back/forward history.
-- **No resize handling:** Transforms are not recomputed when the window resizes.
+- **Resize handling:** Cheap correction when canvas resizes—translate and origin scaled by ratio; scale preserved. Correction is deferred if a transition is running.
 - **Remote views:** URL-backed views use `innerHTML`; sanitize external content to avoid XSS.
 
 ## Development
@@ -250,7 +250,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 - ~~Lateral navigation (same zoom level)~~ done: `goTo(name, { mode: 'lateral' })`
 - Navigation widget (~~programmatic navigation~~ done)
 - Router integration (e.g. URL sync)
-- Recalculate zoom on window resize
+- ~~Resize correction~~ done: cheap translate/origin scaling when canvas size changes
 
 Details and more topics: [docs/roadMap.md](docs/roadMap.md).
 

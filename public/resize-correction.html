@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zumly - Resize Correction Demo</title>
+    <link rel="stylesheet" href="/dist/zumly.css" />
+    <style>
+      body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+      .header {
+        padding: 12px 16px;
+        background: #1a1a2e;
+        color: #eee;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+      .header h1 { margin: 0; font-size: 1.1rem; }
+      .header .info { background: rgba(255,255,255,0.1); padding: 6px 10px; border-radius: 6px; font-size: 0.9rem; }
+      .header .hint { opacity: 0.85; font-size: 0.85rem; max-width: 420px; }
+      .mount {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 60px;
+        overflow: hidden;
+        resize: both;
+        min-width: 320px;
+        min-height: 200px;
+        border: 2px dashed rgba(0,0,0,0.2);
+      }
+      .view {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 20px;
+        background: linear-gradient(135deg, #16213e, #0f3460);
+        color: #e8e8e8;
+      }
+      .card {
+        margin-top: 12px;
+        padding: 14px 16px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(233, 196, 106, 0.5);
+        width: fit-content;
+        cursor: zoom-in;
+      }
+      .card:hover { background: rgba(255,255,255,0.12); }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Resize Correction Demo</h1>
+      <span class="info" id="status">—</span>
+      <span class="hint">Cheap resize correction: translate and origin scaled by canvas ratio; scale preserved. Resize the dashed container or window, then navigate. View and zoom level shown above.</span>
+    </div>
+
+    <div class="mount">
+      <div class="example zumly-canvas"></div>
+    </div>
+
+    <script src="/dist/zumly.js"></script>
+    <script>
+      const ZumlyLib = window.Zumly || globalThis.Zumly
+      if (typeof ZumlyLib !== 'function') throw new Error('Zumly constructor not found.')
+
+      const home = `
+        <div class="z-view view">
+          <h2>Home</h2>
+          <p>Root view. Click a card to zoom. Resize the container, then try navigation.</p>
+          <div class="card zoom-me" data-to="detailA">Detail A</div>
+          <div class="card zoom-me" data-to="detailB">Detail B</div>
+        </div>
+      `
+      const detailA = `
+        <div class="z-view view">
+          <h2>Detail A</h2>
+          <p>Depth 2. back() returns to Home. Lateral to switch siblings.</p>
+          <div class="card zoom-me" data-to="nested">Nested</div>
+        </div>
+      `
+      const detailB = `
+        <div class="z-view view">
+          <h2>Detail B</h2>
+          <p>Sibling of A. back() returns to A or Home.</p>
+        </div>
+      `
+      const nested = `
+        <div class="z-view view">
+          <h2>Nested</h2>
+          <p>Depth 3. back() goes to A.</p>
+        </div>
+      `
+
+      const app = new ZumlyLib({
+        mount: '.example',
+        initialView: 'home',
+        views: { home, detailA, detailB, nested },
+        transitions: { driver: 'css', duration: '350ms', ease: 'ease-in-out', cover: 'width' },
+      })
+
+      function updateStatus () {
+        const el = document.getElementById('status')
+        if (el && app) el.textContent = `View: ${app.getCurrentViewName()} | Level: ${app.getZoomLevel()}`
+      }
+
+      app.init().then(() => {
+        updateStatus()
+        setInterval(updateStatus, 200)
+      })
+    </script>
+    <noscript>Enable JavaScript to run this demo.</noscript>
+  </body>
+</html>
