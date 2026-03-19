@@ -12,15 +12,47 @@
   <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg"></a>
 </p>
 
+<p align="center">
+  <a href="https://zumly.org">
+    <img src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/logo-zumly.png" width="200">
+  </a>
+</p>
+
+<p align="center">
+  Zumly is a JavaScript library for building hierarchical zoom navigation interfaces. Create spatial, zoom-driven view transitions using web standards.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg"></a>
+</p>
+
 ## Status
 
 Zumly is under active development and **not yet ready for production**. It’s a great time for curious developers to experiment: view preloading, prefetch on hover, and multiple view sources (HTML, URL, async functions, web components) are supported. See [docs/roadMap.md](docs/roadMap.md) for improvement topics and roadmap.
 
 ## Overview
 
-Zumly is a frontend library for creating **zoomable user interfaces** ([ZUI](https://en.wikipedia.org/wiki/Zooming_user_interface)). Instead of hyperlinks and windows, Zumly uses zooming as the main way to move through information: an infinite virtual canvas where you zoom into elements to reveal more detail.
+Zumly is a frontend library for creating **zoom-based navigation interfaces** inspired by **zoomable user interfaces** ([ZUI](https://en.wikipedia.org/wiki/Zooming_user_interface)).
+
+Unlike free-pan, infinite-canvas ZUI systems, Zumly focuses on **discrete, hierarchical navigation between views**. Users zoom into interactive elements to move deeper into nested content, preserving spatial context while keeping navigation structured and intentional.
+
+Zumly can be understood as a **hierarchical zoom navigation engine**: a way to move between related views through spatially continuous transitions, without requiring freeform map-like navigation.
 
 The library focuses on **zoom transitions** and stays **UI-agnostic**—you bring your own CSS and layout. Any design system or custom styling works with Zumly.
+
+## What Zumly is
+
+Zumly is not a freeform zooming canvas or map-like navigation system.
+
+It is a **discrete, hierarchical zoom interface** for moving between nested views. Instead of abruptly switching screens, users zoom into elements to reveal the next level of content.
+
+This makes Zumly especially useful for:
+
+* immersive navigation
+* storytelling interfaces
+* visual menus
+* structured exploration
+* any UI where preserving context between views matters
 
 ## Installation
 
