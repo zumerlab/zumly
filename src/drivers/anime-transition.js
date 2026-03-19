@@ -1,16 +1,31 @@
 /**
  * Anime.js transition driver.
- * Uses the global `anime` (Anime.js) if available.
- * Interpolates the *computed transform matrix* to keep intermediate coordinates correct.
- * @param {Object} spec - { type, currentView, previousView, lastView, currentStage, duration, ease, canvas? }
- * @param {function} onComplete
+ * Requires global `anime` — load from CDN before use:
+ * <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
+ *
+ * Interpolates computed transform matrices to keep intermediate coordinates correct
+ * when transform-origin varies between states.
+ *
+ * @param {Object} spec - Transition spec from the engine
+ * @param {function} onComplete - MUST be called exactly once when done
  */
+import {
+  parseDurationMs,
+  showViews,
+  applyZoomInEndState,
+  applyZoomOutPreviousState,
+  applyZoomOutLastState,
+  removeViewFromCanvas,
+  runLateralInstant,
+  readComputedMatrix,
+  interpolateMatrix,
+  matrixToString,
+} from './driver-helpers.js'
+
 export function runTransition (spec, onComplete) {
   const anime = typeof globalThis !== 'undefined' && globalThis.anime
   if (!anime || typeof anime !== 'function') {
-    if (typeof console !== 'undefined' && console.warn) {
-      console.warn('Zumly anime driver: Anime.js not loaded. Add <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>')
-    }
+    console.warn('Zumly anime driver: Anime.js not loaded. Add <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>')
     onComplete()
     return
   }
@@ -24,165 +39,37 @@ export function runTransition (spec, onComplete) {
   const durationMs = parseDurationMs(duration)
 
   if (type === 'lateral') {
-    runLateralFallback(spec, onComplete)
+    runLateralInstant(spec, onComplete)
   } else if (type === 'zoomIn') {
-    runZoomInAnime(anime, currentView, previousView, lastView, currentStage, durationMs, ease, onComplete)
+    runZoomIn(anime, currentView, previousView, lastView, currentStage, durationMs, ease, onComplete)
   } else if (type === 'zoomOut') {
-    runZoomOutAnime(anime, currentView, previousView, lastView, currentStage, durationMs, ease, canvas, onComplete)
+    runZoomOut(anime, currentView, previousView, lastView, currentStage, durationMs, ease, canvas, onComplete)
   } else {
     onComplete()
   }
 }
 
-function runLateralFallback (spec, onComplete) {
-  const { currentView: incomingView, previousView: outgoingView, backView, backViewState, lastView, lastViewState, incomingTransformEnd, currentStage, canvas } = spec
-  incomingView.classList.remove('hide')
-  incomingView.style.contentVisibility = 'auto'
-  const v0 = currentStage.views[0]
-  incomingView.classList.replace('is-new-current-view', 'is-current-view')
-  incomingView.classList.remove('zoom-current-view', 'has-no-events')
-  incomingView.style.transformOrigin = v0.forwardState.origin
-  incomingView.style.transform = incomingTransformEnd || v0.forwardState.transform
-  if (backView && backViewState) backView.style.transform = backViewState.transformEnd
-  if (lastView && lastViewState) lastView.style.transform = lastViewState.transformEnd
-  try {
-    if (canvas) canvas.removeChild(outgoingView)
-  } catch (e) {
-    try {
-      if (outgoingView.parentElement) canvas.removeChild(outgoingView.parentElement)
-    } catch (e2) { /* ignore */ }
-  }
-  onComplete()
-}
+// ─── Zoom In ─────────────────────────────────────────────────────────
 
-function parseDurationMs (duration) {
-  if (typeof duration === 'number') return duration
-  const str = String(duration)
-  const num = parseFloat(str)
-  if (str.includes('ms')) return num
-  if (str.includes('s')) return num * 1000
-  return 1000
-}
-
-/** Parse "translate(Xpx, Ypx) scale(S)" or matrix(a,b,c,d,e,f); return { tx, ty, scale }. */
-function parseTransform (str) {
-  if (!str || typeof str !== 'string' || str.trim() === '' || str === 'none') return { tx: 0, ty: 0, scale: 1 }
-  const s = str.trim()
-  const t = s.match(/translate\s*\(\s*([-\d.eE]+)px\s*,\s*([-\d.eE]+)px\s*\)\s*scale\s*\(\s*([-\d.eE]+)\s*\)/)
-  if (t) return { tx: parseFloat(t[1]) || 0, ty: parseFloat(t[2]) || 0, scale: parseFloat(t[3]) || 1 }
-  const mat = s.match(/matrix\s*\(\s*([-\d.eE]+)\s*,\s*([-\d.eE]+)\s*,\s*([-\d.eE]+)\s*,\s*([-\d.eE]+)\s*,\s*([-\d.eE]+)\s*,\s*([-\d.eE]+)\s*\)/)
-  if (mat) {
-    const a = parseFloat(mat[1])
-    const b = parseFloat(mat[2])
-    const e = parseFloat(mat[5])
-    const f = parseFloat(mat[6])
-    const scale = Math.sqrt(a * a + b * b) || 1
-    return { tx: e, ty: f, scale }
-  }
-  return { tx: 0, ty: 0, scale: 1 }
-}
-
-function interpolateTransform (fromStr, toStr, t) {
-  const tt = Math.max(0, Math.min(1, t))
-  const from = parseTransform(fromStr)
-  const to = parseTransform(toStr)
-  const tx = from.tx + (to.tx - from.tx) * tt
-  const ty = from.ty + (to.ty - from.ty) * tt
-  const scale = from.scale + (to.scale - from.scale) * tt
-  return `translate(${tx}px, ${ty}px) scale(${scale})`
-}
-
-function identityMatrix () {
-  return { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }
-}
-
-function parseMatrixString (mStr) {
-  if (!mStr || mStr === 'none') return identityMatrix()
-  const m = String(mStr).match(/matrix\(([-\d.eE]+),\s*([-\d.eE]+),\s*([-\d.eE]+),\s*([-\d.eE]+),\s*([-\d.eE]+),\s*([-\d.eE]+)\)/)
-  if (!m) return identityMatrix()
-  return {
-    a: parseFloat(m[1]) || 1,
-    b: parseFloat(m[2]) || 0,
-    c: parseFloat(m[3]) || 0,
-    d: parseFloat(m[4]) || 1,
-    e: parseFloat(m[5]) || 0,
-    f: parseFloat(m[6]) || 0,
-  }
-}
-
-function matrixToString (m) {
-  return `matrix(${m.a}, ${m.b}, ${m.c}, ${m.d}, ${m.e}, ${m.f})`
-}
-
-function lerp (a, b, t) {
-  return a + (b - a) * t
-}
-
-function interpolateMatrix (from, to, t) {
-  const tt = Math.max(0, Math.min(1, t))
-  return {
-    a: lerp(from.a, to.a, tt),
-    b: lerp(from.b, to.b, tt),
-    c: lerp(from.c, to.c, tt),
-    d: lerp(from.d, to.d, tt),
-    e: lerp(from.e, to.e, tt),
-    f: lerp(from.f, to.f, tt),
-  }
-}
-
-function readMatrixForTransform (element, origin, transformStr) {
-  element.style.transformOrigin = origin
-  element.style.transform = transformStr
-  // Flush computed transform update.
-  try { element.getBoundingClientRect() } catch {}
-  return parseMatrixString(getComputedStyle(element).transform)
-}
-
-function applyZoomInEndState (element, currentStage) {
-  if (element.classList.contains('is-new-current-view')) {
-    const v = currentStage.views[0].forwardState
-    element.classList.replace('is-new-current-view', 'is-current-view')
-    element.classList.remove('has-no-events')
-    element.style.transformOrigin = v.origin
-    element.style.transform = v.transform
-    return
-  }
-  if (element.classList.contains('is-previous-view')) {
-    const v = currentStage.views[1].forwardState
-    element.classList.remove('has-no-events')
-    element.style.transformOrigin = v.origin
-    element.style.transform = v.transform
-    return
-  }
-  if (element.classList.contains('is-last-view')) {
-    const v = currentStage.views[2].forwardState
-    element.classList.remove('has-no-events')
-    element.style.transformOrigin = v.origin
-    element.style.transform = v.transform
-  }
-}
-
-function runZoomInAnime (anime, currentView, previousView, lastView, currentStage, durationMs, ease, onComplete) {
-  currentView.classList.remove('hide')
-  currentView.style.contentVisibility = 'auto'
-  previousView.style.contentVisibility = 'auto'
-  if (lastView) lastView.style.contentVisibility = 'auto'
+function runZoomIn (anime, currentView, previousView, lastView, currentStage, durationMs, ease, onComplete) {
+  showViews(currentView, previousView, lastView)
 
   const v0 = currentStage.views[0]
   const v1 = currentStage.views[1]
   const v2 = lastView && currentStage.views[2] ? currentStage.views[2] : null
 
-  // Compute matrix endpoints (with fixed origin) to interpolate intermediate coordinates correctly.
-  const mCurrentFrom = readMatrixForTransform(currentView, v0.backwardState.origin, v0.backwardState.transform)
-  const mCurrentTo = readMatrixForTransform(currentView, v0.backwardState.origin, v0.forwardState.transform)
-  const mPrevFrom = readMatrixForTransform(previousView, v1.backwardState.origin, v1.backwardState.transform)
-  const mPrevTo = readMatrixForTransform(previousView, v1.backwardState.origin, v1.forwardState.transform)
-  const mLastFrom = v2 ? readMatrixForTransform(lastView, v2.backwardState.origin, v2.backwardState.transform) : null
-  const mLastTo = v2 ? readMatrixForTransform(lastView, v2.backwardState.origin, v2.forwardState.transform) : null
+  // Read computed matrices for all views
+  const matrices = computeMatrixPairs(
+    [
+      { el: currentView, backward: v0.backwardState, forward: v0.forwardState },
+      { el: previousView, backward: v1.backwardState, forward: v1.forwardState },
+      ...(v2 ? [{ el: lastView, backward: v2.backwardState, forward: v2.forwardState }] : []),
+    ],
+    'forward' // zoom-in: backward → forward
+  )
 
-  currentView.style.transform = matrixToString(mCurrentFrom)
-  previousView.style.transform = matrixToString(mPrevFrom)
-  if (v2) lastView.style.transform = matrixToString(mLastFrom)
+  // Set initial transforms
+  applyMatrices(matrices, 0)
 
   const progress = { value: 0 }
   anime({
@@ -190,12 +77,7 @@ function runZoomInAnime (anime, currentView, previousView, lastView, currentStag
     value: 1,
     duration: durationMs,
     easing: normalizeEasing(ease),
-    update: () => {
-      const t = progress.value
-      currentView.style.transform = matrixToString(interpolateMatrix(mCurrentFrom, mCurrentTo, t))
-      previousView.style.transform = matrixToString(interpolateMatrix(mPrevFrom, mPrevTo, t))
-      if (v2) lastView.style.transform = matrixToString(interpolateMatrix(mLastFrom, mLastTo, t))
-    },
+    update: () => applyMatrices(matrices, progress.value),
     complete: () => {
       applyZoomInEndState(currentView, currentStage)
       applyZoomInEndState(previousView, currentStage)
@@ -205,24 +87,26 @@ function runZoomInAnime (anime, currentView, previousView, lastView, currentStag
   })
 }
 
-function runZoomOutAnime (anime, currentView, previousView, lastView, currentStage, durationMs, ease, canvas, onComplete) {
+// ─── Zoom Out ────────────────────────────────────────────────────────
+
+function runZoomOut (anime, currentView, previousView, lastView, currentStage, durationMs, ease, canvas, onComplete) {
   const v0 = currentStage.views[0]
   const v1 = currentStage.views[1]
   const v2 = lastView && currentStage.views[2] ? currentStage.views[2] : null
   const to1 = v1.backwardState
   const to2 = v2 ? v2.backwardState : null
 
-  // Matrix endpoints with fixed origin (the from state origin is what CSS keyframes keep during the animation).
-  const mCurrentFrom = readMatrixForTransform(currentView, v0.forwardState.origin, v0.forwardState.transform)
-  const mCurrentTo = readMatrixForTransform(currentView, v0.forwardState.origin, v0.backwardState.transform)
-  const mPrevFrom = readMatrixForTransform(previousView, v1.forwardState.origin, v1.forwardState.transform)
-  const mPrevTo = readMatrixForTransform(previousView, v1.forwardState.origin, v1.backwardState.transform)
-  const mLastFrom = v2 ? readMatrixForTransform(lastView, v2.forwardState.origin, v2.forwardState.transform) : null
-  const mLastTo = v2 ? readMatrixForTransform(lastView, v2.forwardState.origin, v2.backwardState.transform) : null
+  // Read computed matrices (zoom-out: forward → backward)
+  const matrices = computeMatrixPairs(
+    [
+      { el: currentView, backward: v0.backwardState, forward: v0.forwardState },
+      { el: previousView, backward: v1.backwardState, forward: v1.forwardState },
+      ...(v2 ? [{ el: lastView, backward: v2.backwardState, forward: v2.forwardState }] : []),
+    ],
+    'backward' // zoom-out: forward → backward
+  )
 
-  currentView.style.transform = matrixToString(mCurrentFrom)
-  previousView.style.transform = matrixToString(mPrevFrom)
-  if (v2) lastView.style.transform = matrixToString(mLastFrom)
+  applyMatrices(matrices, 0)
 
   const progress = { value: 0 }
   anime({
@@ -230,33 +114,45 @@ function runZoomOutAnime (anime, currentView, previousView, lastView, currentSta
     value: 1,
     duration: durationMs,
     easing: normalizeEasing(ease),
-    update: () => {
-      const t = progress.value
-      currentView.style.transform = matrixToString(interpolateMatrix(mCurrentFrom, mCurrentTo, t))
-      previousView.style.transform = matrixToString(interpolateMatrix(mPrevFrom, mPrevTo, t))
-      if (v2) lastView.style.transform = matrixToString(interpolateMatrix(mLastFrom, mLastTo, t))
-    },
+    update: () => applyMatrices(matrices, progress.value),
     complete: () => {
-      try {
-        if (canvas) canvas.removeChild(currentView)
-      } catch (e) {
-        try {
-          if (currentView.parentElement) canvas.removeChild(currentView.parentElement)
-        } catch (e2) {}
-      }
-      previousView.classList.remove('zoom-previous-view-reverse')
-      previousView.classList.remove('has-no-events')
-      previousView.style.transformOrigin = '0 0'
-      previousView.style.transform = to1.transform
-      if (lastView && to2) {
-        lastView.classList.remove('zoom-last-view-reverse')
-        lastView.style.transformOrigin = to2.origin
-        lastView.style.transform = to2.transform
-      }
+      removeViewFromCanvas(currentView, canvas)
+      applyZoomOutPreviousState(previousView, to1)
+      if (lastView && to2) applyZoomOutLastState(lastView, to2)
       onComplete()
     }
   })
 }
+
+// ─── Matrix pair computation ─────────────────────────────────────────
+
+/**
+ * Compute from/to matrix pairs for a set of views.
+ * @param {{ el, backward, forward }[]} views
+ * @param {'forward'|'backward'} direction - 'forward' = backward→forward, 'backward' = forward→backward
+ * @returns {{ el, from, to }[]}
+ */
+function computeMatrixPairs (views, direction) {
+  return views.map(({ el, backward, forward }) => {
+    if (direction === 'forward') {
+      const from = readComputedMatrix(el, backward.origin, backward.transform)
+      const to = readComputedMatrix(el, backward.origin, forward.transform)
+      return { el, from, to }
+    } else {
+      const from = readComputedMatrix(el, forward.origin, forward.transform)
+      const to = readComputedMatrix(el, forward.origin, backward.transform)
+      return { el, from, to }
+    }
+  })
+}
+
+function applyMatrices (matrices, t) {
+  for (const { el, from, to } of matrices) {
+    el.style.transform = matrixToString(interpolateMatrix(from, to, t))
+  }
+}
+
+// ─── Easing normalization ────────────────────────────────────────────
 
 function normalizeEasing (ease) {
   if (typeof ease !== 'string') return 'easeInOutQuad'

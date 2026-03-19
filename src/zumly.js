@@ -14,17 +14,22 @@ import { getDriver } from './drivers/index.js'
 import { applyResizeCorrection } from './resize-correction.js'
 
 /**
+ * Maximum time (ms) that blockEvents can stay true before being force-reset.
+ * Prevents permanent UI freeze if a driver never calls onComplete (bug, error, removed element).
+ * @type {number}
+ */
+const BLOCK_EVENTS_SAFETY_MS = 8000
+
+/**
  * Zumly
  * Powers your apps with a zoomable user interface (ZUI) taste.
  * @class
  */
-
-
 export class Zumly {
   /**
   * Creates a Zumly instance
   * @constructor
-  * @params {Object} options
+  * @param {Object} options
   * @example
   *  new Zumly({
   *  mount: '.mount',
@@ -34,36 +39,33 @@ export class Zumly {
   *   contact,
   *   ...
   *  }
-  *
   */
   constructor (options) {
-    // Internal state:
-    // Store snapshots of each zoom transition
+    // Internal state
     this.storedViews = []
-    // Show current zoom level properties
     this.currentStage = null
-    // Store the scale of previous zoom transition
     this.storedPreviousScale = [1]
-    // Debugging?
     this.debug = false
-    // Array of events useful for debugging
     this.trace = []
-    // Deactive events during transtions
     this.blockEvents = false
-    // Initial values for gesture events
+    /** @type {number|null} Safety timer that resets blockEvents if a driver hangs */
+    this._blockEventsSafetyTimer = null
     this.touchstartX = 0
     this.touchstartY = 0
     this.touchendX = 0
     this.touchendY = 0
     this.touching = false
-    /** Lateral history: view names at current depth. back() pops before zoomOut. Cleared on depth change. */
+    /** Lateral history: view names at current depth. back() pops before zoomOut. */
     this.lateralHistory = []
     /** Canvas size tracking for resize correction. */
     this._lastCanvasWidth = 0
     this._lastCanvasHeight = 0
     /** Pending resize correction when resize occurred during transition. */
     this._pendingResizeCorrection = false
-    // Check if user options exist and are valid
+    /** Whether this instance has been destroyed. */
+    this._destroyed = false
+
+    // Validate options
     checkParameters(options, this)
     if (!this.isValid) {
       this.notify('is unable to start: invalid or missing required options (mount, initialView, views).', 'error')
@@ -76,42 +78,115 @@ export class Zumly {
       return
     }
     this.transitionDriver = getDriver(this.transitionDriver)
-    // Event bindings:
+
+    // Event bindings (stored for cleanup in destroy())
     this._onZoom = this.onZoom.bind(this)
     this._onTouchStart = this.onTouchStart.bind(this)
     this._onTouchEnd = this.onTouchEnd.bind(this)
     this._onKeyUp = this.onKeyUp.bind(this)
     this._onWeel = this.onWeel.bind(this)
-    // View prefetcher (preload, hover, scan)
-    this.prefetcher = new ViewPrefetcher(this.views)
-    this.canvas.setAttribute('tabindex', 0)
-    this.canvas.addEventListener('mouseup', this._onZoom, false)
-    this.canvas.addEventListener('touchend', this._onZoom, false)
-    this.canvas.addEventListener('touchstart', this._onTouchStart, { passive: true })
-    this.canvas.addEventListener('touchend', this._onTouchEnd, false)
-    this.canvas.addEventListener('keyup', this._onKeyUp, false)
-    this.canvas.addEventListener('wheel', this._onWeel, { passive: true })
     this._onPrefetchTrigger = (e) => {
       if (e.target.classList.contains('zoom-me') && e.target.dataset.to) {
         this.prefetcher.prefetch(e.target.dataset.to, { trigger: e.target, ...e.target.dataset })
       }
     }
-    this.canvas.addEventListener('mouseover', this._onPrefetchTrigger, { passive: true })
-    this.canvas.addEventListener('focusin', this._onPrefetchTrigger, { passive: true })
     this._onResize = this._handleResize.bind(this)
     this._resizeDebounceTimer = null
     this._RESIZE_DEBOUNCE_MS = 80
+
+    // View prefetcher
+    this.prefetcher = new ViewPrefetcher(this.views)
+
+    // Bind events
+    this._bindEvents()
+  }
+
+  // ─── Event binding / unbinding ───────────────────────────────────
+
+  /**
+   * Attach all event listeners. Called once in constructor.
+   * @private
+   */
+  _bindEvents () {
+    const canvas = this.canvas
+    if (!canvas) return
+
+    canvas.setAttribute('tabindex', 0)
+    canvas.addEventListener('mouseup', this._onZoom, false)
+    canvas.addEventListener('touchend', this._onZoom, false)
+    canvas.addEventListener('touchstart', this._onTouchStart, { passive: true })
+    canvas.addEventListener('touchend', this._onTouchEnd, false)
+    canvas.addEventListener('keyup', this._onKeyUp, false)
+    canvas.addEventListener('wheel', this._onWeel, { passive: true })
+    canvas.addEventListener('mouseover', this._onPrefetchTrigger, { passive: true })
+    canvas.addEventListener('focusin', this._onPrefetchTrigger, { passive: true })
+
     window.addEventListener('resize', this._onResize, { passive: true })
+
     if (typeof ResizeObserver !== 'undefined') {
-      const resizeObs = new ResizeObserver(() => this._handleResize())
-      resizeObs.observe(this.canvas)
-      this._resizeObserver = resizeObs
+      this._resizeObserver = new ResizeObserver(() => this._handleResize())
+      this._resizeObserver.observe(canvas)
     }
   }
 
   /**
-   * Helpers
+   * Remove all event listeners. Called by destroy().
+   * @private
    */
+  _unbindEvents () {
+    const canvas = this.canvas
+    if (canvas) {
+      canvas.removeEventListener('mouseup', this._onZoom, false)
+      canvas.removeEventListener('touchend', this._onZoom, false)
+      canvas.removeEventListener('touchstart', this._onTouchStart)
+      canvas.removeEventListener('touchend', this._onTouchEnd, false)
+      canvas.removeEventListener('keyup', this._onKeyUp, false)
+      canvas.removeEventListener('wheel', this._onWeel)
+      canvas.removeEventListener('mouseover', this._onPrefetchTrigger)
+      canvas.removeEventListener('focusin', this._onPrefetchTrigger)
+    }
+
+    window.removeEventListener('resize', this._onResize)
+
+    if (this._resizeObserver) {
+      this._resizeObserver.disconnect()
+      this._resizeObserver = null
+    }
+  }
+
+  // ─── blockEvents safety ──────────────────────────────────────────
+
+  /**
+   * Set blockEvents = true with a safety timeout.
+   * If the driver never calls onComplete, blockEvents is force-reset
+   * after BLOCK_EVENTS_SAFETY_MS to prevent permanent UI freeze.
+   * @private
+   */
+  _setBlockEvents () {
+    this.blockEvents = true
+    this._clearBlockEventsSafety()
+    this._blockEventsSafetyTimer = setTimeout(() => {
+      if (this.blockEvents && !this._destroyed) {
+        this.notify('blockEvents safety timeout: driver did not call onComplete. Force-resetting.', 'warn')
+        this.blockEvents = false
+        this._onTransitionComplete()
+      }
+    }, BLOCK_EVENTS_SAFETY_MS)
+  }
+
+  /**
+   * Clear the blockEvents safety timeout (called when driver completes normally).
+   * @private
+   */
+  _clearBlockEventsSafety () {
+    if (this._blockEventsSafetyTimer !== null) {
+      clearTimeout(this._blockEventsSafetyTimer)
+      this._blockEventsSafetyTimer = null
+    }
+  }
+
+  // ─── Helpers ─────────────────────────────────────────────────────
+
   storeViews (data) {
     this.tracing('storedViews()')
     this.storedViews.push(data)
@@ -134,7 +209,7 @@ export class Zumly {
       } else {
         this.trace.push(data)
       }
-    } 
+    }
   }
 
   notify (msg, type) {
@@ -149,6 +224,7 @@ export class Zumly {
   }
 
   _handleResize () {
+    if (this._destroyed) return
     if (this._resizeDebounceTimer) clearTimeout(this._resizeDebounceTimer)
     this._resizeDebounceTimer = setTimeout(() => {
       this._resizeDebounceTimer = null
@@ -168,6 +244,7 @@ export class Zumly {
   }
 
   _onTransitionComplete () {
+    this._clearBlockEventsSafety()
     if (this._pendingResizeCorrection && !this.blockEvents) {
       this._pendingResizeCorrection = false
       const r = this.canvas?.getBoundingClientRect()
@@ -185,9 +262,8 @@ export class Zumly {
     }
   }
 
-  /**
-   * Public methods
-   */
+  // ─── Public methods ──────────────────────────────────────────────
+
   zoomLevel () {
     return this.storedViews.length
   }
@@ -217,6 +293,7 @@ export class Zumly {
    * Returns a Promise when lateral (so callers can await); otherwise returns undefined.
    */
   back () {
+    if (this._destroyed) return
     if (this.lateralHistory && this.lateralHistory.length > 0) {
       const popped = this.lateralHistory.pop()
       const targetViewName = popped && typeof popped === 'object' ? popped.name : popped
@@ -230,10 +307,9 @@ export class Zumly {
    * Navigate to a view by name. Unified API for depth and lateral navigation.
    * @param {string} viewName - Target view (must exist in views)
    * @param {{ mode?: 'depth'|'lateral', duration?: string, ease?: string, props?: object }} [options]
-   *   - mode 'depth': drill-down / zoom-in (default)
-   *   - mode 'lateral': same-level swap, preserves zoom level
    */
   async goTo (viewName, options = {}) {
+    if (this._destroyed) return
     const mode = options.mode === 'lateral' ? 'lateral' : 'depth'
     if (mode === 'depth') {
       return this.zoomTo(viewName, options)
@@ -245,9 +321,10 @@ export class Zumly {
    * Programmatic zoom to a named view without a real DOM trigger.
    * Uses a centered synthetic origin for the transition.
    * @param {string} viewName - Target view name (must exist in views)
-   * @param {{ duration?: string, ease?: string, props?: object }} [options] - Optional overrides
+   * @param {{ duration?: string, ease?: string, props?: object }} [options]
    */
   async zoomTo (viewName, options = {}) {
+    if (this._destroyed) return
     if (!this.isValid || !this.canvas) {
       this.notify('zoomTo() cannot run: instance is invalid or canvas not found.', 'error')
       return
@@ -282,39 +359,94 @@ export class Zumly {
   }
 
   async init () {
+    if (this._destroyed) return
     if (!this.isValid || !this.canvas) {
       this.notify('init() cannot run: instance is invalid or canvas element was not found.', 'error')
       return
     }
     this.tracing('init()')
-      if (this.preload && this.preload.length) {
-        await this.prefetcher.preloadEager(this.preload, null)
-      }
-      const node = await this.prefetcher.get(this.initialView, null)
-      const currentView = await prepareAndInsertView(node, this.initialView, this.canvas, true, this.views, this.componentContext)
-      this.prefetcher.scanAndPrefetch(currentView, null)
-      this.storeViews({
-        zoomLevel: this.storedViews.length,
-        views: [{
-          viewName: this.initialView,
-          backwardState: {
-            origin: '0 0',
-            transform: ''
-          }
-        }]
-      })
+    if (this.preload && this.preload.length) {
+      await this.prefetcher.preloadEager(this.preload, null)
+    }
+    const node = await this.prefetcher.get(this.initialView, null)
+    const currentView = await prepareAndInsertView(node, this.initialView, this.canvas, true, this.views, this.componentContext)
+    this.prefetcher.scanAndPrefetch(currentView, null)
+    this.storeViews({
+      zoomLevel: this.storedViews.length,
+      views: [{
+        viewName: this.initialView,
+        backwardState: {
+          origin: '0 0',
+          transform: ''
+        }
+      }]
+    })
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     this._recordCanvasSize()
   }
 
   /**
-   * Internal: shared zoom-in path for both trigger-based and programmatic navigation.
+   * Destroy the instance: remove all event listeners, observers, timers,
+   * and clear internal state. After calling destroy(), the instance is inert
+   * and cannot be reused. Call this when unmounting in a SPA.
+   *
+   * Does NOT remove DOM content from the canvas — the consumer owns the DOM.
+   * If you want a clean slate, clear canvas.innerHTML after destroy().
+   */
+  destroy () {
+    if (this._destroyed) return
+    this._destroyed = true
+
+    // Clear blockEvents safety timer
+    this._clearBlockEventsSafety()
+
+    // Clear resize debounce timer
+    if (this._resizeDebounceTimer) {
+      clearTimeout(this._resizeDebounceTimer)
+      this._resizeDebounceTimer = null
+    }
+
+    // Remove all event listeners
+    this._unbindEvents()
+
+    // Unblock events so nothing is stuck
+    this.blockEvents = false
+
+    // Clear state
+    this.storedViews = []
+    this.storedPreviousScale = [1]
+    this.currentStage = null
+    this.lateralHistory = []
+    this.trace = []
+
+    // Nullify references
+    this.prefetcher = null
+    this.transitionDriver = null
+    // Keep this.canvas reference for the consumer to clean up DOM if needed,
+    // but remove the tabindex we added.
+    if (this.canvas) {
+      this.canvas.removeAttribute('tabindex')
+    }
+
+    this.isValid = false
+  }
+
+  // ─── Internal: zoom in ───────────────────────────────────────────
+
+  /**
+   * Shared zoom-in path for both trigger-based and programmatic navigation.
+   *
+   * The geometry computation section mutates DOM styles temporarily to read
+   * bounding rects after transforms. This is wrapped in try/catch so that
+   * if anything goes wrong (element removed mid-computation, unexpected NaN,
+   * etc.), the DOM is restored to a safe state and the zoom is aborted
+   * rather than leaving the UI frozen or in a broken transform state.
+   *
    * @param {string} targetViewName - View to zoom to
-   * @param {{ el?: HTMLElement, rect?: {x,y,width,height}, duration?: string, ease?: string, props?: object }} triggerOrDescriptor
-   *   - el: real DOM trigger (has dataset.to, getBoundingClientRect)
-   *   - rect, duration, ease: used for programmatic (synthetic) navigation
+   * @param {{ el?: HTMLElement, rect?: object, duration?: string, ease?: string, props?: object }} triggerOrDescriptor
    */
   async _doZoomIn (targetViewName, triggerOrDescriptor) {
+    if (this._destroyed) return
     this.lateralHistory = []
     this.tracing('zoomIn()')
     const canvas = this.canvas
@@ -330,6 +462,7 @@ export class Zumly {
       : { target: document.createElement('div'), context: this.componentContext, props: triggerOrDescriptor.props ?? {} }
 
     const node = await this.prefetcher.get(targetViewName, context)
+    if (this._destroyed) return // instance may have been destroyed during async fetch
     this.prefetcher.scanAndPrefetch(node, context)
     const currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext)
 
@@ -355,57 +488,111 @@ export class Zumly {
       canvas.removeChild(removeView)
     }
 
-    const cc = currentView.getBoundingClientRect()
-    const canvasOffset = { left: offsetX, top: offsetY }
-    const canvasRectSize = { width: canvasRect.width, height: canvasRect.height }
-    const currentViewRect = { width: cc.width, height: cc.height }
+    // ── Geometry computation ────────────────────────────────────────
+    // This section temporarily mutates transforms on previousView (and lastView)
+    // to read bounding rects after transform changes. If anything throws, we
+    // restore the original transforms and abort gracefully.
 
-    const { scale: laScala, scaleInv: laScalaInv } = computeCoverScale(
-      triggerRect.width, triggerRect.height, cc.width, cc.height, this.cover
-    )
-    this.setPreviousScale(laScala)
+    let transformCurrentView0, transformCurrentView1
+    let transformPreviousView0, prevEnd
+    let transformLastView0, transformLastView1
 
-    const transformCurrentView0 = computeCurrentViewStartTransform(
-      triggerRect, canvasOffset, currentViewRect, laScalaInv
-    )
-    currentView.style.transform = transformCurrentView0
+    // Save original state for rollback
+    const originalPreviousTransform = previousView.style.transform
+    const originalPreviousOrigin = previousView.style.transformOrigin
+    const originalLastTransform = lastView ? lastView.style.transform : null
+    const originalLastOrigin = lastView ? lastView.style.transformOrigin : null
 
-    previousView.classList.replace('is-current-view', 'is-previous-view')
-    const coordenadasPreviousView = previousView.getBoundingClientRect()
-    const transformPreviousView0 = previousView.style.transform
-    previousView.style.transformOrigin = computePreviousViewOrigin(triggerRect, coordenadasPreviousView)
+    try {
+      const cc = currentView.getBoundingClientRect()
+      const canvasOffset = { left: offsetX, top: offsetY }
+      const canvasRectSize = { width: canvasRect.width, height: canvasRect.height }
+      const currentViewRect = { width: cc.width, height: cc.height }
 
-    const prevEnd = computePreviousViewEndTransform(
-      canvasRectSize, triggerRect, coordenadasPreviousView, laScala
-    )
-    previousView.style.transform = prevEnd.transform
-
-    const triggerRectAfterTransform = el ? el.getBoundingClientRect() : triggerRect
-    const transformCurrentView1 = computeCurrentViewEndTransform(
-      triggerRectAfterTransform, canvasOffset, currentViewRect
-    )
-
-    let transformLastView0
-    let transformLastView1
-    if (lastView) {
-      lastView.classList.replace('is-previous-view', 'is-last-view')
-      transformLastView0 = lastView.style.transform
-      const newcoordenadasPV = previousView.getBoundingClientRect()
-      lastView.style.transform = computeLastViewIntermediateTransform(
-        prevEnd.x, prevEnd.y, canvasOffset, laScala, preScale
+      const { scale: laScala, scaleInv: laScalaInv } = computeCoverScale(
+        triggerRect.width, triggerRect.height, cc.width, cc.height, this.cover
       )
-      const last = lastView.querySelector('.zoomed')
-      const coorLast = (last && last.getBoundingClientRect) ? last.getBoundingClientRect() : lastView.getBoundingClientRect()
-      lastView.style.transform = transformLastView0
-      previousView.style.transform = transformPreviousView0
-      const coorPrev = previousView.getBoundingClientRect()
-      transformLastView1 = computeLastViewEndTransform(
-        canvasRectSize, canvasOffset, triggerRect,
-        coorPrev, coorLast, newcoordenadasPV, laScala, preScale
+      this.setPreviousScale(laScala)
+
+      transformCurrentView0 = computeCurrentViewStartTransform(
+        triggerRect, canvasOffset, currentViewRect, laScalaInv
       )
-    } else {
-      previousView.style.transform = transformPreviousView0
+      currentView.style.transform = transformCurrentView0
+
+      previousView.classList.replace('is-current-view', 'is-previous-view')
+      const coordenadasPreviousView = previousView.getBoundingClientRect()
+      transformPreviousView0 = previousView.style.transform
+      previousView.style.transformOrigin = computePreviousViewOrigin(triggerRect, coordenadasPreviousView)
+
+      prevEnd = computePreviousViewEndTransform(
+        canvasRectSize, triggerRect, coordenadasPreviousView, laScala
+      )
+      // ── Temporary DOM mutation: set previousView to end transform to read trigger's new position
+      previousView.style.transform = prevEnd.transform
+
+      const triggerRectAfterTransform = el ? el.getBoundingClientRect() : triggerRect
+      transformCurrentView1 = computeCurrentViewEndTransform(
+        triggerRectAfterTransform, canvasOffset, currentViewRect
+      )
+
+      if (lastView) {
+        lastView.classList.replace('is-previous-view', 'is-last-view')
+        transformLastView0 = lastView.style.transform
+        const newcoordenadasPV = previousView.getBoundingClientRect()
+        // ── Temporary DOM mutation: set lastView intermediate
+        lastView.style.transform = computeLastViewIntermediateTransform(
+          prevEnd.x, prevEnd.y, canvasOffset, laScala, preScale
+        )
+        const last = lastView.querySelector('.zoomed')
+        const coorLast = (last && last.getBoundingClientRect) ? last.getBoundingClientRect() : lastView.getBoundingClientRect()
+        // ── Restore: revert temporary mutations
+        lastView.style.transform = transformLastView0
+        previousView.style.transform = transformPreviousView0
+        const coorPrev = previousView.getBoundingClientRect()
+        transformLastView1 = computeLastViewEndTransform(
+          canvasRectSize, canvasOffset, triggerRect,
+          coorPrev, coorLast, newcoordenadasPV, laScala, preScale
+        )
+      } else {
+        // ── Restore: revert temporary mutation (no lastView branch)
+        previousView.style.transform = transformPreviousView0
+      }
+    } catch (error) {
+      // ── Rollback: restore all DOM mutations on error ──────────────
+      this.notify(`zoomIn geometry computation failed: ${error.message}. Aborting zoom.`, 'error')
+      if (this.debug) console.error('Zumly _doZoomIn error:', error) // eslint-disable-line no-console
+
+      // Restore previousView
+      previousView.style.transform = originalPreviousTransform
+      previousView.style.transformOrigin = originalPreviousOrigin
+      // Undo class swap if it happened
+      if (previousView.classList.contains('is-previous-view')) {
+        previousView.classList.replace('is-previous-view', 'is-current-view')
+      }
+
+      // Restore lastView
+      if (lastView) {
+        lastView.style.transform = originalLastTransform
+        lastView.style.transformOrigin = originalLastOrigin
+        if (lastView.classList.contains('is-last-view')) {
+          lastView.classList.replace('is-last-view', 'is-previous-view')
+        }
+      }
+
+      // Remove the currentView we just inserted (it was never shown)
+      try { canvas.removeChild(currentView) } catch (e) { /* already removed */ }
+
+      // Pop the scale we pushed
+      this.storedPreviousScale.pop()
+
+      // Restore content visibility
+      previousView.style.contentVisibility = 'auto'
+      if (lastView) lastView.style.contentVisibility = 'auto'
+
+      return // Abort the zoom
     }
+
+    // ── Build snapshot and run transition ───────────────────────────
 
     const currentEntry = createViewEntry(
       currentView.dataset.viewName,
@@ -434,7 +621,7 @@ export class Zumly {
     this.storeViews(snapShoot)
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     this.tracing('setCSSVariables()')
-    this.blockEvents = true
+    this._setBlockEvents()
     const spec = {
       type: 'zoomIn',
       currentView,
@@ -456,20 +643,18 @@ export class Zumly {
    * @param {HTMLElement} el - Element with .zoom-me and data-to="viewName"
    */
   async zoomIn (el) {
+    if (this._destroyed) return
     if (!el?.dataset?.to) return
     await this._doZoomIn(el.dataset.to, { el })
   }
 
+  // ─── Internal: lateral navigation ────────────────────────────────
+
   /**
    * Same-level navigation: replace current view with target at same depth.
-   * Moves towards the target element: previous/last views slide so we "pan" to the new view.
-   * Pushes current view to lateralHistory when isBack=false so back() can restore.
-   * @param {string} targetViewName
-   * @param {boolean} isBack - True when invoked from back(); do not push to lateralHistory
-   * @param {{ duration?: string, ease?: string, savedEntry?: object }} [options]
-   *   - savedEntry: when isBack, the restored view entry (preserves backwardState for zoomOut)
    */
   async _doLateral (targetViewName, isBack = false, options = {}) {
+    if (this._destroyed) return
     if (!this.isValid || !this.canvas) return
     if (!Object.prototype.hasOwnProperty.call(this.views, targetViewName)) {
       this.notify(`goTo("${targetViewName}", { mode: 'lateral' }): view not found.`, 'warn')
@@ -511,6 +696,7 @@ export class Zumly {
 
     const context = { target: document.createElement('div'), context: this.componentContext, props: options.props ?? {} }
     const node = await this.prefetcher.get(targetViewName, context)
+    if (this._destroyed) return
     this.prefetcher.scanAndPrefetch(node, context)
     const incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
     if (!incomingView) return
@@ -560,7 +746,7 @@ export class Zumly {
     const incomingTransformStart = this._computeLateralBackTransform(incomingTransformEnd, -slideDeltaX, -slideDeltaY)
     const outgoingTransformEnd = this._computeLateralBackTransform(outTransform, slideDeltaX, slideDeltaY)
 
-    this.blockEvents = true
+    this._setBlockEvents()
     const spec = {
       type: 'lateral',
       currentView: incomingView,
@@ -601,7 +787,10 @@ export class Zumly {
     return `translate(${dx}px, ${dy}px) ${transform}`.trim()
   }
 
+  // ─── Zoom out ────────────────────────────────────────────────────
+
   zoomOut () {
+    if (this._destroyed) return
     this.lateralHistory = []
     this.tracing('zoomOut()')
     const canvas = this.canvas
@@ -611,7 +800,7 @@ export class Zumly {
       this.notify('zoomOut: current or previous view not found (animation may still be running)', 'warn')
       return
     }
-    this.blockEvents = true
+    this._setBlockEvents()
     this.storedPreviousScale.pop()
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     const lastView = canvas.querySelector('.is-last-view')
@@ -655,10 +844,10 @@ export class Zumly {
     this.storedViews.pop()
   }
 
-  /**
-   * Event hangling
-   */
+  // ─── Event handling ──────────────────────────────────────────────
+
   onZoom (event) {
+    if (this._destroyed) return
     if (this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null && !this.touching) {
       this.tracing('onZoom()')
       event.stopPropagation()
@@ -672,8 +861,8 @@ export class Zumly {
   }
 
   onKeyUp (event) {
+    if (this._destroyed) return
     this.tracing('onKeyUp()')
-    // Possible conflict with usar inputs
     if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
       event.preventDefault()
       if (this.storedViews.length > 1 && !this.blockEvents) {
@@ -684,26 +873,24 @@ export class Zumly {
     }
     if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
       event.preventDefault()
-      this.notify(event.key + 'has not actions defined')
+      this.notify(event.key + ' has no actions defined')
     }
   }
 
   onWeel (event) {
-    // inertia need to be fixed
+    if (this._destroyed) return
     if (!this.blockEvents) {
       this.tracing('onWeel()')
-      if (event.deltaY < 0) {}
       if (event.deltaY > 0) {
         if (this.storedViews.length > 1 && !this.blockEvents) {
           this.zoomOut()
-        } else {
-          // this.notify("is on level zero. Can't zoom out. Trigger: wheel/scroll", 'warn')
         }
       }
     }
   }
 
   onTouchStart (event) {
+    if (this._destroyed) return
     this.tracing('onTouchStart()')
     this.touching = true
     this.touchstartX = event.changedTouches[0].screenX
@@ -711,12 +898,12 @@ export class Zumly {
   }
 
   onTouchEnd (event) {
+    if (this._destroyed) return
     if (!this.blockEvents) {
       this.tracing('onTouchEnd()')
       this.touchendX = event.changedTouches[0].screenX
       this.touchendY = event.changedTouches[0].screenY
       this.handleGesture(event)
-      // event.preventDefault()
     }
   }
 
@@ -734,8 +921,6 @@ export class Zumly {
     if (this.touchendY < this.touchstartY - 10) {
       if (this.storedViews.length > 1 && !this.blockEvents) {
         this.tracing('swipe up')
-        // Disabled. In near future enable if Zumly is full screen
-        // this.zoomOut()
       } else {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe up", 'warn')
       }
@@ -752,5 +937,4 @@ export class Zumly {
       this.zoomOut()
     }
   }
-
 }

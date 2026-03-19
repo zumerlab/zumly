@@ -22,6 +22,26 @@
     "ZUI"
   ],
   "main": "dist/zumly.js",
+  "module": "dist/zumly.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/zumly.mjs",
+      "require": "./dist/zumly.js",
+      "default": "./dist/zumly.mjs"
+    },
+    "./style.css": "./dist/zumly.css",
+    "./css": "./dist/zumly.css",
+    "./drivers": {
+      "import": "./src/drivers/index.js"
+    },
+    "./driver-helpers": {
+      "import": "./src/drivers/driver-helpers.js"
+    }
+  },
+  "sideEffects": [
+    "dist/zumly.css",
+    "dist/zumly.min.css"
+  ],
   "scripts": {
     "compile": "node esbuild.config.mjs",
     "build": "npm run compile && npm pack",
@@ -35,6 +55,9 @@
   },
   "files": [
     "dist",
+    "src/drivers/driver-helpers.js",
+    "src/drivers/index.js",
+    "src/drivers/DRIVER_API.md",
     "README.md"
   ],
   "devDependencies": {
