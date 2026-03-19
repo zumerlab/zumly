@@ -22,7 +22,7 @@ Working document to prioritize and design improvements. Not a closed task list b
 ## 2. ZUI model (consolidate)
 
 ### Current state
-- **Navigation**: in/out only (zoom to clicked element, go back). No lateral navigation. ~~Programmatic breadcrumb~~ → done: `zoomTo()`, `back()`, `getCurrentViewName()`, `getZoomLevel()`.
+- **Navigation**: in/out (zoom, back) + ~~lateral~~ done. `goTo(viewName, { mode: 'depth'|'lateral' })`, `zoomTo()`, `back()`, `getCurrentViewName()`, `getZoomLevel()`. Lateral uses `lateralHistory`; back() pops laterally first, then zoomOut.
 - **View**: unit shown at one zoom level; identified by name (`viewName`) and stored in snapshot with `backwardState` / `forwardState`.
 - **Trigger**: `.zoom-me` + `data-to="viewName"`. Optional `data-with-duration`, `data-with-ease` (current typo in code: `data-with-eease`).
 
@@ -30,7 +30,7 @@ Working document to prioritize and design improvements. Not a closed task list b
 - **Formal definition of "view"**: minimum contract (name, how content is resolved, optional metadata for preload/animation).
 - **Navigation graph**: Does Zumly know a graph (which views exist, where you can go from each) or keep it implicit via `data-to`? An explicit model helps for router or preload.
 - **Levels and "back"**: the `storedViews` stack is the history; zoomOut does pop. Always "one step back" or in the future "go to level N" or "go to view X"?
-- **Lateral / same level**: roadmap mentions "lateral navigation"; implies defining "neighbours" and possibly different transitions (slide, fade).
+- **Lateral / same level**: ~~done~~ `goTo(name, { mode: 'lateral' })` swaps current view at same depth; `lateralHistory` tracks undo; back() restores lateral before zoomOut.
 
 ---
 

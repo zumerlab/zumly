@@ -247,7 +247,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 ## Roadmap
 
 - Additional view/template adapters
-- Lateral navigation (same zoom level)
+- ~~Lateral navigation (same zoom level)~~ done: `goTo(name, { mode: 'lateral' })`
 - Navigation widget (~~programmatic navigation~~ done)
 - Router integration (e.g. URL sync)
 - Recalculate zoom on window resize
