@@ -1,4 +1,13 @@
 import { renderView, prepareAndInsertView, notification, checkParameters } from './utils.js'
+import {
+  computeCoverScale,
+  computeCurrentViewStartTransform,
+  computeCurrentViewEndTransform,
+  computePreviousViewOrigin,
+  computePreviousViewEndTransform,
+  computeLastViewEndTransform,
+  computeLastViewIntermediateTransform
+} from './geometry.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
 import { getDriver } from './drivers/index.js'
 
@@ -162,77 +171,67 @@ export class Zumly {
     if (currentView) {
       el.classList.add('zoomed')
       const coordenadasEl = el.getBoundingClientRect()
-      // create new view in a template tag
-      // select VIEWS from DOM
-      //var currentView = canvas.querySelector('.is-new-current-view')
-      var previousView = canvas.querySelector('.is-current-view')
-      var lastView = canvas.querySelector('.is-previous-view')
-      var removeView = canvas.querySelector('.is-last-view')
-      currentView.style.contentVisibility = 'hidden';
-      previousView.style.contentVisibility = 'hidden';
-      if (lastView !== null) lastView.style.contentVisibility = 'hidden';
-      if (removeView !== null) removeView.style.contentVisibility = 'hidden';
+      const previousView = canvas.querySelector('.is-current-view')
+      const lastView = canvas.querySelector('.is-previous-view')
+      const removeView = canvas.querySelector('.is-last-view')
+      currentView.style.contentVisibility = 'hidden'
+      previousView.style.contentVisibility = 'hidden'
+      if (lastView !== null) lastView.style.contentVisibility = 'hidden'
+      if (removeView !== null) removeView.style.contentVisibility = 'hidden'
       if (removeView !== null) canvas.removeChild(removeView)
-      // do changes
-      const cc = currentView.getBoundingClientRect()
-      const scale = cc.width / coordenadasEl.width
-      const scaleInv = 1 / scale
-      const scaleh = cc.height / coordenadasEl.height
-      const scaleInvh = 1 / scaleh
-      // muy interesante featura... usar el zoom de acuardo a la h o w mayor y agra
-      var duration = el.dataset.withDuration || this.duration
-      var ease = el.dataset.withEase || this.ease
-      var filterIn = this.effects[0]
-      var filterOut = this.effects[1]
-      var cover = this.cover
-  
-      // Ensure both branches initialize the same variables.
-      // Without this, `cover: 'height'` can end up writing to undeclared globals.
-      var laScala
-      var laScalaInv
 
-      if (cover === 'width') {
-        laScala = scale
-        laScalaInv = scaleInv
-      } else if (cover === 'height') {
-        laScala = scaleh
-        laScalaInv = scaleInvh
-      }
-  
+      const cc = currentView.getBoundingClientRect()
+      const canvasOffset = { left: offsetX, top: offsetY }
+      const canvasRect = { width: coordenadasCanvas.width, height: coordenadasCanvas.height }
+      const triggerRect = { x: coordenadasEl.x, y: coordenadasEl.y, width: coordenadasEl.width, height: coordenadasEl.height }
+      const currentViewRect = { width: cc.width, height: cc.height }
+
+      const { scale: laScala, scaleInv: laScalaInv } = computeCoverScale(
+        coordenadasEl.width, coordenadasEl.height, cc.width, cc.height, this.cover
+      )
       this.setPreviousScale(laScala)
-      var transformCurrentView0 = `translate(${coordenadasEl.x - offsetX + (coordenadasEl.width - cc.width * laScalaInv) / 2}px, ${coordenadasEl.y - offsetY + (coordenadasEl.height - cc.height * laScalaInv) / 2}px) scale(${laScalaInv})`
+
+      const duration = el.dataset.withDuration || this.duration
+      const ease = el.dataset.withEase || this.ease
+
+      const transformCurrentView0 = computeCurrentViewStartTransform(
+        triggerRect, canvasOffset, currentViewRect, laScalaInv
+      )
       currentView.style.transform = transformCurrentView0
-      //
+
       previousView.classList.replace('is-current-view', 'is-previous-view')
       const coordenadasPreviousView = previousView.getBoundingClientRect()
-      // PREVIOUS VIEW EXACTAMENTE ONDE ESTANA ANTES COMO CURRENT
-      // usar . style. setProperty('--demo-color-change', '#f44336')//
-      var transformPreviousView0 = previousView.style.transform
-      previousView.style.transformOrigin = `${coordenadasEl.x + coordenadasEl.width / 2 - coordenadasPreviousView.x}px ${coordenadasEl.y + coordenadasEl.height / 2 - coordenadasPreviousView.y}px`
-  
-      const x = coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + coordenadasPreviousView.x
-      const y = coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + coordenadasPreviousView.y
-  
-      const transformPreviousView1 = `translate(${x}px, ${y}px) scale(${laScala})`
-      // PREVIOUS VIEW FINAL STAGE
-      previousView.style.transform = transformPreviousView1
-      // ACA CAMBIA LA COSA, LEVANTO LAS COORDENADAS DEL ELEMENTO CLICLEADO QUE ESTBA DNRO DE PREVIOUS VIEW
-      var newcoordenadasEl = el.getBoundingClientRect()
-      // LO QUE DETERMINA LA POSICINES FONAL DEL CURRENT VIEW
-      var transformCurrentView1 = `translate(${newcoordenadasEl.x - offsetX + (newcoordenadasEl.width - cc.width) / 2}px, ${newcoordenadasEl.y - offsetY + (newcoordenadasEl.height - cc.height) / 2}px)`
-  
+      const transformPreviousView0 = previousView.style.transform
+      previousView.style.transformOrigin = computePreviousViewOrigin(triggerRect, coordenadasPreviousView)
+
+      const prevEnd = computePreviousViewEndTransform(
+        canvasRect, triggerRect, coordenadasPreviousView, laScala
+      )
+      previousView.style.transform = prevEnd.transform
+
+      const newcoordenadasEl = el.getBoundingClientRect()
+      const transformCurrentView1 = computeCurrentViewEndTransform(
+        newcoordenadasEl, canvasOffset, currentViewRect
+      )
+
+      let transformLastView0
+      let transformLastView1
       if (lastView !== null) {
         lastView.classList.replace('is-previous-view', 'is-last-view')
-        var transformLastView0 = lastView.style.transform
-        var newcoordenadasPV = previousView.getBoundingClientRect()
-        lastView.style.transform = `translate(${x - offsetX}px, ${y - offsetY}px) scale(${laScala * preScale})`
+        transformLastView0 = lastView.style.transform
+        const newcoordenadasPV = previousView.getBoundingClientRect()
+        lastView.style.transform = computeLastViewIntermediateTransform(
+          prevEnd.x, prevEnd.y, canvasOffset, laScala, preScale
+        )
         const last = lastView.querySelector('.zoomed')
-        var coorLast = last.getBoundingClientRect()
+        const coorLast = last.getBoundingClientRect()
         lastView.style.transform = transformLastView0
         previousView.style.transform = transformPreviousView0
-        var coorPrev = previousView.getBoundingClientRect()
-        var transformLastView1 = `translate(${coordenadasCanvas.width / 2 - coordenadasEl.width / 2 - coordenadasEl.x + (coorPrev.x - coorLast.x) + newcoordenadasPV.x - offsetX + (newcoordenadasPV.width - coorLast.width) / 2}px, ${coordenadasCanvas.height / 2 - coordenadasEl.height / 2 - coordenadasEl.y + (coorPrev.y - coorLast.y) + newcoordenadasPV.y - offsetY +
-          (newcoordenadasPV.height - coorLast.height) / 2}px) scale(${laScala * preScale})`
+        const coorPrev = previousView.getBoundingClientRect()
+        transformLastView1 = computeLastViewEndTransform(
+          canvasRect, canvasOffset, triggerRect,
+          coorPrev, coorLast, newcoordenadasPV, laScala, preScale
+        )
       } else {
         previousView.style.transform = transformPreviousView0
       }
@@ -268,7 +267,7 @@ export class Zumly {
           origin: previousView.style.transformOrigin,
           duration: duration,
           ease: ease,
-          transform: transformPreviousView1
+          transform: prevEnd.transform
         }
       } : null
       const lastv = lastView ? {
