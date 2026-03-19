@@ -36,12 +36,10 @@ Working document to prioritize and design improvements. Not a closed task list b
 
 ## 3. View rendering
 
-### Current state (`utils.renderView`)
-- **String**: `views[name]` is HTML string → `innerHTML` in a template, then look for `.z-view`.
-- **Object with `render()`**: `views[name].render()` async returns HTML; optional `mounted()` (current check `typeof views[viewName].mounted() === 'function'` is wrong: it should check that `mounted` is a function).
-- **Function/constructor**: `new views[name]({ target, context, props })` (Svelte-style); result is wrapped in a div with `.z-view`.
-
-Missing: load by URL, external templates, or PHP/SSR integration as such (that is usually solved on the server by generating the `views` object or the HTML that is sent).
+### Current state (implemented)
+- **ViewResolver** (`view-resolver.js`): Detects type (string/url/function/object/element/webcomponent), resolves to DOM node. Prioritizes `views[name]` so hyphenated view names are not mistaken for web components.
+- **Pipeline**: (1) Resolve via ViewPrefetcher.get() → ViewResolver; (2) prepareAndInsertView normalizes `.z-view`, sets dataset, classes, appends to canvas; (3) `mounted()` called only after insertion.
+- **renderView** in utils: deprecated; delegates to ViewResolver + prepareAndInsertView.
 
 ### Topics to analyze
 - **"View source" contract**: abstract "give me the content of this view" behind an adapter:
@@ -93,22 +91,22 @@ This removes freedom to use other animation systems or no animation.
 1. ~~Extract "set CSS vars + add classes" and "animationend cleanup" into e.g. `drivers/css-transition.js` with `runTransition(spec, onComplete)`.~~ **Done:** `src/drivers/css-transition.js`.
 2. ~~In `zumly.js`, after building the snapshot, call `this.transitionDriver.runTransition(spec, onComplete)` instead of inlining CSS/events.~~ **Done.**
 3. ~~Add `transitions.driver: 'css' | 'waapi' | 'none'` or a custom function.~~ **Done:** `utils.checkParameters` normalizes `transitions.driver`; `getDriver()` in `src/drivers/index.js` returns the driver.
-4. ~~Implement WAAPI and "none" drivers; keep CSS as default.~~ **Done:** `src/drivers/waapi-transition.js`, `src/drivers/none-transition.js`.
+4. ~~Implement WAAPI and "none" drivers; keep CSS as default.~~ **Done:** `src/drivers/waapi-transition.js`, `src/drivers/none-transition.js`. Also: `anime`, `gsap`, `motion` (require global lib).
 5. Optionally support per-trigger override (e.g. `data-driver="none"`) later.
 
 ---
 
 ## 5. View preloading
 
-### Current state
-- No preload: the view is resolved at the moment of the first `zoomIn` to it (in `renderView`).
+### Current state (implemented)
+- **ViewResolver** resolves view sources to DOM nodes; prioritizes `views[name]` so hyphenated names are not mistaken for web components.
+- **ViewCache** stores resolved nodes with optional TTL; static HTML no expiry, remote URLs 5 min; returns clone on get; `has()` does not clone.
+- **ViewPrefetcher** orchestrates: (A) eager on `init()` for `preload: []`, (B) on `mouseover`/`focusin` over `.zoom-me`, (C) scan on view activation (prefetch `.zoom-me` targets). In-flight deduplication for cacheable views.
+- **Caching policy**: string views (HTML or URL) cached; function/object views not cached (context-dependent).
 
-### Topics to analyze
-- **What to preload**: by view name (e.g. "all one click away from current") or full graph.
-- **When**: on `init`, on idle after init, or on hover over `.zoom-me` (preload on hover).
-- **Where**: if view is string/HTML, cache the string or a DocumentFragment; if async (render(), fetch), cache the result (string or element).
-- **API**: e.g. `zumly.preload(['viewA', 'viewB'])` or `preload: true` + policy (neighbours, all). With a "view source" adapter, preload just calls that adapter and stores in a Map name → content.
-- **Limits**: don't preload 50 views at once; priority or queue (e.g. only those linked from current view).
+### Topics to analyze (future)
+- **Limits**: don't preload 50 views at once; priority or queue.
+- Per-element TTL via `data-ttl`; global `remoteTTL` override.
 
 ---
 
@@ -169,7 +167,7 @@ Summary of an external analysis and how it fits this doc, plus corrections and n
 
 ### View system: resolver, cache, prefetcher (from that analysis)
 - **ViewResolver**: Detects type and resolves to a DOM node. Types: `name` (key in `views`), `html` (string with `<`), `url` (starts with `http`/`/` or ends in `.html`/`.php`), `function` (async, returns string or HTMLElement), `element` (clone node), `webcomponent` (string with `-`, then `customElements.whenDefined` + create).
-- **ViewCache**: Store resolved nodes with optional TTL; return `cloneNode(true)` on get so the cached node is not mutated.
+- **ViewCache**: Store resolved nodes with optional TTL; return `cloneNode(true)` on get; `has()` checks existence/expiry without cloning.
 - **ViewPrefetcher**: Three strategies — (A) eager on `init()` for `preload: []`, (B) on hover/focus of `.zoom-me` (silent fetch; not on mobile), (C) on view activation: scan `.zoom-me` children and prefetch their targets in background (works on mobile). TTL: static views no expiry, remote URLs e.g. 5 min, function views no cache. Use an `#inFlight` Map to avoid duplicate concurrent fetches.
 - **Integration**: Constructor wires prefetcher and `mouseover` for hover prefetch; `init()` calls `preloadEager` if `preload` is set; `zoomIn()` uses `prefetcher.get(source)` instead of `renderView()`, then `prefetcher.scanAndPrefetch(node)` for (C).
 
@@ -196,14 +194,14 @@ const app = new Zumly({
 app.init()
 ```
 
-### Target file layout (from that analysis)
+### Target file layout (implemented)
 ```
 src/
-├── zumly.js           (existing, small changes)
-├── utils.js           (existing helpers; renderView to deprecate)
-├── view-resolver.js   NEW: type detection and resolve to DOM node
-├── view-cache.js      NEW: cache with TTL
-└── view-prefetcher.js NEW: orchestrates A+B+C, public API of the system
+├── zumly.js           (orchestrates init, zoomIn, zoomOut; uses prefetcher)
+├── utils.js           (prepareAndInsertView, checkParameters; renderView deprecated)
+├── view-resolver.js   type detection and resolve to DOM node
+├── view-cache.js      cache with TTL; clone on get, has() without cloning
+└── view-prefetcher.js orchestrates A+B+C; get, preloadEager, prefetch, scanAndPrefetch
 ```
 
 ### Left for later (from that analysis)

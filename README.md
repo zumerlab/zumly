@@ -5,20 +5,6 @@
 </p>
 
 <p align="center">
-  Zumly is a JavaScript library for building zooming user interfaces. Create zooming experiences using web standards.
-</p>
-
-<p align="center">
-  <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg"></a>
-</p>
-
-<p align="center">
-  <a href="https://zumly.org">
-    <img src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/logo-zumly.png" width="200">
-  </a>
-</p>
-
-<p align="center">
   Zumly is a JavaScript library for building hierarchical zoom navigation interfaces. Create spatial, zoom-driven view transitions using web standards.
 </p>
 
@@ -153,17 +139,17 @@ transitions: {
 }
 ```
 
-**Transition drivers:** Zoom animations are handled by a pluggable driver so you can swap the implementation without changing app logic.
+**Transition drivers:** Zoom animations are handled by a pluggable driver (`transitions.driver`). You can swap implementations without changing app logic.
 
 | Driver | Description |
 |--------|-------------|
 | `'css'` (default) | CSS keyframes and `animationend`; uses `zumly.css` variables. |
-| `'waapi'` | Web Animations API (`element.animate()`). |
-| `'anime'` | [Anime.js](https://animejs.com/) — load the library (e.g. from CDN) before use. |
-| `'gsap'` | [GSAP](https://greensock.com/gsap/) — load the library (e.g. from CDN) before use. |
-| `'motion'` | [Motion](https://motion.dev/) (motion.dev) — load the library (e.g. from CDN) before use. |
+| `'waapi'` | Web Animations API (`element.animate()`). No extra dependency. |
 | `'none'` | No animation; applies final state immediately. Useful for tests or instant UX. |
-| `function(spec, onComplete)` | Custom driver. Receives a transition spec and must call `onComplete()` when done. |
+| `'anime'` | [Anime.js](https://animejs.com/) — requires global `anime` (load from CDN before use). |
+| `'gsap'` | [GSAP](https://greensock.com/gsap/) — requires global `gsap` (load from CDN before use). |
+| `'motion'` | [Motion](https://motion.dev/) — requires global `Motion` (load from CDN before use). |
+| `function(spec, onComplete)` | Custom driver. Receives `{ type, currentView, previousView, lastView, currentStage, duration, ease }` and must call `onComplete()` when done. |
 
 Example with instant transitions (e.g. for tests):
 
@@ -192,15 +178,31 @@ const app = new Zumly({
 
 ### View sources
 
-Views can be:
+Each entry in `views` is a **view source**. The resolver detects the type and resolves to a DOM node. Hyphenated view names (e.g. `'my-dashboard'`) are resolved as keys in `views` first; only raw template strings with a hyphen are treated as web components.
 
-- **HTML string** — static markup.
-- **Async function** — `(context) => string | Promise<string>` or return an `HTMLElement`.
-- **Object with `render()`** — `{ render(): string | Promise<string>, mounted?(): void }`.
-- **URL** — path or full URL to an HTML file (fetched and cached).
-- **Web component tag name** — string containing a hyphen (e.g. `'my-view'`); the custom element is created after it is defined.
+| Type | Example | Cached? |
+|------|---------|---------|
+| **HTML string** | `'<div class="z-view">…</div>'` | Yes (indefinitely) |
+| **URL** | `'/views/detail.html'`, `https://…` | Yes (5 min TTL) |
+| **Async function** | `(ctx) => fetch(...).then(r => r.text())` or return `HTMLElement` | No |
+| **Object with `render()`** | `{ render(ctx) { return '<div>…</div>' }, mounted?() }` | No |
+| **Web component** | `'my-view'` (string with hyphen, not a key in `views`) | No |
 
-Preloading: use `preload: ['viewA', 'viewB']` to resolve those views on init. Hovering over a `zoom-me` trigger prefetches its target view; when a view becomes current, its `zoom-me` targets are prefetched in the background.
+**View pipeline:** Resolve → normalize `.z-view` → insert into canvas → call `mounted()` (if present). Static/URL views are cloned from cache on each `get()` so consumers cannot mutate the stored node.
+
+### Preload and prefetch
+
+- **Eager preload:** `preload: ['viewA', 'viewB']` — those views are resolved and cached during `init()`.
+- **Hover prefetch:** `mouseover` on a `.zoom-me[data-to]` trigger prefetches its target in the background.
+- **Focus prefetch:** `focusin` on a `.zoom-me[data-to]` also prefetches (for keyboard/accessibility).
+- **Scan prefetch:** When a view becomes current, all `.zoom-me[data-to]` targets inside it are prefetched in the background. This works on touch devices where hover is unavailable.
+
+### Limitations and non-goals
+
+- **No lateral navigation:** Zoom in/out only; no slide or same-level navigation.
+- **No router/URL sync:** Deep views are not reflected in the URL; no built-in back/forward history.
+- **No resize handling:** Transforms are not recomputed when the window resizes.
+- **Remote views:** URL-backed views use `innerHTML`; sanitize external content to avoid XSS.
 
 ## Development
 

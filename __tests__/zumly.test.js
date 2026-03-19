@@ -136,3 +136,22 @@ describe('Zumly invalid initialization', () => {
     errorSpy.mockRestore()
   })
 })
+
+describe('init with preload', () => {
+  it('calls preloadEager with preload array during init', async () => {
+    document.body.innerHTML = '<div class="canvas zumly-canvas"></div>'
+    const home = '<div class="z-view"><span class="zoom-me" data-to="detail">Go</span></div>'
+    const detail = '<div class="z-view"><p>Detail</p></div>'
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'home',
+      views: { home, detail },
+      preload: ['detail'],
+    })
+    const preloadSpy = vi.spyOn(app.prefetcher, 'preloadEager')
+
+    await app.init()
+
+    expect(preloadSpy).toHaveBeenCalledWith(['detail'], null)
+  })
+})
