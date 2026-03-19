@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zumly - Hello World (drivers demo)</title>
+    <link rel="stylesheet" href="/dist/zumly.css" />
+    <style>
+ body {
+  margin: 0;
+  padding: 0;
+}
+.mount {
+  position: absolute;
+  top: 52px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.example {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.view {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(11, 16, 32, 0.9), rgba(11, 16, 32, 0.55));
+  color: #e8ecff;
+}
+
+.muted {
+  opacity: 0.8;
+}
+
+.card {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(226, 186, 26, 0.65);
+  width: fit-content;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.card.zoom-me {
+  cursor: zoom-in;
+}
+.world{
+  width: 250px;
+  height: 250px;
+  top: -5px
+}
+.o {
+  border: 3px solid #ffcc00
+}
+.hello {
+  font-size: 4em;
+  text-align: center;
+  font-family: arial;
+  font-weight: bold;
+   width: 400px;
+  height: 200px;
+}
+
+.driver-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 10px 14px;
+        background: rgba(0, 0, 0, 0.7);
+        color: #fff;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        align-items: center;
+      }
+
+      .driver-bar label {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+      }
+
+    </style>
+  </head>
+
+  <body>
+    <div class="driver-bar">
+      <span style="opacity: 0.9">Drivers:</span>
+      <label><input type="radio" name="driver" value="css" checked /> CSS</label>
+      <label><input type="radio" name="driver" value="waapi" /> WAAPI</label>
+      <label><input type="radio" name="driver" value="anime" /> Anime.js</label>
+      <label><input type="radio" name="driver" value="gsap" /> GSAP</label>
+      <label><input type="radio" name="driver" value="motion" /> Motion</label>
+      <label><input type="radio" name="driver" value="none" /> None</label>
+    </div>
+
+    <div class="mount">
+      <div class="example zumly-canvas"></div>
+    </div>
+
+    <!-- Optional libraries for extra animation drivers -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/motion@11/dist/motion.min.js" crossorigin="anonymous"></script>
+    <script src="/dist/zumly.js"></script>
+    <script>
+      const ZumlyLib = window.Zumly || globalThis.Zumly
+      if (typeof ZumlyLib !== 'function') {
+        throw new Error('Zumly constructor not found.')
+      }
+
+      const hello = `
+        <div class="z-view hello">
+          H E L L O <br>
+          W <span class='zoom-me o' data-to='world'>O</span> R L D!
+        </div>
+      `
+
+      const world = `
+        <div class="z-view world">
+          <img class="world" src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/world.png"/>
+        </div>
+      `
+
+      const mountParentEl = document.querySelector('.mount')
+
+      function readDriver () {
+        const r = document.querySelector('input[name="driver"]:checked')
+        return r ? r.value : 'css'
+      }
+
+      function startApp () {
+        const driver = readDriver()
+        if (mountParentEl) mountParentEl.innerHTML = ''
+
+        const canvas = document.createElement('div')
+        canvas.className = 'example zumly-canvas'
+        if (mountParentEl) mountParentEl.appendChild(canvas)
+
+        const app = new ZumlyLib({
+          mount: '.example',
+          initialView: 'hello',
+          preload: ['world'],
+          views: { hello, world },
+          transitions: {
+            driver,
+            duration: driver === 'none' ? '0s' : '700ms',
+            ease: 'ease-in-out',
+            cover: 'height',
+          },
+          debug: false,
+        })
+
+        app.init()
+      }
+
+      document.querySelectorAll('input[name="driver"]').forEach((radio) => {
+        radio.addEventListener('change', startApp)
+      })
+
+      startApp()
+    </script>
+  </body>
+</html>
+
