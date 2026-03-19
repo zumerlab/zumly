@@ -14,7 +14,7 @@
 
 ## Status
 
-Zumly is under active development. The library is usable in production with a stable core API; view preloading, prefetch on hover, and multiple view sources (HTML, URL, async functions, web components) are supported. See [docs/roadMap.md](docs/roadMap.md) for improvement topics and roadmap.
+Zumly is under active development and **not yet ready for production**. It’s a great time for curious developers to experiment: view preloading, prefetch on hover, and multiple view sources (HTML, URL, async functions, web components) are supported. See [docs/roadMap.md](docs/roadMap.md) for improvement topics and roadmap.
 
 ## Overview
 
