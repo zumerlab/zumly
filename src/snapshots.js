@@ -64,14 +64,12 @@ export function createZoomSnapshot (zoomLevel, current, previous, last, removed)
 
 /**
  * Get the detached node from a snapshot, if any (for reattach on zoomOut).
- * Supports both legacy format (viewName as Node) and new format (detachedNode).
+ * Only the `detachedNode` shape from {@link createRemovedViewEntry} is supported.
  * @param {{ views: Array }} snapshot
  * @returns {Node | undefined}
  */
 export function getDetachedNode (snapshot) {
   const entry = snapshot.views?.[INDEX_REMOVED]
-  if (!entry) return undefined
-  if (entry.detachedNode instanceof Node) return entry.detachedNode
-  if (entry.viewName instanceof Node) return entry.viewName
-  return undefined
+  if (!entry || !(entry.detachedNode instanceof Node)) return undefined
+  return entry.detachedNode
 }

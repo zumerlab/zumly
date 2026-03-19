@@ -85,23 +85,39 @@ export function computePreviousViewEndTransform (canvasRect, triggerRect, previo
 
 /**
  * Compute the last view end transform (complex chained positioning).
- * @param {{ width: number, height: number }} canvasRect
- * @param {{ left: number, top: number }} canvasOffset
- * @param {{ x: number, y: number, width: number, height: number }} triggerRect
- * @param {{ x: number, y: number }} coorPrev - previous view rect after reset to transformPreviousView0
- * @param {{ x: number, y: number, width: number, height: number }} coorLast - lastView's zoomed element rect
- * @param {{ x: number, y: number, width: number, height: number }} newcoordenadasPV - previous view rect after transformPreviousView1
- * @param {number} scale
- * @param {number} preScale
+ * @param {object} params
+ * @param {{ width: number, height: number }} params.canvasRect
+ * @param {{ left: number, top: number }} params.canvasOffset
+ * @param {{ x: number, y: number, width: number, height: number }} params.triggerRect
+ * @param {{ x: number, y: number, width: number, height: number }} params.previousViewRectAtBaseTransform - previous view rect after restoring base transform
+ * @param {{ x: number, y: number, width: number, height: number }} params.lastViewZoomedElementRect - last view’s .zoomed (or last view) rect
+ * @param {{ x: number, y: number, width: number, height: number }} params.previousViewRectWithPreviousAtEndTransform - previous view rect while it holds the “end” transform
+ * @param {number} params.scale - cover scale from the active zoom step
+ * @param {number} params.preScale - accumulated scale from shallower levels
  * @returns {string} CSS transform value
  */
-export function computeLastViewEndTransform (canvasRect, canvasOffset, triggerRect, coorPrev, coorLast, newcoordenadasPV, scale, preScale) {
+export function computeLastViewEndTransform ({
+  canvasRect,
+  canvasOffset,
+  triggerRect,
+  previousViewRectAtBaseTransform,
+  lastViewZoomedElementRect,
+  previousViewRectWithPreviousAtEndTransform,
+  scale,
+  preScale
+}) {
   const offsetX = canvasOffset.left
   const offsetY = canvasOffset.top
   const baseX = canvasRect.width / 2 - triggerRect.width / 2 - triggerRect.x
   const baseY = canvasRect.height / 2 - triggerRect.height / 2 - triggerRect.y
-  const tx = baseX + (coorPrev.x - coorLast.x) + newcoordenadasPV.x - offsetX + (newcoordenadasPV.width - coorLast.width) / 2
-  const ty = baseY + (coorPrev.y - coorLast.y) + newcoordenadasPV.y - offsetY + (newcoordenadasPV.height - coorLast.height) / 2
+  const tx = baseX +
+    (previousViewRectAtBaseTransform.x - lastViewZoomedElementRect.x) +
+    previousViewRectWithPreviousAtEndTransform.x - offsetX +
+    (previousViewRectWithPreviousAtEndTransform.width - lastViewZoomedElementRect.width) / 2
+  const ty = baseY +
+    (previousViewRectAtBaseTransform.y - lastViewZoomedElementRect.y) +
+    previousViewRectWithPreviousAtEndTransform.y - offsetY +
+    (previousViewRectWithPreviousAtEndTransform.height - lastViewZoomedElementRect.height) / 2
   return `translate(${tx}px, ${ty}px) scale(${scale * preScale})`
 }
 

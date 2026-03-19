@@ -4,7 +4,8 @@ import {
   computeCurrentViewStartTransform,
   computeCurrentViewEndTransform,
   computePreviousViewOrigin,
-  computePreviousViewEndTransform
+  computePreviousViewEndTransform,
+  computeLastViewEndTransform
 } from '../src/geometry.js'
 
 describe('geometry helpers', () => {
@@ -92,6 +93,28 @@ describe('geometry helpers', () => {
       expect(result).toHaveProperty('transform')
       expect(typeof result.transform).toBe('string')
       expect(result.transform).toContain(`scale(${scale})`)
+    })
+  })
+
+  describe('computeLastViewEndTransform()', () => {
+    it('matches known output for fixed rects (object-param refactor regression)', () => {
+      const canvasRect = { width: 800, height: 600 }
+      const canvasOffset = { left: 10, top: 20 }
+      const triggerRect = { x: 100, y: 80, width: 50, height: 40 }
+      const previousViewRectAtBaseTransform = { x: 5, y: 6, width: 400, height: 300 }
+      const lastViewZoomedElementRect = { x: 7, y: 8, width: 30, height: 20 }
+      const previousViewRectWithPreviousAtEndTransform = { x: 9, y: 10, width: 350, height: 250 }
+      const t = computeLastViewEndTransform({
+        canvasRect,
+        canvasOffset,
+        triggerRect,
+        previousViewRectAtBaseTransform,
+        lastViewZoomedElementRect,
+        previousViewRectWithPreviousAtEndTransform,
+        scale: 2,
+        preScale: 0.5
+      })
+      expect(t).toBe('translate(432px, 303px) scale(1)')
     })
   })
 })

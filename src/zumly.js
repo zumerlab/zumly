@@ -12,6 +12,7 @@ import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetache
 import { ViewPrefetcher } from './view-prefetcher.js'
 import { getDriver } from './drivers/index.js'
 import { applyResizeCorrection } from './resize-correction.js'
+import { hideViewContent, showViewContent } from './view-visibility.js'
 
 /**
  * Maximum time (ms) that blockEvents can stay true before being force-reset.
@@ -480,11 +481,11 @@ export class Zumly {
     const previousView = canvas.querySelector('.is-current-view')
     const lastView = canvas.querySelector('.is-previous-view')
     const removeView = canvas.querySelector('.is-last-view')
-    currentView.style.contentVisibility = 'hidden'
-    previousView.style.contentVisibility = 'hidden'
-    if (lastView) lastView.style.contentVisibility = 'hidden'
+    hideViewContent(currentView)
+    hideViewContent(previousView)
+    hideViewContent(lastView)
     if (removeView) {
-      removeView.style.contentVisibility = 'hidden'
+      hideViewContent(removeView)
       canvas.removeChild(removeView)
     }
 
@@ -509,23 +510,23 @@ export class Zumly {
       const canvasRectSize = { width: canvasRect.width, height: canvasRect.height }
       const currentViewRect = { width: cc.width, height: cc.height }
 
-      const { scale: laScala, scaleInv: laScalaInv } = computeCoverScale(
+      const { scale: coverScale, scaleInv: coverScaleInv } = computeCoverScale(
         triggerRect.width, triggerRect.height, cc.width, cc.height, this.cover
       )
-      this.setPreviousScale(laScala)
+      this.setPreviousScale(coverScale)
 
       transformCurrentView0 = computeCurrentViewStartTransform(
-        triggerRect, canvasOffset, currentViewRect, laScalaInv
+        triggerRect, canvasOffset, currentViewRect, coverScaleInv
       )
       currentView.style.transform = transformCurrentView0
 
       previousView.classList.replace('is-current-view', 'is-previous-view')
-      const coordenadasPreviousView = previousView.getBoundingClientRect()
+      const previousViewRectAsPrevious = previousView.getBoundingClientRect()
       transformPreviousView0 = previousView.style.transform
-      previousView.style.transformOrigin = computePreviousViewOrigin(triggerRect, coordenadasPreviousView)
+      previousView.style.transformOrigin = computePreviousViewOrigin(triggerRect, previousViewRectAsPrevious)
 
       prevEnd = computePreviousViewEndTransform(
-        canvasRectSize, triggerRect, coordenadasPreviousView, laScala
+        canvasRectSize, triggerRect, previousViewRectAsPrevious, coverScale
       )
       // ── Temporary DOM mutation: set previousView to end transform to read trigger's new position
       previousView.style.transform = prevEnd.transform
@@ -538,21 +539,29 @@ export class Zumly {
       if (lastView) {
         lastView.classList.replace('is-previous-view', 'is-last-view')
         transformLastView0 = lastView.style.transform
-        const newcoordenadasPV = previousView.getBoundingClientRect()
+        const previousViewRectWhileAtEndTransform = previousView.getBoundingClientRect()
         // ── Temporary DOM mutation: set lastView intermediate
         lastView.style.transform = computeLastViewIntermediateTransform(
-          prevEnd.x, prevEnd.y, canvasOffset, laScala, preScale
+          prevEnd.x, prevEnd.y, canvasOffset, coverScale, preScale
         )
-        const last = lastView.querySelector('.zoomed')
-        const coorLast = (last && last.getBoundingClientRect) ? last.getBoundingClientRect() : lastView.getBoundingClientRect()
+        const lastZoomedEl = lastView.querySelector('.zoomed')
+        const lastViewZoomedElementRect = (lastZoomedEl && lastZoomedEl.getBoundingClientRect)
+          ? lastZoomedEl.getBoundingClientRect()
+          : lastView.getBoundingClientRect()
         // ── Restore: revert temporary mutations
         lastView.style.transform = transformLastView0
         previousView.style.transform = transformPreviousView0
-        const coorPrev = previousView.getBoundingClientRect()
-        transformLastView1 = computeLastViewEndTransform(
-          canvasRectSize, canvasOffset, triggerRect,
-          coorPrev, coorLast, newcoordenadasPV, laScala, preScale
-        )
+        const previousViewRectAtBaseTransform = previousView.getBoundingClientRect()
+        transformLastView1 = computeLastViewEndTransform({
+          canvasRect: canvasRectSize,
+          canvasOffset,
+          triggerRect,
+          previousViewRectAtBaseTransform,
+          lastViewZoomedElementRect,
+          previousViewRectWithPreviousAtEndTransform: previousViewRectWhileAtEndTransform,
+          scale: coverScale,
+          preScale
+        })
       } else {
         // ── Restore: revert temporary mutation (no lastView branch)
         previousView.style.transform = transformPreviousView0
@@ -585,9 +594,8 @@ export class Zumly {
       // Pop the scale we pushed
       this.storedPreviousScale.pop()
 
-      // Restore content visibility
-      previousView.style.contentVisibility = 'auto'
-      if (lastView) lastView.style.contentVisibility = 'auto'
+      showViewContent(previousView)
+      showViewContent(lastView)
 
       return // Abort the zoom
     }
@@ -701,8 +709,8 @@ export class Zumly {
     const incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
     if (!incomingView) return
 
-    incomingView.style.contentVisibility = 'hidden'
-    if (lastView) lastView.style.contentVisibility = 'hidden'
+    hideViewContent(incomingView)
+    hideViewContent(lastView)
 
     const outTransform = outgoingView.style.transform || ''
     const outOrigin = outgoingView.style.transformOrigin || '0 0'
@@ -819,7 +827,7 @@ export class Zumly {
       canvas.prepend(detachedNode)
       const newlastView = canvas.querySelector('.z-view:first-child')
       if (newlastView) {
-        newlastView.style.contentVisibility = 'auto'
+        showViewContent(newlastView)
         newlastView.classList.add('hide')
       }
     }

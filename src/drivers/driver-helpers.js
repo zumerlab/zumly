@@ -1,3 +1,5 @@
+import { showViewContent } from '../view-visibility.js'
+
 /**
  * Shared helpers for Zumly transition drivers.
  *
@@ -141,7 +143,7 @@ export function showViews (...elements) {
   for (const el of elements) {
     if (!el) continue
     el.classList.remove('hide')
-    el.style.contentVisibility = 'auto'
+    showViewContent(el)
   }
 }
 

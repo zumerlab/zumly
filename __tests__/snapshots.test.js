@@ -74,10 +74,15 @@ describe('snapshots', () => {
       expect(getDetachedNode(snapshot)).toBeUndefined()
     })
 
-    it('supports legacy format (viewName as Node) for backward compatibility', () => {
+    it('returns undefined for legacy-shaped entry (viewName as Node; no detachedNode)', () => {
       const node = document.createElement('div')
       const snapshot = { views: [{}, {}, {}, { viewName: node }] }
-      expect(getDetachedNode(snapshot)).toBe(node)
+      expect(getDetachedNode(snapshot)).toBeUndefined()
+    })
+
+    it('returns undefined when detachedNode is not a Node', () => {
+      const snapshot = { views: [{}, {}, {}, { detachedNode: {} }] }
+      expect(getDetachedNode(snapshot)).toBeUndefined()
     })
   })
 
@@ -118,6 +123,51 @@ describe('snapshots', () => {
       expect(() => app.zoomOut()).not.toThrow()
       expect(() => app.zoomOut()).not.toThrow()
       expect(app.storedViews.length).toBe(1)
+    })
+
+    it('reattaches detached view after fourth-level zoom (none driver)', async () => {
+      document.body.innerHTML = '<div class="reattach-test zumly-canvas"></div>'
+      const v1 = `<div class="z-view"><div class="zoom-me" data-to="v2"></div></div>`
+      const v2 = `<div class="z-view"><div class="zoom-me" data-to="v3"></div></div>`
+      const v3 = `<div class="z-view"><div class="zoom-me" data-to="v4"></div></div>`
+      const v4 = `<div class="z-view"><p>v4</p></div>`
+      const app = new Zumly({
+        mount: '.reattach-test',
+        initialView: 'v1',
+        views: { v1, v2, v3, v4 },
+        transitions: { driver: 'none', duration: '0s', ease: 'linear' }
+      })
+      await app.init()
+      await app.zoomIn(app.canvas.querySelector('.zoom-me'))
+      await app.zoomIn(app.canvas.querySelector('.zoom-me'))
+      await app.zoomIn(app.canvas.querySelector('.zoom-me'))
+      expect(app.canvas.querySelector('[data-view-name="v1"]')).toBeNull()
+      const detached = getDetachedNode(app.currentStage)
+      expect(detached).toBeTruthy()
+      expect(detached.dataset.viewName).toBe('v1')
+      app.zoomOut()
+      const reattached = app.canvas.querySelector('[data-view-name="v1"]')
+      expect(reattached).toBeTruthy()
+      expect(app.canvas.querySelector('.z-view:first-child')).toBe(reattached)
+      expect(reattached.style.contentVisibility).toBe('auto')
+    })
+
+    it('content-visibility is auto on zoom-in and zoom-out paths (none driver)', async () => {
+      document.body.innerHTML = '<div class="cv-test zumly-canvas"></div>'
+      const a = `<div class="z-view"><div class="zoom-me" data-to="b"></div></div>`
+      const b = `<div class="z-view"><p>b</p></div>`
+      const app = new Zumly({
+        mount: '.cv-test',
+        initialView: 'a',
+        views: { a, b },
+        transitions: { driver: 'none', duration: '0s', ease: 'linear' }
+      })
+      await app.init()
+      await app.zoomIn(app.canvas.querySelector('.zoom-me'))
+      expect(app.canvas.querySelector('.is-current-view').style.contentVisibility).toBe('auto')
+      expect(app.canvas.querySelector('.is-previous-view').style.contentVisibility).toBe('auto')
+      app.zoomOut()
+      expect(app.canvas.querySelector('.is-current-view').style.contentVisibility).toBe('auto')
     })
   })
 })
