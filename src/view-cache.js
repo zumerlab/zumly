@@ -1,6 +1,8 @@
 /**
  * ViewCache — stores resolved view nodes with optional TTL.
+ * Used by ViewPrefetcher for static HTML (ttl=null) and URL-backed views (ttl=REMOTE_TTL).
  * Returns a clone on get so the cached node is not mutated by the consumer.
+ * Function/object views are never stored here; they are resolved fresh each time.
  */
 
 export class ViewCache {
