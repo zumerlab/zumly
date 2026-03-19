@@ -57,7 +57,7 @@
     "dist",
     "src/drivers/driver-helpers.js",
     "src/drivers/index.js",
-    "src/drivers/DRIVER_API.md",
+    "docs/DRIVER_API.md",
     "README.md"
   ],
   "devDependencies": {

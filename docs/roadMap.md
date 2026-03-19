@@ -2,6 +2,8 @@
 
 Working document to prioritize and design improvements. Not a closed task list but a map of topics to analyze.
 
+**Related:** [README](../README.md) · **[Writing a transition driver](DRIVER_API.md)** (`runTransition`, helpers, lateral spec)
+
 ---
 
 ## 1. Architecture
@@ -93,6 +95,8 @@ This removes freedom to use other animation systems or no animation.
 3. ~~Add `transitions.driver: 'css' | 'waapi' | 'none'` or a custom function.~~ **Done:** `utils.checkParameters` normalizes `transitions.driver`; `getDriver()` in `src/drivers/index.js` returns the driver.
 4. ~~Implement WAAPI and "none" drivers; keep CSS as default.~~ **Done:** `src/drivers/waapi-transition.js`, `src/drivers/none-transition.js`. Also: `anime`, `gsap`, `motion` (require global lib).
 5. Optionally support per-trigger override (e.g. `data-driver="none"`) later.
+
+Authoring guide: [DRIVER_API.md](DRIVER_API.md).
 
 ---
 

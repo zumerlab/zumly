@@ -4,7 +4,7 @@
  * Useful for tests, instant UX, or reduced-motion preference.
  *
  * This is the simplest possible Zumly driver — a good starting point
- * for writing your own. See DRIVER_API.md for the full guide.
+ * for writing your own. See docs/DRIVER_API.md for the full guide.
  *
  * @param {Object} spec - Transition spec from the engine
  * @param {function} onComplete - MUST be called exactly once when done

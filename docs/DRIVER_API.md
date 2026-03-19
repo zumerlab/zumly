@@ -115,7 +115,7 @@ This is the #1 rule. The engine sets `blockEvents = true` before calling your dr
 Use the `createFinishGuard` helper to guarantee this:
 
 ```js
-import { createFinishGuard, SAFETY_BUFFER_MS, parseDurationMs } from './driver-helpers.js'
+import { createFinishGuard, SAFETY_BUFFER_MS, parseDurationMs } from 'zumly/driver-helpers'
 
 function runTransition(spec, onComplete) {
   const durationMs = parseDurationMs(spec.duration)
@@ -131,6 +131,8 @@ function runTransition(spec, onComplete) {
 }
 ```
 
+*(In this repo, you can import from `../src/drivers/driver-helpers.js` from your own source files.)*
+
 ### 2. Apply final DOM state after animation
 
 When the animation ends, the DOM must reflect the final state — the engine does NOT do this for you. Use the shared helpers:
@@ -142,7 +144,7 @@ import {
   applyZoomOutLastState,
   removeViewFromCanvas,
   showViews
-} from './driver-helpers.js'
+} from 'zumly/driver-helpers'
 
 // Before animating — make views visible:
 showViews(spec.currentView, spec.previousView, spec.lastView)
@@ -168,7 +170,7 @@ Your driver receives `spec.type` which is one of:
 For lateral, you can use the instant fallback if you don't want to animate it:
 
 ```js
-import { runLateralInstant } from './driver-helpers.js'
+import { runLateralInstant } from 'zumly/driver-helpers'
 
 if (spec.type === 'lateral') {
   runLateralInstant(spec, onComplete)
@@ -180,7 +182,7 @@ if (spec.type === 'lateral') {
 
 ## Available helpers
 
-Import from `./driver-helpers.js`:
+Import from `zumly/driver-helpers` (published) or `src/drivers/driver-helpers.js` (monorepo):
 
 | Helper | Purpose |
 |--------|---------|
@@ -225,7 +227,7 @@ import {
   runLateralInstant,
   createFinishGuard,
   SAFETY_BUFFER_MS,
-} from './driver-helpers.js'
+} from 'zumly/driver-helpers'
 
 export function runTransition(spec, onComplete) {
   const { type, currentView, previousView, lastView, currentStage, duration, canvas } = spec
@@ -316,7 +318,7 @@ expect(app.getCurrentViewName()).toBe('home')
 
 ## Registering with `getDriver()`
 
-Built-in drivers are resolved by name (`'css'`, `'waapi'`, `'none'`, etc.) in `drivers/index.js`. Community drivers are passed as functions — no registration needed:
+Built-in drivers are resolved by name (`'css'`, `'waapi'`, `'none'`, etc.) in [`src/drivers/index.js`](../src/drivers/index.js). Community drivers are passed as functions — no registration needed:
 
 ```js
 // Direct function — works out of the box:
@@ -327,3 +329,10 @@ transitions: { driver: myDriver.runTransition }
 import { runTransition } from 'zumly-driver-lottie'
 new Zumly({ transitions: { driver: runTransition } })
 ```
+
+---
+
+## See also
+
+- [README.md](../README.md) — installation and transition driver table
+- [roadMap.md](roadMap.md) — architecture notes and animation driver history

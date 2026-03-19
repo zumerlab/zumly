@@ -14,7 +14,9 @@
 
 ## Status
 
-Zumly is under active development and **not yet ready for production**. It’s a great time for curious developers to experiment: view preloading, prefetch on hover, and multiple view sources (HTML, URL, async functions, web components) are supported. See [docs/roadMap.md](docs/roadMap.md) for improvement topics and roadmap.
+Zumly is under active development and **not yet ready for production**. It’s a great time for curious developers to experiment: view preloading, prefetch on hover, and multiple view sources (HTML, URL, async functions, web components) are supported.
+
+**Docs:** [Roadmap & topics](docs/roadMap.md) · [Custom transition drivers (`spec`, `onComplete`, helpers)](docs/DRIVER_API.md)
 
 ## Overview
 
@@ -139,7 +141,7 @@ transitions: {
 }
 ```
 
-**Transition drivers:** Zoom animations are handled by a pluggable driver (`transitions.driver`). You can swap implementations without changing app logic.
+**Transition drivers:** Zoom animations are handled by a pluggable driver (`transitions.driver`). You can swap implementations without changing app logic. To author your own, see [docs/DRIVER_API.md](docs/DRIVER_API.md) and the `zumly/driver-helpers` export.
 
 | Driver | Description |
 |--------|-------------|
@@ -252,7 +254,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 - Router integration (e.g. URL sync)
 - ~~Resize correction~~ done: cheap translate/origin scaling when canvas size changes
 
-Details and more topics: [docs/roadMap.md](docs/roadMap.md).
+Details and more topics: [docs/roadMap.md](docs/roadMap.md). Driver contract and helpers: [docs/DRIVER_API.md](docs/DRIVER_API.md).
 
 ## Community
 

@@ -6,7 +6,11 @@ If you haven't already, come find us in [our Telegram group](https://t.me/ZumlyC
 
 ## Testing
 
-[Most of our tests](https://github.com/zumly/zumly/tree/master/__tests__) are unit-tests written with Jest. Please write Spec examples for new code you create.
+Tests live in [`__tests__/`](https://github.com/zumly/zumly/tree/master/__tests__) and run with [Vitest](https://vitest.dev/) + Playwright (`npm run test`). Please add or update tests when you change behavior.
+
+## Transition drivers
+
+Custom `transitions.driver` implementations are documented in **[docs/DRIVER_API.md](docs/DRIVER_API.md)**. Prefer shared helpers from `zumly/driver-helpers` (or `src/drivers/driver-helpers.js` in this repo).
 
 ## Submitting changes
 

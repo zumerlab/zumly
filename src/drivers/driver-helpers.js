@@ -6,7 +6,7 @@
  * lateral (same-level) transitions. Import what you need; skip what you don't.
  *
  * @module driver-helpers
- * @see {@link ./DRIVER_API.md} for the full driver authoring guide
+ * @see ../../docs/DRIVER_API.md for the full driver authoring guide
  */
 
 // ─── Duration parsing ────────────────────────────────────────────────
