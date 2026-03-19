@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { getDriver } from '../src/drivers/index.js'
+import { getDriver, cssTransition } from '../src/drivers/index.js'
 import { Zumly } from '../src/zumly.js'
 
 describe('Transition drivers', () => {
@@ -90,6 +90,91 @@ describe('Transition drivers', () => {
         previousView: document.createElement('div'),
         currentStage: { views: [] },
       }, onComplete)
+      expect(onComplete).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('CSS driver runTransition', () => {
+    it('calls onComplete when spec is invalid', () => {
+      const onComplete = vi.fn()
+      cssTransition({}, onComplete)
+      expect(onComplete).toHaveBeenCalledTimes(1)
+    })
+
+    it('calls onComplete when spec has no currentView', () => {
+      const onComplete = vi.fn()
+      cssTransition({
+        type: 'zoomIn',
+        previousView: document.createElement('div'),
+        currentStage: { views: [] },
+      }, onComplete)
+      expect(onComplete).toHaveBeenCalledTimes(1)
+    })
+
+    it('zoom-in flow cleans up classes and reaches completion after animationend', () => {
+      const currentView = document.createElement('div')
+      currentView.classList.add('is-new-current-view', 'has-no-events')
+      const previousView = document.createElement('div')
+      previousView.classList.add('is-previous-view')
+      document.body.appendChild(previousView)
+      document.body.appendChild(currentView)
+
+      const currentStage = {
+        views: [
+          { backwardState: { transform: 'scale(0.5)' }, forwardState: { origin: '0 0', transform: 'translate(0,0)' } },
+          { backwardState: { transform: '' }, forwardState: { origin: '0 0', transform: 'translate(100px,0)' } },
+        ]
+      }
+
+      return new Promise((resolve) => {
+        cssTransition({
+          type: 'zoomIn',
+          currentView,
+          previousView,
+          lastView: null,
+          currentStage,
+          duration: '10ms',
+          ease: 'linear'
+        }, () => {
+          expect(currentView.classList.contains('is-current-view')).toBe(true)
+          expect(currentView.classList.contains('is-new-current-view')).toBe(false)
+          expect(currentView.classList.contains('zoom-current-view')).toBe(false)
+          expect(previousView.classList.contains('zoom-previous-view')).toBe(false)
+          resolve()
+        })
+
+        currentView.dispatchEvent(new AnimationEvent('animationend', { bubbles: true }))
+        previousView.dispatchEvent(new AnimationEvent('animationend', { bubbles: true }))
+      })
+    })
+
+    it('missing or removed elements do not leave driver hanging (safety timeout)', async () => {
+      const currentView = document.createElement('div')
+      currentView.classList.add('is-new-current-view')
+      const previousView = document.createElement('div')
+      previousView.classList.add('is-previous-view')
+      const currentStage = {
+        views: [
+          { backwardState: { transform: '' }, forwardState: { origin: '0 0', transform: '' } },
+          { backwardState: { transform: '' }, forwardState: { origin: '0 0', transform: '' } },
+        ]
+      }
+
+      const onComplete = vi.fn()
+      cssTransition({
+        type: 'zoomIn',
+        currentView,
+        previousView,
+        lastView: null,
+        currentStage,
+        duration: '10ms',
+        ease: 'linear'
+      }, onComplete)
+
+      currentView.remove()
+      previousView.remove()
+
+      await new Promise(r => setTimeout(r, 200))
       expect(onComplete).toHaveBeenCalledTimes(1)
     })
   })

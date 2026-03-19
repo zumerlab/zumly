@@ -1,6 +1,9 @@
 /**
  * CSS-based transition driver.
  * Uses CSS variables and keyframe classes; completes via animationend.
+ * Includes a safety timeout so onComplete() runs even if animationend is missed
+ * (e.g. element removed, duration 0, browser quirks). Listeners are always cleaned up.
+ *
  * @param {Object} spec - { type: 'zoomIn'|'zoomOut', currentView, previousView, lastView, currentStage, duration, ease, canvas? }
  * @param {function} onComplete - called when all animations have finished and cleanup is done
  */
@@ -19,6 +22,19 @@ export function runTransition (spec, onComplete) {
     onComplete()
   }
 }
+
+/** Parse duration string (e.g. "1s", "500ms") to milliseconds. */
+function parseDurationMs (duration) {
+  if (typeof duration !== 'string') return 500
+  const m = duration.match(/^(\d+(?:\.\d+)?)(ms|s)?$/i)
+  if (!m) return 500
+  const val = parseFloat(m[1])
+  const unit = (m[2] || 's').toLowerCase()
+  return unit === 'ms' ? val : val * 1000
+}
+
+/** Safety buffer beyond parsed duration to avoid racing animationend. */
+const SAFETY_BUFFER_MS = 150
 
 function runZoomIn (currentView, previousView, lastView, currentStage, duration, ease, onComplete) {
   currentView.classList.remove('hide')
@@ -49,16 +65,44 @@ function runZoomIn (currentView, previousView, lastView, currentStage, duration,
 
   const elements = lastView ? [currentView, previousView, lastView] : [currentView, previousView]
   let pending = elements.length
+  let completed = false
 
-  function handleEnd (event) {
-    const el = event.target
-    el.removeEventListener('animationend', handleEnd)
-    applyZoomInEndState(el, currentStage)
-    pending--
-    if (pending === 0) onComplete()
+  function finish () {
+    if (completed) return
+    completed = true
+    clearTimeout(safetyTimer)
+    elements.forEach(el => {
+      if (el && typeof el.removeEventListener === 'function') {
+        el.removeEventListener('animationend', handleEnd)
+      }
+    })
+    onComplete()
   }
 
-  elements.forEach(el => el.addEventListener('animationend', handleEnd))
+  function handleEnd (event) {
+    const el = event && event.target
+    if (el && typeof el.removeEventListener === 'function') {
+      el.removeEventListener('animationend', handleEnd)
+    }
+    if (el && el.isConnected) {
+      try {
+        applyZoomInEndState(el, currentStage)
+      } catch (e) {
+        // Ignore cleanup errors on partially detached DOM
+      }
+    }
+    pending--
+    if (pending <= 0) finish()
+  }
+
+  elements.forEach(el => {
+    if (el && typeof el.addEventListener === 'function') {
+      el.addEventListener('animationend', handleEnd)
+    }
+  })
+
+  const durationMs = parseDurationMs(duration)
+  const safetyTimer = setTimeout(finish, durationMs + SAFETY_BUFFER_MS)
 }
 
 function applyZoomInEndState (element, currentStage) {
@@ -98,16 +142,44 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
 
   const elements = lastView ? [currentView, previousView, lastView] : [currentView, previousView]
   let pending = elements.length
+  let completed = false
 
-  function handleEnd (event) {
-    const el = event.target
-    el.removeEventListener('animationend', handleEnd)
-    applyZoomOutEndState(el, currentStage, canvas)
-    pending--
-    if (pending === 0) onComplete()
+  function finish () {
+    if (completed) return
+    completed = true
+    clearTimeout(safetyTimer)
+    elements.forEach(el => {
+      if (el && typeof el.removeEventListener === 'function') {
+        el.removeEventListener('animationend', handleEnd)
+      }
+    })
+    onComplete()
   }
 
-  elements.forEach(el => el.addEventListener('animationend', handleEnd))
+  function handleEnd (event) {
+    const el = event && event.target
+    if (el && typeof el.removeEventListener === 'function') {
+      el.removeEventListener('animationend', handleEnd)
+    }
+    if (el && el.isConnected) {
+      try {
+        applyZoomOutEndState(el, currentStage, canvas)
+      } catch (e) {
+        // Ignore cleanup errors on partially detached DOM
+      }
+    }
+    pending--
+    if (pending <= 0) finish()
+  }
+
+  elements.forEach(el => {
+    if (el && typeof el.addEventListener === 'function') {
+      el.addEventListener('animationend', handleEnd)
+    }
+  })
+
+  const durationMs = parseDurationMs(duration)
+  const safetyTimer = setTimeout(finish, durationMs + SAFETY_BUFFER_MS)
 }
 
 function applyZoomOutEndState (element, currentZoomLevel, canvas) {
