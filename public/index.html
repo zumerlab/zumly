@@ -73,12 +73,19 @@
       <span class="muted">Transition driver:</span>
       <label><input type="radio" name="driver" value="css" checked> CSS</label>
       <label><input type="radio" name="driver" value="waapi"> WAAPI</label>
+      <label><input type="radio" name="driver" value="anime"> Anime.js</label>
+      <label><input type="radio" name="driver" value="gsap"> GSAP</label>
+      <label><input type="radio" name="driver" value="motion"> Motion</label>
       <label><input type="radio" name="driver" value="none"> None</label>
     </div>
     <div id="demo-container">
       <div class="example zumly-canvas"></div>
     </div>
 
+    <!-- Optional: load to try anime, gsap or motion driver -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/motion@11/dist/motion.min.js" crossorigin="anonymous"></script>
     <script src="/dist/zumly.js"></script>
     <script>
       const ZumlyLib = window.Zumly || globalThis.Zumly

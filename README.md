@@ -112,7 +112,7 @@ await app.init();
 
 ```js
 transitions: {
-  driver: 'css',   // 'css' (default) | 'waapi' | 'none' or custom function(spec, onComplete)
+  driver: 'css',   // 'css' | 'waapi' | 'anime' | 'gsap' | 'motion' | 'none' or custom function(spec, onComplete)
   effects: ['blur', 'sepia', 'saturate'],  // background view effects
   cover: 'width',   // or 'height' — how the previous view scales to cover the trigger
   duration: '1s',
@@ -126,6 +126,9 @@ transitions: {
 |--------|-------------|
 | `'css'` (default) | CSS keyframes and `animationend`; uses `zumly.css` variables. |
 | `'waapi'` | Web Animations API (`element.animate()`). |
+| `'anime'` | [Anime.js](https://animejs.com/) — load the library (e.g. from CDN) before use. |
+| `'gsap'` | [GSAP](https://greensock.com/gsap/) — load the library (e.g. from CDN) before use. |
+| `'motion'` | [Motion](https://motion.dev/) (motion.dev) — load the library (e.g. from CDN) before use. |
 | `'none'` | No animation; applies final state immediately. Useful for tests or instant UX. |
 | `function(spec, onComplete)` | Custom driver. Receives a transition spec and must call `onComplete()` when done. |
 
