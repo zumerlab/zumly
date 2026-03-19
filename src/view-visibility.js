@@ -1,6 +1,6 @@
 /**
  * Centralized `content-visibility` handling for view layers during zoom prep / teardown.
- * Matches prior inline `style.contentVisibility` behavior (auto vs hidden).
+ * Single source of truth — .z-view.hide only handles opacity; this module controls content-visibility.
  */
 
 /**

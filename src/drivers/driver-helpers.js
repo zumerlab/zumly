@@ -134,8 +134,8 @@ export function removeViewFromCanvas (element, canvas) {
 
 /**
  * Make a view visible and interactive before animating it.
- * Views start hidden (class `hide`, `contentVisibility: hidden`) when inserted
- * by prepareAndInsertView. Drivers must call this before running any animation.
+ * Views start hidden (class `hide` for opacity, `contentVisibility: hidden` via view-visibility)
+ * when inserted by prepareAndInsertView. Drivers must call this before running any animation.
  *
  * @param  {...HTMLElement} elements - One or more view elements (nulls are skipped)
  */

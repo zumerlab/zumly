@@ -36,7 +36,6 @@
 
 .z-view.hide {
   opacity: 0;
-  content-visibility: hidden;
 }
 
 .zoom-me {
