@@ -13,11 +13,21 @@ export function runTransition (spec, onComplete) {
   }
 
   if (type === 'zoomIn') {
+    // Match the setup side-effects that CSS/WAAPI drivers do at the start:
+    // when a view is inserted it may still be `hide` and `contentVisibility: hidden`.
+    currentView.classList.remove('hide')
+    currentView.style.contentVisibility = 'auto'
+    previousView.style.contentVisibility = 'auto'
+    if (lastView) lastView.style.contentVisibility = 'auto'
+
     applyZoomInEndState(currentView, currentStage)
     applyZoomInEndState(previousView, currentStage)
     if (lastView) applyZoomInEndState(lastView, currentStage)
   } else if (type === 'zoomOut') {
     removeCurrentView(currentView, canvas)
+    // Ensure the new active view is visible immediately.
+    previousView.style.contentVisibility = 'auto'
+    if (lastView) lastView.style.contentVisibility = 'auto'
     applyZoomOutPreviousState(previousView, currentStage.views[1].backwardState)
     if (lastView) applyZoomOutLastState(lastView, currentStage.views[2].backwardState)
   }
@@ -36,14 +46,14 @@ function applyZoomInEndState (element, currentStage) {
   }
   if (element.classList.contains('is-previous-view')) {
     const v = currentStage.views[1].forwardState
-    element.classList.remove('zoom-previous-view')
+    element.classList.remove('zoom-previous-view', 'has-no-events')
     element.style.transformOrigin = v.origin
     element.style.transform = v.transform
     return
   }
   if (element.classList.contains('is-last-view')) {
     const v = currentStage.views[2].forwardState
-    element.classList.remove('zoom-last-view')
+    element.classList.remove('zoom-last-view', 'has-no-events')
     element.style.transformOrigin = v.origin
     element.style.transform = v.transform
   }
@@ -62,13 +72,15 @@ function removeCurrentView (element, canvas) {
 }
 
 function applyZoomOutPreviousState (element, backwardState) {
-  element.classList.remove('zoom-previous-view-reverse')
+  // During zoomOut the engine swaps `is-previous-view` -> `is-current-view` before
+  // calling the driver, so remove any leftover interaction-blocking class.
+  element.classList.remove('zoom-previous-view-reverse', 'has-no-events')
   element.style.transformOrigin = '0 0'
   element.style.transform = backwardState.transform
 }
 
 function applyZoomOutLastState (element, backwardState) {
-  element.classList.remove('zoom-last-view-reverse')
+  element.classList.remove('zoom-last-view-reverse', 'has-no-events')
   element.style.transformOrigin = backwardState.origin
   element.style.transform = backwardState.transform
 }
