@@ -50,13 +50,14 @@ Download the built files from [unpkg.com/zumly](https://unpkg.com/zumly/) (see t
 
 ```html
 <link rel="stylesheet" href="zumly/dist/zumly.css">
-<!-- or https://unpkg.com/zumly@0.9.11/dist/zumly.css -->
+<!-- or https://unpkg.com/zumly/dist/zumly.css -->
 ```
 
 2. Load the JS bundle (it exposes `window.Zumly`):
 
 ```html
 <script src="zumly/dist/zumly.js"></script>
+<!-- or https://unpkg.com/zumly/dist/zumly.js -->
 ```
 
 ## Hello World
