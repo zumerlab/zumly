@@ -8,6 +8,7 @@ import {
   computeLastViewEndTransform,
   computeLastViewIntermediateTransform
 } from './geometry.js'
+import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetachedNode, INDEX_CURRENT } from './snapshots.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
 import { getDriver } from './drivers/index.js'
 
@@ -235,63 +236,31 @@ export class Zumly {
       } else {
         previousView.style.transform = transformPreviousView0
       }
-      // arrays
-      var snapShoot = {
-        zoomLevel: this.storedViews.length,
-        views: []
-      }
-      const currentv = currentView ? {
-        viewName: currentView.dataset.viewName,
-        backwardState: {
-          origin: currentView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformCurrentView0
-        },
-        forwardState: {
-          origin: currentView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformCurrentView1
-        }
-      } : null
-      const previousv = previousView ? {
-        viewName: previousView.dataset.viewName,
-        backwardState: {
-          origin: previousView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformPreviousView0
-        },
-        forwardState: {
-          origin: previousView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: prevEnd.transform
-        }
-      } : null
-      const lastv = lastView ? {
-        viewName: lastView.dataset.viewName,
-        backwardState: {
-          origin: lastView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformLastView0
-        },
-        forwardState: {
-          origin: lastView.style.transformOrigin,
-          duration: duration,
-          ease: ease,
-          transform: transformLastView1
-        }
-      } : null
-      const gonev = removeView ? { // ACA VA LA VISTA ENTERA FALTA REALIZAR UN ZOOM IGUAL ANTES DE SACARLA DE JUEGO
-        viewName: removeView
-      } : null
-      if (currentv !== null) snapShoot.views.push(currentv)
-      if (previousv !== null) snapShoot.views.push(previousv)
-      if (lastv !== null) snapShoot.views.push(lastv)
-      if (gonev !== null) snapShoot.views.push(gonev)
+
+      const currentEntry = createViewEntry(
+        currentView.dataset.viewName,
+        { origin: currentView.style.transformOrigin, duration, ease, transform: transformCurrentView0 },
+        { origin: currentView.style.transformOrigin, duration, ease, transform: transformCurrentView1 }
+      )
+      const previousEntry = createViewEntry(
+        previousView.dataset.viewName,
+        { origin: previousView.style.transformOrigin, duration, ease, transform: transformPreviousView0 },
+        { origin: previousView.style.transformOrigin, duration, ease, transform: prevEnd.transform }
+      )
+      const lastEntry = lastView ? createViewEntry(
+        lastView.dataset.viewName,
+        { origin: lastView.style.transformOrigin, duration, ease, transform: transformLastView0 },
+        { origin: lastView.style.transformOrigin, duration, ease, transform: transformLastView1 }
+      ) : null
+      const removedEntry = removeView ? createRemovedViewEntry(removeView) : null
+
+      const snapShoot = createZoomSnapshot(
+        this.storedViews.length,
+        currentEntry,
+        previousEntry,
+        lastEntry,
+        removedEntry
+      )
       this.storeViews(snapShoot)
       this.currentStage = this.storedViews[this.storedViews.length - 1]
       this.tracing('setCSSVariables()')
@@ -325,32 +294,29 @@ export class Zumly {
     this.blockEvents = true
     this.storedPreviousScale.pop()
     this.currentStage = this.storedViews[this.storedViews.length - 1]
-    const reAttachView = this.currentStage.views[3]
-    var lastView = canvas.querySelector('.is-last-view')
-    //
+    const lastView = canvas.querySelector('.is-last-view')
     this.tracing('setCSSVariables()')
 
     const zoomedEl = previousView.querySelector('.zoomed')
     if (zoomedEl) zoomedEl.classList.remove('zoomed')
     previousView.classList.replace('is-previous-view', 'is-current-view')
-    
-    
+
     if (lastView !== null) {
-      lastView.classList.replace('is-last-view','is-previous-view')
+      lastView.classList.replace('is-last-view', 'is-previous-view')
       lastView.classList.remove('hide')
     }
-    // Reattach the view that was removed at 4+ levels (stored as node in snapshot)
-    if (reAttachView !== undefined && reAttachView.viewName instanceof Node) {
-      canvas.prepend(reAttachView.viewName)
-      var newlastView = canvas.querySelector('.z-view:first-child')
+    const detachedNode = getDetachedNode(this.currentStage)
+    if (detachedNode) {
+      canvas.prepend(detachedNode)
+      const newlastView = canvas.querySelector('.z-view:first-child')
       if (newlastView) {
         newlastView.style.contentVisibility = 'auto'
         newlastView.classList.add('hide')
       }
     }
 
-    const duration = this.currentStage.views[0]?.forwardState?.duration ?? this.duration
-    const ease = this.currentStage.views[0]?.forwardState?.ease ?? this.ease
+    const duration = this.currentStage.views[INDEX_CURRENT]?.forwardState?.duration ?? this.duration
+    const ease = this.currentStage.views[INDEX_CURRENT]?.forwardState?.ease ?? this.ease
     const spec = {
       type: 'zoomOut',
       currentView,
