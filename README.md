@@ -93,7 +93,7 @@ const app = new Zumly({
 await app.init();
 ```
 
-- Live example: [CodePen](https://codepen.io/zumly/pen/gOPQovd)
+- Live example: [CodePen](https://codepen.io/zircle/pen/yyaXvRN)
 
 ### Options
 
