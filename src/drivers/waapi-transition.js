@@ -1,6 +1,9 @@
 /**
  * Web Animations API transition driver.
  * Uses element.animate() for each view; on finish applies final state and calls onComplete.
+ * Includes safety timeout so onComplete runs even if finished never settles (e.g. element removed).
+ * Rejected finished promises are handled: animations are cancelled, final state applied where safe, onComplete called.
+ *
  * @param {Object} spec - { type, currentView, previousView, lastView, currentStage, duration, ease, canvas? }
  * @param {function} onComplete
  */
@@ -22,13 +25,22 @@ export function runTransition (spec, onComplete) {
   }
 }
 
-function parseDurationMs (duration) {
-  if (typeof duration === 'number') return duration
+/** Safety buffer beyond parsed duration when finished may never settle. */
+const SAFETY_BUFFER_MS = 150
+
+/**
+ * Parse duration to milliseconds. Supports "1s", "500ms", numeric, and invalid fallback.
+ * @param {string|number} duration
+ * @returns {number}
+ */
+export function parseDurationMs (duration) {
+  if (typeof duration === 'number' && !Number.isNaN(duration)) return Math.max(0, duration)
   const str = String(duration)
-  const num = parseFloat(str)
-  if (str.includes('ms')) return num
-  if (str.includes('s')) return num * 1000
-  return 1000
+  const m = str.match(/^(\d+(?:\.\d+)?)\s*(ms|s)?$/i)
+  if (!m) return 500
+  const val = parseFloat(m[1])
+  const unit = (m[2] || 's').toLowerCase()
+  return unit === 'ms' ? Math.max(0, val) : Math.max(0, val * 1000)
 }
 
 function runZoomInWaapi (currentView, previousView, lastView, currentStage, durationMs, ease, onComplete) {
@@ -67,16 +79,32 @@ function runZoomInWaapi (currentView, previousView, lastView, currentStage, dura
     ))
   }
 
-  Promise.all(anims.map(a => a.finished)).then(() => {
-    anims.forEach(a => a.cancel())
-    applyZoomInEndState(currentView, currentStage)
-    applyZoomInEndState(previousView, currentStage)
-    if (lastView) applyZoomInEndState(lastView, currentStage)
+  let completed = false
+
+  function finish () {
+    if (completed) return
+    completed = true
+    clearTimeout(safetyTimer)
+    anims.forEach(a => {
+      try { a.cancel() } catch (e) { /* ignore */ }
+    })
+    try {
+      applyZoomInEndState(currentView, currentStage)
+      applyZoomInEndState(previousView, currentStage)
+      if (lastView) applyZoomInEndState(lastView, currentStage)
+    } catch (e) {
+      /* ensure DOM cleanup doesn't block onComplete */
+    }
     onComplete()
-  }).catch(() => {
-    anims.forEach(a => a.cancel())
-    onComplete()
-  })
+  }
+
+  const safetyTimer = setTimeout(finish, durationMs + SAFETY_BUFFER_MS)
+
+  Promise.all(anims.map(a => a.finished))
+    .then(finish)
+    .catch(() => {
+      finish()
+    })
 }
 
 function applyZoomInEndState (element, currentStage) {
@@ -143,26 +171,44 @@ function runZoomOutWaapi (currentView, previousView, lastView, currentStage, dur
     // So that the animation drives transform, not the inline style (critical for 2-view zoomOut)
     previousView.style.removeProperty('transform')
     if (lastView) lastView.style.removeProperty('transform')
-    Promise.all(anims.map(a => a.finished)).then(finishZoomOut).catch(() => { anims.forEach(a => a.cancel()); onComplete() })
-  }
 
-  function finishZoomOut () {
-    anims.forEach(a => a.cancel())
-    try {
-      if (canvas) canvas.removeChild(currentView)
-    } catch (e) {
+    let completed = false
+
+    function finishZoomOut () {
+      if (completed) return
+      completed = true
+      clearTimeout(safetyTimer)
+      anims.forEach(a => {
+        try { a.cancel() } catch (e) { /* ignore */ }
+      })
       try {
-        if (currentView.parentElement) canvas.removeChild(currentView.parentElement)
-      } catch (e2) {}
+        if (canvas) canvas.removeChild(currentView)
+      } catch (e) {
+        try {
+          if (currentView.parentElement) canvas.removeChild(currentView.parentElement)
+        } catch (e2) {}
+      }
+      try {
+        previousView.classList.remove('has-no-events')
+        previousView.style.transformOrigin = '0 0'
+        previousView.style.transform = to1.transform
+        if (lastView && to2) {
+          lastView.style.transformOrigin = to2.origin
+          lastView.style.transform = to2.transform
+        }
+      } catch (e) {
+        /* ensure DOM cleanup doesn't block onComplete */
+      }
+      onComplete()
     }
-    previousView.classList.remove('has-no-events')
-    previousView.style.transformOrigin = '0 0'
-    previousView.style.transform = to1.transform
-    if (lastView && to2) {
-      lastView.style.transformOrigin = to2.origin
-      lastView.style.transform = to2.transform
-    }
-    onComplete()
+
+    const safetyTimer = setTimeout(finishZoomOut, durationMs + SAFETY_BUFFER_MS)
+
+    Promise.all(anims.map(a => a.finished))
+      .then(finishZoomOut)
+      .catch(() => {
+        finishZoomOut()
+      })
   }
 
   requestAnimationFrame(() => {

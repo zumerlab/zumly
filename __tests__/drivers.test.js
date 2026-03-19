@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { getDriver, cssTransition } from '../src/drivers/index.js'
+import { getDriver, cssTransition, waapiTransition } from '../src/drivers/index.js'
+import { parseDurationMs } from '../src/drivers/waapi-transition.js'
 import { Zumly } from '../src/zumly.js'
 
 describe('Transition drivers', () => {
@@ -162,6 +163,136 @@ describe('Transition drivers', () => {
 
       const onComplete = vi.fn()
       cssTransition({
+        type: 'zoomIn',
+        currentView,
+        previousView,
+        lastView: null,
+        currentStage,
+        duration: '10ms',
+        ease: 'linear'
+      }, onComplete)
+
+      currentView.remove()
+      previousView.remove()
+
+      await new Promise(r => setTimeout(r, 200))
+      expect(onComplete).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('WAAPI driver parseDurationMs', () => {
+    it('parses "500ms" as milliseconds', () => {
+      expect(parseDurationMs('500ms')).toBe(500)
+    })
+
+    it('parses "1s" as seconds', () => {
+      expect(parseDurationMs('1s')).toBe(1000)
+    })
+
+    it('parses "0.5s" as seconds', () => {
+      expect(parseDurationMs('0.5s')).toBe(500)
+    })
+
+    it('accepts numeric input', () => {
+      expect(parseDurationMs(300)).toBe(300)
+    })
+
+    it('falls back for invalid input', () => {
+      expect(parseDurationMs('invalid')).toBe(500)
+      expect(parseDurationMs('')).toBe(500)
+    })
+  })
+
+  describe('WAAPI driver runTransition', () => {
+    it('successful zoom-in transition calls onComplete()', async () => {
+      const currentView = document.createElement('div')
+      currentView.classList.add('is-new-current-view', 'has-no-events')
+      const previousView = document.createElement('div')
+      previousView.classList.add('is-previous-view')
+      document.body.appendChild(previousView)
+      document.body.appendChild(currentView)
+
+      const currentStage = {
+        views: [
+          { backwardState: { origin: '0 0', transform: 'scale(0.5)' }, forwardState: { origin: '0 0', transform: 'translate(0,0)' } },
+          { backwardState: { origin: '0 0', transform: '' }, forwardState: { origin: '0 0', transform: 'translate(100px,0)' } },
+        ]
+      }
+
+      const onComplete = vi.fn()
+      waapiTransition({
+        type: 'zoomIn',
+        currentView,
+        previousView,
+        lastView: null,
+        currentStage,
+        duration: '20ms',
+        ease: 'linear'
+      }, onComplete)
+
+      await new Promise(r => setTimeout(r, 100))
+      expect(onComplete).toHaveBeenCalledTimes(1)
+      expect(currentView.classList.contains('is-current-view')).toBe(true)
+    })
+
+    it('rejected finished promises still clean up and call onComplete without throwing', async () => {
+      const currentView = document.createElement('div')
+      currentView.classList.add('is-new-current-view')
+      const previousView = document.createElement('div')
+      previousView.classList.add('is-previous-view')
+      document.body.appendChild(previousView)
+      document.body.appendChild(currentView)
+
+      const currentStage = {
+        views: [
+          { backwardState: { origin: '0 0', transform: '' }, forwardState: { origin: '0 0', transform: '' } },
+          { backwardState: { origin: '0 0', transform: '' }, forwardState: { origin: '0 0', transform: '' } },
+        ]
+      }
+
+      const rejectingPromise = Promise.reject(new Error('simulated reject'))
+      const originalAnimate = Element.prototype.animate
+      vi.spyOn(Element.prototype, 'animate').mockImplementation(function (...args) {
+        const anim = originalAnimate.apply(this, args)
+        if (this === currentView) {
+          return { finished: rejectingPromise, cancel: () => {} }
+        }
+        return anim
+      })
+
+      const onComplete = vi.fn()
+      waapiTransition({
+        type: 'zoomIn',
+        currentView,
+        previousView,
+        lastView: null,
+        currentStage,
+        duration: '10ms',
+        ease: 'linear'
+      }, onComplete)
+
+      await new Promise(r => setTimeout(r, 50))
+      expect(onComplete).toHaveBeenCalledTimes(1)
+      vi.restoreAllMocks()
+    })
+
+    it('removed elements do not leave driver hanging (safety timeout)', async () => {
+      const currentView = document.createElement('div')
+      currentView.classList.add('is-new-current-view')
+      const previousView = document.createElement('div')
+      previousView.classList.add('is-previous-view')
+      document.body.appendChild(previousView)
+      document.body.appendChild(currentView)
+
+      const currentStage = {
+        views: [
+          { backwardState: { origin: '0 0', transform: '' }, forwardState: { origin: '0 0', transform: '' } },
+          { backwardState: { origin: '0 0', transform: '' }, forwardState: { origin: '0 0', transform: '' } },
+        ]
+      }
+
+      const onComplete = vi.fn()
+      waapiTransition({
         type: 'zoomIn',
         currentView,
         previousView,
