@@ -101,3 +101,28 @@
     transform: var(--last-view-transform-end);
   }
 }
+
+/* Lateral (same-level) navigation: back views slide, outgoing slides out, incoming slides in */
+.zoom-lateral-back {
+  animation: zoom-lateral-back var(--zoom-duration) var(--zoom-ease) forwards;
+}
+@keyframes zoom-lateral-back {
+  0% { transform: var(--lateral-from); }
+  100% { transform: var(--lateral-to); }
+}
+
+.zoom-lateral-out {
+  animation: zoom-lateral-out var(--zoom-duration) var(--zoom-ease) forwards;
+}
+@keyframes zoom-lateral-out {
+  0% { transform: var(--lateral-out-from); opacity: 1; }
+  100% { transform: var(--lateral-out-to); opacity: 0; }
+}
+
+.zoom-lateral-in {
+  animation: zoom-lateral-in var(--zoom-duration) var(--zoom-ease) forwards;
+}
+@keyframes zoom-lateral-in {
+  0% { transform: var(--lateral-in-from); opacity: 0; }
+  100% { transform: var(--lateral-in-to); opacity: 1; }
+}

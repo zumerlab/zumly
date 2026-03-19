@@ -12,7 +12,19 @@ export function runTransition (spec, onComplete) {
     return
   }
 
-  if (type === 'zoomIn') {
+  if (type === 'lateral') {
+    const { backView, backViewState, lastView, lastViewState, incomingTransformEnd } = spec
+    currentView.classList.remove('hide')
+    currentView.style.contentVisibility = 'auto'
+    const v0 = currentStage.views[0]
+    currentView.classList.replace('is-new-current-view', 'is-current-view')
+    currentView.classList.remove('zoom-current-view', 'has-no-events')
+    currentView.style.transformOrigin = v0.forwardState.origin
+    currentView.style.transform = incomingTransformEnd || v0.forwardState.transform
+    if (backView && backViewState) backView.style.transform = backViewState.transformEnd
+    if (lastView && lastViewState) lastView.style.transform = lastViewState.transformEnd
+    removeCurrentView(previousView, canvas)
+  } else if (type === 'zoomIn') {
     // Match the setup side-effects that CSS/WAAPI drivers do at the start:
     // when a view is inserted it may still be `hide` and `contentVisibility: hidden`.
     currentView.classList.remove('hide')

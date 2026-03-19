@@ -16,7 +16,9 @@ export function runTransition (spec, onComplete) {
 
   const durationMs = parseDurationMs(duration)
 
-  if (type === 'zoomIn') {
+  if (type === 'lateral') {
+    runLateralWaapi(spec, onComplete)
+  } else if (type === 'zoomIn') {
     runZoomInWaapi(currentView, previousView, lastView, currentStage, durationMs, ease, onComplete)
   } else if (type === 'zoomOut') {
     runZoomOutWaapi(currentView, previousView, lastView, currentStage, durationMs, ease, canvas, onComplete)
@@ -27,6 +29,27 @@ export function runTransition (spec, onComplete) {
 
 /** Safety buffer beyond parsed duration when finished may never settle. */
 const SAFETY_BUFFER_MS = 150
+
+function runLateralWaapi (spec, onComplete) {
+  const { currentView: incomingView, previousView: outgoingView, backView, backViewState, lastView, lastViewState, incomingTransformEnd, currentStage, canvas } = spec
+  incomingView.classList.remove('hide')
+  incomingView.style.contentVisibility = 'auto'
+  const v0 = currentStage.views[0]
+  incomingView.classList.replace('is-new-current-view', 'is-current-view')
+  incomingView.classList.remove('zoom-current-view', 'has-no-events')
+  incomingView.style.transformOrigin = v0.forwardState.origin
+  incomingView.style.transform = incomingTransformEnd || v0.forwardState.transform
+  if (backView && backViewState) backView.style.transform = backViewState.transformEnd
+  if (lastView && lastViewState) lastView.style.transform = lastViewState.transformEnd
+  try {
+    if (canvas) canvas.removeChild(outgoingView)
+  } catch (e) {
+    try {
+      if (outgoingView.parentElement) canvas.removeChild(outgoingView.parentElement)
+    } catch (e2) { /* ignore */ }
+  }
+  onComplete()
+}
 
 /**
  * Parse duration to milliseconds. Supports "1s", "500ms", numeric, and invalid fallback.

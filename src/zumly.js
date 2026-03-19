@@ -8,7 +8,7 @@ import {
   computeLastViewEndTransform,
   computeLastViewIntermediateTransform
 } from './geometry.js'
-import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetachedNode, INDEX_CURRENT } from './snapshots.js'
+import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetachedNode, INDEX_CURRENT, INDEX_PREVIOUS, INDEX_LAST } from './snapshots.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
 import { getDriver } from './drivers/index.js'
 
@@ -55,6 +55,8 @@ export class Zumly {
     this.touchendX = 0
     this.touchendY = 0
     this.touching = false
+    /** Lateral history: view names at current depth. back() pops before zoomOut. Cleared on depth change. */
+    this.lateralHistory = []
     // Check if user options exist and are valid
     checkParameters(options, this)
     if (!this.isValid) {
@@ -151,10 +153,33 @@ export class Zumly {
   }
 
   /**
-   * Navigate back one level (zoom out). Safe no-op at root.
+   * Navigate back. If there is lateral history at current depth, goes back laterally first.
+   * Otherwise zooms out one level. Safe no-op at root with no lateral history.
+   * Returns a Promise when lateral (so callers can await); otherwise returns undefined.
    */
   back () {
+    if (this.lateralHistory && this.lateralHistory.length > 0) {
+      const popped = this.lateralHistory.pop()
+      const targetViewName = popped && typeof popped === 'object' ? popped.name : popped
+      const savedEntry = popped && typeof popped === 'object' ? popped.entry : undefined
+      return this._doLateral(targetViewName, true, { savedEntry })
+    }
     this.zoomOut()
+  }
+
+  /**
+   * Navigate to a view by name. Unified API for depth and lateral navigation.
+   * @param {string} viewName - Target view (must exist in views)
+   * @param {{ mode?: 'depth'|'lateral', duration?: string, ease?: string, props?: object }} [options]
+   *   - mode 'depth': drill-down / zoom-in (default)
+   *   - mode 'lateral': same-level swap, preserves zoom level
+   */
+  async goTo (viewName, options = {}) {
+    const mode = options.mode === 'lateral' ? 'lateral' : 'depth'
+    if (mode === 'depth') {
+      return this.zoomTo(viewName, options)
+    }
+    return this._doLateral(viewName, false, options)
   }
 
   /**
@@ -230,6 +255,7 @@ export class Zumly {
    *   - rect, duration, ease: used for programmatic (synthetic) navigation
    */
   async _doZoomIn (targetViewName, triggerOrDescriptor) {
+    this.lateralHistory = []
     this.tracing('zoomIn()')
     const canvas = this.canvas
     const el = triggerOrDescriptor.el
@@ -373,7 +399,148 @@ export class Zumly {
     await this._doZoomIn(el.dataset.to, { el })
   }
 
+  /**
+   * Same-level navigation: replace current view with target at same depth.
+   * Moves towards the target element: previous/last views slide so we "pan" to the new view.
+   * Pushes current view to lateralHistory when isBack=false so back() can restore.
+   * @param {string} targetViewName
+   * @param {boolean} isBack - True when invoked from back(); do not push to lateralHistory
+   * @param {{ duration?: string, ease?: string, savedEntry?: object }} [options]
+   *   - savedEntry: when isBack, the restored view entry (preserves backwardState for zoomOut)
+   */
+  async _doLateral (targetViewName, isBack = false, options = {}) {
+    if (!this.isValid || !this.canvas) return
+    if (!Object.prototype.hasOwnProperty.call(this.views, targetViewName)) {
+      this.notify(`goTo("${targetViewName}", { mode: 'lateral' }): view not found.`, 'warn')
+      return
+    }
+    const outgoingView = this.canvas.querySelector('.is-current-view')
+    if (!outgoingView) return
+    const currentName = outgoingView.dataset?.viewName
+    if (currentName === targetViewName) return
+
+    if (!isBack) {
+      this.lateralHistory = this.lateralHistory || []
+      const topSnapshot = this.storedViews[this.storedViews.length - 1]
+      this.lateralHistory.push({ name: currentName, entry: topSnapshot.views[INDEX_CURRENT] })
+    }
+
+    this.tracing('lateral()')
+    const duration = options.duration ?? this.duration
+    const ease = options.ease ?? this.ease
+
+    const backView = this.canvas.querySelector('.is-previous-view')
+    const lastView = this.canvas.querySelector('.is-last-view')
+
+    let slideDeltaX = 0
+    let slideDeltaY = 0
+    if (backView) {
+      const fromTrigger = backView.querySelector(`.zoom-me[data-to="${currentName}"]`)
+      const toTrigger = backView.querySelector(`.zoom-me[data-to="${targetViewName}"]`)
+      if (fromTrigger && toTrigger) {
+        const fr = fromTrigger.getBoundingClientRect()
+        const tr = toTrigger.getBoundingClientRect()
+        slideDeltaX = (fr.left + fr.width / 2) - (tr.left + tr.width / 2)
+        slideDeltaY = (fr.top + fr.height / 2) - (tr.top + tr.height / 2)
+      } else {
+        const canvasRect = this.canvas.getBoundingClientRect()
+        slideDeltaX = canvasRect.width * 0.15
+      }
+    }
+
+    const context = { target: document.createElement('div'), context: this.componentContext, props: options.props ?? {} }
+    const node = await this.prefetcher.get(targetViewName, context)
+    this.prefetcher.scanAndPrefetch(node, context)
+    const incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
+    if (!incomingView) return
+
+    incomingView.style.contentVisibility = 'hidden'
+    if (lastView) lastView.style.contentVisibility = 'hidden'
+
+    const outTransform = outgoingView.style.transform || ''
+    const outOrigin = outgoingView.style.transformOrigin || '0 0'
+    incomingView.style.transform = outTransform
+    incomingView.style.transformOrigin = outOrigin
+
+    const topSnapshot = this.storedViews[this.storedViews.length - 1]
+    const newCurrentEntry = (isBack && options.savedEntry)
+      ? { ...options.savedEntry, viewName: targetViewName }
+      : createViewEntry(
+          targetViewName,
+          { origin: outOrigin, duration, ease, transform: outTransform },
+          { origin: outOrigin, duration, ease, transform: outTransform }
+        )
+    topSnapshot.views[INDEX_CURRENT] = newCurrentEntry
+    this.currentStage = topSnapshot
+
+    const backViewState = backView ? {
+      transformStart: backView.style.transform || '',
+      transformEnd: this._computeLateralBackTransform(backView.style.transform || '', slideDeltaX, slideDeltaY)
+    } : null
+    const lastViewState = lastView && topSnapshot.views[INDEX_LAST] ? {
+      transformStart: lastView.style.transform || '',
+      transformEnd: this._computeLateralBackTransform(lastView.style.transform || '', slideDeltaX * 0.7, slideDeltaY * 0.7)
+    } : null
+
+    if (backViewState && topSnapshot.views[INDEX_PREVIOUS]) {
+      topSnapshot.views[INDEX_PREVIOUS].forwardState = {
+        ...topSnapshot.views[INDEX_PREVIOUS].forwardState,
+        transform: backViewState.transformEnd
+      }
+    }
+    if (lastViewState && topSnapshot.views[INDEX_LAST]) {
+      topSnapshot.views[INDEX_LAST].forwardState = {
+        ...topSnapshot.views[INDEX_LAST].forwardState,
+        transform: lastViewState.transformEnd
+      }
+    }
+
+    const incomingTransformEnd = outTransform
+    const incomingTransformStart = this._computeLateralBackTransform(incomingTransformEnd, -slideDeltaX, -slideDeltaY)
+    const outgoingTransformEnd = this._computeLateralBackTransform(outTransform, slideDeltaX, slideDeltaY)
+
+    this.blockEvents = true
+    const spec = {
+      type: 'lateral',
+      currentView: incomingView,
+      previousView: outgoingView,
+      lastView: lastView || null,
+      backView: backView || null,
+      backViewState,
+      lastViewState,
+      incomingTransformStart,
+      incomingTransformEnd,
+      outgoingTransform: outTransform,
+      outgoingTransformEnd,
+      currentStage: this.currentStage,
+      duration,
+      ease,
+      canvas: this.canvas,
+      slideDeltaX,
+      slideDeltaY
+    }
+    this.transitionDriver.runTransition(spec, () => {
+      this.blockEvents = false
+      this.tracing('ended')
+    })
+  }
+
+  /**
+   * Add translate(dx, dy) to an existing transform string for lateral slide.
+   */
+  _computeLateralBackTransform (transform, dx, dy) {
+    const m = transform.match(/translate\s*\(\s*([-\d.eE]+)px\s*,\s*([-\d.eE]+)px\s*\)/)
+    if (m) {
+      const tx = parseFloat(m[1]) + dx
+      const ty = parseFloat(m[2]) + dy
+      const rest = transform.replace(/translate\s*\([^)]+\)\s*/, '')
+      return `translate(${tx}px, ${ty}px) ${rest}`.trim()
+    }
+    return `translate(${dx}px, ${dy}px) ${transform}`.trim()
+  }
+
   zoomOut () {
+    this.lateralHistory = []
     this.tracing('zoomOut()')
     const canvas = this.canvas
     var currentView = canvas.querySelector('.is-current-view')
