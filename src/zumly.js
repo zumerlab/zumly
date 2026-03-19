@@ -131,6 +131,72 @@ export class Zumly {
     return this.storedViews.length
   }
 
+  /**
+   * Returns the current zoom level (alias for zoomLevel).
+   * @returns {number}
+   */
+  getZoomLevel () {
+    return this.zoomLevel()
+  }
+
+  /**
+   * Returns the currently active view name, or null if not initialized.
+   * @returns {string|null}
+   */
+  getCurrentViewName () {
+    if (!this.storedViews || this.storedViews.length === 0) return null
+    const latest = this.storedViews[this.storedViews.length - 1]
+    const current = latest?.views?.[INDEX_CURRENT]
+    return current?.viewName ?? null
+  }
+
+  /**
+   * Navigate back one level (zoom out). Safe no-op at root.
+   */
+  back () {
+    this.zoomOut()
+  }
+
+  /**
+   * Programmatic zoom to a named view without a real DOM trigger.
+   * Uses a centered synthetic origin for the transition.
+   * @param {string} viewName - Target view name (must exist in views)
+   * @param {{ duration?: string, ease?: string, props?: object }} [options] - Optional overrides
+   */
+  async zoomTo (viewName, options = {}) {
+    if (!this.isValid || !this.canvas) {
+      this.notify('zoomTo() cannot run: instance is invalid or canvas not found.', 'error')
+      return
+    }
+    if (typeof viewName !== 'string' || !viewName) {
+      this.notify('zoomTo() requires a non-empty view name.', 'warn')
+      return
+    }
+    if (!Object.prototype.hasOwnProperty.call(this.views, viewName)) {
+      this.notify(`zoomTo("${viewName}"): view not found in views.`, 'warn')
+      return
+    }
+    const current = this.getCurrentViewName()
+    if (current === viewName) return
+
+    const cr = this.canvas.getBoundingClientRect()
+    const w = Math.max(40, cr.width * 0.1)
+    const h = Math.max(40, cr.height * 0.1)
+    const syntheticRect = {
+      x: cr.left + (cr.width - w) / 2,
+      y: cr.top + (cr.height - h) / 2,
+      width: w,
+      height: h
+    }
+    const descriptor = {
+      rect: syntheticRect,
+      duration: options.duration ?? this.duration,
+      ease: options.ease ?? this.ease,
+      props: options.props ?? {}
+    }
+    await this._doZoomIn(viewName, descriptor)
+  }
+
   async init () {
     if (!this.isValid || !this.canvas) {
       this.notify('init() cannot run: instance is invalid or canvas element was not found.', 'error')
@@ -153,135 +219,158 @@ export class Zumly {
           }
         }]
       })
+    this.currentStage = this.storedViews[this.storedViews.length - 1]
   }
 
   /**
-   * Main methods
+   * Internal: shared zoom-in path for both trigger-based and programmatic navigation.
+   * @param {string} targetViewName - View to zoom to
+   * @param {{ el?: HTMLElement, rect?: {x,y,width,height}, duration?: string, ease?: string, props?: object }} triggerOrDescriptor
+   *   - el: real DOM trigger (has dataset.to, getBoundingClientRect)
+   *   - rect, duration, ease: used for programmatic (synthetic) navigation
    */
-  async zoomIn (el) {
+  async _doZoomIn (targetViewName, triggerOrDescriptor) {
     this.tracing('zoomIn()')
     const canvas = this.canvas
-    const coordenadasCanvas = canvas.getBoundingClientRect()
-    var offsetX = coordenadasCanvas.left
-    var offsetY = coordenadasCanvas.top
+    const el = triggerOrDescriptor.el
+    const canvasRect = canvas.getBoundingClientRect()
+    const offsetX = canvasRect.left
+    const offsetY = canvasRect.top
     const preScale = this.storedPreviousScale[this.storedPreviousScale.length - 1]
     this.tracing('getView()')
-    const context = { trigger: el, target: document.createElement('div'), context: this.componentContext, props: Object.assign({}, el.dataset) }
-    const node = await this.prefetcher.get(el.dataset.to, context)
+
+    const context = el
+      ? { trigger: el, target: document.createElement('div'), context: this.componentContext, props: Object.assign({}, el.dataset) }
+      : { target: document.createElement('div'), context: this.componentContext, props: triggerOrDescriptor.props ?? {} }
+
+    const node = await this.prefetcher.get(targetViewName, context)
     this.prefetcher.scanAndPrefetch(node, context)
-    var currentView = await prepareAndInsertView(node, el.dataset.to, canvas, false, this.views, this.componentContext)
+    const currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext)
 
-    if (currentView) {
-      el.classList.add('zoomed')
-      const coordenadasEl = el.getBoundingClientRect()
-      const previousView = canvas.querySelector('.is-current-view')
-      const lastView = canvas.querySelector('.is-previous-view')
-      const removeView = canvas.querySelector('.is-last-view')
-      currentView.style.contentVisibility = 'hidden'
-      previousView.style.contentVisibility = 'hidden'
-      if (lastView !== null) lastView.style.contentVisibility = 'hidden'
-      if (removeView !== null) removeView.style.contentVisibility = 'hidden'
-      if (removeView !== null) canvas.removeChild(removeView)
+    if (!currentView) return
 
-      const cc = currentView.getBoundingClientRect()
-      const canvasOffset = { left: offsetX, top: offsetY }
-      const canvasRect = { width: coordenadasCanvas.width, height: coordenadasCanvas.height }
-      const triggerRect = { x: coordenadasEl.x, y: coordenadasEl.y, width: coordenadasEl.width, height: coordenadasEl.height }
-      const currentViewRect = { width: cc.width, height: cc.height }
+    if (el) el.classList.add('zoomed')
 
-      const { scale: laScala, scaleInv: laScalaInv } = computeCoverScale(
-        coordenadasEl.width, coordenadasEl.height, cc.width, cc.height, this.cover
-      )
-      this.setPreviousScale(laScala)
+    const triggerRect = el
+      ? (() => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height } })()
+      : triggerOrDescriptor.rect
 
-      const duration = el.dataset.withDuration || this.duration
-      const ease = el.dataset.withEase || this.ease
+    const duration = el ? (el.dataset.withDuration || this.duration) : (triggerOrDescriptor.duration ?? this.duration)
+    const ease = el ? (el.dataset.withEase || this.ease) : (triggerOrDescriptor.ease ?? this.ease)
 
-      const transformCurrentView0 = computeCurrentViewStartTransform(
-        triggerRect, canvasOffset, currentViewRect, laScalaInv
-      )
-      currentView.style.transform = transformCurrentView0
-
-      previousView.classList.replace('is-current-view', 'is-previous-view')
-      const coordenadasPreviousView = previousView.getBoundingClientRect()
-      const transformPreviousView0 = previousView.style.transform
-      previousView.style.transformOrigin = computePreviousViewOrigin(triggerRect, coordenadasPreviousView)
-
-      const prevEnd = computePreviousViewEndTransform(
-        canvasRect, triggerRect, coordenadasPreviousView, laScala
-      )
-      previousView.style.transform = prevEnd.transform
-
-      const newcoordenadasEl = el.getBoundingClientRect()
-      const transformCurrentView1 = computeCurrentViewEndTransform(
-        newcoordenadasEl, canvasOffset, currentViewRect
-      )
-
-      let transformLastView0
-      let transformLastView1
-      if (lastView !== null) {
-        lastView.classList.replace('is-previous-view', 'is-last-view')
-        transformLastView0 = lastView.style.transform
-        const newcoordenadasPV = previousView.getBoundingClientRect()
-        lastView.style.transform = computeLastViewIntermediateTransform(
-          prevEnd.x, prevEnd.y, canvasOffset, laScala, preScale
-        )
-        const last = lastView.querySelector('.zoomed')
-        const coorLast = last.getBoundingClientRect()
-        lastView.style.transform = transformLastView0
-        previousView.style.transform = transformPreviousView0
-        const coorPrev = previousView.getBoundingClientRect()
-        transformLastView1 = computeLastViewEndTransform(
-          canvasRect, canvasOffset, triggerRect,
-          coorPrev, coorLast, newcoordenadasPV, laScala, preScale
-        )
-      } else {
-        previousView.style.transform = transformPreviousView0
-      }
-
-      const currentEntry = createViewEntry(
-        currentView.dataset.viewName,
-        { origin: currentView.style.transformOrigin, duration, ease, transform: transformCurrentView0 },
-        { origin: currentView.style.transformOrigin, duration, ease, transform: transformCurrentView1 }
-      )
-      const previousEntry = createViewEntry(
-        previousView.dataset.viewName,
-        { origin: previousView.style.transformOrigin, duration, ease, transform: transformPreviousView0 },
-        { origin: previousView.style.transformOrigin, duration, ease, transform: prevEnd.transform }
-      )
-      const lastEntry = lastView ? createViewEntry(
-        lastView.dataset.viewName,
-        { origin: lastView.style.transformOrigin, duration, ease, transform: transformLastView0 },
-        { origin: lastView.style.transformOrigin, duration, ease, transform: transformLastView1 }
-      ) : null
-      const removedEntry = removeView ? createRemovedViewEntry(removeView) : null
-
-      const snapShoot = createZoomSnapshot(
-        this.storedViews.length,
-        currentEntry,
-        previousEntry,
-        lastEntry,
-        removedEntry
-      )
-      this.storeViews(snapShoot)
-      this.currentStage = this.storedViews[this.storedViews.length - 1]
-      this.tracing('setCSSVariables()')
-      this.blockEvents = true
-      const spec = {
-        type: 'zoomIn',
-        currentView,
-        previousView,
-        lastView,
-        currentStage: this.currentStage,
-        duration,
-        ease
-      }
-      this.transitionDriver.runTransition(spec, () => {
-        this.blockEvents = false
-        this.tracing('ended')
-      })
+    const previousView = canvas.querySelector('.is-current-view')
+    const lastView = canvas.querySelector('.is-previous-view')
+    const removeView = canvas.querySelector('.is-last-view')
+    currentView.style.contentVisibility = 'hidden'
+    previousView.style.contentVisibility = 'hidden'
+    if (lastView) lastView.style.contentVisibility = 'hidden'
+    if (removeView) {
+      removeView.style.contentVisibility = 'hidden'
+      canvas.removeChild(removeView)
     }
 
+    const cc = currentView.getBoundingClientRect()
+    const canvasOffset = { left: offsetX, top: offsetY }
+    const canvasRectSize = { width: canvasRect.width, height: canvasRect.height }
+    const currentViewRect = { width: cc.width, height: cc.height }
+
+    const { scale: laScala, scaleInv: laScalaInv } = computeCoverScale(
+      triggerRect.width, triggerRect.height, cc.width, cc.height, this.cover
+    )
+    this.setPreviousScale(laScala)
+
+    const transformCurrentView0 = computeCurrentViewStartTransform(
+      triggerRect, canvasOffset, currentViewRect, laScalaInv
+    )
+    currentView.style.transform = transformCurrentView0
+
+    previousView.classList.replace('is-current-view', 'is-previous-view')
+    const coordenadasPreviousView = previousView.getBoundingClientRect()
+    const transformPreviousView0 = previousView.style.transform
+    previousView.style.transformOrigin = computePreviousViewOrigin(triggerRect, coordenadasPreviousView)
+
+    const prevEnd = computePreviousViewEndTransform(
+      canvasRectSize, triggerRect, coordenadasPreviousView, laScala
+    )
+    previousView.style.transform = prevEnd.transform
+
+    const triggerRectAfterTransform = el ? el.getBoundingClientRect() : triggerRect
+    const transformCurrentView1 = computeCurrentViewEndTransform(
+      triggerRectAfterTransform, canvasOffset, currentViewRect
+    )
+
+    let transformLastView0
+    let transformLastView1
+    if (lastView) {
+      lastView.classList.replace('is-previous-view', 'is-last-view')
+      transformLastView0 = lastView.style.transform
+      const newcoordenadasPV = previousView.getBoundingClientRect()
+      lastView.style.transform = computeLastViewIntermediateTransform(
+        prevEnd.x, prevEnd.y, canvasOffset, laScala, preScale
+      )
+      const last = lastView.querySelector('.zoomed')
+      const coorLast = (last && last.getBoundingClientRect) ? last.getBoundingClientRect() : lastView.getBoundingClientRect()
+      lastView.style.transform = transformLastView0
+      previousView.style.transform = transformPreviousView0
+      const coorPrev = previousView.getBoundingClientRect()
+      transformLastView1 = computeLastViewEndTransform(
+        canvasRectSize, canvasOffset, triggerRect,
+        coorPrev, coorLast, newcoordenadasPV, laScala, preScale
+      )
+    } else {
+      previousView.style.transform = transformPreviousView0
+    }
+
+    const currentEntry = createViewEntry(
+      currentView.dataset.viewName,
+      { origin: currentView.style.transformOrigin, duration, ease, transform: transformCurrentView0 },
+      { origin: currentView.style.transformOrigin, duration, ease, transform: transformCurrentView1 }
+    )
+    const previousEntry = createViewEntry(
+      previousView.dataset.viewName,
+      { origin: previousView.style.transformOrigin, duration, ease, transform: transformPreviousView0 },
+      { origin: previousView.style.transformOrigin, duration, ease, transform: prevEnd.transform }
+    )
+    const lastEntry = lastView ? createViewEntry(
+      lastView.dataset.viewName,
+      { origin: lastView.style.transformOrigin, duration, ease, transform: transformLastView0 },
+      { origin: lastView.style.transformOrigin, duration, ease, transform: transformLastView1 }
+    ) : null
+    const removedEntry = removeView ? createRemovedViewEntry(removeView) : null
+
+    const snapShoot = createZoomSnapshot(
+      this.storedViews.length,
+      currentEntry,
+      previousEntry,
+      lastEntry,
+      removedEntry
+    )
+    this.storeViews(snapShoot)
+    this.currentStage = this.storedViews[this.storedViews.length - 1]
+    this.tracing('setCSSVariables()')
+    this.blockEvents = true
+    const spec = {
+      type: 'zoomIn',
+      currentView,
+      previousView,
+      lastView,
+      currentStage: this.currentStage,
+      duration,
+      ease
+    }
+    this.transitionDriver.runTransition(spec, () => {
+      this.blockEvents = false
+      this.tracing('ended')
+    })
+  }
+
+  /**
+   * Zoom in to the view indicated by the clicked element.
+   * @param {HTMLElement} el - Element with .zoom-me and data-to="viewName"
+   */
+  async zoomIn (el) {
+    if (!el?.dataset?.to) return
+    await this._doZoomIn(el.dataset.to, { el })
   }
 
   zoomOut () {

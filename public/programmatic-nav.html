@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zumly - Programmatic Navigation</title>
+    <link rel="stylesheet" href="/dist/zumly.css" />
+    <style>
+      body { margin: 0; padding: 0; }
+      .mount {
+        position: absolute;
+        top: 72px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        overflow: hidden;
+      }
+      .example { width: 100%; height: 100%; position: relative; }
+      .view {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 24px;
+        background: linear-gradient(180deg, rgba(11, 16, 32, 0.9), rgba(11, 16, 32, 0.55));
+        color: #e8ecff;
+      }
+      .card {
+        margin-top: 16px;
+        padding: 16px 18px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(226, 186, 26, 0.65);
+        width: fit-content;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+        cursor: zoom-in;
+      }
+      .nav-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 20;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 10px 14px;
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        font-family: system-ui, -apple-system, sans-serif;
+        align-items: center;
+      }
+      .nav-bar button {
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        cursor: pointer;
+      }
+      .nav-bar button:hover { background: rgba(255, 255, 255, 0.2); }
+      .nav-bar .info { opacity: 0.85; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <div class="nav-bar">
+      <span><strong>Programmatic Navigation</strong></span>
+      <button onclick="app.zoomTo('detail')">zoomTo('detail')</button>
+      <button onclick="app.zoomTo('settings')">zoomTo('settings')</button>
+      <button onclick="app.back()">back()</button>
+      <span class="info" id="status">—</span>
+      <span class="info" style="opacity: 0.6; font-size: 0.8rem;">Programmatic API (zoomTo, back) + traditional .zoom-me clicks—both coexist. Foundation for future nav widgets, router sync, etc.</span>
+    </div>
+
+    <div class="mount">
+      <div class="example zumly-canvas"></div>
+    </div>
+
+    <script src="/dist/zumly.js"></script>
+    <script>
+      const ZumlyLib = window.Zumly || globalThis.Zumly
+      if (typeof ZumlyLib !== 'function') throw new Error('Zumly constructor not found.')
+
+      const home = `
+        <div class="z-view view">
+          <h2>Home</h2>
+          <p>Click a card below or use the bar buttons to navigate.</p>
+          <div class="card zoom-me" data-to="detail">Detail (click me)</div>
+          <div class="card zoom-me" data-to="settings">Settings (click me)</div>
+        </div>
+      `
+      const detail = `
+        <div class="z-view view">
+          <h2>Detail</h2>
+          <p>You can also click the card to go to Settings.</p>
+          <div class="card zoom-me" data-to="settings">Settings (click me)</div>
+        </div>
+      `
+      const settings = `
+        <div class="z-view view">
+          <h2>Settings</h2>
+          <p>Use the back() button in the bar to go back.</p>
+        </div>
+      `
+
+      const app = new ZumlyLib({
+        mount: '.example',
+        initialView: 'home',
+        views: { home, detail, settings },
+        transitions: { driver: 'css', duration: '500ms', ease: 'ease-in-out', cover: 'width' },
+      })
+
+      function updateStatus () {
+        const el = document.getElementById('status')
+        if (el && app) el.textContent = `View: ${app.getCurrentViewName()} | Level: ${app.getZoomLevel()}`
+      }
+
+      app.init().then(() => {
+        updateStatus()
+        setInterval(updateStatus, 300)
+      })
+    </script>
+  </body>
+</html>

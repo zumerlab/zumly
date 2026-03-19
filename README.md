@@ -248,7 +248,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 - Additional view/template adapters
 - Lateral navigation (same zoom level)
-- Navigation widget and programmatic navigation
+- Navigation widget (~~programmatic navigation~~ done)
 - Router integration (e.g. URL sync)
 - Recalculate zoom on window resize
 

@@ -22,7 +22,7 @@ Working document to prioritize and design improvements. Not a closed task list b
 ## 2. ZUI model (consolidate)
 
 ### Current state
-- **Navigation**: in/out only (zoom to clicked element, go back). No lateral navigation, no programmatic breadcrumb.
+- **Navigation**: in/out only (zoom to clicked element, go back). No lateral navigation. ~~Programmatic breadcrumb~~ → done: `zoomTo()`, `back()`, `getCurrentViewName()`, `getZoomLevel()`.
 - **View**: unit shown at one zoom level; identified by name (`viewName`) and stored in snapshot with `backwardState` / `forwardState`.
 - **Trigger**: `.zoom-me` + `data-to="viewName"`. Optional `data-with-duration`, `data-with-ease` (current typo in code: `data-with-eease`).
 
@@ -124,7 +124,7 @@ This removes freedom to use other animation systems or no animation.
 - **Tests**: extend for zoomOut (with/without lastView, reAttach); and for renderView (string, object with render, mounted).
 
 ### Navigation and product
-- **Programmatic**: `zumly.zoomTo('viewName')` without relying on a `.zoom-me` click; implies resolving the view and the "origin" (center or last active element).
+- ~~**Programmatic**~~ **Done**: `zoomTo(viewName)`, `back()`, `getCurrentViewName()`, `getZoomLevel()`.
 - **Router**: sync URL with level/view (hash or history) so deep views can be shared; depends on state model.
 - **Resize**: recompute transforms or at least scales when canvas size changes; currently no listener.
 
