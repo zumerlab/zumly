@@ -101,22 +101,33 @@ export function notification (debug, msg, type) {
 export function checkParameters (parameters, instance) {
   // Minimal, explicit normalization with safe defaults.
   // Strictness: invalid values warn/error and fall back to safe defaults.
+  instance.isValid = false
+
   if (!parameters || typeof parameters !== 'object') {
     notification(false, '\'options\' object has to be provided when instance is defined', 'error')
     return
   }
 
-  instance.options = true
+  // Required: all must pass for instance to be valid
+  if (typeof parameters.mount !== 'string') {
+    notification(false, '\'mount\' must be a string selector', 'error')
+    return
+  }
+  instance.mount = parameters.mount
 
-  // Required
-  if (typeof parameters.mount === 'string') instance.mount = parameters.mount
-  else notification(false, '\'mount\' must be a string selector', 'error')
+  if (typeof parameters.initialView !== 'string') {
+    notification(false, '\'initialView\' must be a string', 'error')
+    return
+  }
+  instance.initialView = parameters.initialView
 
-  if (typeof parameters.initialView === 'string') instance.initialView = parameters.initialView
-  else notification(false, '\'initialView\' must be a string', 'error')
+  if (!parameters.views || typeof parameters.views !== 'object') {
+    notification(false, '\'views\' must be an object', 'error')
+    return
+  }
+  instance.views = parameters.views
 
-  if (parameters.views && typeof parameters.views === 'object') instance.views = parameters.views
-  else notification(false, '\'views\' must be an object', 'error')
+  instance.isValid = true
 
   // Optional
   instance.preload = Array.isArray(parameters.preload) ? parameters.preload : []

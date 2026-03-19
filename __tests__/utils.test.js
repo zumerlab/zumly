@@ -112,5 +112,30 @@ describe('utils.checkParameters()', () => {
     expect(instance.debug).toBe(true)
     expect(instance.componentContext instanceof Map).toBe(true)
   })
+
+  it('sets isValid=true when all required params are valid', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+      },
+      instance
+    )
+    expect(instance.isValid).toBe(true)
+  })
+
+  it('keeps isValid=false when mount is missing', () => {
+    const instance = {}
+    checkParameters({ initialView: 'home', views: {} }, instance)
+    expect(instance.isValid).toBe(false)
+  })
+
+  it('keeps isValid=false when options is null', () => {
+    const instance = {}
+    checkParameters(null, instance)
+    expect(instance.isValid).toBe(false)
+  })
 })
 

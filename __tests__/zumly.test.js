@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, vi } from 'vitest'
 import { Zumly } from '../src/zumly.js'
 
 let zumly0
@@ -106,5 +106,33 @@ describe('Zumly instances', () => {
   it('should have storedViews after init', () => {
     expect(zumly0.storedViews.length).toBeGreaterThanOrEqual(1)
     expect(zumly1.storedViews.length).toBeGreaterThanOrEqual(1)
+  })
+})
+
+describe('Zumly invalid initialization', () => {
+  it('leaves instance invalid when mount is missing', () => {
+    const invalid = new Zumly({ initialView: 'home', views: {} })
+    expect(invalid.isValid).toBe(false)
+    expect(invalid.prefetcher).toBeUndefined()
+    expect(invalid.canvas).toBeUndefined()
+  })
+
+  it('does not crash and does not bind events when mount selector matches nothing', () => {
+    const invalid = new Zumly({
+      mount: '.missing',
+      initialView: 'home',
+      views: { home: '<div class="z-view"></div>' },
+    })
+    expect(invalid.isValid).toBe(false)
+    expect(invalid.canvas).toBeNull()
+    expect(invalid.prefetcher).toBeUndefined()
+  })
+
+  it('init() on invalid instance is a no-op and never null dereferences', async () => {
+    const invalid = new Zumly({ initialView: 'home', views: {} })
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await expect(invalid.init()).resolves.toBeUndefined()
+    expect(invalid.storedViews).toHaveLength(0)
+    errorSpy.mockRestore()
   })
 })

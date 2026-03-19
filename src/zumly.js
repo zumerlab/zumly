@@ -45,35 +45,39 @@ export class Zumly {
     this.touchendX = 0
     this.touchendY = 0
     this.touching = false
-    // Check if user options exist
+    // Check if user options exist and are valid
     checkParameters(options, this)
-    if (this.options) {
-      this.transitionDriver = getDriver(this.transitionDriver)
-      // Event bindings:
-      this._onZoom = this.onZoom.bind(this)
-      this._onTouchStart = this.onTouchStart.bind(this)
-      this._onTouchEnd = this.onTouchEnd.bind(this)
-      this._onKeyUp = this.onKeyUp.bind(this)
-      this._onWeel = this.onWeel.bind(this)
-      // View prefetcher (preload, hover, scan)
-      this.prefetcher = new ViewPrefetcher(this.views)
-      // Prepare the instance:
-      this.canvas = document.querySelector(this.mount)
-      this.canvas.setAttribute('tabindex', 0)
-      this.canvas.addEventListener('mouseup', this._onZoom, false)
-      this.canvas.addEventListener('touchend', this._onZoom, false)
-      this.canvas.addEventListener('touchstart', this._onTouchStart, { passive: true })
-      this.canvas.addEventListener('touchend', this._onTouchEnd, false)
-      this.canvas.addEventListener('keyup', this._onKeyUp, false)
-      this.canvas.addEventListener('wheel', this._onWeel, { passive: true })
-      this.canvas.addEventListener('mouseover', this._onPrefetchHover = (e) => {
-        if (e.target.classList.contains('zoom-me') && e.target.dataset.to) {
-          this.prefetcher.prefetchOnHover(e.target.dataset.to, { trigger: e.target, ...e.target.dataset })
-        }
-      }, { passive: true })
-    } else {
-      this.notify('is unable to start: no {options} have been passed to the Zumly\'s instance.', 'error')
+    if (!this.isValid) {
+      this.notify('is unable to start: invalid or missing required options (mount, initialView, views).', 'error')
+      return
     }
+    this.canvas = document.querySelector(this.mount)
+    if (!this.canvas) {
+      this.notify(`mount selector "${this.mount}" did not match any element.`, 'error')
+      this.isValid = false
+      return
+    }
+    this.transitionDriver = getDriver(this.transitionDriver)
+    // Event bindings:
+    this._onZoom = this.onZoom.bind(this)
+    this._onTouchStart = this.onTouchStart.bind(this)
+    this._onTouchEnd = this.onTouchEnd.bind(this)
+    this._onKeyUp = this.onKeyUp.bind(this)
+    this._onWeel = this.onWeel.bind(this)
+    // View prefetcher (preload, hover, scan)
+    this.prefetcher = new ViewPrefetcher(this.views)
+    this.canvas.setAttribute('tabindex', 0)
+    this.canvas.addEventListener('mouseup', this._onZoom, false)
+    this.canvas.addEventListener('touchend', this._onZoom, false)
+    this.canvas.addEventListener('touchstart', this._onTouchStart, { passive: true })
+    this.canvas.addEventListener('touchend', this._onTouchEnd, false)
+    this.canvas.addEventListener('keyup', this._onKeyUp, false)
+    this.canvas.addEventListener('wheel', this._onWeel, { passive: true })
+    this.canvas.addEventListener('mouseover', this._onPrefetchHover = (e) => {
+      if (e.target.classList.contains('zoom-me') && e.target.dataset.to) {
+        this.prefetcher.prefetchOnHover(e.target.dataset.to, { trigger: e.target, ...e.target.dataset })
+      }
+    }, { passive: true })
   }
 
   /**
@@ -116,8 +120,11 @@ export class Zumly {
   }
 
   async init () {
-    if (this.options) {
-      this.tracing('init()')
+    if (!this.isValid || !this.canvas) {
+      this.notify('init() cannot run: instance is invalid or canvas element was not found.', 'error')
+      return
+    }
+    this.tracing('init()')
       if (this.preload && this.preload.length) {
         await this.prefetcher.preloadEager(this.preload, null)
       }
@@ -134,7 +141,6 @@ export class Zumly {
           }
         }]
       })
-    }
   }
 
   /**
