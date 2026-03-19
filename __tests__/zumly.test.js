@@ -26,9 +26,6 @@ beforeAll(async () => {
     mount: '.second',
     initialView: 'homeView',
     views: { homeView },
-    transitions: {
-      effects: ['blur', 'sepia', 'saturate'],
-    },
   })
   await zumly1.init()
 })
@@ -61,17 +58,9 @@ describe('Zumly parameters', () => {
       expect(zumly0.ease).toBe('ease-in-out')
     })
 
-    it('effects should be an array (default)', () => {
-      expect(zumly0.effects).toEqual(expect.arrayContaining(['none', 'none']))
-    })
-
-    it('effects should be an array (custom)', () => {
-      expect(zumly1.effects).toEqual(
-        expect.arrayContaining([
-          'blur(0px) sepia(0) saturate(0) ',
-          'blur(0.8px) sepia(5) saturate(8) ',
-        ])
-      )
+    it('effects defaults to [\'none\', \'none\'] (not implemented)', () => {
+      expect(zumly0.effects).toEqual(['none', 'none'])
+      expect(zumly1.effects).toEqual(['none', 'none'])
     })
 
     it('debug should be a boolean', () => {

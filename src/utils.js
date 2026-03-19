@@ -11,18 +11,6 @@
 
 import { ViewResolver } from './view-resolver.js'
 
-function setFx (values) {
-  var start = ''
-  var end = ''
-  if (values !== undefined) {
-    values.map(effect => {
-      start += `${effect.toLowerCase() === 'blur' ? 'blur(0px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(0) ' : effect.toLowerCase() === 'saturate' ? 'saturate(0) ' : 'none'}`
-      end += `${effect.toLowerCase() === 'blur' ? 'blur(0.8px) ' : effect.toLowerCase() === 'sepia' ? 'sepia(5) ' : effect.toLowerCase() === 'saturate' ? 'saturate(8) ' : 'none'}`
-    })
-    return [start, end]
-  }
-}
-
 /**
  * Prepare a resolved view node and insert it into the canvas.
  * Steps 2–4 of the pipeline: normalize .z-view, set classes, append, then mounted().
@@ -148,29 +136,10 @@ export function checkParameters (parameters, instance) {
   instance.duration = (t && typeof t.duration === 'string') ? t.duration : '1s'
   instance.ease = (t && typeof t.ease === 'string') ? t.ease : 'ease-in-out'
 
-  // Effects: used by setFx() to produce filter start/end strings.
-  // If transitions.effects is missing/invalid -> ['none','none'].
-  if (!t || t.effects === undefined) {
-    instance.effects = ['none', 'none']
-  } else {
-    const effectsInput = t.effects
-    if (!Array.isArray(effectsInput) || effectsInput.length === 0 || !effectsInput.every(e => typeof e === 'string')) {
-      notification(false, '\'transitions.effects\' must be an array of strings: blur|sepia|saturate (or [\"none\",...]). Falling back to [\"none\",\"none\"].', 'warn')
-      instance.effects = ['none', 'none']
-    } else {
-      const effectsLower = effectsInput.map(e => e.toLowerCase())
-      const firstIsNone = effectsLower[0] === 'none'
-      const allowed = ['blur', 'sepia', 'saturate']
-      const valid = firstIsNone || [...new Set(effectsLower)].every(v => allowed.indexOf(v) !== -1)
-      if (!valid) {
-        notification(false, '\'transitions.effects\' contains invalid values. Falling back to [\"none\",\"none\"].', 'warn')
-        instance.effects = ['none', 'none']
-      } else {
-        instance.effects = setFx(effectsLower)
-        // setFx() can return undefined only if effectsLower is undefined (we guard above).
-        if (!instance.effects) instance.effects = ['none', 'none']
-      }
-    }
+  // Effects: not implemented; reserved for future filter animations on background views.
+  instance.effects = ['none', 'none']
+  if (t && t.effects !== undefined) {
+    notification(false, '\'transitions.effects\' is not implemented and is ignored.', 'warn')
   }
 
   // Transition driver: 'css' | 'waapi' | 'none' | 'anime' | 'gsap' | 'motion' or custom function(spec, onComplete)

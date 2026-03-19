@@ -130,25 +130,7 @@ describe('utils.checkParameters()', () => {
     warnSpy.mockRestore()
   })
 
-  it('normalizes effects=blur/sepia/saturate', () => {
-    const instance = {}
-    checkParameters(
-      {
-        mount: '.first',
-        initialView: 'home',
-        views: { home: '<div class="z-view"></div>' },
-        transitions: { effects: ['blur', 'sepia', 'saturate'] },
-      },
-      instance
-    )
-
-    expect(instance.effects).toEqual([
-      'blur(0px) sepia(0) saturate(0) ',
-      'blur(0.8px) sepia(5) saturate(8) ',
-    ])
-  })
-
-  it('falls back effects when effects array contains invalid values', () => {
+  it('ignores transitions.effects and warns (not implemented)', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     const instance = {}
@@ -157,13 +139,14 @@ describe('utils.checkParameters()', () => {
         mount: '.first',
         initialView: 'home',
         views: { home: '<div class="z-view"></div>' },
-        transitions: { effects: ['blur', 'bad'] },
+        transitions: { effects: ['blur', 'sepia'] },
       },
       instance
     )
 
     expect(instance.effects).toEqual(['none', 'none'])
     expect(warnSpy).toHaveBeenCalled()
+    expect(warnSpy.mock.calls[0][0]).toContain('transitions.effects')
 
     warnSpy.mockRestore()
   })

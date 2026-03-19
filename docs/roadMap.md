@@ -192,7 +192,7 @@ const app = new Zumly({
     contact: '/views/contact.html',
     dashboard: 'my-dashboard',  // web component
   },
-  transitions: { effects: ['blur'], cover: 'width', duration: '1s', ease: 'ease-in-out' },
+  transitions: { cover: 'width', duration: '1s', ease: 'ease-in-out' },
   debug: false
 })
 app.init()

@@ -125,7 +125,7 @@ await app.init();
 | `initialView` | string | Yes | Name of the first view to show. |
 | `views` | object | Yes | Map of view names to view sources (see View sources below). |
 | `preload` | string[] | No | View names to resolve and cache when the app initializes. |
-| `transitions` | object | No | Duration, ease, cover, and effects for zoom transitions. |
+| `transitions` | object | No | Duration, ease, cover, and driver for zoom transitions. |
 | `debug` | boolean | No | Enable debug messages (default: `false`). |
 | `componentContext` | object | No | Context passed to component-style views. |
 
@@ -134,8 +134,7 @@ await app.init();
 ```js
 transitions: {
   driver: 'css',   // 'css' | 'waapi' | 'anime' | 'gsap' | 'motion' | 'none' or custom function(spec, onComplete)
-  effects: ['blur', 'sepia', 'saturate'],  // background view effects
-  cover: 'width',   // or 'height' — how the previous view scales to cover the trigger
+  cover: 'width',  // or 'height' — how the previous view scales to cover the trigger
   duration: '1s',
   ease: 'ease-in-out',
 }
