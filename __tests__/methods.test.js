@@ -29,14 +29,6 @@ describe('Zumly methods', () => {
     expect(appMocked.storedViews).toContain('test')
   })
 
-  it('setPreviousScale() should store scale and notify', () => {
-    appMocked.tracing = vi.fn()
-    expect(appMocked.storedPreviousScale.length).toBe(1)
-    appMocked.setPreviousScale(1)
-    expect(appMocked.tracing).toHaveBeenCalledWith('setPreviousScale()')
-    expect(appMocked.storedPreviousScale.length).toBe(2)
-  })
-
   it('tracing() should push to trace or reset on "ended"', () => {
     appMocked.debug = true
     appMocked.tracing('ended')

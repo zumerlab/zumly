@@ -44,11 +44,10 @@ describe('destroy()', () => {
     await app.init()
     await app.zoomTo('detail')
     expect(app.storedViews.length).toBeGreaterThan(0)
-    expect(app.storedPreviousScale.length).toBeGreaterThan(1)
+    expect(app.storedViews[app.storedViews.length - 1].scale).toBeDefined()
 
     app.destroy()
     expect(app.storedViews).toHaveLength(0)
-    expect(app.storedPreviousScale).toEqual([1])
     expect(app.currentStage).toBeNull()
     expect(app.lateralHistory).toHaveLength(0)
   })
@@ -330,6 +329,6 @@ describe('destroyed instance guards', () => {
     // Manually call event handlers — should not throw
     expect(() => app.onZoom({ target: document.createElement('div'), stopPropagation: () => {} })).not.toThrow()
     expect(() => app.onKeyUp({ key: 'ArrowLeft', preventDefault: () => {} })).not.toThrow()
-    expect(() => app.onWeel({ deltaY: 10 })).not.toThrow()
+    expect(() => app.onWheel({ deltaY: 10 })).not.toThrow()
   })
 })
