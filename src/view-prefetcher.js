@@ -122,7 +122,11 @@ export class ViewPrefetcher {
     const triggers = node.querySelectorAll('.zoom-me[data-to]')
     triggers.forEach(el => {
       const to = el.dataset.to
-      if (to) this.prefetch(to, context)
+      if (to) {
+        if (!el.hasAttribute('role')) el.setAttribute('role', 'button')
+        if (!el.hasAttribute('aria-label')) el.setAttribute('aria-label', `Zoom to ${to}`)
+        this.prefetch(to, context)
+      }
     })
   }
 }

@@ -5,6 +5,9 @@
  * Does NOT add .z-view, insert, or call mounted(); that is done by prepareAndInsertView().
  */
 
+/** Default fetch timeout in ms for URL-backed views. */
+const FETCH_TIMEOUT_MS = 10000
+
 export class ViewResolver {
   #views = {}
 
@@ -46,7 +49,14 @@ export class ViewResolver {
         return el
       }
       case 'url': {
-        const res = await fetch(source)
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
+        let res
+        try {
+          res = await fetch(source, { signal: controller.signal })
+        } finally {
+          clearTimeout(timer)
+        }
         if (!res.ok) throw new Error(`Zumly: fetch failed for "${source}" (${res.status})`)
         const html = await res.text()
         const wrapper = document.createElement('div')
