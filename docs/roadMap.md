@@ -212,3 +212,18 @@ src/
 - Per-element TTL via `data-ttl` on `.zoom-me`.
 - Global TTL override in config via `remoteTTL`.
 - For now use a fixed internal TTL (e.g. 5 minutes) for remote URLs.
+
+---
+
+## 8. Transition physics and depth effects
+
+### Parallax (implemented — needs refinement)
+- `transitions.parallax: 0-1` reduces translation displacement for background views during zoom, creating depth illusion.
+- Previous view moves `(1 - parallax)` of normal displacement; last view moves `(1 - 2*parallax)`.
+- **Current limitation**: The effect modifies the forward state transform only, so it's a static position offset rather than a dynamic motion during the transition. With only 2 zoom levels the difference is barely perceptible. For a convincing parallax, it would need to be animated dynamically during the transition (e.g. an offset that grows with animation progress) or applied as an idle effect on mousemove/device tilt. Revisit when 3+ level demos exist or when idle parallax is designed.
+
+### Stagger delay (implemented)
+- `transitions.stagger: N` (ms) adds progressive delay between view layers during zoom transitions.
+- Current view starts immediately, previous view starts after `1 * stagger` ms, last view after `2 * stagger` ms.
+- Creates an elastic "spring chain" feel where deeper views lag behind, reinforcing depth and physicality.
+- Works across all drivers via the snapshot `delay` field.
