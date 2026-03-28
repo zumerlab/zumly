@@ -117,6 +117,15 @@
       <label><input type="checkbox" id="threshold-toggle" /> Elastic zoom</label>
       <label style="font-size:12px">Parallax <input type="range" id="parallax-slider" min="0" max="100" value="0" style="width:70px"><span id="parallax-val">0</span></label>
       <label style="font-size:12px">Stagger <input type="range" id="stagger-slider" min="0" max="300" value="0" style="width:70px"><span id="stagger-val">0</span>ms</label>
+      <span style="opacity: 0.5">|</span>
+      <label style="font-size:12px">Hide trigger
+        <select id="hide-trigger-select" style="font-size:12px">
+          <option value="">off</option>
+          <option value="true">hide</option>
+          <option value="fade">fade</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="deferred-toggle" /> Deferred render</label>
     </div>
 
     <div class="mount">
@@ -193,6 +202,9 @@
         if (staggerVal > 0) {
           transitions.stagger = staggerVal
         }
+        const htVal = document.getElementById('hide-trigger-select').value
+        if (htVal === 'fade') transitions.hideTrigger = 'fade'
+        else if (htVal === 'true') transitions.hideTrigger = true
 
         const app = new ZumlyLib({
           mount: '.example',
@@ -246,6 +258,8 @@
         document.getElementById('stagger-val').textContent = staggerSlider.value
         startApp()
       })
+
+      document.getElementById('hide-trigger-select').addEventListener('change', startApp)
 
       startApp()
     </script>

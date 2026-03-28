@@ -60,6 +60,25 @@
   opacity: 0;
 }
 
+/* Trigger hide/crossfade during zoom */
+.zoom-me.z-trigger-hidden {
+  visibility: hidden;
+}
+.zoom-me.z-trigger-fade {
+  transition: opacity var(--zoom-duration, 1s) var(--zoom-ease, ease-in-out);
+  opacity: 0;
+}
+.zoom-me.z-trigger-fade-reverse {
+  transition: opacity var(--zoom-duration, 1s) var(--zoom-ease, ease-in-out);
+  opacity: 1;
+}
+
+/* New view fade-in during zoom */
+.z-view.z-view-fade-in {
+  transition: opacity var(--zoom-duration, 1s) var(--zoom-ease, ease-in-out);
+  opacity: 1;
+}
+
 .zoom-me {
   cursor: zoom-in;
 }

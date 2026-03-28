@@ -371,6 +371,78 @@ export class Zumly {
     setTimeout(onEnd, dur ? parseFloat(dur) * (dur.includes('ms') ? 1 : 1000) + 100 : 1100)
   }
 
+  // ─── Trigger hide/crossfade ───────────────────────────────────────
+
+  /**
+   * Resolve hideTrigger mode: per-trigger data attribute or global config.
+   * @param {HTMLElement|null} triggerEl
+   * @returns {string|boolean} 'fade', true, or false
+   * @private
+   */
+  _resolveHideTrigger (triggerEl) {
+    if (triggerEl?.dataset?.hideTrigger !== undefined) {
+      const val = triggerEl.dataset.hideTrigger
+      if (val === 'fade') return 'fade'
+      return true // data-hide-trigger (no value or any value) → hide
+    }
+    return this.hideTrigger
+  }
+
+  /**
+   * Apply trigger hide/crossfade on zoom-in.
+   * @param {HTMLElement|null} triggerEl
+   * @param {HTMLElement} currentView - The incoming view
+   * @param {string|boolean} mode - 'fade', true, or false
+   * @param {string} duration - CSS duration
+   * @param {string} ease - CSS easing
+   * @private
+   */
+  _applyHideTrigger (triggerEl, currentView, mode, duration, ease) {
+    if (!mode || !triggerEl) return
+    if (mode === 'fade') {
+      triggerEl.style.setProperty('--zoom-duration', duration)
+      triggerEl.style.setProperty('--zoom-ease', ease)
+      triggerEl.classList.add('z-trigger-fade')
+      // New view starts at opacity 0 and fades in
+      currentView.style.opacity = '0'
+      currentView.style.setProperty('--zoom-duration', duration)
+      currentView.style.setProperty('--zoom-ease', ease)
+      // Force reflow so the transition runs from 0 → 1
+      currentView.offsetHeight // eslint-disable-line no-unused-expressions
+      currentView.classList.add('z-view-fade-in')
+    } else {
+      triggerEl.classList.add('z-trigger-hidden')
+    }
+  }
+
+  /**
+   * Restore trigger visibility on zoom-out.
+   * @param {HTMLElement|null} triggerEl - The .zoomed element in previousView
+   * @param {string|boolean} mode - from snapshot.hideTriggerMode
+   * @param {string} duration - CSS duration
+   * @param {string} ease - CSS easing
+   * @private
+   */
+  _restoreHideTrigger (triggerEl, mode, duration, ease) {
+    if (!mode || !triggerEl) return
+    if (mode === 'fade') {
+      triggerEl.classList.remove('z-trigger-fade')
+      triggerEl.style.setProperty('--zoom-duration', duration)
+      triggerEl.style.setProperty('--zoom-ease', ease)
+      triggerEl.classList.add('z-trigger-fade-reverse')
+      const onEnd = () => {
+        triggerEl.classList.remove('z-trigger-fade-reverse')
+        triggerEl.style.removeProperty('--zoom-duration')
+        triggerEl.style.removeProperty('--zoom-ease')
+        triggerEl.removeEventListener('transitionend', onEnd)
+      }
+      triggerEl.addEventListener('transitionend', onEnd, { once: true })
+      setTimeout(onEnd, parseFloat(duration) * (duration.includes('ms') ? 1 : 1000) + 100)
+    } else {
+      triggerEl.classList.remove('z-trigger-hidden')
+    }
+  }
+
   // ─── Lifecycle hooks ─────────────────────────────────────────────
 
   /**
@@ -631,13 +703,28 @@ export class Zumly {
       ? { trigger: el, target: document.createElement('div'), context: this.componentContext, props: Object.assign({}, el.dataset) }
       : { target: document.createElement('div'), context: this.componentContext, props: triggerOrDescriptor.props ?? {} }
 
-    const node = await this.prefetcher.get(targetViewName, context)
-    if (this._destroyed) return // instance may have been destroyed during async fetch
-    this.prefetcher.scanAndPrefetch(node, context)
-    const currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext)
+    // Check if this view should use deferred rendering
+    const isDeferred = el?.dataset?.deferred !== undefined ? true : this.deferred
+
+    let currentView
+    if (isDeferred) {
+      // Deferred: insert an empty placeholder — real content loads after animation
+      const placeholder = document.createElement('div')
+      placeholder.classList.add('z-view')
+      placeholder.style.width = '100%'
+      placeholder.style.height = '100%'
+      currentView = await prepareAndInsertView(placeholder, targetViewName, canvas, false, {}, this.componentContext)
+      // Start prefetching in background so it's ready when animation ends
+      this.prefetcher.prefetch(targetViewName, context)
+    } else {
+      const node = await this.prefetcher.get(targetViewName, context)
+      if (this._destroyed) return
+      this.prefetcher.scanAndPrefetch(node, context)
+      currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext)
+    }
 
     if (!currentView) return
-    this._emit('viewMounted', { viewName: targetViewName, node: currentView })
+    if (!isDeferred) this._emit('viewMounted', { viewName: targetViewName, node: currentView })
 
     if (el) el.classList.add('zoomed')
 
@@ -803,6 +890,10 @@ export class Zumly {
     // Apply background view effects (blur, saturate, etc.)
     const effects = this._resolveEffects(el)
     this._applyEffects(previousView, lastView, effects, duration, ease)
+    // Hide/crossfade trigger element during zoom
+    const htMode = this._resolveHideTrigger(el)
+    this._applyHideTrigger(el, currentView, htMode, duration, ease)
+    if (htMode) snapShoot.hideTriggerMode = htMode
     this._setBlockEvents()
     const spec = {
       type: 'zoomIn',
@@ -813,7 +904,28 @@ export class Zumly {
       duration,
       ease
     }
-    this.transitionDriver.runTransition(spec, () => {
+    this.transitionDriver.runTransition(spec, async () => {
+      // Deferred rendering: swap placeholder with real content after animation
+      if (isDeferred && currentView && !this._destroyed) {
+        try {
+          const realNode = await this.prefetcher.get(targetViewName, context)
+          if (realNode && !this._destroyed) {
+            // Transfer content from resolved node into the placeholder
+            const fragment = document.createDocumentFragment()
+            while (realNode.firstChild) fragment.appendChild(realNode.firstChild)
+            currentView.appendChild(fragment)
+            // Copy classes from resolved node (except z-view which placeholder already has)
+            realNode.classList.forEach(cls => { if (cls !== 'z-view') currentView.classList.add(cls) })
+            this.prefetcher.scanAndPrefetch(currentView, context)
+            if (typeof this.views[targetViewName] === 'object' && typeof this.views[targetViewName].mounted === 'function') {
+              await this.views[targetViewName].mounted()
+            }
+            this._emit('viewMounted', { viewName: targetViewName, node: currentView })
+          }
+        } catch (e) {
+          this.notify(`Deferred render failed for "${targetViewName}": ${e.message}`, 'warn')
+        }
+      }
       this.blockEvents = false
       this._onTransitionComplete()
       this._emit('afterZoomIn', { viewName: targetViewName, zoomLevel: this.zoomLevel() })
@@ -994,6 +1106,16 @@ export class Zumly {
 
     const zoomedEl = previousView.querySelector('.zoomed')
     if (zoomedEl) zoomedEl.classList.remove('zoomed')
+    // Restore trigger visibility if it was hidden/faded during zoom-in
+    const htMode = this.currentStage.hideTriggerMode
+    if (htMode && zoomedEl) {
+      const htDuration = this.currentStage.views[INDEX_CURRENT]?.forwardState?.duration ?? this.duration
+      const htEase = this.currentStage.views[INDEX_CURRENT]?.forwardState?.ease ?? this.ease
+      this._restoreHideTrigger(zoomedEl, htMode, htDuration, htEase)
+    }
+    // Clean crossfade class from outgoing current view
+    currentView.classList.remove('z-view-fade-in')
+    currentView.style.removeProperty('opacity')
     // Remove effect from previousView (it becomes current again)
     this._removeEffect(previousView)
     previousView.classList.replace('is-previous-view', 'is-current-view')

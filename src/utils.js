@@ -139,6 +139,23 @@ export function checkParameters (parameters, instance) {
   instance.duration = (t && typeof t.duration === 'string') ? t.duration : '1s'
   instance.ease = (t && typeof t.ease === 'string') ? t.ease : 'ease-in-out'
 
+  // Deferred rendering: render view content after zoom animation completes.
+  // true = all views deferred, false = all views immediate (default).
+  // Per-trigger override via data-deferred attribute on .zoom-me elements.
+  instance.deferred = typeof parameters.deferred === 'boolean' ? parameters.deferred : false
+
+  // hideTrigger: hide or crossfade the trigger element during zoom-in.
+  // true = visibility:hidden, 'fade' = opacity crossfade, false = do nothing (default)
+  const htIn = t && t.hideTrigger
+  if (htIn === true || htIn === 'fade') {
+    instance.hideTrigger = htIn
+  } else {
+    instance.hideTrigger = false
+    if (htIn !== undefined && htIn !== null && htIn !== false) {
+      notification(false, '\'transitions.hideTrigger\' must be true or "fade". Falling back to false.', 'warn')
+    }
+  }
+
   // Effects: CSS filter values for background views [previousView, lastView].
   // e.g. ['blur(3px)', 'blur(8px) saturate(0)']
   const effectsIn = t && t.effects

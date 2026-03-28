@@ -226,4 +226,11 @@ src/
 - `transitions.stagger: N` (ms) adds progressive delay between view layers during zoom transitions.
 - Current view starts immediately, previous view starts after `1 * stagger` ms, last view after `2 * stagger` ms.
 - Creates an elastic "spring chain" feel where deeper views lag behind, reinforcing depth and physicality.
-- Works across all drivers via the snapshot `delay` field.
+- Works across all drivers via the snapshot `stagger` field.
+
+### snapDOM integration (planned — game changer)
+- **Problem**: Complex views with many internal DOM elements suffer heavy performance when scaled/transformed. No animation engine handles this well because it's a DOM limitation.
+- **Solution**: Use [snapDOM](https://github.com/zumerlab/snapdom) to rasterize previous/last views as SVG images before animating. Animating a single image element is orders of magnitude faster than animating a full DOM tree.
+- **Pipeline change**: Before zoom-in animation, capture previousView with snapDOM → replace live DOM node with SVG snapshot → animate the snapshot. On zoom-out, animate snapshot back → restore live DOM when view becomes current again.
+- **Implications**: Touches the core engine (view lifecycle), snapshot system, and potentially drivers. Requires careful design to preserve scroll position, event listeners, and interactive state when swapping between live DOM and snapshot.
+- **Status**: Requires dedicated exploration session. snapDOM has a known Safari `<foreignObject>` bug being worked on.
