@@ -45,7 +45,6 @@ export class Zumly {
     // Internal state
     this.storedViews = []
     this.currentStage = null
-    this.storedPreviousScale = [1]
     this.debug = false
     this.trace = []
     this.blockEvents = false
@@ -65,6 +64,8 @@ export class Zumly {
     this._pendingResizeCorrection = false
     /** Whether this instance has been destroyed. */
     this._destroyed = false
+    /** Lifecycle hooks: { eventName: [fn, ...] } */
+    this._hooks = {}
 
     // Validate options
     checkParameters(options, this)
@@ -85,7 +86,7 @@ export class Zumly {
     this._onTouchStart = this.onTouchStart.bind(this)
     this._onTouchEnd = this.onTouchEnd.bind(this)
     this._onKeyUp = this.onKeyUp.bind(this)
-    this._onWeel = this.onWeel.bind(this)
+    this._onWheel = this.onWheel.bind(this)
     this._onPrefetchTrigger = (e) => {
       if (e.target.classList.contains('zoom-me') && e.target.dataset.to) {
         this.prefetcher.prefetch(e.target.dataset.to, { trigger: e.target, ...e.target.dataset })
@@ -112,13 +113,16 @@ export class Zumly {
     const canvas = this.canvas
     if (!canvas) return
 
-    canvas.setAttribute('tabindex', 0)
+    canvas.setAttribute('tabindex', '0')
+    canvas.setAttribute('role', 'application')
+    canvas.setAttribute('aria-roledescription', 'zoomable interface')
+    canvas.setAttribute('aria-live', 'polite')
     canvas.addEventListener('mouseup', this._onZoom, false)
     canvas.addEventListener('touchend', this._onZoom, false)
     canvas.addEventListener('touchstart', this._onTouchStart, { passive: true })
     canvas.addEventListener('touchend', this._onTouchEnd, false)
     canvas.addEventListener('keyup', this._onKeyUp, false)
-    canvas.addEventListener('wheel', this._onWeel, { passive: true })
+    canvas.addEventListener('wheel', this._onWheel, { passive: true })
     canvas.addEventListener('mouseover', this._onPrefetchTrigger, { passive: true })
     canvas.addEventListener('focusin', this._onPrefetchTrigger, { passive: true })
 
@@ -142,7 +146,7 @@ export class Zumly {
       canvas.removeEventListener('touchstart', this._onTouchStart)
       canvas.removeEventListener('touchend', this._onTouchEnd, false)
       canvas.removeEventListener('keyup', this._onKeyUp, false)
-      canvas.removeEventListener('wheel', this._onWeel)
+      canvas.removeEventListener('wheel', this._onWheel)
       canvas.removeEventListener('mouseover', this._onPrefetchTrigger)
       canvas.removeEventListener('focusin', this._onPrefetchTrigger)
     }
@@ -196,10 +200,6 @@ export class Zumly {
     }
   }
 
-  setPreviousScale (scale) {
-    this.tracing('setPreviousScale()')
-    this.storedPreviousScale.push(scale)
-  }
 
   tracing (data) {
     if (this.debug) {
@@ -260,6 +260,74 @@ export class Zumly {
       }
     } else {
       this._recordCanvasSize()
+    }
+    this._manageFocus()
+  }
+
+  /**
+   * Move focus to the current view after a transition completes.
+   * Finds the first focusable element inside the view, or the view itself.
+   * @private
+   */
+  _manageFocus () {
+    if (!this.canvas) return
+    const currentView = this.canvas.querySelector('.is-current-view')
+    if (!currentView) return
+    const focusable = currentView.querySelector(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+    if (focusable) {
+      focusable.focus({ preventScroll: true })
+    } else {
+      currentView.setAttribute('tabindex', '-1')
+      currentView.focus({ preventScroll: true })
+    }
+  }
+
+  // ─── Lifecycle hooks ─────────────────────────────────────────────
+
+  /**
+   * Register a lifecycle hook.
+   * Events: 'beforeZoomIn', 'afterZoomIn', 'beforeZoomOut', 'afterZoomOut',
+   *         'beforeLateral', 'afterLateral', 'viewMounted', 'destroy'
+   * @param {string} event
+   * @param {function} fn
+   * @returns {this} For chaining
+   */
+  on (event, fn) {
+    if (typeof fn !== 'function') return this
+    ;(this._hooks[event] ||= []).push(fn)
+    return this
+  }
+
+  /**
+   * Remove a lifecycle hook. If fn is omitted, removes all hooks for that event.
+   * @param {string} event
+   * @param {function} [fn]
+   * @returns {this}
+   */
+  off (event, fn) {
+    if (!fn) {
+      delete this._hooks[event]
+    } else if (this._hooks[event]) {
+      this._hooks[event] = this._hooks[event].filter(f => f !== fn)
+    }
+    return this
+  }
+
+  /**
+   * Emit a lifecycle event. Hooks receive a data object with event details.
+   * @private
+   * @param {string} event
+   * @param {object} [data={}]
+   */
+  _emit (event, data = {}) {
+    const hooks = this._hooks[event]
+    if (!hooks || hooks.length === 0) return
+    for (const fn of hooks) {
+      try { fn(data) } catch (e) {
+        if (this.debug) console.error(`Zumly hook "${event}" threw:`, e) // eslint-disable-line no-console
+      }
     }
   }
 
@@ -335,7 +403,7 @@ export class Zumly {
       return
     }
     if (!Object.prototype.hasOwnProperty.call(this.views, viewName)) {
-      this.notify(`zoomTo("${viewName}"): view not found in views.`, 'warn')
+      this.notify(`zoomTo("${viewName}"): view not found in views. Available: ${Object.keys(this.views).join(', ')}`, 'warn')
       return
     }
     const current = this.getCurrentViewName()
@@ -371,9 +439,11 @@ export class Zumly {
     }
     const node = await this.prefetcher.get(this.initialView, null)
     const currentView = await prepareAndInsertView(node, this.initialView, this.canvas, true, this.views, this.componentContext)
+    this._emit('viewMounted', { viewName: this.initialView, node: currentView })
     this.prefetcher.scanAndPrefetch(currentView, null)
     this.storeViews({
       zoomLevel: this.storedViews.length,
+      scale: 1,
       views: [{
         viewName: this.initialView,
         backwardState: {
@@ -396,6 +466,7 @@ export class Zumly {
    */
   destroy () {
     if (this._destroyed) return
+    this._emit('destroy')
     this._destroyed = true
 
     // Clear blockEvents safety timer
@@ -415,18 +486,21 @@ export class Zumly {
 
     // Clear state
     this.storedViews = []
-    this.storedPreviousScale = [1]
     this.currentStage = null
     this.lateralHistory = []
     this.trace = []
 
     // Nullify references
+    this._hooks = {}
     this.prefetcher = null
     this.transitionDriver = null
     // Keep this.canvas reference for the consumer to clean up DOM if needed,
-    // but remove the tabindex we added.
+    // but remove the attributes we added.
     if (this.canvas) {
       this.canvas.removeAttribute('tabindex')
+      this.canvas.removeAttribute('role')
+      this.canvas.removeAttribute('aria-roledescription')
+      this.canvas.removeAttribute('aria-live')
     }
 
     this.isValid = false
@@ -449,13 +523,15 @@ export class Zumly {
   async _doZoomIn (targetViewName, triggerOrDescriptor) {
     if (this._destroyed) return
     this.lateralHistory = []
+    this._emit('beforeZoomIn', { viewName: targetViewName })
     this.tracing('zoomIn()')
     const canvas = this.canvas
     const el = triggerOrDescriptor.el
     const canvasRect = canvas.getBoundingClientRect()
     const offsetX = canvasRect.left
     const offsetY = canvasRect.top
-    const preScale = this.storedPreviousScale[this.storedPreviousScale.length - 1]
+    const prevSnapshot = this.storedViews.length > 0 ? this.storedViews[this.storedViews.length - 1] : null
+    const preScale = prevSnapshot?.scale ?? 1
     this.tracing('getView()')
 
     const context = el
@@ -468,6 +544,7 @@ export class Zumly {
     const currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext)
 
     if (!currentView) return
+    this._emit('viewMounted', { viewName: targetViewName, node: currentView })
 
     if (el) el.classList.add('zoomed')
 
@@ -497,6 +574,7 @@ export class Zumly {
     let transformCurrentView0, transformCurrentView1
     let transformPreviousView0, prevEnd
     let transformLastView0, transformLastView1
+    let coverScale
 
     // Save original state for rollback
     const originalPreviousTransform = previousView.style.transform
@@ -510,11 +588,11 @@ export class Zumly {
       const canvasRectSize = { width: canvasRect.width, height: canvasRect.height }
       const currentViewRect = { width: cc.width, height: cc.height }
 
-      const { scale: coverScale, scaleInv: coverScaleInv } = computeCoverScale(
+      const coverResult = computeCoverScale(
         triggerRect.width, triggerRect.height, cc.width, cc.height, this.cover
       )
-      this.setPreviousScale(coverScale)
-
+      coverScale = coverResult.scale
+      const coverScaleInv = coverResult.scaleInv
       transformCurrentView0 = computeCurrentViewStartTransform(
         triggerRect, canvasOffset, currentViewRect, coverScaleInv
       )
@@ -591,9 +669,6 @@ export class Zumly {
       // Remove the currentView we just inserted (it was never shown)
       try { canvas.removeChild(currentView) } catch (e) { /* already removed */ }
 
-      // Pop the scale we pushed
-      this.storedPreviousScale.pop()
-
       showViewContent(previousView)
       showViewContent(lastView)
 
@@ -626,6 +701,7 @@ export class Zumly {
       lastEntry,
       removedEntry
     )
+    snapShoot.scale = coverScale
     this.storeViews(snapShoot)
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     this.tracing('setCSSVariables()')
@@ -642,6 +718,7 @@ export class Zumly {
     this.transitionDriver.runTransition(spec, () => {
       this.blockEvents = false
       this._onTransitionComplete()
+      this._emit('afterZoomIn', { viewName: targetViewName, zoomLevel: this.zoomLevel() })
       this.tracing('ended')
     })
   }
@@ -665,13 +742,14 @@ export class Zumly {
     if (this._destroyed) return
     if (!this.isValid || !this.canvas) return
     if (!Object.prototype.hasOwnProperty.call(this.views, targetViewName)) {
-      this.notify(`goTo("${targetViewName}", { mode: 'lateral' }): view not found.`, 'warn')
+      this.notify(`goTo("${targetViewName}", { mode: 'lateral' }): view not found in views. Available: ${Object.keys(this.views).join(', ')}`, 'warn')
       return
     }
     const outgoingView = this.canvas.querySelector('.is-current-view')
     if (!outgoingView) return
     const currentName = outgoingView.dataset?.viewName
     if (currentName === targetViewName) return
+    this._emit('beforeLateral', { viewName: targetViewName, from: currentName, isBack })
 
     if (!isBack) {
       this.lateralHistory = this.lateralHistory || []
@@ -708,6 +786,7 @@ export class Zumly {
     this.prefetcher.scanAndPrefetch(node, context)
     const incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
     if (!incomingView) return
+    this._emit('viewMounted', { viewName: targetViewName, node: incomingView })
 
     hideViewContent(incomingView)
     hideViewContent(lastView)
@@ -777,6 +856,7 @@ export class Zumly {
     this.transitionDriver.runTransition(spec, () => {
       this.blockEvents = false
       this._onTransitionComplete()
+      this._emit('afterLateral', { viewName: targetViewName, from: currentName, isBack })
       this.tracing('ended')
     })
   }
@@ -800,16 +880,16 @@ export class Zumly {
   zoomOut () {
     if (this._destroyed) return
     this.lateralHistory = []
+    this._emit('beforeZoomOut', { zoomLevel: this.zoomLevel() })
     this.tracing('zoomOut()')
     const canvas = this.canvas
-    var currentView = canvas.querySelector('.is-current-view')
-    var previousView = canvas.querySelector('.is-previous-view')
+    const currentView = canvas.querySelector('.is-current-view')
+    const previousView = canvas.querySelector('.is-previous-view')
     if (!currentView || !previousView) {
       this.notify('zoomOut: current or previous view not found (animation may still be running)', 'warn')
       return
     }
     this._setBlockEvents()
-    this.storedPreviousScale.pop()
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     const lastView = canvas.querySelector('.is-last-view')
     this.tracing('setCSSVariables()')
@@ -847,6 +927,7 @@ export class Zumly {
     this.transitionDriver.runTransition(spec, () => {
       this.blockEvents = false
       this._onTransitionComplete()
+      this._emit('afterZoomOut', { zoomLevel: this.zoomLevel() })
       this.tracing('ended')
     })
     this.storedViews.pop()
@@ -885,10 +966,10 @@ export class Zumly {
     }
   }
 
-  onWeel (event) {
+  onWheel (event) {
     if (this._destroyed) return
     if (!this.blockEvents) {
-      this.tracing('onWeel()')
+      this.tracing('onWheel()')
       if (event.deltaY > 0) {
         if (this.storedViews.length > 1 && !this.blockEvents) {
           this.zoomOut()
@@ -918,7 +999,10 @@ export class Zumly {
   handleGesture (event) {
     event.stopPropagation()
     this.tracing('handleGesture()')
-    if (this.touchendX < this.touchstartX - 30) {
+    const dx = this.touchendX - this.touchstartX
+    const dy = this.touchendY - this.touchstartY
+    const isTap = Math.abs(dx) < 10 && Math.abs(dy) < 10
+    if (dx < -30) {
       if (this.storedViews.length > 1 && !this.blockEvents) {
         this.tracing('swipe left')
         this.zoomOut()
@@ -926,20 +1010,13 @@ export class Zumly {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe left", 'warn')
       }
     }
-    if (this.touchendY < this.touchstartY - 10) {
-      if (this.storedViews.length > 1 && !this.blockEvents) {
-        this.tracing('swipe up')
-      } else {
-        this.notify("is on level zero. Can't zoom out. Trigger: Swipe up", 'warn')
-      }
-    }
-    if (this.touchendY === this.touchstartY && !this.blockEvents && event.target.classList.contains('zoom-me') && this.touching) {
+    if (isTap && !this.blockEvents && event.target.classList.contains('zoom-me') && this.touching) {
       this.touching = false
       this.tracing('tap')
       event.preventDefault()
       this.zoomIn(event.target)
     }
-    if (this.touchendY === this.touchstartY && this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null && this.touching) {
+    if (isTap && this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null && this.touching) {
       this.touching = false
       this.tracing('tap')
       this.zoomOut()
