@@ -38,6 +38,7 @@ export async function prepareAndInsertView (node, viewName, canvas, isInit, view
     node.setAttribute('aria-label', `View: ${viewName}`)
   }
   node.style.transformOrigin = '0 0'
+  node.style.position = 'absolute'
   if (isInit) {
     node.classList.add('is-current-view')
   } else {

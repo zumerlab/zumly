@@ -14,5 +14,5 @@ export function hideViewContent (element) {
  * @param {HTMLElement | null | undefined} element
  */
 export function showViewContent (element) {
-  if (element) element.style.contentVisibility = 'auto'
+  if (element) element.style.contentVisibility = 'visible'
 }

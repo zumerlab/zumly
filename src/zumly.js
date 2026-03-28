@@ -1159,15 +1159,19 @@ export class Zumly {
 
   onZoom (event) {
     if (this._destroyed) return
-    if (this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null && !this.touching) {
-      this.tracing('onZoom()')
+    const target = event.target
+    const isZoomMe = target.classList.contains('zoom-me') || target.closest('.zoom-me')
+    if (!this.blockEvents && isZoomMe && !this.touching && !this.threshold) {
+      this.tracing('onZoom() → zoomIn')
+      event.stopPropagation()
+      const trigger = target.classList.contains('zoom-me') ? target : target.closest('.zoom-me')
+      this.zoomIn(trigger)
+      return
+    }
+    if (this.storedViews.length > 1 && !this.blockEvents && !isZoomMe && !this.touching) {
+      this.tracing('onZoom() → zoomOut')
       event.stopPropagation()
       this.zoomOut()
-    }
-    if (!this.blockEvents && event.target.classList.contains('zoom-me') && !this.touching && !this.threshold) {
-      this.tracing('onZoom()')
-      event.stopPropagation()
-      this.zoomIn(event.target)
     }
   }
 
@@ -1193,11 +1197,41 @@ export class Zumly {
     if (!this.blockEvents) {
       this.tracing('onWheel()')
       if (event.deltaY > 0) {
+        // Don't zoom-out if the wheel target is inside a scrollable element
+        // that still has room to scroll down.
+        if (this._isInsideScrollable(event.target, event.deltaY)) return
         if (this.storedViews.length > 1 && !this.blockEvents) {
           this.zoomOut()
         }
       }
     }
+  }
+
+  /**
+   * Check if an element sits inside a scrollable container (within the current view)
+   * that still has scroll room in the wheel direction.
+   * @param {HTMLElement} target - The event target
+   * @param {number} deltaY - Wheel deltaY (positive = scroll down)
+   * @returns {boolean}
+   * @private
+   */
+  _isInsideScrollable (target, deltaY) {
+    let el = target
+    const currentView = this.canvas.querySelector('.is-current-view')
+    while (el && el !== this.canvas) {
+      // Only check elements inside the current view
+      if (el === currentView || (currentView && currentView.contains(el))) {
+        const { overflowY } = window.getComputedStyle(el)
+        if (overflowY === 'auto' || overflowY === 'scroll') {
+          const canScroll = deltaY > 0
+            ? el.scrollTop + el.clientHeight < el.scrollHeight - 1
+            : el.scrollTop > 0
+          if (canScroll) return true
+        }
+      }
+      el = el.parentElement
+    }
+    return false
   }
 
   onTouchStart (event) {
