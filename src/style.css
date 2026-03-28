@@ -30,8 +30,19 @@
 }
 
 .z-view {
-  will-change: transform, opacity;
   content-visibility: auto;
+}
+
+.zoom-current-view,
+.zoom-current-view-reverse,
+.zoom-previous-view,
+.zoom-previous-view-reverse,
+.zoom-last-view,
+.zoom-last-view-reverse,
+.zoom-lateral-back,
+.zoom-lateral-out,
+.zoom-lateral-in {
+  will-change: transform, opacity;
 }
 
 .z-view.hide {
@@ -40,6 +51,10 @@
 
 .zoom-me {
   cursor: zoom-in;
+}
+
+.zoom-me[role="button"] {
+  -webkit-tap-highlight-color: transparent;
 }
 
 .zoom-current-view-reverse {

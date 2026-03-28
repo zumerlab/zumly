@@ -34,6 +34,9 @@ export async function prepareAndInsertView (node, viewName, canvas, isInit, view
     node.classList.add('z-view')
   }
   node.dataset.viewName = viewName
+  if (!node.getAttribute('aria-label')) {
+    node.setAttribute('aria-label', `View: ${viewName}`)
+  }
   node.style.transformOrigin = '0 0'
   if (isInit) {
     node.classList.add('is-current-view')
