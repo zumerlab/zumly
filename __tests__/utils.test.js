@@ -295,5 +295,90 @@ describe('utils.checkParameters()', () => {
     expect(warnSpy).toHaveBeenCalled()
     warnSpy.mockRestore()
   })
+
+  it('parses transitions.hideTrigger as true', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        transitions: { hideTrigger: true },
+      },
+      instance
+    )
+    expect(instance.hideTrigger).toBe(true)
+  })
+
+  it('parses transitions.hideTrigger as "fade"', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        transitions: { hideTrigger: 'fade' },
+      },
+      instance
+    )
+    expect(instance.hideTrigger).toBe('fade')
+  })
+
+  it('defaults hideTrigger to false when not provided', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+      },
+      instance
+    )
+    expect(instance.hideTrigger).toBe(false)
+  })
+
+  it('warns and falls back for invalid transitions.hideTrigger', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        transitions: { hideTrigger: 'invalid' },
+      },
+      instance
+    )
+    expect(instance.hideTrigger).toBe(false)
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
+  it('parses deferred option as boolean', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        deferred: true,
+      },
+      instance
+    )
+    expect(instance.deferred).toBe(true)
+  })
+
+  it('defaults deferred to false when not provided', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+      },
+      instance
+    )
+    expect(instance.deferred).toBe(false)
+  })
 })
 

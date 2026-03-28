@@ -206,12 +206,15 @@
         if (htVal === 'fade') transitions.hideTrigger = 'fade'
         else if (htVal === 'true') transitions.hideTrigger = true
 
+        const useDeferred = document.getElementById('deferred-toggle').checked
+
         const app = new ZumlyLib({
           mount: '.example',
           initialView: 'hello',
           preload: ['world'],
           views: { hello, world },
           transitions,
+          deferred: useDeferred,
           debug: false,
         })
 
@@ -260,6 +263,7 @@
       })
 
       document.getElementById('hide-trigger-select').addEventListener('change', startApp)
+      document.getElementById('deferred-toggle').addEventListener('change', startApp)
 
       startApp()
     </script>

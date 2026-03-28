@@ -73,10 +73,14 @@
   opacity: 1;
 }
 
-/* New view fade-in during zoom */
+/* New view fade-in during zoom-in, fade-out during zoom-out */
 .z-view.z-view-fade-in {
   transition: opacity var(--zoom-duration, 1s) var(--zoom-ease, ease-in-out);
   opacity: 1;
+}
+.z-view.z-view-fade-out {
+  transition: opacity var(--zoom-duration, 1s) var(--zoom-ease, ease-in-out);
+  opacity: 0;
 }
 
 .zoom-me {
