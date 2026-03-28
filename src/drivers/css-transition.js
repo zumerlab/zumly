@@ -116,20 +116,25 @@ function runLateral (spec, onComplete) {
 function runZoomIn (currentView, previousView, lastView, currentStage, duration, ease, onComplete) {
   showViews(currentView, previousView, lastView)
 
+  const stagger = currentStage.stagger || 0
+
   // Set CSS variables for keyframe animations
   setCSSVars(currentView, duration, ease, {
     '--current-view-transform-start': currentStage.views[0].backwardState.transform,
     '--current-view-transform-end': currentStage.views[0].forwardState.transform,
   })
+  if (stagger > 0) currentView.style.setProperty('animation-delay', '0ms')
   setCSSVars(previousView, duration, ease, {
     '--previous-view-transform-start': currentStage.views[1].backwardState.transform,
     '--previous-view-transform-end': currentStage.views[1].forwardState.transform,
   })
+  if (stagger > 0) previousView.style.setProperty('animation-delay', `${stagger}ms`)
   if (lastView) {
     setCSSVars(lastView, duration, ease, {
       '--last-view-transform-start': currentStage.views[2].backwardState.transform,
       '--last-view-transform-end': currentStage.views[2].forwardState.transform,
     })
+    if (stagger > 0) lastView.style.setProperty('animation-delay', `${stagger * 2}ms`)
   }
 
   // Trigger animations via classes
@@ -140,11 +145,14 @@ function runZoomIn (currentView, previousView, lastView, currentStage, duration,
   const elements = lastView ? [currentView, previousView, lastView] : [currentView, previousView]
   let pending = elements.length
   const durationMs = parseDurationMs(duration)
+  const maxDelay = lastView ? stagger * 2 : stagger
 
   const { finish } = createFinishGuard(() => {
     cleanupListeners(elements, handleEnd)
+    // Clean up animation-delay
+    elements.forEach(el => el.style.removeProperty('animation-delay'))
     onComplete()
-  }, durationMs + SAFETY_BUFFER_MS)
+  }, durationMs + maxDelay + SAFETY_BUFFER_MS)
 
   function handleEnd (event) {
     const el = event?.target
@@ -165,20 +173,24 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
   const v0 = currentStage.views[0]
   const v1 = currentStage.views[1]
   const v2 = lastView && currentStage.views[2] ? currentStage.views[2] : null
+  const stagger = currentStage.stagger || 0
 
   setCSSVars(currentView, duration, ease, {
     '--current-view-transform-start': v0.backwardState.transform,
     '--current-view-transform-end': v0.forwardState.transform,
   })
+  if (stagger > 0) currentView.style.setProperty('animation-delay', '0ms')
   setCSSVars(previousView, duration, ease, {
     '--previous-view-transform-start': v1.backwardState.transform,
     '--previous-view-transform-end': v1.forwardState.transform,
   })
+  if (stagger > 0) previousView.style.setProperty('animation-delay', `${stagger}ms`)
   if (lastView && v2) {
     setCSSVars(lastView, duration, ease, {
       '--last-view-transform-start': v2.backwardState.transform,
       '--last-view-transform-end': v2.forwardState.transform,
     })
+    if (stagger > 0) lastView.style.setProperty('animation-delay', `${stagger * 2}ms`)
   }
 
   // Trigger reverse animations
@@ -189,11 +201,13 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
   const elements = lastView ? [currentView, previousView, lastView] : [currentView, previousView]
   let pending = elements.length
   const durationMs = parseDurationMs(duration)
+  const maxDelay = lastView ? stagger * 2 : stagger
 
   const { finish } = createFinishGuard(() => {
     cleanupListeners(elements, handleEnd)
+    elements.forEach(el => el.style.removeProperty('animation-delay'))
     onComplete()
-  }, durationMs + SAFETY_BUFFER_MS)
+  }, durationMs + maxDelay + SAFETY_BUFFER_MS)
 
   function handleEnd (event) {
     const el = event?.target

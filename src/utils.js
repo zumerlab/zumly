@@ -139,10 +139,19 @@ export function checkParameters (parameters, instance) {
   instance.duration = (t && typeof t.duration === 'string') ? t.duration : '1s'
   instance.ease = (t && typeof t.ease === 'string') ? t.ease : 'ease-in-out'
 
-  // Effects: not implemented; reserved for future filter animations on background views.
-  instance.effects = ['none', 'none']
-  if (t && t.effects !== undefined) {
-    notification(false, '\'transitions.effects\' is not implemented and is ignored.', 'warn')
+  // Effects: CSS filter values for background views [previousView, lastView].
+  // e.g. ['blur(3px)', 'blur(8px) saturate(0)']
+  const effectsIn = t && t.effects
+  if (Array.isArray(effectsIn) && effectsIn.length >= 2 &&
+      typeof effectsIn[0] === 'string' && typeof effectsIn[1] === 'string') {
+    instance.effects = [effectsIn[0], effectsIn[1]]
+  } else if (Array.isArray(effectsIn) && effectsIn.length === 1 && typeof effectsIn[0] === 'string') {
+    instance.effects = [effectsIn[0], effectsIn[0]]
+  } else {
+    instance.effects = ['none', 'none']
+    if (effectsIn !== undefined && effectsIn !== null) {
+      notification(false, '\'transitions.effects\' must be an array of 1-2 CSS filter strings (e.g. ["blur(3px)", "blur(8px) saturate(0)"]). Falling back to no effects.', 'warn')
+    }
   }
 
   // Transition driver: 'css' | 'waapi' | 'none' | 'anime' | 'gsap' | 'motion' or custom function(spec, onComplete)
@@ -159,5 +168,40 @@ export function checkParameters (parameters, instance) {
     instance.transitionDriver = driverFn
   } else {
     instance.transitionDriver = 'css'
+  }
+
+  // Stagger: progressive delay (ms) between view layers during zoom transitions.
+  // Current starts immediately, previous after 1*stagger ms, last after 2*stagger ms.
+  const staggerIn = t && t.stagger
+  if (typeof staggerIn === 'number' && staggerIn > 0) {
+    instance.stagger = staggerIn
+  } else {
+    instance.stagger = 0
+    if (staggerIn !== undefined && staggerIn !== null && staggerIn !== 0) {
+      notification(false, '\'transitions.stagger\' must be a positive number (ms). Falling back to 0 (disabled).', 'warn')
+    }
+  }
+
+  // Parallax: depth-based displacement for background views during zoom.
+  // 0 = disabled, 0-1 = intensity factor (previous moves parallax*less, last moves 2*parallax*less)
+  const parallaxIn = t && t.parallax
+  if (typeof parallaxIn === 'number' && parallaxIn > 0 && parallaxIn <= 1) {
+    instance.parallax = parallaxIn
+  } else {
+    instance.parallax = 0
+    if (parallaxIn !== undefined && parallaxIn !== null && parallaxIn !== 0) {
+      notification(false, '\'transitions.parallax\' must be a number between 0 and 1. Falling back to 0 (disabled).', 'warn')
+    }
+  }
+
+  // Threshold (elastic zoom): press-and-hold preview before committing zoom.
+  // { enabled: true, duration: 300, commitAt: 0.5 }
+  instance.threshold = null
+  const thIn = t && t.threshold
+  if (thIn && typeof thIn === 'object' && thIn.enabled) {
+    instance.threshold = {
+      duration: typeof thIn.duration === 'number' && thIn.duration > 0 ? thIn.duration : 300,
+      commitAt: typeof thIn.commitAt === 'number' && thIn.commitAt > 0 && thIn.commitAt <= 1 ? thIn.commitAt : 0.5
+    }
   }
 }

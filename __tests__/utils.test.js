@@ -130,7 +130,22 @@ describe('utils.checkParameters()', () => {
     warnSpy.mockRestore()
   })
 
-  it('ignores transitions.effects and warns (not implemented)', () => {
+  it('parses transitions.effects as array of CSS filter strings', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        transitions: { effects: ['blur(3px)', 'blur(8px) saturate(0)'] },
+      },
+      instance
+    )
+
+    expect(instance.effects).toEqual(['blur(3px)', 'blur(8px) saturate(0)'])
+  })
+
+  it('warns and falls back for invalid transitions.effects', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     const instance = {}
@@ -139,14 +154,13 @@ describe('utils.checkParameters()', () => {
         mount: '.first',
         initialView: 'home',
         views: { home: '<div class="z-view"></div>' },
-        transitions: { effects: ['blur', 'sepia'] },
+        transitions: { effects: 'invalid' },
       },
       instance
     )
 
     expect(instance.effects).toEqual(['none', 'none'])
     expect(warnSpy).toHaveBeenCalled()
-    expect(warnSpy.mock.calls[0][0]).toContain('transitions.effects')
 
     warnSpy.mockRestore()
   })
@@ -192,6 +206,94 @@ describe('utils.checkParameters()', () => {
     const instance = {}
     checkParameters(null, instance)
     expect(instance.isValid).toBe(false)
+  })
+
+  it('parses transitions.parallax as number between 0 and 1', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        transitions: { parallax: 0.15 },
+      },
+      instance
+    )
+    expect(instance.parallax).toBe(0.15)
+  })
+
+  it('defaults parallax to 0 when not provided', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+      },
+      instance
+    )
+    expect(instance.parallax).toBe(0)
+  })
+
+  it('warns and falls back for invalid transitions.parallax', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        transitions: { parallax: 'bad' },
+      },
+      instance
+    )
+    expect(instance.parallax).toBe(0)
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
+
+  it('parses transitions.stagger as positive number (ms)', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        transitions: { stagger: 60 },
+      },
+      instance
+    )
+    expect(instance.stagger).toBe(60)
+  })
+
+  it('defaults stagger to 0 when not provided', () => {
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+      },
+      instance
+    )
+    expect(instance.stagger).toBe(0)
+  })
+
+  it('warns and falls back for invalid transitions.stagger', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const instance = {}
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        transitions: { stagger: 'bad' },
+      },
+      instance
+    )
+    expect(instance.stagger).toBe(0)
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
   })
 })
 

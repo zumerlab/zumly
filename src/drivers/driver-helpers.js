@@ -92,7 +92,8 @@ export function applyZoomInEndState (element, currentStage) {
  * @param {{ origin?: string, transform: string }} backwardState
  */
 export function applyZoomOutPreviousState (element, backwardState) {
-  element.classList.remove('zoom-previous-view-reverse', 'has-no-events')
+  element.classList.remove('zoom-previous-view-reverse', 'has-no-events', 'has-effect', 'has-effect-reverse')
+  element.style.removeProperty('--z-effect-filter')
   element.style.transformOrigin = '0 0'
   element.style.transform = backwardState.transform
 }
@@ -104,7 +105,8 @@ export function applyZoomOutPreviousState (element, backwardState) {
  * @param {{ origin: string, transform: string }} backwardState
  */
 export function applyZoomOutLastState (element, backwardState) {
-  element.classList.remove('zoom-last-view-reverse', 'has-no-events')
+  element.classList.remove('zoom-last-view-reverse', 'has-no-events', 'has-effect', 'has-effect-reverse')
+  element.style.removeProperty('--z-effect-filter')
   element.style.transformOrigin = backwardState.origin
   element.style.transform = backwardState.transform
 }

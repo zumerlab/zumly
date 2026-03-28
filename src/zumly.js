@@ -6,7 +6,8 @@ import {
   computePreviousViewOrigin,
   computePreviousViewEndTransform,
   computeLastViewEndTransform,
-  computeLastViewIntermediateTransform
+  computeLastViewIntermediateTransform,
+  computePreviewTransform
 } from './geometry.js'
 import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetachedNode, INDEX_CURRENT, INDEX_PREVIOUS, INDEX_LAST } from './snapshots.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
@@ -66,6 +67,8 @@ export class Zumly {
     this._destroyed = false
     /** Lifecycle hooks: { eventName: [fn, ...] } */
     this._hooks = {}
+    /** Elastic zoom preview state (threshold feature). */
+    this._previewState = null
 
     // Validate options
     checkParameters(options, this)
@@ -95,6 +98,13 @@ export class Zumly {
     this._onResize = this._handleResize.bind(this)
     this._resizeDebounceTimer = null
     this._RESIZE_DEBOUNCE_MS = 80
+
+    // Elastic zoom (threshold) event bindings
+    if (this.threshold) {
+      this._onPointerDown = this._handlePointerDown.bind(this)
+      this._onPointerUp = this._handlePointerUp.bind(this)
+      this._onPointerCancel = this._handlePointerCancel.bind(this)
+    }
 
     // View prefetcher
     this.prefetcher = new ViewPrefetcher(this.views)
@@ -126,6 +136,13 @@ export class Zumly {
     canvas.addEventListener('mouseover', this._onPrefetchTrigger, { passive: true })
     canvas.addEventListener('focusin', this._onPrefetchTrigger, { passive: true })
 
+    // Elastic zoom (threshold) pointer events
+    if (this.threshold && this._onPointerDown) {
+      canvas.addEventListener('pointerdown', this._onPointerDown, false)
+      canvas.addEventListener('pointerup', this._onPointerUp, false)
+      canvas.addEventListener('pointercancel', this._onPointerCancel, false)
+    }
+
     window.addEventListener('resize', this._onResize, { passive: true })
 
     if (typeof ResizeObserver !== 'undefined') {
@@ -149,6 +166,11 @@ export class Zumly {
       canvas.removeEventListener('wheel', this._onWheel)
       canvas.removeEventListener('mouseover', this._onPrefetchTrigger)
       canvas.removeEventListener('focusin', this._onPrefetchTrigger)
+      if (this._onPointerDown) {
+        canvas.removeEventListener('pointerdown', this._onPointerDown, false)
+        canvas.removeEventListener('pointerup', this._onPointerUp, false)
+        canvas.removeEventListener('pointercancel', this._onPointerCancel, false)
+      }
     }
 
     window.removeEventListener('resize', this._onResize)
@@ -282,6 +304,71 @@ export class Zumly {
       currentView.setAttribute('tabindex', '-1')
       currentView.focus({ preventScroll: true })
     }
+  }
+
+  // ─── Background view effects ─────────────────────────────────────
+
+  /**
+   * Parse per-trigger effects override or fall back to instance config.
+   * Format: "blur(3px) | blur(8px) saturate(0)" (pipe separator for previous|last).
+   * @param {HTMLElement|null} triggerEl
+   * @returns {[string, string]} [previousEffect, lastEffect]
+   * @private
+   */
+  _resolveEffects (triggerEl) {
+    const perTrigger = triggerEl?.dataset?.withEffects
+    if (perTrigger && typeof perTrigger === 'string') {
+      const parts = perTrigger.split('|').map(s => s.trim())
+      return [parts[0] || 'none', parts[1] || parts[0] || 'none']
+    }
+    return this.effects
+  }
+
+  /**
+   * Apply background effects to previous/last views during zoom-in.
+   * Sets CSS custom properties and adds .has-effect class for CSS transition.
+   * @param {HTMLElement} previousView
+   * @param {HTMLElement|null} lastView
+   * @param {[string, string]} effects - [previousEffect, lastEffect]
+   * @param {string} duration - CSS duration for transition timing
+   * @param {string} ease - CSS easing for transition timing
+   * @private
+   */
+  _applyEffects (previousView, lastView, effects, duration, ease) {
+    if (!effects || (effects[0] === 'none' && effects[1] === 'none')) return
+    if (previousView && effects[0] !== 'none') {
+      previousView.style.setProperty('--z-effect-filter', effects[0])
+      previousView.style.setProperty('--zoom-duration', duration)
+      previousView.style.setProperty('--zoom-ease', ease)
+      previousView.classList.add('has-effect')
+    }
+    if (lastView && effects[1] !== 'none') {
+      lastView.style.setProperty('--z-effect-filter', effects[1])
+      lastView.style.setProperty('--zoom-duration', duration)
+      lastView.style.setProperty('--zoom-ease', ease)
+      lastView.classList.add('has-effect')
+    }
+  }
+
+  /**
+   * Remove background effect from a view (used when it becomes current on zoom-out).
+   * Adds .has-effect-reverse temporarily to animate the filter back to none.
+   * @param {HTMLElement} element
+   * @private
+   */
+  _removeEffect (element) {
+    if (!element || !element.classList.contains('has-effect')) return
+    element.classList.remove('has-effect')
+    element.classList.add('has-effect-reverse')
+    const onEnd = () => {
+      element.classList.remove('has-effect-reverse')
+      element.style.removeProperty('--z-effect-filter')
+      element.removeEventListener('transitionend', onEnd)
+    }
+    element.addEventListener('transitionend', onEnd, { once: true })
+    // Safety: remove after duration in case transitionend doesn't fire
+    const dur = element.style.getPropertyValue('--zoom-duration')
+    setTimeout(onEnd, dur ? parseFloat(dur) * (dur.includes('ms') ? 1 : 1000) + 100 : 1100)
   }
 
   // ─── Lifecycle hooks ─────────────────────────────────────────────
@@ -469,6 +556,12 @@ export class Zumly {
     this._emit('destroy')
     this._destroyed = true
 
+    // Cancel any in-progress elastic zoom preview
+    if (this._previewState) {
+      try { this._previewState.animation.cancel() } catch {}
+      this._previewState = null
+    }
+
     // Clear blockEvents safety timer
     this._clearBlockEventsSafety()
 
@@ -604,7 +697,7 @@ export class Zumly {
       previousView.style.transformOrigin = computePreviousViewOrigin(triggerRect, previousViewRectAsPrevious)
 
       prevEnd = computePreviousViewEndTransform(
-        canvasRectSize, triggerRect, previousViewRectAsPrevious, coverScale
+        canvasRectSize, triggerRect, previousViewRectAsPrevious, coverScale, this.parallax
       )
       // ── Temporary DOM mutation: set previousView to end transform to read trigger's new position
       previousView.style.transform = prevEnd.transform
@@ -638,7 +731,8 @@ export class Zumly {
           lastViewZoomedElementRect,
           previousViewRectWithPreviousAtEndTransform: previousViewRectWhileAtEndTransform,
           scale: coverScale,
-          preScale
+          preScale,
+          parallax: this.parallax
         })
       } else {
         // ── Restore: revert temporary mutation (no lastView branch)
@@ -702,9 +796,13 @@ export class Zumly {
       removedEntry
     )
     snapShoot.scale = coverScale
+    snapShoot.stagger = this.stagger || 0
     this.storeViews(snapShoot)
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     this.tracing('setCSSVariables()')
+    // Apply background view effects (blur, saturate, etc.)
+    const effects = this._resolveEffects(el)
+    this._applyEffects(previousView, lastView, effects, duration, ease)
     this._setBlockEvents()
     const spec = {
       type: 'zoomIn',
@@ -896,9 +994,15 @@ export class Zumly {
 
     const zoomedEl = previousView.querySelector('.zoomed')
     if (zoomedEl) zoomedEl.classList.remove('zoomed')
+    // Remove effect from previousView (it becomes current again)
+    this._removeEffect(previousView)
     previousView.classList.replace('is-previous-view', 'is-current-view')
 
     if (lastView !== null) {
+      // lastView becomes previous: update its effect to the previous-view level
+      if (lastView.classList.contains('has-effect') && this.effects[0] !== 'none') {
+        lastView.style.setProperty('--z-effect-filter', this.effects[0])
+      }
       lastView.classList.replace('is-last-view', 'is-previous-view')
       lastView.classList.remove('hide')
     }
@@ -942,7 +1046,7 @@ export class Zumly {
       event.stopPropagation()
       this.zoomOut()
     }
-    if (!this.blockEvents && event.target.classList.contains('zoom-me') && !this.touching) {
+    if (!this.blockEvents && event.target.classList.contains('zoom-me') && !this.touching && !this.threshold) {
       this.tracing('onZoom()')
       event.stopPropagation()
       this.zoomIn(event.target)
@@ -1010,7 +1114,7 @@ export class Zumly {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe left", 'warn')
       }
     }
-    if (isTap && !this.blockEvents && event.target.classList.contains('zoom-me') && this.touching) {
+    if (isTap && !this.blockEvents && event.target.classList.contains('zoom-me') && this.touching && !this.threshold) {
       this.touching = false
       this.tracing('tap')
       event.preventDefault()
@@ -1021,5 +1125,162 @@ export class Zumly {
       this.tracing('tap')
       this.zoomOut()
     }
+  }
+
+  // ─── Elastic zoom (threshold) ───────────────────────────────────
+
+  /**
+   * Pointer down on a .zoom-me trigger: start the preview animation.
+   * @private
+   */
+  _handlePointerDown (event) {
+    if (this._destroyed || this.blockEvents || this._previewState) return
+    if (!event.isPrimary) return
+
+    const triggerEl = event.target.closest('.zoom-me[data-to]')
+    if (!triggerEl) return
+
+    event.preventDefault()
+    triggerEl.setPointerCapture(event.pointerId)
+
+    const currentView = this.canvas.querySelector('.is-current-view')
+    if (!currentView) return
+
+    // Prefetch the target view in background while user holds
+    const targetName = triggerEl.dataset.to
+    if (targetName) {
+      this.prefetcher.prefetch(targetName)
+    }
+
+    const triggerRect = triggerEl.getBoundingClientRect()
+    const canvasRect = this.canvas.getBoundingClientRect()
+    const currentTransform = currentView.style.transform || ''
+    const currentOrigin = currentView.style.transformOrigin || '0 0'
+
+    // Compute preview end state: slight scale toward trigger
+    const previewScale = 1.08
+    const preview = computePreviewTransform(triggerRect, canvasRect, currentTransform, previewScale)
+
+    // Start WAAPI preview animation
+    const anim = currentView.animate([
+      { transform: currentTransform || 'none', transformOrigin: currentOrigin },
+      { transform: preview.transform, transformOrigin: preview.origin }
+    ], {
+      duration: this.threshold.duration,
+      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+      fill: 'forwards'
+    })
+
+    this._previewState = {
+      triggerEl,
+      animation: anim,
+      currentView,
+      currentTransform,
+      currentOrigin,
+      startTime: performance.now(),
+      pointerId: event.pointerId
+    }
+
+    // Apply partial background effect during preview (Feature 1 integration)
+    const effects = this._resolveEffects(triggerEl)
+    if (effects[0] !== 'none') {
+      currentView.style.setProperty('--z-effect-filter', effects[0])
+      currentView.style.setProperty('--zoom-duration', `${this.threshold.duration}ms`)
+      currentView.style.setProperty('--zoom-ease', 'ease-out')
+      currentView.classList.add('has-effect')
+    }
+
+    this.tracing('preview start')
+  }
+
+  /**
+   * Pointer up: commit or cancel the preview based on progress.
+   * @private
+   */
+  _handlePointerUp (event) {
+    if (!this._previewState) return
+    if (!event.isPrimary) return
+
+    const state = this._previewState
+    const elapsed = performance.now() - state.startTime
+    const progress = Math.min(1, elapsed / this.threshold.duration)
+
+    // Quick click (< 16ms): skip preview, zoom immediately
+    if (elapsed < 16) {
+      this._cancelPreview()
+      this.zoomIn(state.triggerEl)
+      return
+    }
+
+    if (progress >= this.threshold.commitAt) {
+      // Commit: cancel preview, restore state, then do the real zoom
+      this._commitPreview()
+    } else {
+      // Cancel: rubber-band back
+      this._cancelPreview()
+    }
+  }
+
+  /**
+   * Pointer cancel (e.g. touch interrupted): always cancel.
+   * @private
+   */
+  _handlePointerCancel () {
+    if (!this._previewState) return
+    this._cancelPreview()
+  }
+
+  /**
+   * Cancel the preview: reverse the animation (rubber-band) and clean up.
+   * @private
+   */
+  _cancelPreview () {
+    const state = this._previewState
+    if (!state) return
+    this._previewState = null
+
+    const { animation, currentView } = state
+
+    // Remove partial effect
+    this._removeEffect(currentView)
+
+    // Reverse the WAAPI animation for rubber-band
+    try {
+      animation.reverse()
+      animation.addEventListener('finish', () => {
+        try { animation.cancel() } catch {}
+      }, { once: true })
+    } catch {
+      // Animation may have already finished
+      try { animation.cancel() } catch {}
+    }
+
+    this.tracing('preview cancel')
+  }
+
+  /**
+   * Commit the preview: cancel animation, restore DOM, then run full zoomIn.
+   * @private
+   */
+  _commitPreview () {
+    const state = this._previewState
+    if (!state) return
+    this._previewState = null
+
+    const { animation, currentView, currentTransform, currentOrigin, triggerEl } = state
+
+    // Cancel preview animation and restore original transform
+    try { animation.cancel() } catch {}
+    currentView.style.transform = currentTransform
+    currentView.style.transformOrigin = currentOrigin
+
+    // Remove preview effect (full effect will be applied by _doZoomIn)
+    currentView.classList.remove('has-effect', 'has-effect-reverse')
+    currentView.style.removeProperty('--z-effect-filter')
+
+    this.tracing('preview commit')
+
+    // Execute the real zoom
+    this.zoomIn(triggerEl)
   }
 }

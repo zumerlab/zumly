@@ -42,7 +42,18 @@
 .zoom-lateral-back,
 .zoom-lateral-out,
 .zoom-lateral-in {
-  will-change: transform, opacity;
+  will-change: transform, opacity, filter;
+}
+
+/* Background view effects: CSS filter transitions (independent of zoom driver) */
+.z-view.has-effect {
+  transition: filter var(--zoom-duration, 1s) var(--zoom-ease, ease-in-out);
+  filter: var(--z-effect-filter, none);
+}
+
+.z-view.has-effect-reverse {
+  transition: filter var(--zoom-duration, 1s) var(--zoom-ease, ease-in-out);
+  filter: none;
 }
 
 .z-view.hide {
@@ -61,12 +72,14 @@
   animation-name: zoom-current-view;
   animation-duration: var(--zoom-duration);
   animation-timing-function: var(--zoom-ease);
+  animation-fill-mode: both;
   animation-direction: reverse;
 }
 .zoom-current-view {
   animation-name: zoom-current-view;
   animation-duration: var(--zoom-duration);
   animation-timing-function: var(--zoom-ease);
+  animation-fill-mode: both;
 }
 @keyframes zoom-current-view {
   0% {
@@ -81,11 +94,13 @@
   animation-name: zoom-previous-view;
   animation-duration: var(--zoom-duration);
   animation-timing-function: var(--zoom-ease);
+  animation-fill-mode: both;
 }
 .zoom-previous-view-reverse {
   animation-name: zoom-previous-view;
   animation-duration: var(--zoom-duration);
   animation-timing-function: var(--zoom-ease);
+  animation-fill-mode: both;
   animation-direction: reverse;
 }
 @keyframes zoom-previous-view {
@@ -100,12 +115,14 @@
   animation-name: zoom-last-view;
   animation-duration: var(--zoom-duration);
   animation-timing-function: var(--zoom-ease);
+  animation-fill-mode: both;
   animation-direction: reverse;
 }
 .zoom-last-view {
   animation-name: zoom-last-view;
   animation-duration: var(--zoom-duration);
   animation-timing-function: var(--zoom-ease);
+  animation-fill-mode: both;
 }
 @keyframes zoom-last-view {
   0% {

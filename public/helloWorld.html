@@ -107,6 +107,16 @@
       <label><input type="radio" name="driver" value="gsap" /> GSAP</label>
       <label><input type="radio" name="driver" value="motion" /> Motion</label>
       <label><input type="radio" name="driver" value="none" /> None</label>
+      <span style="opacity: 0.5; margin-left: 12px">|</span>
+      <label><input type="checkbox" id="effects-toggle" /> Effects</label>
+      <span id="effects-controls" style="display:none; gap:10px; align-items:center">
+        <label style="font-size:12px">Blur <input type="range" id="blur-prev" min="0" max="20" value="3" style="width:60px"><span id="blur-prev-val">3</span>px / <input type="range" id="blur-last" min="0" max="20" value="8" style="width:60px"><span id="blur-last-val">8</span>px</label>
+        <label style="font-size:12px">Bright <input type="range" id="bright-prev" min="0" max="100" value="70" style="width:60px"><span id="bright-prev-val">0.7</span> / <input type="range" id="bright-last" min="0" max="100" value="40" style="width:60px"><span id="bright-last-val">0.4</span></label>
+        <label style="font-size:12px">Saturate <input type="range" id="sat-last" min="0" max="100" value="0" style="width:60px"><span id="sat-last-val">0</span>%</label>
+      </span>
+      <label><input type="checkbox" id="threshold-toggle" /> Elastic zoom</label>
+      <label style="font-size:12px">Parallax <input type="range" id="parallax-slider" min="0" max="100" value="0" style="width:70px"><span id="parallax-val">0</span></label>
+      <label style="font-size:12px">Stagger <input type="range" id="stagger-slider" min="0" max="300" value="0" style="width:70px"><span id="stagger-val">0</span>ms</label>
     </div>
 
     <div class="mount">
@@ -152,17 +162,44 @@
         canvas.className = 'example zumly-canvas'
         if (mountParentEl) mountParentEl.appendChild(canvas)
 
+        const useEffects = document.getElementById('effects-toggle').checked
+        const useThreshold = document.getElementById('threshold-toggle').checked
+
+        const transitions = {
+            driver,
+            duration: driver === 'none' ? '0s' : '700ms',
+            ease: 'ease-in-out',
+            cover: 'height',
+        }
+        if (useEffects) {
+          const bp = document.getElementById('blur-prev').value
+          const bl = document.getElementById('blur-last').value
+          const brp = (document.getElementById('bright-prev').value / 100).toFixed(2)
+          const brl = (document.getElementById('bright-last').value / 100).toFixed(2)
+          const sl = document.getElementById('sat-last').value
+          transitions.effects = [
+            `blur(${bp}px) brightness(${brp})`,
+            `blur(${bl}px) brightness(${brl}) saturate(${sl}%)`
+          ]
+        }
+        if (useThreshold) {
+          transitions.threshold = { enabled: true, duration: 400, commitAt: 0.4 }
+        }
+        const parallaxVal = document.getElementById('parallax-slider').value / 100
+        if (parallaxVal > 0) {
+          transitions.parallax = parallaxVal
+        }
+        const staggerVal = parseInt(document.getElementById('stagger-slider').value, 10)
+        if (staggerVal > 0) {
+          transitions.stagger = staggerVal
+        }
+
         const app = new ZumlyLib({
           mount: '.example',
           initialView: 'hello',
           preload: ['world'],
           views: { hello, world },
-          transitions: {
-            driver,
-            duration: driver === 'none' ? '0s' : '700ms',
-            ease: 'ease-in-out',
-            cover: 'height',
-          },
+          transitions,
           debug: false,
         })
 
@@ -171,6 +208,43 @@
 
       document.querySelectorAll('input[name="driver"]').forEach((radio) => {
         radio.addEventListener('change', startApp)
+      })
+      const effectsToggle = document.getElementById('effects-toggle')
+      const effectsControls = document.getElementById('effects-controls')
+
+      effectsToggle.addEventListener('change', () => {
+        effectsControls.style.display = effectsToggle.checked ? 'inline-flex' : 'none'
+        startApp()
+      })
+
+      // Update slider labels and restart on change
+      ;['blur-prev', 'blur-last', 'bright-prev', 'bright-last', 'sat-last'].forEach(id => {
+        const el = document.getElementById(id)
+        el.addEventListener('input', () => {
+          const valEl = document.getElementById(id + '-val')
+          if (id.startsWith('bright')) {
+            valEl.textContent = (el.value / 100).toFixed(1)
+          } else if (id.startsWith('sat')) {
+            valEl.textContent = el.value
+          } else {
+            valEl.textContent = el.value
+          }
+          startApp()
+        })
+      })
+
+      document.getElementById('threshold-toggle').addEventListener('change', startApp)
+
+      const parallaxSlider = document.getElementById('parallax-slider')
+      parallaxSlider.addEventListener('input', () => {
+        document.getElementById('parallax-val').textContent = (parallaxSlider.value / 100).toFixed(2)
+        startApp()
+      })
+
+      const staggerSlider = document.getElementById('stagger-slider')
+      staggerSlider.addEventListener('input', () => {
+        document.getElementById('stagger-val').textContent = staggerSlider.value
+        startApp()
       })
 
       startApp()

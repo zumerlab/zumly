@@ -94,6 +94,25 @@ describe('geometry helpers', () => {
       expect(typeof result.transform).toBe('string')
       expect(result.transform).toContain(`scale(${scale})`)
     })
+
+    it('applies parallax factor to reduce translation displacement', () => {
+      const canvasRect = { width: 800, height: 600 }
+      const triggerRect = { x: 100, y: 80, width: 50, height: 40 }
+      const previousViewRect = { x: 0, y: 0 }
+      const scale = 4
+      const noParallax = computePreviousViewEndTransform(canvasRect, triggerRect, previousViewRect, scale, 0)
+      const withParallax = computePreviousViewEndTransform(canvasRect, triggerRect, previousViewRect, scale, 0.2)
+      // Raw x,y stay the same (used for lastView intermediate computation)
+      expect(withParallax.x).toBe(noParallax.x)
+      expect(withParallax.y).toBe(noParallax.y)
+      // But the transform translation is reduced by the parallax factor
+      expect(withParallax.transform).toContain(`scale(${scale})`)
+      expect(withParallax.transform).not.toBe(noParallax.transform)
+      // Parallaxed translate values should be 80% of the originals (factor = 1 - 0.2)
+      const expectedTx = noParallax.x * 0.8
+      const expectedTy = noParallax.y * 0.8
+      expect(withParallax.transform).toBe(`translate(${expectedTx}px, ${expectedTy}px) scale(${scale})`)
+    })
   })
 
   describe('computeLastViewEndTransform()', () => {

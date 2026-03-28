@@ -67,7 +67,8 @@ function runZoomIn (currentView, previousView, lastView, currentStage, durationM
     lastView.style.transform = v2.backwardState.transform
   }
 
-  // Start WAAPI animations
+  // Start WAAPI animations with stagger delay
+  const stagger = currentStage.stagger || 0
   const anims = []
   anims.push(currentView.animate(
     [{ transform: v0.backwardState.transform }, { transform: v0.forwardState.transform }],
@@ -75,15 +76,16 @@ function runZoomIn (currentView, previousView, lastView, currentStage, durationM
   ))
   anims.push(previousView.animate(
     [{ transform: v1.backwardState.transform }, { transform: v1.forwardState.transform }],
-    { duration: durationMs, easing: ease, fill: 'forwards' }
+    { duration: durationMs, delay: stagger, easing: ease, fill: 'forwards' }
   ))
   if (v2) {
     anims.push(lastView.animate(
       [{ transform: v2.backwardState.transform }, { transform: v2.forwardState.transform }],
-      { duration: durationMs, easing: ease, fill: 'forwards' }
+      { duration: durationMs, delay: stagger * 2, easing: ease, fill: 'forwards' }
     ))
   }
 
+  const maxDelay = v2 ? stagger * 2 : stagger
   const { finish } = createFinishGuard(() => {
     cancelAll(anims)
     try {
@@ -92,7 +94,7 @@ function runZoomIn (currentView, previousView, lastView, currentStage, durationM
       if (lastView) applyZoomInEndState(lastView, currentStage)
     } catch (e) { /* DOM cleanup should not block onComplete */ }
     onComplete()
-  }, durationMs + SAFETY_BUFFER_MS)
+  }, durationMs + maxDelay + SAFETY_BUFFER_MS)
 
   Promise.all(anims.map(a => a.finished)).then(finish).catch(finish)
 }
@@ -122,6 +124,7 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
         ? (lastView.style.transform || getComputedStyle(lastView).transform || v2.forwardState.transform)
         : null
 
+      const stagger = currentStage.stagger || 0
       const anims = []
       anims.push(currentView.animate(
         [{ transform: v0.forwardState.transform }, { transform: v0.backwardState.transform }],
@@ -129,19 +132,20 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
       ))
       anims.push(previousView.animate(
         [{ transform: from1 }, { transform: to1.transform }],
-        { duration: durationMs, easing: ease, fill: 'forwards' }
+        { duration: durationMs, delay: stagger, easing: ease, fill: 'both' }
       ))
       if (lastView && to2) {
         anims.push(lastView.animate(
           [{ transform: from2 }, { transform: to2.transform }],
-          { duration: durationMs, easing: ease, fill: 'forwards' }
+          { duration: durationMs, delay: stagger * 2, easing: ease, fill: 'both' }
         ))
       }
 
-      // Let WAAPI drive transforms — remove inline styles that would conflict
+      // Let WAAPI drive transforms — remove inline styles so WAAPI fill takes over
       previousView.style.removeProperty('transform')
       if (lastView) lastView.style.removeProperty('transform')
 
+      const maxDelay = (lastView && to2) ? stagger * 2 : stagger
       const { finish } = createFinishGuard(() => {
         cancelAll(anims)
         try {
@@ -150,7 +154,7 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
           if (lastView && to2) applyZoomOutLastState(lastView, to2)
         } catch (e) { /* DOM cleanup should not block onComplete */ }
         onComplete()
-      }, durationMs + SAFETY_BUFFER_MS)
+      }, durationMs + maxDelay + SAFETY_BUFFER_MS)
 
       Promise.all(anims.map(a => a.finished)).then(finish).catch(finish)
     })

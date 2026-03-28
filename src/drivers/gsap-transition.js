@@ -67,10 +67,11 @@ function runZoomIn (gsap, currentView, previousView, lastView, currentStage, dur
   })
 
   const gsapEase = normalizeEasing(ease)
+  const staggerSec = (currentStage.stagger || 0) / 1000
   tl.to(currentView, { transform: v0.forwardState.transform, duration: durationSec, ease: gsapEase }, 0)
-  tl.to(previousView, { transform: v1.forwardState.transform, duration: durationSec, ease: gsapEase }, 0)
+  tl.to(previousView, { transform: v1.forwardState.transform, duration: durationSec, ease: gsapEase }, staggerSec)
   if (v2) {
-    tl.to(lastView, { transform: v2.forwardState.transform, duration: durationSec, ease: gsapEase }, 0)
+    tl.to(lastView, { transform: v2.forwardState.transform, duration: durationSec, ease: gsapEase }, staggerSec * 2)
   }
 }
 
@@ -104,6 +105,12 @@ function runZoomOut (gsap, currentView, previousView, lastView, currentStage, du
     }
   })
 
+  const staggerSec = (currentStage.stagger || 0) / 1000
+
+  // Set initial transforms so views hold position during stagger delay
+  gsap.set(previousView, { transform: from1 })
+  if (lastView && from2) gsap.set(lastView, { transform: from2 })
+
   tl.fromTo(currentView,
     { transform: v0.forwardState.transform },
     { transform: v0.backwardState.transform, duration: durationSec, ease: gsapEase },
@@ -112,17 +119,15 @@ function runZoomOut (gsap, currentView, previousView, lastView, currentStage, du
   tl.fromTo(previousView,
     { transform: from1 },
     { transform: to1.transform, duration: durationSec, ease: gsapEase },
-    0
+    staggerSec
   )
-  previousView.style.removeProperty('transform')
 
   if (lastView && to2) {
     tl.fromTo(lastView,
       { transform: from2 },
       { transform: to2.transform, duration: durationSec, ease: gsapEase },
-      0
+      staggerSec * 2
     )
-    lastView.style.removeProperty('transform')
   }
 }
 

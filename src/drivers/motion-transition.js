@@ -57,10 +57,18 @@ function runZoomIn (animate, currentView, previousView, lastView, currentStage, 
   )
   applyMatricesAtProgress(matrices, 0)
 
+  const stagger = currentStage.stagger || 0
+  const staggerSec = stagger / 1000
+  const durationMs = durationSec * 1000
+  const totalSec = durationSec + (matrices.length > 2 ? staggerSec * 2 : staggerSec)
+
   const controls = animate(0, 1, {
-    duration: durationSec,
+    duration: totalSec,
     ease: normalizeEasing(ease),
-    onUpdate: t => applyMatricesAtProgress(matrices, t),
+    onUpdate: t => {
+      const elapsed = t * totalSec * 1000
+      applyStaggeredMatrices(matrices, elapsed, durationMs, stagger)
+    },
   })
 
   controls.then(() => {
@@ -84,10 +92,18 @@ function runZoomOut (animate, currentView, previousView, lastView, currentStage,
   )
   applyMatricesAtProgress(matrices, 0)
 
+  const stagger = currentStage.stagger || 0
+  const staggerSec = stagger / 1000
+  const durationMs = durationSec * 1000
+  const totalSec = durationSec + (matrices.length > 2 ? staggerSec * 2 : staggerSec)
+
   const controls = animate(0, 1, {
-    duration: durationSec,
+    duration: totalSec,
     ease: normalizeEasing(ease),
-    onUpdate: t => applyMatricesAtProgress(matrices, t),
+    onUpdate: t => {
+      const elapsed = t * totalSec * 1000
+      applyStaggeredMatrices(matrices, elapsed, durationMs, stagger)
+    },
   })
 
   controls.then(() => {
@@ -130,6 +146,16 @@ function computeMatrixPairs (currentView, previousView, lastView, currentStage, 
 
 function applyMatricesAtProgress (matrices, t) {
   for (const { el, from, to } of matrices) {
+    el.style.transform = matrixToString(interpolateMatrix(from, to, t))
+  }
+}
+
+function applyStaggeredMatrices (matrices, elapsed, durationMs, stagger) {
+  for (let i = 0; i < matrices.length; i++) {
+    const { el, from, to } = matrices[i]
+    const delay = i * stagger
+    const localElapsed = Math.max(0, elapsed - delay)
+    const t = durationMs > 0 ? Math.min(1, localElapsed / durationMs) : 1
     el.style.transform = matrixToString(interpolateMatrix(from, to, t))
   }
 }

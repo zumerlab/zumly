@@ -71,13 +71,18 @@ function runZoomIn (anime, currentView, previousView, lastView, currentStage, du
   // Set initial transforms
   applyMatrices(matrices, 0)
 
+  const stagger = currentStage.stagger || 0
+  const totalDuration = durationMs + (v2 ? stagger * 2 : stagger)
   const progress = { value: 0 }
   anime({
     targets: progress,
     value: 1,
-    duration: durationMs,
+    duration: totalDuration,
     easing: normalizeEasing(ease),
-    update: () => applyMatrices(matrices, progress.value),
+    update: () => {
+      const elapsed = progress.value * totalDuration
+      applyStaggeredMatrices(matrices, elapsed, durationMs, stagger)
+    },
     complete: () => {
       applyZoomInEndState(currentView, currentStage)
       applyZoomInEndState(previousView, currentStage)
@@ -108,13 +113,18 @@ function runZoomOut (anime, currentView, previousView, lastView, currentStage, d
 
   applyMatrices(matrices, 0)
 
+  const stagger = currentStage.stagger || 0
+  const totalDuration = durationMs + (v2 ? stagger * 2 : stagger)
   const progress = { value: 0 }
   anime({
     targets: progress,
     value: 1,
-    duration: durationMs,
+    duration: totalDuration,
     easing: normalizeEasing(ease),
-    update: () => applyMatrices(matrices, progress.value),
+    update: () => {
+      const elapsed = progress.value * totalDuration
+      applyStaggeredMatrices(matrices, elapsed, durationMs, stagger)
+    },
     complete: () => {
       removeViewFromCanvas(currentView, canvas)
       applyZoomOutPreviousState(previousView, to1)
@@ -148,6 +158,16 @@ function computeMatrixPairs (views, direction) {
 
 function applyMatrices (matrices, t) {
   for (const { el, from, to } of matrices) {
+    el.style.transform = matrixToString(interpolateMatrix(from, to, t))
+  }
+}
+
+function applyStaggeredMatrices (matrices, elapsed, durationMs, stagger) {
+  for (let i = 0; i < matrices.length; i++) {
+    const { el, from, to } = matrices[i]
+    const delay = i * stagger
+    const localElapsed = Math.max(0, elapsed - delay)
+    const t = durationMs > 0 ? Math.min(1, localElapsed / durationMs) : 1
     el.style.transform = matrixToString(interpolateMatrix(from, to, t))
   }
 }
