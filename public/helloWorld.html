@@ -58,6 +58,15 @@
   height: 250px;
   top: -5px
 }
+.spain {  
+
+  box-sizing: border-box;
+  padding: 24px;
+  color: #e8ecff;
+  width: 900px;
+  height: 800px;
+  border: 1px solid red;
+}
 .o {
   border: 3px solid #ffcc00
 }
@@ -152,9 +161,16 @@
 
       const world = `
         <div class="z-view world">
-          <img class="world" src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/world.png"/>
+          <img class='zoom-me world' data-to='spain' src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/world.png"/>
         </div>
       `
+
+      const spain = `
+     <div class="z-view spain">
+         B Y E!
+        </div>
+        `
+     
 
       const mountParentEl = document.querySelector('.mount')
 
@@ -212,7 +228,7 @@
           mount: '.example',
           initialView: 'hello',
           preload: ['world'],
-          views: { hello, world },
+          views: { hello, world, spain},
           transitions,
           deferred: useDeferred,
           debug: false,
