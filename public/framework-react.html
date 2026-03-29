@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zumly + React Demo</title>
+    <link rel="stylesheet" href="/dist/zumly.css" />
+    <style>
+      html, body { height: 100%; margin: 0; overflow: hidden; font-family: system-ui, sans-serif; background: #0b1020; }
+      #app { position: absolute; top: 52px; left: 0; right: 0; bottom: 0; }
+      .info-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding: 12px 16px; background: rgba(11,16,32,0.95); border-bottom: 1px solid rgba(97,218,251,0.4); color: #e8ecff; font-size: 14px; }
+      .info-bar strong { color: #61dafb; }
+      .z-view { box-sizing: border-box; padding: 32px; color: #e8ecff; }
+      .card { margin-top: 12px; padding: 14px 18px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(97,218,251,0.6); width: fit-content; cursor: zoom-in; transition: background 0.2s; }
+      .card:hover { background: rgba(255,255,255,0.12); }
+      .cards { display: flex; flex-wrap: wrap; gap: 10px; }
+      .counter { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+      .counter button { padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(97,218,251,0.6); background: rgba(97,218,251,0.15); color: #61dafb; font-size: 16px; cursor: pointer; }
+      .counter button:hover { background: rgba(97,218,251,0.3); }
+      .counter span { font-size: 24px; min-width: 40px; text-align: center; }
+      .user-card { padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(97,218,251,0.3); margin: 8px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="info-bar">
+      <strong>Zumly + React</strong> — React components mounted as Zumly views via function views
+    </div>
+    <div id="app">
+      <div class="demo zumly-canvas"></div>
+    </div>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="/dist/zumly.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React
+
+      // ── React Components ──────────────────────────────────────────
+
+      function Counter() {
+        const [count, setCount] = useState(0)
+        return (
+          <div className="z-view" style={{ background: 'linear-gradient(135deg, #1a1a3e, #2d1b4e)', width: 500, height: 350, padding: 32 }}>
+            <span style={{ background: '#61dafb', color: '#000', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>REACT COMPONENT</span>
+            <h2 style={{ margin: '12px 0 8px' }}>Counter Component</h2>
+            <p style={{ opacity: 0.7, fontSize: 14 }}>A stateful React component with hooks, mounted fresh each zoom.</p>
+            <div className="counter">
+              <button onClick={() => setCount(c => c - 1)}>−</button>
+              <span>{count}</span>
+              <button onClick={() => setCount(c => c + 1)}>+</button>
+            </div>
+            <div className="card zoom-me" data-to="home" style={{ marginTop: 24 }}>← Back</div>
+          </div>
+        )
+      }
+
+      function UserProfile({ userId }) {
+        const [user, setUser] = useState(null)
+        useEffect(() => {
+          // Simulate API fetch
+          setTimeout(() => {
+            setUser({ name: `User #${userId}`, email: `user${userId}@example.com`, role: 'Developer' })
+          }, 200)
+        }, [userId])
+
+        return (
+          <div className="z-view" style={{ background: 'linear-gradient(135deg, #1a3e2d, #1b4e3a)', width: 500, height: 350, padding: 32 }}>
+            <span style={{ background: '#059669', color: '#fff', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>REACT + PROPS</span>
+            <h2 style={{ margin: '12px 0 8px' }}>User Profile</h2>
+            <p style={{ opacity: 0.7, fontSize: 14 }}>Receives <code>data-user-id</code> from the trigger via props.</p>
+            {user ? (
+              <div className="user-card">
+                <div><strong>{user.name}</strong></div>
+                <div style={{ opacity: 0.6, fontSize: 13 }}>{user.email}</div>
+                <div style={{ opacity: 0.6, fontSize: 13 }}>{user.role}</div>
+              </div>
+            ) : (
+              <div style={{ opacity: 0.5 }}>Loading...</div>
+            )}
+            <div className="card zoom-me" data-to="home" style={{ marginTop: 16 }}>← Back</div>
+          </div>
+        )
+      }
+
+      function TodoList({ context }) {
+        const [todos, setTodos] = useState(context?.get?.('initialTodos') || ['Learn Zumly', 'Build ZUI'])
+        const [input, setInput] = useState('')
+        const addTodo = () => { if (input.trim()) { setTodos(t => [...t, input.trim()]); setInput('') } }
+
+        return (
+          <div className="z-view" style={{ background: 'linear-gradient(135deg, #3e3a1a, #4e4b1b)', width: 500, height: 400, padding: 32 }}>
+            <span style={{ background: '#d97706', color: '#fff', padding: '3px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600 }}>REACT + CONTEXT</span>
+            <h2 style={{ margin: '12px 0 8px' }}>Todo List</h2>
+            <p style={{ opacity: 0.7, fontSize: 14 }}>Reads initial data from <code>componentContext</code>.</p>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && addTodo()}
+                placeholder="New todo..." style={{ padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)', color: '#fff', flex: 1 }} />
+              <button onClick={addTodo} style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(217,119,6,0.6)', background: 'rgba(217,119,6,0.2)', color: '#d97706', cursor: 'pointer' }}>Add</button>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 20 }}>
+              {todos.map((t, i) => <li key={i} style={{ marginBottom: 4 }}>{t}</li>)}
+            </ul>
+            <div className="card zoom-me" data-to="home" style={{ marginTop: 16 }}>← Back</div>
+          </div>
+        )
+      }
+
+      // ── Zumly setup ───────────────────────────────────────────────
+
+      const home = `
+        <div class="z-view" style="background: linear-gradient(135deg, #0b1020, #1a1a3e); width: 600px; height: 400px">
+          <h2>Zumly + React</h2>
+          <p style="opacity:0.7; font-size:14px">Each card zooms into a React component mounted via function views.</p>
+          <div class="cards">
+            <div class="card zoom-me" data-to="counter">
+              <strong>Counter</strong><br><small style="opacity:0.6">useState hook</small>
+            </div>
+            <div class="card zoom-me" data-to="profile" data-user-id="7">
+              <strong>User Profile</strong><br><small style="opacity:0.6">Props from trigger</small>
+            </div>
+            <div class="card zoom-me" data-to="todos">
+              <strong>Todo List</strong><br><small style="opacity:0.6">componentContext</small>
+            </div>
+          </div>
+        </div>
+      `
+
+      const app = new Zumly({
+        mount: '.demo',
+        initialView: 'home',
+        views: {
+          home,
+          counter: ({ target }) => {
+            ReactDOM.createRoot(target).render(React.createElement(Counter))
+          },
+          profile: ({ target, props }) => {
+            ReactDOM.createRoot(target).render(React.createElement(UserProfile, { userId: props.userId }))
+          },
+          todos: ({ target, context }) => {
+            ReactDOM.createRoot(target).render(React.createElement(TodoList, { context }))
+          }
+        },
+        componentContext: new Map([
+          ['initialTodos', ['Learn Zumly', 'Integrate React', 'Ship it']]
+        ]),
+        transitions: { driver: 'waapi', duration: '600ms', ease: 'ease-in-out' },
+        debug: true
+      })
+
+      app.init()
+    </script>
+  </body>
+</html>

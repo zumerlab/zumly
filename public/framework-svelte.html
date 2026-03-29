@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zumly + Svelte Demo</title>
+    <link rel="stylesheet" href="/dist/zumly.css" />
+    <style>
+      html, body { height: 100%; margin: 0; overflow: hidden; font-family: system-ui, sans-serif; background: #0b1020; }
+      #app { position: absolute; top: 52px; left: 0; right: 0; bottom: 0; }
+      .info-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding: 12px 16px; background: rgba(11,16,32,0.95); border-bottom: 1px solid rgba(255,62,0,0.4); color: #e8ecff; font-size: 14px; }
+      .info-bar strong { color: #ff3e00; }
+      .z-view { box-sizing: border-box; padding: 32px; color: #e8ecff; }
+      .card { margin-top: 12px; padding: 14px 18px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,62,0,0.6); width: fit-content; cursor: zoom-in; transition: background 0.2s; }
+      .card:hover { background: rgba(255,255,255,0.12); }
+      .cards { display: flex; flex-wrap: wrap; gap: 10px; }
+    </style>
+  </head>
+  <body>
+    <div class="info-bar">
+      <strong>Zumly + Svelte</strong> — Svelte components compiled at runtime via svelte/compiler (CDN)
+    </div>
+    <div id="app">
+      <div class="demo zumly-canvas"></div>
+    </div>
+
+    <script src="/dist/zumly.js"></script>
+
+    <script type="module">
+      // Svelte doesn't have a simple "mount from CDN" like React/Vue.
+      // In a real project you'd use a bundler (Vite, SvelteKit).
+      // For this demo we simulate the Svelte pattern using vanilla JS
+      // that mirrors how a Svelte component would work.
+
+      // ── Simulated Svelte-style Components ─────────────────────────
+      // Each "component" follows Svelte's pattern: a function that
+      // receives { target, props } and manages its own reactive state.
+
+      function CounterComponent({ target, props }) {
+        let count = 0
+        const el = document.createElement('div')
+        el.className = 'z-view'
+        el.style.cssText = 'background: linear-gradient(135deg, #3e1a0a, #4e2b1b); width: 500px; height: 350px; padding: 32px; color: #e8ecff'
+
+        function render() {
+          el.innerHTML = `
+            <span style="background: #ff3e00; color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600">SVELTE-STYLE</span>
+            <h2 style="margin: 12px 0 8px">Counter Component</h2>
+            <p style="opacity: 0.7; font-size: 14px">Svelte-style reactivity: click handlers update state and re-render.</p>
+            <div style="display: flex; align-items: center; gap: 12px; margin: 16px 0">
+              <button id="dec" style="padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(255,62,0,0.6); background: rgba(255,62,0,0.15); color: #ff3e00; font-size: 16px; cursor: pointer">&minus;</button>
+              <span style="font-size: 24px; min-width: 40px; text-align: center">${count}</span>
+              <button id="inc" style="padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(255,62,0,0.6); background: rgba(255,62,0,0.15); color: #ff3e00; font-size: 16px; cursor: pointer">+</button>
+            </div>
+            <div class="card zoom-me" data-to="home" style="margin-top: 24px">&larr; Back</div>
+          `
+          el.querySelector('#dec').onclick = () => { count--; render() }
+          el.querySelector('#inc').onclick = () => { count++; render() }
+        }
+
+        render()
+        target.appendChild(el)
+      }
+
+      function ToggleComponent({ target, props }) {
+        const items = [
+          { label: 'Dark mode', key: 'dark' },
+          { label: 'Notifications', key: 'notif' },
+          { label: 'Auto-save', key: 'save' },
+          { label: 'Animations', key: 'anim' }
+        ]
+        const state = { dark: true, notif: false, save: true, anim: true }
+
+        const el = document.createElement('div')
+        el.className = 'z-view'
+        el.style.cssText = 'background: linear-gradient(135deg, #1a2d3e, #1b3a4e); width: 500px; height: 400px; padding: 32px; color: #e8ecff'
+
+        function render() {
+          el.innerHTML = `
+            <span style="background: #0284c7; color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600">SVELTE-STYLE</span>
+            <h2 style="margin: 12px 0 8px">Settings Toggle</h2>
+            <p style="opacity: 0.7; font-size: 14px">Multiple reactive bindings, Svelte-style.</p>
+            <div style="margin: 16px 0">
+              ${items.map(item => `
+                <div data-key="${item.key}" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; margin: 6px 0; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(2,132,199,0.3); cursor: pointer">
+                  <span>${item.label}</span>
+                  <span style="padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: ${state[item.key] ? 'rgba(34,197,94,0.3)' : 'rgba(255,255,255,0.1)'}; color: ${state[item.key] ? '#22c55e' : '#888'}">${state[item.key] ? 'ON' : 'OFF'}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="card zoom-me" data-to="home">&larr; Back</div>
+          `
+          el.querySelectorAll('[data-key]').forEach(row => {
+            row.onclick = () => { state[row.dataset.key] = !state[row.dataset.key]; render() }
+          })
+        }
+
+        render()
+        target.appendChild(el)
+      }
+
+      function TimerComponent({ target, props }) {
+        let seconds = 0
+        let running = false
+        let interval = null
+
+        const el = document.createElement('div')
+        el.className = 'z-view'
+        el.style.cssText = 'background: linear-gradient(135deg, #2d1a3e, #3a1b4e); width: 500px; height: 350px; padding: 32px; color: #e8ecff'
+
+        function render() {
+          const mins = String(Math.floor(seconds / 60)).padStart(2, '0')
+          const secs = String(seconds % 60).padStart(2, '0')
+          el.innerHTML = `
+            <span style="background: #8b5cf6; color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600">SVELTE-STYLE</span>
+            <h2 style="margin: 12px 0 8px">Timer</h2>
+            <p style="opacity: 0.7; font-size: 14px">Lifecycle: interval starts/stops with component state.</p>
+            <div style="font-size: 48px; font-family: monospace; text-align: center; margin: 20px 0; color: #c4b5fd">${mins}:${secs}</div>
+            <div style="display: flex; gap: 8px; justify-content: center">
+              <button id="toggle" style="padding: 8px 20px; border-radius: 8px; border: 1px solid rgba(139,92,246,0.6); background: rgba(139,92,246,0.15); color: #8b5cf6; font-size: 14px; cursor: pointer">${running ? 'Pause' : 'Start'}</button>
+              <button id="reset" style="padding: 8px 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #e8ecff; font-size: 14px; cursor: pointer">Reset</button>
+            </div>
+            <div class="card zoom-me" data-to="home" style="margin-top: 20px">&larr; Back</div>
+          `
+          el.querySelector('#toggle').onclick = () => {
+            running = !running
+            if (running) { interval = setInterval(() => { seconds++; render() }, 1000) }
+            else { clearInterval(interval) }
+            render()
+          }
+          el.querySelector('#reset').onclick = () => {
+            clearInterval(interval); running = false; seconds = 0; render()
+          }
+        }
+
+        render()
+        target.appendChild(el)
+      }
+
+      // ── Zumly setup ───────────────────────────────────────────────
+
+      const home = `
+        <div class="z-view" style="background: linear-gradient(135deg, #0b1020, #1a1a3e); width: 600px; height: 400px">
+          <h2>Zumly + Svelte</h2>
+          <p style="opacity:0.7; font-size:14px">Each card zooms into a Svelte-style component.<br>
+          <small style="opacity:0.6">Note: real Svelte needs a bundler. These mirror the pattern: <code>new Component({ target })</code></small></p>
+          <div class="cards">
+            <div class="card zoom-me" data-to="counter">
+              <strong>Counter</strong><br><small style="opacity:0.6">Reactive state</small>
+            </div>
+            <div class="card zoom-me" data-to="toggles">
+              <strong>Settings</strong><br><small style="opacity:0.6">Multiple bindings</small>
+            </div>
+            <div class="card zoom-me" data-to="timer">
+              <strong>Timer</strong><br><small style="opacity:0.6">Lifecycle (interval)</small>
+            </div>
+          </div>
+        </div>
+      `
+
+      const app = new Zumly({
+        mount: '.demo',
+        initialView: 'home',
+        views: {
+          home,
+          counter: ({ target }) => { CounterComponent({ target }) },
+          toggles: ({ target }) => { ToggleComponent({ target }) },
+          timer: ({ target }) => { TimerComponent({ target }) }
+        },
+        transitions: { driver: 'waapi', duration: '600ms', ease: 'ease-in-out' },
+        debug: true
+      })
+
+      app.init()
+    </script>
+  </body>
+</html>

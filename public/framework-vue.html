@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zumly + Vue Demo</title>
+    <link rel="stylesheet" href="/dist/zumly.css" />
+    <style>
+      html, body { height: 100%; margin: 0; overflow: hidden; font-family: system-ui, sans-serif; background: #0b1020; }
+      #app { position: absolute; top: 52px; left: 0; right: 0; bottom: 0; }
+      .info-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding: 12px 16px; background: rgba(11,16,32,0.95); border-bottom: 1px solid rgba(66,184,131,0.4); color: #e8ecff; font-size: 14px; }
+      .info-bar strong { color: #42b883; }
+      .z-view { box-sizing: border-box; padding: 32px; color: #e8ecff; }
+      .card { margin-top: 12px; padding: 14px 18px; border-radius: 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(66,184,131,0.6); width: fit-content; cursor: zoom-in; transition: background 0.2s; }
+      .card:hover { background: rgba(255,255,255,0.12); }
+      .cards { display: flex; flex-wrap: wrap; gap: 10px; }
+      .counter { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+      .counter button { padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(66,184,131,0.6); background: rgba(66,184,131,0.15); color: #42b883; font-size: 16px; cursor: pointer; }
+      .counter button:hover { background: rgba(66,184,131,0.3); }
+      .counter span { font-size: 24px; min-width: 40px; text-align: center; }
+      .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+      .tag { padding: 4px 12px; border-radius: 16px; background: rgba(66,184,131,0.2); border: 1px solid rgba(66,184,131,0.4); font-size: 13px; cursor: pointer; }
+      .tag.active { background: rgba(66,184,131,0.5); }
+    </style>
+  </head>
+  <body>
+    <div class="info-bar">
+      <strong>Zumly + Vue 3</strong> — Vue components mounted as Zumly views via createApp()
+    </div>
+    <div id="app">
+      <div class="demo zumly-canvas"></div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="/dist/zumly.js"></script>
+
+    <script>
+      const { createApp, ref, computed, onMounted } = Vue
+
+      // ── Vue Components ────────────────────────────────────────────
+
+      const Counter = {
+        setup() {
+          const count = ref(0)
+          return { count }
+        },
+        template: `
+          <div class="z-view" style="background: linear-gradient(135deg, #1a3e2d, #1b4e3a); width: 500px; height: 350px; padding: 32px">
+            <span style="background: #42b883; color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600">VUE COMPONENT</span>
+            <h2 style="margin: 12px 0 8px">Counter Component</h2>
+            <p style="opacity: 0.7; font-size: 14px">A reactive Vue 3 component with Composition API.</p>
+            <div class="counter">
+              <button @click="count--">&minus;</button>
+              <span>{{ count }}</span>
+              <button @click="count++">+</button>
+            </div>
+            <div class="card zoom-me" data-to="home" style="margin-top: 24px">&larr; Back</div>
+          </div>
+        `
+      }
+
+      const ColorPicker = {
+        props: ['initialColor'],
+        setup(props) {
+          const colors = ['#42b883', '#61dafb', '#ff3e00', '#dd0031', '#7c3aed', '#d97706']
+          const selected = ref(props.initialColor || colors[0])
+          return { colors, selected }
+        },
+        template: `
+          <div class="z-view" style="background: linear-gradient(135deg, #1a1a3e, #2d1b4e); width: 500px; height: 380px; padding: 32px">
+            <span style="background: #7c3aed; color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600">VUE + PROPS</span>
+            <h2 style="margin: 12px 0 8px">Color Picker</h2>
+            <p style="opacity: 0.7; font-size: 14px">Receives <code>data-color</code> from the trigger as initial color.</p>
+            <div class="tag-list">
+              <div v-for="c in colors" :key="c" class="tag" :class="{ active: selected === c }" @click="selected = c"
+                :style="{ borderColor: c, background: selected === c ? c + '44' : 'transparent' }">
+                {{ c }}
+              </div>
+            </div>
+            <div style="margin: 16px 0; padding: 20px; border-radius: 12px; text-align: center; font-size: 18px; font-weight: bold; transition: background 0.3s"
+              :style="{ background: selected }">
+              {{ selected }}
+            </div>
+            <div class="card zoom-me" data-to="home">&larr; Back</div>
+          </div>
+        `
+      }
+
+      const UserList = {
+        setup() {
+          const users = ref([])
+          const loading = ref(true)
+          onMounted(() => {
+            setTimeout(() => {
+              users.value = [
+                { name: 'Alice', role: 'Engineer' },
+                { name: 'Bob', role: 'Designer' },
+                { name: 'Carol', role: 'Product' }
+              ]
+              loading.value = false
+            }, 300)
+          })
+          const count = computed(() => users.value.length)
+          return { users, loading, count }
+        },
+        template: `
+          <div class="z-view" style="background: linear-gradient(135deg, #3e3a1a, #4e4b1b); width: 500px; height: 400px; padding: 32px">
+            <span style="background: #d97706; color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600">VUE + ASYNC</span>
+            <h2 style="margin: 12px 0 8px">User List</h2>
+            <p style="opacity: 0.7; font-size: 14px">Fetches data in onMounted, uses computed properties.</p>
+            <div v-if="loading" style="opacity: 0.5; padding: 16px">Loading {{ count }} users...</div>
+            <div v-else>
+              <div v-for="u in users" :key="u.name" style="padding: 10px 14px; margin: 6px 0; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(217,119,6,0.3)">
+                <strong>{{ u.name }}</strong> <span style="opacity: 0.5; margin-left: 8px">{{ u.role }}</span>
+              </div>
+              <div style="opacity: 0.5; font-size: 13px; margin-top: 8px">{{ count }} users loaded</div>
+            </div>
+            <div class="card zoom-me" data-to="home" style="margin-top: 16px">&larr; Back</div>
+          </div>
+        `
+      }
+
+      // ── Zumly setup ───────────────────────────────────────────────
+
+      const home = `
+        <div class="z-view" style="background: linear-gradient(135deg, #0b1020, #1a1a3e); width: 600px; height: 400px">
+          <h2>Zumly + Vue 3</h2>
+          <p style="opacity:0.7; font-size:14px">Each card zooms into a Vue component mounted via createApp().</p>
+          <div class="cards">
+            <div class="card zoom-me" data-to="counter">
+              <strong>Counter</strong><br><small style="opacity:0.6">Composition API</small>
+            </div>
+            <div class="card zoom-me" data-to="colorPicker" data-color="#ff3e00">
+              <strong>Color Picker</strong><br><small style="opacity:0.6">Props from trigger</small>
+            </div>
+            <div class="card zoom-me" data-to="userList">
+              <strong>User List</strong><br><small style="opacity:0.6">Async data</small>
+            </div>
+          </div>
+        </div>
+      `
+
+      const app = new Zumly({
+        mount: '.demo',
+        initialView: 'home',
+        views: {
+          home,
+          counter: ({ target }) => {
+            createApp(Counter).mount(target)
+          },
+          colorPicker: ({ target, props }) => {
+            createApp(ColorPicker, { initialColor: props.color }).mount(target)
+          },
+          userList: ({ target }) => {
+            createApp(UserList).mount(target)
+          }
+        },
+        transitions: { driver: 'waapi', duration: '600ms', ease: 'ease-in-out' },
+        debug: true
+      })
+
+      app.init()
+    </script>
+  </body>
+</html>
