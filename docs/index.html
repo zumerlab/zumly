@@ -537,6 +537,14 @@
       <div class="pg">
         <div class="pg-bar">
           <span class="tag">Same-level navigation</span>
+          <div class="ctrl-group">
+            <span class="ctrl-label">keepAlive</span>
+            <select id="lat-keepalive">
+              <option value="">off</option>
+              <option value="true">hidden</option>
+              <option value="visible">visible</option>
+            </select>
+          </div>
           <button class="btn-code" onclick="toggleCode(this)">Show code</button>
         </div>
         <div class="pg-canvas" style="height:380px">
@@ -558,7 +566,10 @@ app.<span class="fn">goTo</span>(<span class="str">'page3'</span>, { <span class
 <span class="cm">// back() pops lateral history, then zooms out</span>
 app.<span class="fn">back</span>(); <span class="cm">// → page2</span>
 app.<span class="fn">back</span>(); <span class="cm">// → page1</span>
-app.<span class="fn">back</span>(); <span class="cm">// → menu (zoom out)</span></code></pre>
+app.<span class="fn">back</span>(); <span class="cm">// → menu (zoom out)</span>
+
+<span class="cm">// keepAlive: views stay in DOM when navigating laterally</span>
+<span class="prop">lateralNav</span>: { <span class="prop">keepAlive</span>: <span class="kw">true</span> }</code></pre>
         </div>
       </div>
     </section>
@@ -938,28 +949,50 @@ app.<span class="fn">on</span>(<span class="str">'destroy'</span>,       () => {
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
         trig('Page 1', 'p1') + trig('Page 2', 'p2') + trig('Page 3', 'p3') + '</div>')
 
+      function counterWidget () {
+        return '<div style="display:inline-flex;align-items:center;gap:8px;margin:8px 0;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.08);font-size:0.85rem">' +
+          '<span style="color:rgba(255,255,255,0.5)">Clicks:</span> ' +
+          '<span class="click-count" style="font-weight:700;color:#f0b428">0</span> ' +
+          '<div class="trig" style="cursor:pointer;display:inline-block;padding:4px 12px;font-size:0.8rem" ' +
+          'onclick="var c=this.parentElement.querySelector(\'.click-count\');c.textContent=+c.textContent+1">+1</div>' +
+          '<span style="color:rgba(255,255,255,0.35);font-size:0.75rem">(keepAlive preserves this state)</span></div>'
+      }
+
       var p1 = dv('Page 1', '#1a1a3e, #2d1b4e', 500, 250,
         '<p>First page. Navigate laterally to siblings.</p>' +
+        counterWidget() +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
         navBtn('p2', 'Go to Page 2') + navBtn('p3', 'Go to Page 3') + '</div>')
 
       var p2 = dv('Page 2', '#1a3e2d, #1b4e3a', 500, 250,
         '<p>Slid in from the right. The parent shifts behind.</p>' +
+        counterWidget() +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
         navBtn('p1', 'Page 1') + navBtn('p3', 'Page 3') + backBtn() + '</div>')
 
       var p3 = dv('Page 3', '#3e3a1a, #4e4b1b', 500, 250,
         '<p>Third page at same zoom level.</p>' +
+        counterWidget() +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
         navBtn('p1', 'Page 1') + navBtn('p2', 'Page 2') + backBtn() + '</div>')
 
-      var app = new Z({
-        mount: '#demo-lateral', initialView: 'menu',
-        views: { menu: menu, p1: p1, p2: p2, p3: p3 },
-        transitions: { duration: '500ms', ease: 'ease-in-out', cover: 'height' }
+      var views = { menu: menu, p1: p1, p2: p2, p3: p3 }
+      function initLateral (keepAlive) {
+        if (window._latApp) { window._latApp.destroy(); document.getElementById('demo-lateral').innerHTML = '' }
+        var app = new Z({
+          mount: '#demo-lateral', initialView: 'menu',
+          views: views,
+          transitions: { duration: '500ms', ease: 'ease-in-out', cover: 'height' },
+          lateralNav: { arrows: true, dots: true, keepAlive: keepAlive }
+        })
+        app.init()
+        window._latApp = app
+      }
+      initLateral(false)
+      document.getElementById('lat-keepalive').addEventListener('change', function () {
+        var v = this.value
+        initLateral(v === 'visible' ? 'visible' : v === 'true' ? true : false)
       })
-      app.init()
-      window._latApp = app
     })()
 
     // ─── 5. VIEW SOURCES ────────────────────────────
