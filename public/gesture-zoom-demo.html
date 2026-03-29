@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zumly - Gesture-Driven Zoom Demo</title>
+    <link rel="stylesheet" href="/dist/zumly.css" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a1a; }
+      .mount {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 60px;
+      }
+      .example { width: 100%; height: 100%; position: relative; }
+
+      .home {
+        width: 100%; height: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr 1fr;
+        gap: 20px;
+        padding: 40px;
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+      }
+      .home h1 {
+        grid-column: 1 / -1;
+        color: #fff;
+        font-size: 1.3rem;
+        text-align: center;
+      }
+
+      .card {
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #fff;
+        border: 2px solid rgba(255,255,255,0.1);
+        user-select: none;
+        touch-action: none;
+      }
+      .card small {
+        font-weight: 400;
+        font-size: 0.7rem;
+        opacity: 0.6;
+        margin-top: 8px;
+        text-align: center;
+        max-width: 140px;
+      }
+
+      .card-1 { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+      .card-2 { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+      .card-3 { background: linear-gradient(135deg, #3498db, #2980b9); }
+      .card-4 { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+
+      .detail {
+        width: 60%; height: 60%;
+        margin: 20% auto;
+        border-radius: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.8rem;
+      }
+      .detail p {
+        font-size: 0.95rem;
+        opacity: 0.7;
+        margin-top: 12px;
+        text-align: center;
+        max-width: 380px;
+      }
+      .detail-1 { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+      .detail-2 { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+      .detail-3 { background: linear-gradient(135deg, #3498db, #2980b9); }
+      .detail-4 { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+
+      .status {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 100;
+        padding: 10px 16px;
+        background: rgba(0,0,0,0.9);
+        color: #fff;
+        font-size: 0.8rem;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .status strong { color: #f1c40f; }
+    </style>
+  </head>
+  <body>
+    <div class="mount">
+      <div class="example zumly-canvas"></div>
+    </div>
+
+    <div class="status">
+      <span id="info">Press &amp; drag a card — the zoom follows your finger/mouse</span>
+      <span>|</span>
+      <span><strong>Drag</strong> to scrub the zoom transition</span>
+      <span>Release <strong>early</strong> → reverses</span>
+      <span>Drag <strong>far enough</strong> → commits</span>
+    </div>
+
+    <script src="/dist/zumly.js"></script>
+    <script>
+      const ZumlyLib = window.Zumly || globalThis.Zumly
+
+      const home = `
+        <div class="z-view home">
+          <h1>Gesture-Driven Zoom: Hold, Drag, or Pinch any card</h1>
+          <div class="card card-1 zoom-me" data-to="view1">
+            Red
+            <small>Hold to preview</small>
+          </div>
+          <div class="card card-2 zoom-me" data-to="view2">
+            Green
+            <small>Drag to zoom</small>
+          </div>
+          <div class="card card-3 zoom-me" data-to="view3">
+            Blue
+            <small>Pinch to zoom</small>
+          </div>
+          <div class="card card-4 zoom-me" data-to="view4">
+            Purple
+            <small>Release early to cancel</small>
+          </div>
+        </div>
+      `
+
+      const view1 = '<div class="z-view detail detail-1"><h2>Red View</h2><p>You made it! Click empty space to zoom out, or click a sibling card in the background.</p></div>'
+      const view2 = '<div class="z-view detail detail-2"><h2>Green View</h2><p>Gesture-driven zoom! The transition follows your input.</p></div>'
+      const view3 = '<div class="z-view detail detail-3"><h2>Blue View</h2><p>Pinch on trackpad works too. Try it!</p></div>'
+      const view4 = '<div class="z-view detail detail-4"><h2>Purple View</h2><p>If you release before 50% progress, zoom cancels with a spring animation.</p></div>'
+
+      const app = new ZumlyLib({
+        mount: '.example',
+        initialView: 'home',
+        views: { home, view1, view2, view3, view4 },
+        transitions: {
+          driver: 'waapi',
+          duration: '500ms',
+          ease: 'ease-in-out',
+          cover: 'width',
+          effects: ['blur(3px)', 'blur(6px)'],
+          threshold: {
+            enabled: true,
+            duration: 600,
+            commitAt: 0.5,
+            dragDistance: 150,
+          },
+        },
+        debug: true,
+      })
+
+      app.init()
+    </script>
+  </body>
+</html>

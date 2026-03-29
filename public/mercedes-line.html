@@ -253,6 +253,16 @@
         width: 100%;
         height: 100%;
         max-height: 400px;
+        overflow: visible;
+      }
+
+      /* Clickable hit areas over SVG subsystems */
+      .svg-hit {
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
+      .svg-hit:hover {
+        background: rgba(255, 255, 255, 0.08);
       }
 
       .issues-panel {
@@ -419,7 +429,8 @@
       }
 
       // Full truck schema SVG for unit detail view
-      function truckSchema (highlights) {
+      // truckId is used to build zoom-me data-to targets for clickable subsystems
+      function truckSchema (highlights, truckId) {
         // highlights: { engine, brake, electric, suspension, exhaust, cabin }
         // each is 'ok' | 'warn' | 'fail'
         const c = (k) => {
@@ -430,6 +441,13 @@
         const pulse = (k) => highlights[k] === 'fail'
           ? `<animate attributeName="opacity" values="1;0.3;1" dur="1.2s" repeatCount="indefinite"/>`
           : ''
+        // foreignObject hit area for clickable subsystems (only if warn/fail)
+        const hit = (k, x, y, w, h) => {
+          if (highlights[k] === 'ok') return ''
+          return `<foreignObject x="${x}" y="${y}" width="${w}" height="${h}">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="zoom-me svg-hit" data-to="issue_${truckId}_${k}" style="width:100%;height:100%;cursor:zoom-in"></div>
+          </foreignObject>`
+        }
 
         return `<svg viewBox="0 0 520 240" fill="none" xmlns="http://www.w3.org/2000/svg">
           <!-- Chassis frame -->
@@ -444,12 +462,14 @@
           <text x="420" y="72" text-anchor="middle" fill="${c('cabin')}" font-size="10" font-family="system-ui" font-weight="600">CABINA</text>
           <rect x="385" y="85" width="55" height="30" rx="3" stroke="${c('cabin')}" stroke-width="1" opacity="0.5" fill="none"/>
           <text x="412" y="104" text-anchor="middle" fill="${c('cabin')}" font-size="8" font-family="system-ui" opacity="0.6">windshield</text>
+          ${hit('cabin', 370, 50, 100, 100)}
 
           <!-- Engine -->
           <rect x="280" y="90" width="70" height="50" rx="4" stroke="${c('engine')}" stroke-width="2" fill="rgba(255,255,255,0.03)">
             ${pulse('engine')}
           </rect>
           <text x="315" y="120" text-anchor="middle" fill="${c('engine')}" font-size="10" font-family="system-ui" font-weight="600">MOTOR</text>
+          ${hit('engine', 275, 85, 80, 60)}
 
           <!-- Transmission -->
           <rect x="210" y="95" width="55" height="40" rx="3" stroke="#666" stroke-width="1.2" fill="none"/>
@@ -460,12 +480,14 @@
             ${pulse('exhaust')}
           </rect>
           <text x="95" y="74" text-anchor="middle" fill="${c('exhaust')}" font-size="9" font-family="system-ui">ESCAPE</text>
+          ${hit('exhaust', 45, 55, 100, 30)}
 
           <!-- Electric -->
           <path d="M 360 100 L 360 60 L 280 60 L 180 60 L 100 60" stroke="${c('electric')}" stroke-width="1.5" stroke-dasharray="4 3" fill="none">
             ${pulse('electric')}
           </path>
           <text x="230" y="55" text-anchor="middle" fill="${c('electric')}" font-size="9" font-family="system-ui">CABLEADO</text>
+          ${hit('electric', 100, 45, 265, 22)}
 
           <!-- Suspension -->
           <!-- Front axle -->
@@ -479,6 +501,7 @@
           <line x1="160" y1="150" x2="160" y2="185" stroke="${c('suspension')}" stroke-width="2"/>
           <path d="M 145 155 Q 160 175 175 155" stroke="${c('suspension')}" stroke-width="1.5" fill="none"/>
           <text x="130" y="175" text-anchor="middle" fill="${c('suspension')}" font-size="9" font-family="system-ui">SUSPENSION</text>
+          ${hit('suspension', 80, 148, 290, 40)}
 
           <!-- Brakes -->
           <circle cx="100" cy="195" r="16" stroke="${c('brake')}" stroke-width="2" fill="rgba(255,255,255,0.02)">
@@ -491,6 +514,7 @@
           <circle cx="350" cy="195" r="6" stroke="${c('brake')}" stroke-width="1" fill="none"/>
           <text x="350" y="225" text-anchor="middle" fill="${c('brake')}" font-size="9" font-family="system-ui">FRENOS</text>
           <text x="130" y="225" text-anchor="middle" fill="${c('brake')}" font-size="9" font-family="system-ui">FRENOS</text>
+          ${hit('brake', 80, 175, 290, 55)}
 
           <!-- Labels legend -->
           <circle cx="490" cy="20" r="5" fill="#27ae60"/>
@@ -692,7 +716,7 @@
             </div>
             <div class="unit-layout">
               <div class="svg-wrap">
-                ${truckSchema(t.issues.highlights)}
+                ${truckSchema(t.issues.highlights, t.id)}
               </div>
               <div class="issues-panel">
                 <div style="font-size:0.75em;color:var(--mb-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Problemas detectados</div>

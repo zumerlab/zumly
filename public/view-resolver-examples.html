@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zumly - View Resolver Examples</title>
+    <link rel="stylesheet" href="/dist/zumly.css" />
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #0b1020;
+      }
+
+      #demo-container {
+        position: absolute;
+        top: 52px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+      }
+
+      .info-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        padding: 12px 16px;
+        background: rgba(11, 16, 32, 0.95);
+        border-bottom: 1px solid rgba(226, 186, 26, 0.4);
+        color: #e8ecff;
+        font-size: 14px;
+      }
+
+      .info-bar strong {
+        color: rgba(226, 186, 26, 1);
+      }
+
+      /* ---- Shared view styles ---- */
+      .view {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding: 32px;
+        color: #e8ecff;
+      }
+
+      .view h2 {
+        margin: 0 0 8px;
+        font-size: 1.4em;
+      }
+
+      .view .type-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+      }
+
+      .view p {
+        margin: 0 0 16px;
+        opacity: 0.8;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .view pre {
+        background: rgba(0,0,0,0.4);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 12px;
+        overflow-x: auto;
+        margin: 0 0 16px;
+        color: #c8d0ff;
+      }
+
+      .card {
+        margin-top: 12px;
+        padding: 14px 18px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(226, 186, 26, 0.6);
+        width: fit-content;
+        cursor: zoom-in;
+        transition: background 0.2s;
+      }
+
+      .card:hover {
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      zumly-demo-wc {
+        display: block;
+        width: 600px;
+        height: 450px;
+        background: linear-gradient(135deg, #1a3e3e, #1b4e4e);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="info-bar">
+      <strong>View Resolver Examples</strong> — Click each card to see a different view type. Use browser back or click outside to zoom out.
+    </div>
+
+    <div id="demo-container">
+      <div class="example zumly-canvas"></div>
+    </div>
+
+    <script src="/dist/zumly.js"></script>
+    <script>
+      const ZumlyLib = window.Zumly || globalThis.Zumly
+
+      // =========================================================
+      // Register a Web Component for the webcomponent example
+      // =========================================================
+      class ZumlyDemoWc extends HTMLElement {
+        connectedCallback () {
+          if (this._initialized) return
+          this._initialized = true
+          this.innerHTML = `
+            <span class="type-badge" style="background:#0d9488;color:#fff">Web Component</span>
+            <h2>Web Component View</h2>
+            <p>Pass a custom element tag name (must contain a <code>-</code>). The ViewResolver waits for it to be defined via <code>customElements.whenDefined()</code>, then creates it.</p>
+            <pre>// Define your component
+class MyView extends HTMLElement {
+  connectedCallback () {
+    this.innerHTML = '&lt;h1&gt;Hello from WC&lt;/h1&gt;'
+  }
+}
+customElements.define('my-view', MyView)
+
+// Use the tag name as the view
+views: { myView: 'my-view' }</pre>
+            <div class="card zoom-me" data-to="home">Back to menu</div>
+          `
+        }
+      }
+      customElements.define('zumly-demo-wc', ZumlyDemoWc)
+
+      // =========================================================
+      // 1) HTML String — the simplest way to define a view
+      // =========================================================
+      const htmlStringView = `
+        <div class="z-view view" style="background: linear-gradient(135deg, #1a1a3e, #2d1b4e); width:600px; height:400px">
+          <span class="type-badge" style="background:#7c3aed;color:#fff">HTML String</span>
+          <h2>HTML String View</h2>
+          <p>The simplest way: just pass an HTML string. The ViewResolver parses it and uses the first element.</p>
+          <pre>views: {
+  myView: '&lt;div class="z-view"&gt;Hello!&lt;/div&gt;'
+}</pre>
+          <div class="card zoom-me" data-to="home">Back to menu</div>
+        </div>
+      `
+
+      // =========================================================
+      // 2) Function view — receives context, returns HTML string
+      // =========================================================
+      function functionView ({ target }) {
+        return `
+          <div class="z-view view" style="background: linear-gradient(135deg, #1a3e2d, #1b4e3a); width:600px; height:450px">
+            <span class="type-badge" style="background:#059669;color:#fff">Function</span>
+            <h2>Function View</h2>
+            <p>A function that receives <code>{ target, ...context }</code> and returns an HTML string (or HTMLElement, or mounts into target).</p>
+            <pre>views: {
+  myView: function ({ target }) {
+    return '&lt;div class="z-view"&gt;Dynamic!&lt;/div&gt;'
+  }
+}</pre>
+            <p style="opacity:0.5">This view was generated at: ${new Date().toLocaleTimeString()}</p>
+            <div class="card zoom-me" data-to="home">Back to menu</div>
+          </div>
+        `
+      }
+
+      // =========================================================
+      // 3) Function view — returns an HTMLElement directly
+      // =========================================================
+      function functionElementView () {
+        const el = document.createElement('div')
+        el.className = 'z-view view'
+        el.style.cssText = 'background: linear-gradient(135deg, #3e1a2d, #4e1b3a); width:600px; height:450px'
+        el.innerHTML = `
+          <span class="type-badge" style="background:#db2777;color:#fff">Function (Element)</span>
+          <h2>Function returning HTMLElement</h2>
+          <p>A function can also create and return an <code>HTMLElement</code> directly instead of a string.</p>
+          <pre>views: {
+  myView: function () {
+    const el = document.createElement('div')
+    el.className = 'z-view'
+    el.textContent = 'Built with DOM API'
+    return el
+  }
+}</pre>
+          <p style="opacity:0.5">Created at: ${new Date().toLocaleTimeString()}</p>
+          <div class="card zoom-me" data-to="home">Back to menu</div>
+        `
+        return el
+      }
+
+      // =========================================================
+      // 4) Object with render() — component-like pattern
+      // =========================================================
+      const objectView = {
+        render (context) {
+          return `
+            <div class="z-view view" style="background: linear-gradient(135deg, #3e3a1a, #4e4b1b); width:600px; height:450px">
+              <span class="type-badge" style="background:#d97706;color:#fff">Object { render() }</span>
+              <h2>Object with render()</h2>
+              <p>An object with a <code>render(context)</code> method that returns an HTML string. Useful for component-like patterns.</p>
+              <pre>views: {
+  myView: {
+    render (context) {
+      return '&lt;div class="z-view"&gt;Rendered!&lt;/div&gt;'
+    }
+  }
+}</pre>
+              <div class="card zoom-me" data-to="home">Back to menu</div>
+            </div>
+          `
+        }
+      }
+
+      // =========================================================
+      // 5) HTMLElement — a pre-built DOM node (gets cloned)
+      // =========================================================
+      const elementView = document.createElement('div')
+      elementView.className = 'z-view view'
+      elementView.style.cssText = 'background: linear-gradient(135deg, #1a2d3e, #1b3a4e); width:600px; height:450px'
+      elementView.innerHTML = `
+        <span class="type-badge" style="background:#0284c7;color:#fff">HTMLElement</span>
+        <h2>HTMLElement View</h2>
+        <p>Pass a pre-built <code>HTMLElement</code> directly. The ViewResolver clones it each time it's needed.</p>
+        <pre>const el = document.createElement('div')
+el.className = 'z-view'
+el.textContent = 'Pre-built element'
+
+views: { myView: el }</pre>
+        <div class="card zoom-me" data-to="home">Back to menu</div>
+      `
+
+      // =========================================================
+      // 6) Async function view — fetches data, then returns HTML
+      // =========================================================
+      async function asyncFunctionView () {
+        // Simulate an async operation (API call, etc.)
+        await new Promise(resolve => setTimeout(resolve, 300))
+        return `
+          <div class="z-view view" style="background: linear-gradient(135deg, #2d1a3e, #3a1b4e); width:600px; height:450px">
+            <span class="type-badge" style="background:#8b5cf6;color:#fff">Async Function</span>
+            <h2>Async Function View</h2>
+            <p>An <code>async</code> function that can fetch data or do async work before returning the view.</p>
+            <pre>views: {
+  myView: async function ({ target }) {
+    const data = await fetch('/api/data')
+    return \`&lt;div class="z-view"&gt;\${data}&lt;/div&gt;\`
+  }
+}</pre>
+            <p style="opacity:0.5">Loaded at: ${new Date().toLocaleTimeString()} (after 300ms delay)</p>
+            <div class="card zoom-me" data-to="home">Back to menu</div>
+          </div>
+        `
+      }
+
+      // =========================================================
+      // Home — the menu linking to all examples
+      // =========================================================
+      const home = `
+        <div class="z-view view" style="background: linear-gradient(135deg, #0b1020, #1a1a3e); width:700px; height:520px">
+          <h2>View Resolver — All View Types</h2>
+          <p>Each card below navigates to a view defined in a different way. All are registered in the <code>views</code> config object.</p>
+          <div class="cards">
+            <div class="card zoom-me" data-to="htmlStringView">
+              <strong>1. HTML String</strong><br>
+              <small style="opacity:0.6">Template literal</small>
+            </div>
+            <div class="card zoom-me" data-to="functionView">
+              <strong>2. Function</strong><br>
+              <small style="opacity:0.6">Returns string</small>
+            </div>
+            <div class="card zoom-me" data-to="functionElementView">
+              <strong>3. Function</strong><br>
+              <small style="opacity:0.6">Returns HTMLElement</small>
+            </div>
+            <div class="card zoom-me" data-to="objectView">
+              <strong>4. Object</strong><br>
+              <small style="opacity:0.6">{ render() }</small>
+            </div>
+            <div class="card zoom-me" data-to="elementView">
+              <strong>5. HTMLElement</strong><br>
+              <small style="opacity:0.6">Pre-built DOM node</small>
+            </div>
+            <div class="card zoom-me" data-to="asyncFunctionView">
+              <strong>6. Async Function</strong><br>
+              <small style="opacity:0.6">Async data loading</small>
+            </div>
+            <div class="card zoom-me" data-to="urlView">
+              <strong>7. URL</strong><br>
+              <small style="opacity:0.6">Fetched from file</small>
+            </div>
+            <div class="card zoom-me" data-to="webComponentView">
+              <strong>8. Web Component</strong><br>
+              <small style="opacity:0.6">Custom element tag</small>
+            </div>
+          </div>
+        </div>
+      `
+
+      // =========================================================
+      // Initialize Zumly with all view types
+      // =========================================================
+      const app = new ZumlyLib({
+        mount: '.example',
+        initialView: 'home',
+        views: {
+          home,
+          htmlStringView,
+          functionView,
+          functionElementView,
+          objectView,
+          elementView,
+          asyncFunctionView,
+          urlView: '/url-view-partial.html',
+          webComponentView: 'zumly-demo-wc',
+        },
+        transitions: {
+          driver: 'css',
+          duration: '600ms',
+          ease: 'ease-in-out',
+          cover: 'height',
+        },
+        debug: true,
+      })
+
+      app.init()
+    </script>
+  </body>
+</html>
