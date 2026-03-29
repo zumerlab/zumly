@@ -45,7 +45,7 @@
   "scripts": {
     "compile": "node esbuild.config.mjs",
     "build": "npm run compile && npm pack",
-    "dev": "npm run compile && npx serve public -p 9090",
+    "dev": "npm run compile && npx serve . -p 9090 -c ./serve.json",
     "test": "npx vitest run --browser.headless --reporter=verbose",
     "test:unit": "npx vitest run __tests__/utils.test.js --reporter=verbose",
     "test:coverage": "npx vitest run --browser.headless --coverage",
