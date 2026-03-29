@@ -31,7 +31,7 @@ export function runTransition (spec, onComplete) {
   const durationMs = parseDurationMs(duration)
 
   if (type === 'lateral') {
-    runLateralInstant(spec, onComplete)
+    runLateralAnimated(spec, durationMs, ease, onComplete)
     return
   }
 
@@ -159,6 +159,73 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
       Promise.all(anims.map(a => a.finished)).then(finish).catch(finish)
     })
   })
+}
+
+// ─── Lateral ────────────────────────────────────────────────────────
+
+function runLateralAnimated (spec, durationMs, ease, onComplete) {
+  const {
+    currentView: incomingView,
+    previousView: outgoingView,
+    backView,
+    backViewState,
+    lastView,
+    lastViewState,
+    incomingTransformStart,
+    incomingTransformEnd,
+    outgoingTransform,
+    outgoingTransformEnd,
+    currentStage,
+    canvas
+  } = spec
+  const v0 = currentStage.views[0]
+
+  showViews(incomingView)
+  incomingView.classList.replace('is-new-current-view', 'is-current-view')
+  incomingView.classList.remove('zoom-current-view', 'has-no-events')
+  incomingView.style.transformOrigin = v0.forwardState.origin
+
+  const anims = []
+
+  // Incoming view slides in
+  anims.push(incomingView.animate(
+    [{ transform: incomingTransformStart, opacity: 0 }, { transform: incomingTransformEnd, opacity: 1 }],
+    { duration: durationMs, easing: ease, fill: 'forwards' }
+  ))
+
+  // Outgoing view slides out
+  anims.push(outgoingView.animate(
+    [{ transform: outgoingTransform, opacity: 1 }, { transform: outgoingTransformEnd, opacity: 0 }],
+    { duration: durationMs, easing: ease, fill: 'forwards' }
+  ))
+
+  // Back view shifts
+  if (backView && backViewState) {
+    anims.push(backView.animate(
+      [{ transform: backViewState.transformStart }, { transform: backViewState.transformEnd }],
+      { duration: durationMs, easing: ease, fill: 'forwards' }
+    ))
+  }
+
+  // Last view shifts
+  if (lastView && lastViewState) {
+    anims.push(lastView.animate(
+      [{ transform: lastViewState.transformStart }, { transform: lastViewState.transformEnd }],
+      { duration: durationMs, easing: ease, fill: 'forwards' }
+    ))
+  }
+
+  const { finish } = createFinishGuard(() => {
+    cancelAll(anims)
+    // Apply final state
+    incomingView.style.transform = incomingTransformEnd || v0.forwardState.transform
+    if (backView && backViewState) backView.style.transform = backViewState.transformEnd
+    if (lastView && lastViewState) lastView.style.transform = lastViewState.transformEnd
+    removeViewFromCanvas(outgoingView, canvas)
+    onComplete()
+  }, durationMs + SAFETY_BUFFER_MS)
+
+  Promise.all(anims.map(a => a.finished)).then(finish).catch(finish)
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────

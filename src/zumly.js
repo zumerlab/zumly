@@ -7,7 +7,9 @@ import {
   computePreviousViewEndTransform,
   computeLastViewEndTransform,
   computeLastViewIntermediateTransform,
-  computePreviewTransform
+  computeChildRectAfterParentTransformChange,
+  parseOrigin,
+  parseTranslateScale
 } from './geometry.js'
 import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetachedNode, INDEX_CURRENT, INDEX_PREVIOUS, INDEX_LAST } from './snapshots.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
@@ -67,8 +69,6 @@ export class Zumly {
     this._destroyed = false
     /** Lifecycle hooks: { eventName: [fn, ...] } */
     this._hooks = {}
-    /** Elastic zoom preview state (threshold feature). */
-    this._previewState = null
 
     // Validate options
     checkParameters(options, this)
@@ -99,12 +99,6 @@ export class Zumly {
     this._resizeDebounceTimer = null
     this._RESIZE_DEBOUNCE_MS = 80
 
-    // Elastic zoom (threshold) event bindings
-    if (this.threshold) {
-      this._onPointerDown = this._handlePointerDown.bind(this)
-      this._onPointerUp = this._handlePointerUp.bind(this)
-      this._onPointerCancel = this._handlePointerCancel.bind(this)
-    }
 
     // View prefetcher
     this.prefetcher = new ViewPrefetcher(this.views)
@@ -136,12 +130,6 @@ export class Zumly {
     canvas.addEventListener('mouseover', this._onPrefetchTrigger, { passive: true })
     canvas.addEventListener('focusin', this._onPrefetchTrigger, { passive: true })
 
-    // Elastic zoom (threshold) pointer events
-    if (this.threshold && this._onPointerDown) {
-      canvas.addEventListener('pointerdown', this._onPointerDown, false)
-      canvas.addEventListener('pointerup', this._onPointerUp, false)
-      canvas.addEventListener('pointercancel', this._onPointerCancel, false)
-    }
 
     window.addEventListener('resize', this._onResize, { passive: true })
 
@@ -166,11 +154,6 @@ export class Zumly {
       canvas.removeEventListener('wheel', this._onWheel)
       canvas.removeEventListener('mouseover', this._onPrefetchTrigger)
       canvas.removeEventListener('focusin', this._onPrefetchTrigger)
-      if (this._onPointerDown) {
-        canvas.removeEventListener('pointerdown', this._onPointerDown, false)
-        canvas.removeEventListener('pointerup', this._onPointerUp, false)
-        canvas.removeEventListener('pointercancel', this._onPointerCancel, false)
-      }
     }
 
     window.removeEventListener('resize', this._onResize)
@@ -630,11 +613,6 @@ export class Zumly {
     this._emit('destroy')
     this._destroyed = true
 
-    // Cancel any in-progress elastic zoom preview
-    if (this._previewState) {
-      try { this._previewState.animation.cancel() } catch {}
-      this._previewState = null
-    }
 
     // Clear blockEvents safety timer
     this._clearBlockEventsSafety()
@@ -647,6 +625,9 @@ export class Zumly {
 
     // Remove all event listeners
     this._unbindEvents()
+
+    // Remove lateral nav UI
+    this._removeLateralNav()
 
     // Unblock events so nothing is stuck
     this.blockEvents = false
@@ -765,7 +746,24 @@ export class Zumly {
     const originalLastOrigin = lastView ? lastView.style.transformOrigin : null
 
     try {
+      // ── Single read phase: all getBoundingClientRect() calls batched ──
+      previousView.classList.replace('is-current-view', 'is-previous-view')
+      if (lastView) lastView.classList.replace('is-previous-view', 'is-last-view')
+
       const cc = currentView.getBoundingClientRect()
+      const previousViewRectAsPrevious = previousView.getBoundingClientRect()
+      let lastViewRect = null
+      let lastViewZoomedElementRect = null
+      let lastZoomedEl = null
+      if (lastView) {
+        lastViewRect = lastView.getBoundingClientRect()
+        lastZoomedEl = lastView.querySelector('.zoomed')
+        lastViewZoomedElementRect = (lastZoomedEl && lastZoomedEl.getBoundingClientRect)
+          ? lastZoomedEl.getBoundingClientRect()
+          : lastViewRect
+      }
+
+      // ── Pure compute phase: no DOM reads or writes ──
       const canvasOffset = { left: offsetX, top: offsetY }
       const canvasRectSize = { width: canvasRect.width, height: canvasRect.height }
       const currentViewRect = { width: cc.width, height: cc.height }
@@ -778,55 +776,73 @@ export class Zumly {
       transformCurrentView0 = computeCurrentViewStartTransform(
         triggerRect, canvasOffset, currentViewRect, coverScaleInv
       )
-      currentView.style.transform = transformCurrentView0
 
-      previousView.classList.replace('is-current-view', 'is-previous-view')
-      const previousViewRectAsPrevious = previousView.getBoundingClientRect()
       transformPreviousView0 = previousView.style.transform
-      previousView.style.transformOrigin = computePreviousViewOrigin(triggerRect, previousViewRectAsPrevious)
+      const prevOriginStr = computePreviousViewOrigin(triggerRect, previousViewRectAsPrevious)
 
       prevEnd = computePreviousViewEndTransform(
         canvasRectSize, triggerRect, previousViewRectAsPrevious, coverScale, this.parallax
       )
-      // ── Temporary DOM mutation: set previousView to end transform to read trigger's new position
-      previousView.style.transform = prevEnd.transform
 
-      const triggerRectAfterTransform = el ? el.getBoundingClientRect() : triggerRect
+      // Parse old and new transforms for previousView to compute child positions mathematically
+      const prevOldOrigin = parseOrigin(originalPreviousOrigin || '0 0')
+      const prevOldT = parseTranslateScale(transformPreviousView0 || '')
+      const prevNewOrigin = parseOrigin(prevOriginStr)
+      const prevNewT = parseTranslateScale(prevEnd.transform)
+
+      // Compute trigger rect after previousView transform change — no reflow needed
+      let triggerRectAfterTransform = triggerRect
+      if (el) {
+        triggerRectAfterTransform = computeChildRectAfterParentTransformChange(
+          triggerRect, previousViewRectAsPrevious,
+          prevOldOrigin, prevOldT.tx, prevOldT.ty, prevOldT.scale,
+          prevNewOrigin, prevNewT.tx, prevNewT.ty, prevNewT.scale
+        )
+      }
       transformCurrentView1 = computeCurrentViewEndTransform(
         triggerRectAfterTransform, canvasOffset, currentViewRect
       )
 
       if (lastView) {
-        lastView.classList.replace('is-previous-view', 'is-last-view')
         transformLastView0 = lastView.style.transform
-        const previousViewRectWhileAtEndTransform = previousView.getBoundingClientRect()
-        // ── Temporary DOM mutation: set lastView intermediate
-        lastView.style.transform = computeLastViewIntermediateTransform(
+
+        // Compute previousView rect at end transform — self-rect after transform change
+        const previousViewRectWhileAtEndTransform = computeChildRectAfterParentTransformChange(
+          previousViewRectAsPrevious, previousViewRectAsPrevious,
+          prevOldOrigin, prevOldT.tx, prevOldT.ty, prevOldT.scale,
+          prevNewOrigin, prevNewT.tx, prevNewT.ty, prevNewT.scale
+        )
+
+        // Compute lastViewZoomedElementRect after lastView gets intermediate transform
+        const intermediateTransformStr = computeLastViewIntermediateTransform(
           prevEnd.x, prevEnd.y, canvasOffset, coverScale, preScale
         )
-        const lastZoomedEl = lastView.querySelector('.zoomed')
-        const lastViewZoomedElementRect = (lastZoomedEl && lastZoomedEl.getBoundingClientRect)
-          ? lastZoomedEl.getBoundingClientRect()
-          : lastView.getBoundingClientRect()
-        // ── Restore: revert temporary mutations
-        lastView.style.transform = transformLastView0
-        previousView.style.transform = transformPreviousView0
-        const previousViewRectAtBaseTransform = previousView.getBoundingClientRect()
+        const lastOldOrigin = parseOrigin(originalLastOrigin || '0 0')
+        const lastOldT = parseTranslateScale(transformLastView0 || '')
+        const lastNewT = parseTranslateScale(intermediateTransformStr)
+        // lastView origin doesn't change (stays at originalLastOrigin)
+        const lastViewZoomedElementRectAfterIntermediate = computeChildRectAfterParentTransformChange(
+          lastViewZoomedElementRect, lastViewRect,
+          lastOldOrigin, lastOldT.tx, lastOldT.ty, lastOldT.scale,
+          lastOldOrigin, lastNewT.tx, lastNewT.ty, lastNewT.scale
+        )
+
         transformLastView1 = computeLastViewEndTransform({
           canvasRect: canvasRectSize,
           canvasOffset,
           triggerRect,
-          previousViewRectAtBaseTransform,
-          lastViewZoomedElementRect,
+          previousViewRectAtBaseTransform: previousViewRectAsPrevious,
+          lastViewZoomedElementRect: lastViewZoomedElementRectAfterIntermediate,
           previousViewRectWithPreviousAtEndTransform: previousViewRectWhileAtEndTransform,
           scale: coverScale,
           preScale,
           parallax: this.parallax
         })
-      } else {
-        // ── Restore: revert temporary mutation (no lastView branch)
-        previousView.style.transform = transformPreviousView0
       }
+
+      // ── Write phase: apply all transforms at once ──
+      currentView.style.transform = transformCurrentView0
+      previousView.style.transformOrigin = prevOriginStr
     } catch (error) {
       // ── Rollback: restore all DOM mutations on error ──────────────
       this.notify(`zoomIn geometry computation failed: ${error.message}. Aborting zoom.`, 'error')
@@ -918,6 +934,7 @@ export class Zumly {
       }
       this.blockEvents = false
       this._onTransitionComplete()
+      this._updateLateralNav()
       this._emit('afterZoomIn', { viewName: targetViewName, zoomLevel: this.zoomLevel() })
       this.tracing('ended')
     })
@@ -989,7 +1006,6 @@ export class Zumly {
     this._emit('viewMounted', { viewName: targetViewName, node: incomingView })
 
     hideViewContent(incomingView)
-    hideViewContent(lastView)
 
     const outTransform = outgoingView.style.transform || ''
     const outOrigin = outgoingView.style.transformOrigin || '0 0'
@@ -1056,10 +1072,19 @@ export class Zumly {
     this.transitionDriver.runTransition(spec, () => {
       this.blockEvents = false
       this._onTransitionComplete()
+      this._updateLateralNav()
       this._emit('afterLateral', { viewName: targetViewName, from: currentName, isBack })
       this.tracing('ended')
     })
   }
+
+  /**
+   * After a lateral animation completes, recompute the currentView snapshot entry
+   * so that zoom-out animates the view back into the correct trigger position.
+   * Also updates previousView origin to point at the new trigger, compensating
+   * its transform so the view stays visually in the same position.
+   * @private
+   */
 
   /**
    * Add translate(dx, dy) to an existing transform string for lateral slide.
@@ -1125,6 +1150,7 @@ export class Zumly {
       }
       lastView.classList.replace('is-last-view', 'is-previous-view')
       lastView.classList.remove('hide')
+      showViewContent(lastView)
     }
     const detachedNode = getDetachedNode(this.currentStage)
     if (detachedNode) {
@@ -1149,6 +1175,7 @@ export class Zumly {
     this.transitionDriver.runTransition(spec, () => {
       this.blockEvents = false
       this._onTransitionComplete()
+      this._updateLateralNav()
       this._emit('afterZoomOut', { zoomLevel: this.zoomLevel() })
       this.tracing('ended')
     })
@@ -1160,8 +1187,10 @@ export class Zumly {
   onZoom (event) {
     if (this._destroyed) return
     const target = event.target
+    // Ignore events from the lateral navigation UI
+    if (target.closest('.z-lateral-nav')) return
     const isZoomMe = target.classList.contains('zoom-me') || target.closest('.zoom-me')
-    if (!this.blockEvents && isZoomMe && !this.touching && !this.threshold) {
+    if (!this.blockEvents && isZoomMe && !this.touching) {
       this.tracing('onZoom() → zoomIn')
       event.stopPropagation()
       const trigger = target.classList.contains('zoom-me') ? target : target.closest('.zoom-me')
@@ -1169,10 +1198,141 @@ export class Zumly {
       return
     }
     if (this.storedViews.length > 1 && !this.blockEvents && !isZoomMe && !this.touching) {
+      // Check if click lands on a sibling .zoom-me in the previous view
+      const siblingTrigger = this._findSiblingTriggerAtPoint(event.clientX, event.clientY)
+      if (siblingTrigger) {
+        this.tracing('onZoom() → lateral')
+        event.stopPropagation()
+        this._doLateral(siblingTrigger.dataset.to)
+        return
+      }
       this.tracing('onZoom() → zoomOut')
       event.stopPropagation()
       this.zoomOut()
     }
+  }
+
+  /**
+   * Hit-test sibling .zoom-me elements in the previous view at given coordinates.
+   * Uses getBoundingClientRect since previous-view has pointer-events: none.
+   * @param {number} x - clientX
+   * @param {number} y - clientY
+   * @returns {HTMLElement|null} The sibling trigger element, or null
+   * @private
+   */
+  _findSiblingTriggerAtPoint (x, y) {
+    const previousView = this.canvas.querySelector('.is-previous-view')
+    if (!previousView) return null
+    const currentView = this.canvas.querySelector('.is-current-view')
+    const currentName = currentView?.dataset?.viewName
+    if (!currentName) return null
+    const triggers = previousView.querySelectorAll('.zoom-me[data-to]')
+    for (const trigger of triggers) {
+      if (trigger.dataset.to === currentName) continue
+      const rect = trigger.getBoundingClientRect()
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        return trigger
+      }
+    }
+    return null
+  }
+
+  // ─── Lateral navigation UI ────────────────────────────────────────
+
+  /**
+   * Get the list of sibling view names at the current depth.
+   * @returns {{ siblings: string[], currentIndex: number }}
+   * @private
+   */
+  _getSiblings () {
+    const previousView = this.canvas.querySelector('.is-previous-view')
+    if (!previousView) return { siblings: [], currentIndex: -1 }
+    const currentView = this.canvas.querySelector('.is-current-view')
+    const currentName = currentView?.dataset?.viewName
+    const triggers = previousView.querySelectorAll('.zoom-me[data-to]')
+    const siblings = []
+    for (const t of triggers) {
+      if (t.dataset.to) siblings.push(t.dataset.to)
+    }
+    const currentIndex = siblings.indexOf(currentName)
+    return { siblings, currentIndex }
+  }
+
+  /**
+   * Create or update the lateral navigation UI (arrows + dots).
+   * Called after zoom-in and after lateral navigation.
+   * @private
+   */
+  _updateLateralNav () {
+    if (!this.lateralNav || this._destroyed) return
+    this._removeLateralNav()
+
+    const { siblings, currentIndex } = this._getSiblings()
+    if (siblings.length < 2) return
+
+    const nav = document.createElement('div')
+    nav.className = 'z-lateral-nav'
+
+    if (this.lateralNav.arrows) {
+      const prevBtn = document.createElement('button')
+      prevBtn.className = 'z-lateral-arrow z-lateral-prev'
+      prevBtn.setAttribute('aria-label', 'Previous sibling view')
+      prevBtn.innerHTML = '&#8249;'
+      prevBtn.disabled = currentIndex <= 0
+      prevBtn.addEventListener('mouseup', (e) => {
+        e.stopPropagation()
+        if (currentIndex > 0) {
+          this._doLateral(siblings[currentIndex - 1])
+        }
+      })
+      nav.appendChild(prevBtn)
+    }
+
+    if (this.lateralNav.dots) {
+      const dotsContainer = document.createElement('div')
+      dotsContainer.className = 'z-lateral-dots'
+      for (let i = 0; i < siblings.length; i++) {
+        const dot = document.createElement('button')
+        dot.className = 'z-lateral-dot' + (i === currentIndex ? ' is-active' : '')
+        dot.setAttribute('aria-label', `Go to ${siblings[i]}`)
+        dot.dataset.to = siblings[i]
+        dot.addEventListener('mouseup', (e) => {
+          e.stopPropagation()
+          if (i !== currentIndex) {
+            this._doLateral(siblings[i])
+          }
+        })
+        dotsContainer.appendChild(dot)
+      }
+      nav.appendChild(dotsContainer)
+    }
+
+    if (this.lateralNav.arrows) {
+      const nextBtn = document.createElement('button')
+      nextBtn.className = 'z-lateral-arrow z-lateral-next'
+      nextBtn.setAttribute('aria-label', 'Next sibling view')
+      nextBtn.innerHTML = '&#8250;'
+      nextBtn.disabled = currentIndex >= siblings.length - 1
+      nextBtn.addEventListener('mouseup', (e) => {
+        e.stopPropagation()
+        if (currentIndex < siblings.length - 1) {
+          this._doLateral(siblings[currentIndex + 1])
+        }
+      })
+      nav.appendChild(nextBtn)
+    }
+
+    this.canvas.appendChild(nav)
+  }
+
+  /**
+   * Remove the lateral navigation UI from the canvas.
+   * @private
+   */
+  _removeLateralNav () {
+    if (!this.canvas) return
+    const existing = this.canvas.querySelector('.z-lateral-nav')
+    if (existing) existing.remove()
   }
 
   onKeyUp (event) {
@@ -1266,7 +1426,7 @@ export class Zumly {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe left", 'warn')
       }
     }
-    if (isTap && !this.blockEvents && event.target.classList.contains('zoom-me') && this.touching && !this.threshold) {
+    if (isTap && !this.blockEvents && event.target.classList.contains('zoom-me') && this.touching) {
       this.touching = false
       this.tracing('tap')
       event.preventDefault()
@@ -1279,160 +1439,4 @@ export class Zumly {
     }
   }
 
-  // ─── Elastic zoom (threshold) ───────────────────────────────────
-
-  /**
-   * Pointer down on a .zoom-me trigger: start the preview animation.
-   * @private
-   */
-  _handlePointerDown (event) {
-    if (this._destroyed || this.blockEvents || this._previewState) return
-    if (!event.isPrimary) return
-
-    const triggerEl = event.target.closest('.zoom-me[data-to]')
-    if (!triggerEl) return
-
-    event.preventDefault()
-    triggerEl.setPointerCapture(event.pointerId)
-
-    const currentView = this.canvas.querySelector('.is-current-view')
-    if (!currentView) return
-
-    // Prefetch the target view in background while user holds
-    const targetName = triggerEl.dataset.to
-    if (targetName) {
-      this.prefetcher.prefetch(targetName)
-    }
-
-    const triggerRect = triggerEl.getBoundingClientRect()
-    const canvasRect = this.canvas.getBoundingClientRect()
-    const currentTransform = currentView.style.transform || ''
-    const currentOrigin = currentView.style.transformOrigin || '0 0'
-
-    // Compute preview end state: slight scale toward trigger
-    const previewScale = 1.08
-    const preview = computePreviewTransform(triggerRect, canvasRect, currentTransform, previewScale)
-
-    // Start WAAPI preview animation
-    const anim = currentView.animate([
-      { transform: currentTransform || 'none', transformOrigin: currentOrigin },
-      { transform: preview.transform, transformOrigin: preview.origin }
-    ], {
-      duration: this.threshold.duration,
-      easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-      fill: 'forwards'
-    })
-
-    this._previewState = {
-      triggerEl,
-      animation: anim,
-      currentView,
-      currentTransform,
-      currentOrigin,
-      startTime: performance.now(),
-      pointerId: event.pointerId
-    }
-
-    // Apply partial background effect during preview (Feature 1 integration)
-    const effects = this._resolveEffects(triggerEl)
-    if (effects[0] !== 'none') {
-      currentView.style.setProperty('--z-effect-filter', effects[0])
-      currentView.style.setProperty('--zoom-duration', `${this.threshold.duration}ms`)
-      currentView.style.setProperty('--zoom-ease', 'ease-out')
-      currentView.classList.add('has-effect')
-    }
-
-    this.tracing('preview start')
-  }
-
-  /**
-   * Pointer up: commit or cancel the preview based on progress.
-   * @private
-   */
-  _handlePointerUp (event) {
-    if (!this._previewState) return
-    if (!event.isPrimary) return
-
-    const state = this._previewState
-    const elapsed = performance.now() - state.startTime
-    const progress = Math.min(1, elapsed / this.threshold.duration)
-
-    // Quick click (< 16ms): skip preview, zoom immediately
-    if (elapsed < 16) {
-      this._cancelPreview()
-      this.zoomIn(state.triggerEl)
-      return
-    }
-
-    if (progress >= this.threshold.commitAt) {
-      // Commit: cancel preview, restore state, then do the real zoom
-      this._commitPreview()
-    } else {
-      // Cancel: rubber-band back
-      this._cancelPreview()
-    }
-  }
-
-  /**
-   * Pointer cancel (e.g. touch interrupted): always cancel.
-   * @private
-   */
-  _handlePointerCancel () {
-    if (!this._previewState) return
-    this._cancelPreview()
-  }
-
-  /**
-   * Cancel the preview: reverse the animation (rubber-band) and clean up.
-   * @private
-   */
-  _cancelPreview () {
-    const state = this._previewState
-    if (!state) return
-    this._previewState = null
-
-    const { animation, currentView } = state
-
-    // Remove partial effect
-    this._removeEffect(currentView)
-
-    // Reverse the WAAPI animation for rubber-band
-    try {
-      animation.reverse()
-      animation.addEventListener('finish', () => {
-        try { animation.cancel() } catch {}
-      }, { once: true })
-    } catch {
-      // Animation may have already finished
-      try { animation.cancel() } catch {}
-    }
-
-    this.tracing('preview cancel')
-  }
-
-  /**
-   * Commit the preview: cancel animation, restore DOM, then run full zoomIn.
-   * @private
-   */
-  _commitPreview () {
-    const state = this._previewState
-    if (!state) return
-    this._previewState = null
-
-    const { animation, currentView, currentTransform, currentOrigin, triggerEl } = state
-
-    // Cancel preview animation and restore original transform
-    try { animation.cancel() } catch {}
-    currentView.style.transform = currentTransform
-    currentView.style.transformOrigin = currentOrigin
-
-    // Remove preview effect (full effect will be applied by _doZoomIn)
-    currentView.classList.remove('has-effect', 'has-effect-reverse')
-    currentView.style.removeProperty('--z-effect-filter')
-
-    this.tracing('preview commit')
-
-    // Execute the real zoom
-    this.zoomIn(triggerEl)
-  }
 }

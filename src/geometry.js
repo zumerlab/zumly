@@ -142,6 +142,99 @@ export function computeLastViewIntermediateTransform (x, y, canvasOffset, scale,
 }
 
 /**
+ * Parse a transform-origin string like "123px 456px" into numeric values.
+ * @param {string} originStr
+ * @returns {{ x: number, y: number }}
+ */
+export function parseOrigin (originStr) {
+  const parts = originStr.split(/\s+/)
+  return { x: parseFloat(parts[0]) || 0, y: parseFloat(parts[1]) || 0 }
+}
+
+/**
+ * Parse a transform string like "translate(10px, 20px) scale(3)" into components.
+ * @param {string} transformStr
+ * @returns {{ tx: number, ty: number, scale: number }}
+ */
+export function parseTranslateScale (transformStr) {
+  const tm = transformStr.match(/translate\(\s*([-\d.]+)px[,\s]+([-\d.]+)px\s*\)/)
+  const sm = transformStr.match(/scale\(\s*([-\d.]+)\s*\)/)
+  return {
+    tx: tm ? parseFloat(tm[1]) : 0,
+    ty: tm ? parseFloat(tm[2]) : 0,
+    scale: sm ? parseFloat(sm[1]) : 1
+  }
+}
+
+/**
+ * Compute a child element's bounding rect after its parent's CSS transform is REPLACED,
+ * WITHOUT forcing a DOM reflow. Pure math replacement for getBoundingClientRect().
+ *
+ * The parent currently has an old transform applied, so parentRect and childRect already
+ * reflect that old transform. This function:
+ * 1. Inverts the old transform to recover layout-box positions
+ * 2. Applies the new transform to get the final screen positions
+ *
+ * CSS transform with origin: point_screen = origin + translate + scale * (point_layout - origin)
+ * Inverse: point_layout = origin + (point_screen - origin - translate) / scale
+ *
+ * @param {{ x: number, y: number, width: number, height: number }} childRect - Child's CURRENT bounding rect (includes old parent transform)
+ * @param {{ x: number, y: number, width: number, height: number }} parentRect - Parent's CURRENT bounding rect (includes old parent transform)
+ * @param {{ x: number, y: number }} oldOrigin - Old transform-origin (relative to parent layout box)
+ * @param {number} oldTx - Old translate X
+ * @param {number} oldTy - Old translate Y
+ * @param {number} oldS - Old scale
+ * @param {{ x: number, y: number }} newOrigin - New transform-origin (relative to parent layout box)
+ * @param {number} newTx - New translate X
+ * @param {number} newTy - New translate Y
+ * @param {number} newS - New scale
+ * @returns {{ x: number, y: number, width: number, height: number }}
+ */
+export function computeChildRectAfterParentTransformChange (
+  childRect, parentRect,
+  oldOrigin, oldTx, oldTy, oldS,
+  newOrigin, newTx, newTy, newS
+) {
+  // Step 1: recover parent layout box position from its current (transformed) rect
+  // parentScreen = layoutBox + oldOrigin + oldTranslate + oldScale * (layoutBox - layoutBox - oldOrigin)
+  //              = layoutBox + oldOrigin + oldTranslate + oldScale * (-oldOrigin)
+  //              = layoutBox + oldOrigin * (1 - oldScale) + oldTranslate
+  // So: layoutBox = parentScreen - oldOrigin * (1 - oldScale) - oldTranslate
+  const layoutX = parentRect.x - oldOrigin.x * (1 - oldS) - oldTx
+  const layoutY = parentRect.y - oldOrigin.y * (1 - oldS) - oldTy
+  const layoutW = parentRect.width / oldS
+  const layoutH = parentRect.height / oldS
+
+  // Step 2: recover child layout position
+  // childScreen = layoutBox + oldOrigin + oldTranslate + oldScale * (childLayout_rel - oldOrigin)
+  // where childLayout_rel = childLayout - layoutBox (relative to parent layout)
+  // childScreen = layoutBox + oldOrigin + oldTx + oldS * (childLayout - layoutBox - oldOrigin)
+  // So: childLayout = layoutBox + oldOrigin + (childScreen - layoutBox - oldOrigin - oldTx) / oldS
+  const childLayoutX = layoutX + oldOrigin.x + (childRect.x - layoutX - oldOrigin.x - oldTx) / oldS
+  const childLayoutY = layoutY + oldOrigin.y + (childRect.y - layoutY - oldOrigin.y - oldTy) / oldS
+  const childLayoutW = childRect.width / oldS
+  const childLayoutH = childRect.height / oldS
+
+  // Step 3: apply new transform to get new screen position
+  // childNewScreen = layoutBox + newOrigin + newTx + newS * (childLayout - layoutBox - newOrigin)
+  const newX = layoutX + newOrigin.x + newTx + newS * (childLayoutX - layoutX - newOrigin.x)
+  const newY = layoutY + newOrigin.y + newTy + newS * (childLayoutY - layoutY - newOrigin.y)
+  const newW = childLayoutW * newS
+  const newH = childLayoutH * newS
+
+  return {
+    x: newX,
+    y: newY,
+    width: newW,
+    height: newH,
+    left: newX,
+    top: newY,
+    right: newX + newW,
+    bottom: newY + newH
+  }
+}
+
+/**
  * Compute a preview transform for elastic zoom (threshold).
  * Produces a slight zoom toward the trigger center, suitable for the hold preview phase.
  *

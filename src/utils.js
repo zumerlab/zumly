@@ -200,17 +200,8 @@ export function checkParameters (parameters, instance) {
     }
   }
 
-  // Parallax: depth-based displacement for background views during zoom.
-  // 0 = disabled, 0-1 = intensity factor (previous moves parallax*less, last moves 2*parallax*less)
-  const parallaxIn = t && t.parallax
-  if (typeof parallaxIn === 'number' && parallaxIn > 0 && parallaxIn <= 1) {
-    instance.parallax = parallaxIn
-  } else {
-    instance.parallax = 0
-    if (parallaxIn !== undefined && parallaxIn !== null && parallaxIn !== 0) {
-      notification(false, '\'transitions.parallax\' must be a number between 0 and 1. Falling back to 0 (disabled).', 'warn')
-    }
-  }
+  // Parallax: disabled (reserved for future use).
+  instance.parallax = 0
 
   // Threshold (elastic zoom): press-and-hold preview before committing zoom.
   // { enabled: true, duration: 300, commitAt: 0.5 }
@@ -221,5 +212,20 @@ export function checkParameters (parameters, instance) {
       duration: typeof thIn.duration === 'number' && thIn.duration > 0 ? thIn.duration : 300,
       commitAt: typeof thIn.commitAt === 'number' && thIn.commitAt > 0 && thIn.commitAt <= 1 ? thIn.commitAt : 0.5
     }
+  }
+
+  // Lateral navigation UI: auto-generated arrows and dots when siblings exist.
+  // true = default (arrows + dots), false = disabled,
+  // or object: { arrows: true, dots: true }
+  const lnIn = parameters.lateralNav
+  if (lnIn === false) {
+    instance.lateralNav = false
+  } else if (lnIn && typeof lnIn === 'object') {
+    instance.lateralNav = {
+      arrows: typeof lnIn.arrows === 'boolean' ? lnIn.arrows : true,
+      dots: typeof lnIn.dots === 'boolean' ? lnIn.dots : true
+    }
+  } else {
+    instance.lateralNav = { arrows: true, dots: true }
   }
 }
