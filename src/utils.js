@@ -223,10 +223,11 @@ export function checkParameters (parameters, instance) {
   } else if (lnIn && typeof lnIn === 'object') {
     instance.lateralNav = {
       arrows: typeof lnIn.arrows === 'boolean' ? lnIn.arrows : true,
-      dots: typeof lnIn.dots === 'boolean' ? lnIn.dots : true
+      dots: typeof lnIn.dots === 'boolean' ? lnIn.dots : true,
+      keepAlive: (lnIn.keepAlive === true || lnIn.keepAlive === 'visible') ? lnIn.keepAlive : false
     }
   } else {
-    instance.lateralNav = { arrows: true, dots: true }
+    instance.lateralNav = { arrows: true, dots: true, keepAlive: false }
   }
 
   // Depth navigation UI: zoom-out button + level indicator.

@@ -512,7 +512,8 @@ export class Zumly {
       const popped = this.lateralHistory.pop()
       const targetViewName = popped && typeof popped === 'object' ? popped.name : popped
       const savedEntry = popped && typeof popped === 'object' ? popped.entry : undefined
-      return this._doLateral(targetViewName, true, { savedEntry })
+      const keepAliveNode = popped && typeof popped === 'object' ? popped.node : undefined
+      return this._doLateral(targetViewName, true, { savedEntry, keepAliveNode })
     }
     this.zoomOut()
   }
@@ -627,9 +628,10 @@ export class Zumly {
     // Remove all event listeners
     this._unbindEvents()
 
-    // Remove navigation UI
+    // Remove navigation UI and kept-alive lateral views
     this._removeLateralNav()
     this._removeDepthNav()
+    this._cleanupLateralKeepAlive()
 
     // Unblock events so nothing is stuck
     this.blockEvents = false
@@ -672,6 +674,7 @@ export class Zumly {
    */
   async _doZoomIn (targetViewName, triggerOrDescriptor) {
     if (this._destroyed) return
+    this._cleanupLateralKeepAlive()
     this.lateralHistory = []
     this._emit('beforeZoomIn', { viewName: targetViewName })
     this.tracing('zoomIn()')
@@ -971,10 +974,16 @@ export class Zumly {
     if (currentName === targetViewName) return
     this._emit('beforeLateral', { viewName: targetViewName, from: currentName, isBack })
 
+    const keepAlive = this.lateralNav && this.lateralNav.keepAlive
+
     if (!isBack) {
       this.lateralHistory = this.lateralHistory || []
       const topSnapshot = this.storedViews[this.storedViews.length - 1]
-      this.lateralHistory.push({ name: currentName, entry: topSnapshot.views[INDEX_CURRENT] })
+      this.lateralHistory.push({
+        name: currentName,
+        entry: topSnapshot.views[INDEX_CURRENT],
+        node: keepAlive ? outgoingView : null
+      })
     }
 
     this.tracing('lateral()')
@@ -1000,13 +1009,39 @@ export class Zumly {
       }
     }
 
-    const context = { target: document.createElement('div'), context: this.componentContext, props: options.props ?? {} }
-    const node = await this.prefetcher.get(targetViewName, context)
-    if (this._destroyed) return
-    this.prefetcher.scanAndPrefetch(node, context)
-    const incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
-    if (!incomingView) return
-    this._emit('viewMounted', { viewName: targetViewName, node: incomingView })
+    // keepAlive: try to find an existing hidden DOM node for the target view
+    let incomingView = null
+    let keepAliveNode = null
+    if (keepAlive) {
+      // Check if back() passed a specific node
+      if (isBack && options.keepAliveNode) {
+        keepAliveNode = options.keepAliveNode
+      } else {
+        // Look for a kept-alive node in the canvas by view name
+        keepAliveNode = this.canvas.querySelector(`.is-lateral-hidden[data-view-name="${targetViewName}"]`)
+      }
+    }
+    if (keepAliveNode) {
+      // Restore the kept-alive node: unhide and make it the incoming view
+      keepAliveNode.style.display = ''
+      keepAliveNode.style.opacity = ''
+      keepAliveNode.classList.remove('is-lateral-hidden', 'zoom-lateral-out')
+      keepAliveNode.classList.add('is-new-current-view', 'has-no-events')
+      incomingView = keepAliveNode
+      // Remove from lateralHistory if navigating forward to a kept-alive view
+      if (!isBack && this.lateralHistory) {
+        const idx = this.lateralHistory.findIndex(h => h.node === keepAliveNode)
+        if (idx !== -1) this.lateralHistory.splice(idx, 1)
+      }
+    } else {
+      const context = { target: document.createElement('div'), context: this.componentContext, props: options.props ?? {} }
+      const node = await this.prefetcher.get(targetViewName, context)
+      if (this._destroyed) return
+      this.prefetcher.scanAndPrefetch(node, context)
+      incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
+      if (!incomingView) return
+      this._emit('viewMounted', { viewName: targetViewName, node: incomingView })
+    }
 
     hideViewContent(incomingView)
 
@@ -1070,9 +1105,22 @@ export class Zumly {
       ease,
       canvas: this.canvas,
       slideDeltaX,
-      slideDeltaY
+      slideDeltaY,
+      keepAlive: keepAlive && !isBack ? keepAlive : false
     }
     this.transitionDriver.runTransition(spec, () => {
+      // keepAlive forward: keep outgoing view in DOM instead of removing (driver skips removeViewFromCanvas)
+      if (keepAlive && !isBack) {
+        outgoingView.classList.remove('is-current-view', 'is-new-current-view', 'has-no-events')
+        outgoingView.classList.add('is-lateral-hidden')
+        if (keepAlive !== 'visible') {
+          outgoingView.style.display = 'none'
+        } else {
+          // visible mode: restore original transform (driver didn't animate outgoing)
+          outgoingView.style.transform = outTransform
+          outgoingView.style.opacity = ''
+        }
+      }
       this.blockEvents = false
       this._onTransitionComplete()
       this._updateLateralNav()
@@ -1108,6 +1156,7 @@ export class Zumly {
 
   zoomOut () {
     if (this._destroyed) return
+    this._cleanupLateralKeepAlive()
     this.lateralHistory = []
     this._emit('beforeZoomOut', { zoomLevel: this.zoomLevel() })
     this.tracing('zoomOut()')
@@ -1345,6 +1394,17 @@ export class Zumly {
     if (!this.canvas) return
     const existing = this.canvas.querySelector('.z-lateral-nav')
     if (existing) existing.remove()
+  }
+
+  /**
+   * Remove all kept-alive lateral views from the DOM.
+   * Called when leaving the current depth level (zoomIn, zoomOut, destroy).
+   * @private
+   */
+  _cleanupLateralKeepAlive () {
+    if (!this.canvas) return
+    const hidden = this.canvas.querySelectorAll('.is-lateral-hidden')
+    for (const el of hidden) el.remove()
   }
 
   // ─── Depth navigation UI ─────────────────────────────────────────

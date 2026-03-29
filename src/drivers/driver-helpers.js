@@ -182,7 +182,7 @@ export function runLateralInstant (spec, onComplete) {
   if (backView && backViewState) backView.style.transform = backViewState.transformEnd
   if (lastView && lastViewState) lastView.style.transform = lastViewState.transformEnd
 
-  removeViewFromCanvas(outgoingView, canvas)
+  if (!spec.keepAlive) removeViewFromCanvas(outgoingView, canvas)
   onComplete()
 }
 

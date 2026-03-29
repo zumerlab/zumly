@@ -73,21 +73,29 @@ function runLateral (spec, onComplete) {
     lastView.classList.add('zoom-lateral-back')
   }
 
-  setCSSVars(outgoingView, duration, ease, { '--lateral-out-from': outgoingTransform, '--lateral-out-to': outgoingTransformEnd })
-  outgoingView.classList.add('zoom-lateral-out')
+  // Skip outgoing animation in 'visible' keepAlive mode
+  if (spec.keepAlive !== 'visible') {
+    setCSSVars(outgoingView, duration, ease, { '--lateral-out-from': outgoingTransform, '--lateral-out-to': outgoingTransformEnd })
+    outgoingView.classList.add('zoom-lateral-out')
+  }
 
   setCSSVars(incomingView, duration, ease, { '--lateral-in-from': incomingTransformStart, '--lateral-in-to': incomingTransformEnd })
   incomingView.classList.add('zoom-lateral-in')
 
   // Collect all animated elements
-  const elements = [outgoingView, incomingView]
+  const elements = spec.keepAlive === 'visible' ? [incomingView] : [outgoingView, incomingView]
   if (backView && backViewState) elements.push(backView)
   if (lastView && lastViewState) elements.push(lastView)
 
   let pending = elements.length
   const { finish } = createFinishGuard(() => {
     cleanupListeners(elements, handleEnd)
-    removeViewFromCanvas(outgoingView, canvas)
+    if (spec.keepAlive) {
+      outgoingView.classList.remove('zoom-lateral-out')
+      outgoingView.style.opacity = ''
+    } else {
+      removeViewFromCanvas(outgoingView, canvas)
+    }
     if (backView) {
       backView.classList.remove('zoom-lateral-back')
       backView.style.transform = backViewState?.transformEnd || backView.style.transform

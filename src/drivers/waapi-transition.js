@@ -193,11 +193,13 @@ function runLateralAnimated (spec, durationMs, ease, onComplete) {
     { duration: durationMs, easing: ease, fill: 'forwards' }
   ))
 
-  // Outgoing view slides out
-  anims.push(outgoingView.animate(
-    [{ transform: outgoingTransform, opacity: 1 }, { transform: outgoingTransformEnd, opacity: 0 }],
-    { duration: durationMs, easing: ease, fill: 'forwards' }
-  ))
+  // Outgoing view slides out (skip animation in 'visible' keepAlive mode)
+  if (spec.keepAlive !== 'visible') {
+    anims.push(outgoingView.animate(
+      [{ transform: outgoingTransform, opacity: 1 }, { transform: outgoingTransformEnd, opacity: 0 }],
+      { duration: durationMs, easing: ease, fill: 'forwards' }
+    ))
+  }
 
   // Back view shifts
   if (backView && backViewState) {
@@ -221,7 +223,12 @@ function runLateralAnimated (spec, durationMs, ease, onComplete) {
     incomingView.style.transform = incomingTransformEnd || v0.forwardState.transform
     if (backView && backViewState) backView.style.transform = backViewState.transformEnd
     if (lastView && lastViewState) lastView.style.transform = lastViewState.transformEnd
-    removeViewFromCanvas(outgoingView, canvas)
+    if (spec.keepAlive) {
+      outgoingView.style.opacity = ''
+      outgoingView.style.transform = outgoingTransformEnd
+    } else {
+      removeViewFromCanvas(outgoingView, canvas)
+    }
     onComplete()
   }, durationMs + SAFETY_BUFFER_MS)
 
