@@ -1198,6 +1198,10 @@ export class Zumly {
       return
     }
     if (this.storedViews.length > 1 && !this.blockEvents && !isZoomMe && !this.touching) {
+      // If the click landed inside the current view, let interactive elements work
+      const currentView = this.canvas.querySelector('.is-current-view')
+      if (currentView && currentView.contains(target)) return
+
       // Check if click lands on a sibling .zoom-me in the previous view
       const siblingTrigger = this._findSiblingTriggerAtPoint(event.clientX, event.clientY)
       if (siblingTrigger) {
