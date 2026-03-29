@@ -52,6 +52,8 @@ export interface TransitionSpec {
   outgoingTransformEnd?: string
   slideDeltaX?: number
   slideDeltaY?: number
+  /** When true, driver should not remove the outgoing view from DOM (lateral keepAlive). */
+  keepAlive?: boolean
 }
 
 /** Custom driver function signature. */
@@ -106,6 +108,8 @@ export interface LateralNavOptions {
   arrows?: boolean
   /** Show dot indicators. Default: true. */
   dots?: boolean
+  /** Keep lateral views alive in the DOM. true = hidden, 'visible' = visible. Default: false. */
+  keepAlive?: boolean | 'visible'
 }
 
 /** Depth navigation UI configuration. */
