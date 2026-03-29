@@ -234,3 +234,39 @@ src/
 - **Pipeline change**: Before zoom-in animation, capture previousView with snapDOM → replace live DOM node with SVG snapshot → animate the snapshot. On zoom-out, animate snapshot back → restore live DOM when view becomes current again.
 - **Implications**: Touches the core engine (view lifecycle), snapshot system, and potentially drivers. Requires careful design to preserve scroll position, event listeners, and interactive state when swapping between live DOM and snapshot.
 - **Status**: Requires dedicated exploration session. snapDOM has a known Safari `<foreignObject>` bug being worked on.
+
+---
+
+## 9. Framework wrappers and TypeScript
+
+### Framework wrappers (planned)
+
+Thin wrapper packages (`@zumly/react`, `@zumly/vue`, `@zumly/svelte`, `@zumly/angular`) that expose Zumly as a native component within each framework. The core API is already framework-friendly:
+
+- **Lifecycle**: Constructor → `init()` → `destroy()` maps cleanly to framework mount/unmount hooks.
+- **Events**: `on()`/`off()` pub/sub maps to React callbacks, Vue emits, Svelte dispatchers, Angular EventEmitters.
+- **Views as functions**: The `({ target, props, context }) => void` pattern lets each framework mount components into the target div.
+- **componentContext**: Passes framework-specific shared state (React context, Vue provide/inject, stores).
+- **Clean destroy()**: Idempotent, removes all listeners/timers/observers, nullifies references — safe for SPA unmount.
+
+Each wrapper would be ~100-200 lines:
+
+| Framework | Component | Hook/Composable |
+|-----------|-----------|-----------------|
+| React | `<Zumly>` | `useZumly()` with `useEffect` → init/destroy, `useRef` for canvas |
+| Vue 3 | `<Zumly>` | `useZumly()` composable, `onMounted` → init, `onUnmounted` → destroy |
+| Svelte | `<Zumly>` | `use:action` or `onMount`/`onDestroy` |
+| Angular | `ZumlyComponent` + `ZumlyService` | `ngOnInit` → init, `ngOnDestroy` → destroy |
+
+**Limitations to document**: No SSR/hydration support (Zumly requires real DOM). Custom drivers within frameworks may need access to framework context.
+
+### TypeScript definitions (planned)
+
+Generate `.d.ts` type definitions for the public API. Key types needed:
+- `ZumlyOptions` (constructor config)
+- `TransitionOptions` (driver, duration, ease, cover, effects, stagger, parallax)
+- `InputsOptions` (wheel, keyboard, click, touch)
+- `ViewSource` (string | Function | object with render() | HTMLElement)
+- `ZumlyEvent` union type for event names
+- `ZumlyInstance` (public methods and properties)
+- Export types for driver authors: `TransitionSpec`, `DriverFunction`
