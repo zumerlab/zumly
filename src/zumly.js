@@ -1191,6 +1191,9 @@ export class Zumly {
 
   onZoom (event) {
     if (this._destroyed) return
+    // Check if this input type is enabled
+    if (event.type === 'mouseup' && !this.inputs.click) return
+    if (event.type === 'touchend' && !this.inputs.touch) return
     const target = event.target
     // Ignore events from navigation UI
     if (target.closest('.z-lateral-nav') || target.closest('.z-depth-nav')) return
@@ -1399,6 +1402,7 @@ export class Zumly {
 
   onKeyUp (event) {
     if (this._destroyed) return
+    if (!this.inputs.keyboard) return
     this.tracing('onKeyUp()')
     if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
       event.preventDefault()
@@ -1416,6 +1420,7 @@ export class Zumly {
 
   onWheel (event) {
     if (this._destroyed) return
+    if (!this.inputs.wheel) return
     // Don't intercept wheel if target is inside a scrollable element
     if (this._isInsideScrollable(event.target, event.deltaY)) return
     // Prevent browser scroll on the canvas — it causes jank during zoom transitions
@@ -1459,6 +1464,7 @@ export class Zumly {
 
   onTouchStart (event) {
     if (this._destroyed) return
+    if (!this.inputs.touch) return
     this.tracing('onTouchStart()')
     this.touching = true
     this.touchstartX = event.changedTouches[0].screenX
@@ -1467,6 +1473,7 @@ export class Zumly {
 
   onTouchEnd (event) {
     if (this._destroyed) return
+    if (!this.inputs.touch) return
     if (!this.blockEvents) {
       this.tracing('onTouchEnd()')
       this.touchendX = event.changedTouches[0].screenX

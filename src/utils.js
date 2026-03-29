@@ -243,4 +243,18 @@ export function checkParameters (parameters, instance) {
   } else {
     instance.depthNav = { button: true, indicator: true }
   }
+
+  // Navigation inputs: control which user interactions trigger zoom/navigation.
+  // All enabled by default. Set individual keys to false to disable.
+  const niIn = parameters.inputs
+  if (niIn && typeof niIn === 'object') {
+    instance.inputs = {
+      wheel: typeof niIn.wheel === 'boolean' ? niIn.wheel : true,
+      keyboard: typeof niIn.keyboard === 'boolean' ? niIn.keyboard : true,
+      click: typeof niIn.click === 'boolean' ? niIn.click : true,
+      touch: typeof niIn.touch === 'boolean' ? niIn.touch : true
+    }
+  } else {
+    instance.inputs = { wheel: true, keyboard: true, click: true, touch: true }
+  }
 }
