@@ -228,4 +228,19 @@ export function checkParameters (parameters, instance) {
   } else {
     instance.lateralNav = { arrows: true, dots: true }
   }
+
+  // Depth navigation UI: zoom-out button + level indicator.
+  // true = default (button + indicator), false = disabled,
+  // or object: { button: true, indicator: true }
+  const dnIn = parameters.depthNav
+  if (dnIn === false) {
+    instance.depthNav = false
+  } else if (dnIn && typeof dnIn === 'object') {
+    instance.depthNav = {
+      button: typeof dnIn.button === 'boolean' ? dnIn.button : true,
+      indicator: typeof dnIn.indicator === 'boolean' ? dnIn.indicator : true
+    }
+  } else {
+    instance.depthNav = { button: true, indicator: true }
+  }
 }

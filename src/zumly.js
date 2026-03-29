@@ -627,8 +627,9 @@ export class Zumly {
     // Remove all event listeners
     this._unbindEvents()
 
-    // Remove lateral nav UI
+    // Remove navigation UI
     this._removeLateralNav()
+    this._removeDepthNav()
 
     // Unblock events so nothing is stuck
     this.blockEvents = false
@@ -936,6 +937,7 @@ export class Zumly {
       this.blockEvents = false
       this._onTransitionComplete()
       this._updateLateralNav()
+      this._updateDepthNav()
       this._emit('afterZoomIn', { viewName: targetViewName, zoomLevel: this.zoomLevel() })
       this.tracing('ended')
     })
@@ -1074,6 +1076,7 @@ export class Zumly {
       this.blockEvents = false
       this._onTransitionComplete()
       this._updateLateralNav()
+      this._updateDepthNav()
       this._emit('afterLateral', { viewName: targetViewName, from: currentName, isBack })
       this.tracing('ended')
     })
@@ -1177,6 +1180,7 @@ export class Zumly {
       this.blockEvents = false
       this._onTransitionComplete()
       this._updateLateralNav()
+      this._updateDepthNav()
       this._emit('afterZoomOut', { zoomLevel: this.zoomLevel() })
       this.tracing('ended')
     })
@@ -1188,8 +1192,8 @@ export class Zumly {
   onZoom (event) {
     if (this._destroyed) return
     const target = event.target
-    // Ignore events from the lateral navigation UI
-    if (target.closest('.z-lateral-nav')) return
+    // Ignore events from navigation UI
+    if (target.closest('.z-lateral-nav') || target.closest('.z-depth-nav')) return
     const isZoomMe = target.classList.contains('zoom-me') || target.closest('.zoom-me')
     if (!this.blockEvents && isZoomMe && !this.touching) {
       this.tracing('onZoom() → zoomIn')
@@ -1337,6 +1341,59 @@ export class Zumly {
   _removeLateralNav () {
     if (!this.canvas) return
     const existing = this.canvas.querySelector('.z-lateral-nav')
+    if (existing) existing.remove()
+  }
+
+  // ─── Depth navigation UI ─────────────────────────────────────────
+
+  /**
+   * Create or update the depth navigation UI (zoom-out button + level indicator).
+   * Called after zoom-in, zoom-out, and lateral navigation.
+   * @private
+   */
+  _updateDepthNav () {
+    if (!this.depthNav || this._destroyed) return
+    this._removeDepthNav()
+
+    const depth = this.storedViews.length - 1
+    if (depth < 1) return
+
+    const nav = document.createElement('div')
+    nav.className = 'z-depth-nav'
+
+    const backBtn = document.createElement('button')
+    backBtn.className = 'z-depth-back'
+    backBtn.setAttribute('aria-label', 'Zoom out (go back)')
+    backBtn.innerHTML = '&#8593;'
+    backBtn.addEventListener('mouseup', (e) => {
+      e.stopPropagation()
+      if (!this.blockEvents && this.storedViews.length > 1) {
+        this.zoomOut()
+      }
+    })
+    nav.appendChild(backBtn)
+
+    if (this.depthNav.indicator) {
+      const indicator = document.createElement('div')
+      indicator.className = 'z-depth-indicator'
+      for (let i = 0; i <= depth; i++) {
+        const dot = document.createElement('span')
+        dot.className = 'z-depth-dot' + (i === depth ? ' is-active' : '')
+        indicator.appendChild(dot)
+      }
+      nav.appendChild(indicator)
+    }
+
+    this.canvas.appendChild(nav)
+  }
+
+  /**
+   * Remove the depth navigation UI from the canvas.
+   * @private
+   */
+  _removeDepthNav () {
+    if (!this.canvas) return
+    const existing = this.canvas.querySelector('.z-depth-nav')
     if (existing) existing.remove()
   }
 
