@@ -208,7 +208,7 @@ describe('utils.checkParameters()', () => {
     expect(instance.isValid).toBe(false)
   })
 
-  it('parses transitions.parallax as number between 0 and 1', () => {
+  it('parallax is always disabled (0)', () => {
     const instance = {}
     checkParameters(
       {
@@ -219,7 +219,7 @@ describe('utils.checkParameters()', () => {
       },
       instance
     )
-    expect(instance.parallax).toBe(0.15)
+    expect(instance.parallax).toBe(0)
   })
 
   it('defaults parallax to 0 when not provided', () => {
@@ -233,23 +233,6 @@ describe('utils.checkParameters()', () => {
       instance
     )
     expect(instance.parallax).toBe(0)
-  })
-
-  it('warns and falls back for invalid transitions.parallax', () => {
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const instance = {}
-    checkParameters(
-      {
-        mount: '.first',
-        initialView: 'home',
-        views: { home: '<div class="z-view"></div>' },
-        transitions: { parallax: 'bad' },
-      },
-      instance
-    )
-    expect(instance.parallax).toBe(0)
-    expect(warnSpy).toHaveBeenCalled()
-    warnSpy.mockRestore()
   })
 
   it('parses transitions.stagger as positive number (ms)', () => {

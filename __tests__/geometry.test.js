@@ -5,7 +5,10 @@ import {
   computeCurrentViewEndTransform,
   computePreviousViewOrigin,
   computePreviousViewEndTransform,
-  computeLastViewEndTransform
+  computeLastViewEndTransform,
+  parseOrigin,
+  parseTranslateScale,
+  computeChildRectAfterParentTransformChange
 } from '../src/geometry.js'
 
 describe('geometry helpers', () => {
@@ -112,6 +115,109 @@ describe('geometry helpers', () => {
       const expectedTx = noParallax.x * 0.8
       const expectedTy = noParallax.y * 0.8
       expect(withParallax.transform).toBe(`translate(${expectedTx}px, ${expectedTy}px) scale(${scale})`)
+    })
+  })
+
+  describe('parseOrigin()', () => {
+    it('parses "123px 456px" into numeric values', () => {
+      const o = parseOrigin('123px 456px')
+      expect(o.x).toBe(123)
+      expect(o.y).toBe(456)
+    })
+
+    it('handles decimal values', () => {
+      const o = parseOrigin('12.5px 34.75px')
+      expect(o.x).toBe(12.5)
+      expect(o.y).toBe(34.75)
+    })
+  })
+
+  describe('parseTranslateScale()', () => {
+    it('parses "translate(10px, 20px) scale(3)"', () => {
+      const r = parseTranslateScale('translate(10px, 20px) scale(3)')
+      expect(r.tx).toBe(10)
+      expect(r.ty).toBe(20)
+      expect(r.scale).toBe(3)
+    })
+
+    it('handles negative values', () => {
+      const r = parseTranslateScale('translate(-5.5px, -10.2px) scale(0.25)')
+      expect(r.tx).toBe(-5.5)
+      expect(r.ty).toBe(-10.2)
+      expect(r.scale).toBe(0.25)
+    })
+  })
+
+  describe('computeChildRectAfterParentTransformChange()', () => {
+    const O = { x: 0, y: 0 } // zero origin
+
+    it('identity→identity returns same rect', () => {
+      const child = { x: 50, y: 60, width: 100, height: 80 }
+      const parent = { x: 0, y: 0, width: 400, height: 300 }
+      const result = computeChildRectAfterParentTransformChange(
+        child, parent, O, 0, 0, 1, O, 0, 0, 1
+      )
+      expect(result.x).toBeCloseTo(50)
+      expect(result.y).toBeCloseTo(60)
+      expect(result.width).toBeCloseTo(100)
+      expect(result.height).toBeCloseTo(80)
+    })
+
+    it('identity→translate shifts child', () => {
+      const child = { x: 50, y: 60, width: 100, height: 80 }
+      const parent = { x: 0, y: 0, width: 400, height: 300 }
+      const result = computeChildRectAfterParentTransformChange(
+        child, parent, O, 0, 0, 1, O, 10, 20, 1
+      )
+      expect(result.x).toBeCloseTo(60)
+      expect(result.y).toBeCloseTo(80)
+      expect(result.width).toBeCloseTo(100)
+      expect(result.height).toBeCloseTo(80)
+    })
+
+    it('identity→scale(2) with origin 0,0 doubles position and size', () => {
+      const child = { x: 100, y: 200, width: 50, height: 40 }
+      const parent = { x: 0, y: 0, width: 400, height: 300 }
+      const result = computeChildRectAfterParentTransformChange(
+        child, parent, O, 0, 0, 1, O, 0, 0, 2
+      )
+      expect(result.x).toBeCloseTo(200)
+      expect(result.y).toBeCloseTo(400)
+      expect(result.width).toBeCloseTo(100)
+      expect(result.height).toBeCloseTo(80)
+    })
+
+    it('handles parent already transformed (old scale 2 → new scale 4)', () => {
+      // Parent layout at (0,0) 400x300, old transform: scale(2) origin 0,0
+      // So parent screen rect = (0,0) 800x600
+      // Child layout at (50,60) 100x80, after old scale(2): screen rect = (100,120) 200x160
+      const parent = { x: 0, y: 0, width: 800, height: 600 }
+      const child = { x: 100, y: 120, width: 200, height: 160 }
+      const result = computeChildRectAfterParentTransformChange(
+        child, parent, O, 0, 0, 2, O, 0, 0, 4
+      )
+      // Child layout (50,60) 100x80 → after scale(4): (200,240) 400x320
+      expect(result.x).toBeCloseTo(200)
+      expect(result.y).toBeCloseTo(240)
+      expect(result.width).toBeCloseTo(400)
+      expect(result.height).toBeCloseTo(320)
+    })
+
+    it('handles origin change between old and new transforms', () => {
+      // Parent layout at (0,0) 400x300
+      // Old: translate(0,0) scale(1) origin(0,0) → parent screen (0,0) 400x300
+      // Child layout at (200,150) → screen same
+      const parent = { x: 0, y: 0, width: 400, height: 300 }
+      const child = { x: 200, y: 150, width: 50, height: 50 }
+      const newOrigin = { x: 200, y: 150 } // origin at child center
+      const result = computeChildRectAfterParentTransformChange(
+        child, parent, O, 0, 0, 1, newOrigin, 0, 0, 2
+      )
+      // scale(2) around (200,150): child at (200,150) stays at (200,150), size doubles
+      expect(result.x).toBeCloseTo(200)
+      expect(result.y).toBeCloseTo(150)
+      expect(result.width).toBeCloseTo(100)
+      expect(result.height).toBeCloseTo(100)
     })
   })
 
