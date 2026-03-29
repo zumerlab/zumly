@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Zumly - Zoom-based navigation for the web</title>
+  <meta name="description"
+    content="Zumly is a JavaScript library for building hierarchical zoom navigation interfaces. Create spatial, zoom-driven view transitions using web standards." />
+  <meta name="keywords"
+    content="zumly, zooming user interface, ZUI, zoom navigation, spatial UI, javascript, web components, animation drivers" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Zumly - Zoom-based navigation for the web" />
+  <meta property="og:description"
+    content="Build hierarchical zoom interfaces with pluggable animation drivers, multiple view sources, and smooth spatial transitions." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="../dist/zumly.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #07080f;
+      --bg-card: rgba(255,255,255,0.025);
+      --bg-card-hover: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.06);
+      --border-accent: rgba(240,180,40,0.25);
+      --accent: #f0b428;
+      --accent-glow: rgba(240,180,40,0.12);
+      --text: #dde1f0;
+      --text-dim: rgba(220,224,240,0.45);
+      --text-mid: rgba(220,224,240,0.7);
+      --code-bg: rgba(0,0,0,0.5);
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --max-w: 820px;
+      --playground-h: 380px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ━━━ Hero ━━━ */
+    .hero {
+      position: relative;
+      text-align: center;
+      padding: 6rem 1.5rem 4rem;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(240,180,40,0.07), transparent 70%),
+        radial-gradient(ellipse 40% 60% at 80% 20%, rgba(80,60,200,0.05), transparent 60%),
+        radial-gradient(ellipse 40% 60% at 20% 80%, rgba(40,180,200,0.04), transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-glow);
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 900;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #f0c040 10%, #ff8a50 50%, #f06040 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero .sub {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--text-mid);
+      max-width: 520px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+      position: relative;
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 0.7rem 1.6rem; border-radius: var(--radius-sm);
+      font-weight: 600; font-size: 0.9rem; text-decoration: none;
+      transition: all 0.2s; cursor: pointer; border: none;
+      font-family: var(--font);
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-primary {
+      background: linear-gradient(135deg, #f0c040, #e09520);
+      color: #1a1000;
+      box-shadow: 0 8px 30px rgba(240,180,40,0.2);
+    }
+    .btn-primary:hover { box-shadow: 0 12px 40px rgba(240,180,40,0.3); }
+    .btn-ghost {
+      background: transparent; color: var(--text-mid);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--border-accent); }
+
+    /* ━━━ Sticky nav ━━━ */
+    .site-nav {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(7,8,15,0.8);
+      backdrop-filter: blur(16px) saturate(1.4);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: var(--max-w); margin: 0 auto;
+      display: flex; align-items: center;
+      padding: 0 1.5rem; height: 44px; gap: 4px;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .nav-inner::-webkit-scrollbar { display: none; }
+    .nav-inner a {
+      color: var(--text-dim); text-decoration: none;
+      font-size: 0.78rem; font-weight: 500; white-space: nowrap;
+      padding: 5px 10px; border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .nav-inner a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+
+    /* ━━━ Layout ━━━ */
+    main { max-width: var(--max-w); margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+    section { margin-bottom: 4rem; }
+    section h2 {
+      font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;
+      margin-bottom: 0.4rem;
+    }
+    section > .desc {
+      color: var(--text-dim); font-size: 0.92rem; margin-bottom: 1.8rem;
+    }
+    h3 { font-size: 1.05rem; font-weight: 700; margin: 2rem 0 0.6rem; }
+
+    /* ━━━ Feature grid ━━━ */
+    .grid { display: grid; gap: 14px; margin-bottom: 2rem; }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+
+    .card {
+      padding: 22px; border-radius: var(--radius);
+      background: var(--bg-card); border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .card:hover { border-color: var(--border-accent); transform: translateY(-2px); background: var(--bg-card-hover); }
+    .card h4 { font-size: 0.92rem; font-weight: 700; margin-bottom: 6px; }
+    .card p { font-size: 0.8rem; color: var(--text-dim); line-height: 1.55; }
+    .card .icon { font-size: 1.3rem; margin-bottom: 8px; display: block; }
+
+    /* ━━━ Playground (shared) ━━━ */
+    .pg {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; margin-bottom: 1.5rem;
+      background: var(--bg-card);
+    }
+    .pg-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid var(--border);
+      gap: 12px; flex-wrap: wrap;
+    }
+    .pg-bar .tag {
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--text-dim);
+    }
+    .pg-canvas {
+      position: relative; width: 100%; height: var(--playground-h); overflow: hidden;
+    }
+    .pg-canvas .zumly-canvas { position: absolute; inset: 0; }
+
+    .pg-code {
+      border-top: 1px solid var(--border);
+      max-height: 0; overflow: hidden; transition: max-height 0.35s ease;
+    }
+    .pg-code.open { max-height: 700px; overflow-y: auto; }
+
+    .btn-code {
+      background: none; border: none; color: var(--accent);
+      cursor: pointer; font-family: var(--font);
+      font-size: 0.72rem; font-weight: 600;
+      padding: 3px 8px; border-radius: 4px;
+      transition: background 0.15s;
+    }
+    .btn-code:hover { background: var(--accent-glow); }
+
+    /* ━━━ Playground controls ━━━ */
+    .ctrl-row {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    }
+    .ctrl-group {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ctrl-label {
+      font-size: 0.7rem; font-weight: 600; color: var(--text-dim);
+      white-space: nowrap;
+    }
+    .ctrl-group input[type="radio"],
+    .ctrl-group input[type="checkbox"] {
+      accent-color: var(--accent); margin: 0; cursor: pointer;
+    }
+    .ctrl-group label {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 0.72rem; color: var(--text-mid); cursor: pointer;
+    }
+    .ctrl-group select {
+      background: rgba(0,0,0,0.4); color: var(--text-mid);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 2px 6px; font-size: 0.72rem; font-family: var(--font);
+      cursor: pointer;
+    }
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none;
+      width: 70px; height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px;
+      border-radius: 50%; background: var(--accent);
+      box-shadow: 0 0 8px rgba(240,180,40,0.3);
+    }
+    .ctrl-val {
+      font-size: 0.68rem; font-family: var(--mono);
+      color: var(--accent); min-width: 28px; text-align: right;
+    }
+    .ctrl-sep {
+      width: 1px; height: 16px; background: var(--border); flex-shrink: 0;
+    }
+
+    /* ━━━ Code ━━━ */
+    pre {
+      background: var(--code-bg); border-radius: var(--radius-sm);
+      padding: 18px 22px; overflow-x: auto;
+      font-size: 0.8rem; line-height: 1.7; color: #b8c0e0;
+      margin: 0;
+    }
+    code { font-family: var(--mono); font-size: 0.84em; }
+    :not(pre) > code {
+      background: rgba(0,0,0,0.4); padding: 2px 7px; border-radius: 5px;
+      color: var(--accent);
+    }
+    .kw { color: #c792ea; } .str { color: #c3e88d; } .fn { color: #82aaff; }
+    .cm { color: #546e7a; } .num { color: #f78c6c; } .tag { color: #f07178; }
+    .attr { color: #ffcb6b; } .prop { color: #82aaff; }
+
+    /* ━━━ Tables ━━━ */
+    .table-wrap { overflow-x: auto; margin-bottom: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    th {
+      color: var(--text-dim); font-weight: 600;
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    /* ━━━ Install ━━━ */
+    .install-cmd {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 14px 20px;
+      font-family: var(--mono); font-size: 0.88rem;
+      color: #b8c0e0; cursor: pointer; transition: border-color 0.2s;
+      margin-bottom: 1rem;
+    }
+    .install-cmd:hover { border-color: var(--border-accent); }
+    .install-cmd .prompt { color: var(--accent); user-select: none; }
+    .install-cmd .hint { margin-left: auto; font-size: 0.65rem; color: var(--text-dim); font-family: var(--font); }
+
+    /* ━━━ Demo view styles (inside playgrounds) ━━━ */
+    .dv {
+      width: 100%; height: 100%; box-sizing: border-box;
+      padding: 28px; color: #dde1f0; font-family: var(--font);
+    }
+    .dv h3 { margin: 0 0 6px; font-weight: 700; font-size: 1.2em; }
+    .dv p { margin: 0 0 14px; color: var(--text-mid); font-size: 0.82rem; }
+    .dv .trig {
+      display: inline-block; padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border-accent);
+      color: var(--accent); font-weight: 600; font-size: 0.82rem;
+      cursor: zoom-in; transition: all 0.15s;
+      margin: 3px 4px 3px 0;
+    }
+    .dv .trig:hover { background: rgba(255,255,255,0.1); transform: scale(1.03); }
+
+    /* ━━━ Footer ━━━ */
+    footer {
+      text-align: center; padding: 3rem 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim); font-size: 0.8rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ━━━ Responsive ━━━ */
+    @media (max-width: 640px) {
+      .hero { padding: 3.5rem 1rem 2.5rem; }
+      .hero h1 { font-size: 2.8rem; }
+      .pg-canvas { height: 300px; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .ctrl-row { gap: 8px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section class="hero">
+    <span class="hero-badge">v0.18</span>
+    <h1>Zumly</h1>
+    <p class="sub">
+      Build hierarchical, zoom-driven navigation for the web.
+      Spatial transitions that preserve context, powered by pluggable animation drivers.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#playground">Try the Playground</a>
+      <a class="btn btn-ghost" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="btn btn-ghost" href="https://www.npmjs.com/package/zumly">npm</a>
+    </div>
+  </section>
+
+  <!-- ═══════════════ NAV ═══════════════ -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="#playground">Playground</a>
+      <a href="#hello-world">Hello World</a>
+      <a href="#deep-zoom">Deep Zoom</a>
+      <a href="#lateral">Lateral Nav</a>
+      <a href="#view-sources">View Sources</a>
+      <a href="#events">Events</a>
+      <a href="#api">API</a>
+      <a href="#install">Install</a>
+    </div>
+  </nav>
+
+  <main>
+    <!-- ═══════════════ WHY ═══════════════ -->
+    <section>
+      <h2>Why Zumly</h2>
+      <p class="desc">Everything you need for zoom-based navigation, nothing you don't.</p>
+      <div class="grid grid-3">
+        <div class="card"><span class="icon">&#10070;</span><h4>Spatial Continuity</h4><p>Users zoom into elements to explore deeper content. Context is preserved through smooth hierarchical transitions.</p></div>
+        <div class="card"><span class="icon">&#9881;</span><h4>Pluggable Drivers</h4><p>CSS, WAAPI, GSAP, Anime.js, Motion, or your own. Swap without touching app code.</p></div>
+        <div class="card"><span class="icon">&#9641;</span><h4>Multiple View Sources</h4><p>HTML strings, URLs, async functions, render objects, HTMLElements, web components.</p></div>
+        <div class="card"><span class="icon">&#9889;</span><h4>Smart Prefetching</h4><p>Eager preload, hover prefetch, scan prefetch. Views are ready before the user clicks.</p></div>
+        <div class="card"><span class="icon">&#8596;</span><h4>Lateral Navigation</h4><p>Same-depth view swaps with spatial slide transitions. Navigate sideways at any zoom level.</p></div>
+        <div class="card"><span class="icon">&#9898;</span><h4>Zero Dependencies</h4><p>Core has no deps. Animation libraries are optional, loaded only if you use their driver.</p></div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ PLAYGROUND ═══════════════ -->
+    <section id="playground">
+      <h2>Playground</h2>
+      <p class="desc">Tweak every option in real time. Change the driver, effects, parallax, stagger, and more.</p>
+
+      <div class="pg">
+        <!-- Controls bar 1: driver -->
+        <div class="pg-bar">
+          <div class="ctrl-row">
+            <span class="ctrl-label">Driver</span>
+            <div class="ctrl-group" id="pg-driver">
+              <label><input type="radio" name="pg-drv" value="css" checked> CSS</label>
+              <label><input type="radio" name="pg-drv" value="waapi"> WAAPI</label>
+              <label><input type="radio" name="pg-drv" value="none"> None</label>
+            </div>
+            <div class="ctrl-sep"></div>
+            <span class="ctrl-label">Cover</span>
+            <div class="ctrl-group" id="pg-cover">
+              <label><input type="radio" name="pg-cov" value="width" checked> width</label>
+              <label><input type="radio" name="pg-cov" value="height"> height</label>
+            </div>
+          </div>
+        </div>
+        <!-- Controls bar 2: sliders -->
+        <div class="pg-bar" style="border-bottom:1px solid var(--border)">
+          <div class="ctrl-row">
+            <div class="ctrl-group">
+              <span class="ctrl-label">Duration</span>
+              <input type="range" id="pg-dur" min="100" max="2000" value="700" step="50">
+              <span class="ctrl-val" id="pg-dur-val">700ms</span>
+            </div>
+            <div class="ctrl-sep"></div>
+            <div class="ctrl-group">
+              <span class="ctrl-label">Parallax</span>
+              <input type="range" id="pg-par" min="0" max="100" value="0">
+              <span class="ctrl-val" id="pg-par-val">0</span>
+            </div>
+            <div class="ctrl-sep"></div>
+            <div class="ctrl-group">
+              <span class="ctrl-label">Stagger</span>
+              <input type="range" id="pg-stag" min="0" max="300" value="0" step="10">
+              <span class="ctrl-val" id="pg-stag-val">0ms</span>
+            </div>
+          </div>
+        </div>
+        <!-- Controls bar 3: effects -->
+        <div class="pg-bar" style="border-bottom:1px solid var(--border)">
+          <div class="ctrl-row">
+            <div class="ctrl-group">
+              <label><input type="checkbox" id="pg-fx"> <span class="ctrl-label">Effects</span></label>
+            </div>
+            <div class="ctrl-group" id="pg-fx-controls" style="display:none">
+              <span class="ctrl-label">Blur prev</span>
+              <input type="range" id="pg-blur-p" min="0" max="15" value="3">
+              <span class="ctrl-val" id="pg-blur-p-val">3px</span>
+              <span class="ctrl-label">last</span>
+              <input type="range" id="pg-blur-l" min="0" max="15" value="8">
+              <span class="ctrl-val" id="pg-blur-l-val">8px</span>
+            </div>
+            <div class="ctrl-sep"></div>
+            <div class="ctrl-group">
+              <span class="ctrl-label">Hide trigger</span>
+              <select id="pg-ht">
+                <option value="">off</option>
+                <option value="true">hide</option>
+                <option value="fade" selected>fade</option>
+              </select>
+            </div>
+            <div class="ctrl-sep"></div>
+            <div class="ctrl-group">
+              <label><input type="checkbox" id="pg-elastic"> <span class="ctrl-label">Elastic zoom</span></label>
+            </div>
+            <div class="ctrl-sep"></div>
+            <div class="ctrl-group">
+              <label><input type="checkbox" id="pg-deferred"> <span class="ctrl-label">Deferred render</span></label>
+            </div>
+          </div>
+        </div>
+        <!-- Canvas -->
+        <div class="pg-canvas" style="height:420px">
+          <div class="zumly-canvas" id="pg-mount"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ HELLO WORLD ═══════════════ -->
+    <section id="hello-world">
+      <h2>Hello World</h2>
+      <p class="desc">The simplest Zumly app: two views, click to zoom in, click outside to zoom out.</p>
+      <div class="pg">
+        <div class="pg-bar">
+          <span class="tag">Live</span>
+          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
+        </div>
+        <div class="pg-canvas" style="height:320px">
+          <div class="zumly-canvas" id="demo-hello"></div>
+        </div>
+        <div class="pg-code">
+<pre><code><span class="kw">const</span> hello = <span class="str">`
+  &lt;div class="z-view" style="width:500px; height:250px"&gt;
+    &lt;h3&gt;Hello World&lt;/h3&gt;
+    &lt;span class="zoom-me" data-to="world"&gt;Zoom&lt;/span&gt;
+  &lt;/div&gt;`</span>;
+
+<span class="kw">const</span> world = <span class="str">`
+  &lt;div class="z-view" style="width:400px; height:200px"&gt;
+    &lt;h3&gt;World&lt;/h3&gt;
+    &lt;p&gt;Click outside or press Escape to zoom out&lt;/p&gt;
+  &lt;/div&gt;`</span>;
+
+<span class="kw">new</span> <span class="fn">Zumly</span>({
+  <span class="prop">mount</span>: <span class="str">'#my-canvas'</span>,
+  <span class="prop">initialView</span>: <span class="str">'hello'</span>,
+  <span class="prop">views</span>: { hello, world },
+}).<span class="fn">init</span>();</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ DEEP ZOOM ═══════════════ -->
+    <section id="deep-zoom">
+      <h2>Deep Zoom</h2>
+      <p class="desc">Navigate multiple levels deep. Each zoom preserves the spatial context of parent views with blur and parallax.</p>
+      <div class="pg">
+        <div class="pg-bar">
+          <span class="tag">3 levels &middot; effects &middot; parallax</span>
+          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
+        </div>
+        <div class="pg-canvas" style="height:400px">
+          <div class="zumly-canvas" id="demo-deep"></div>
+        </div>
+        <div class="pg-code">
+<pre><code><span class="kw">new</span> <span class="fn">Zumly</span>({
+  <span class="prop">mount</span>: <span class="str">'#canvas'</span>,
+  <span class="prop">initialView</span>: <span class="str">'continent'</span>,
+  <span class="prop">views</span>: { continent, country, city },
+  <span class="prop">transitions</span>: {
+    <span class="prop">duration</span>: <span class="str">'600ms'</span>,
+    <span class="prop">cover</span>: <span class="str">'height'</span>,
+    <span class="prop">effects</span>: [<span class="str">'blur(3px) brightness(0.7)'</span>, <span class="str">'blur(8px) brightness(0.4)'</span>],
+    <span class="prop">parallax</span>: <span class="num">0.3</span>,
+    <span class="prop">hideTrigger</span>: <span class="str">'fade'</span>,
+  },
+}).<span class="fn">init</span>();</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ LATERAL NAV ═══════════════ -->
+    <section id="lateral">
+      <h2>Lateral Navigation</h2>
+      <p class="desc">Swap views at the same zoom level with slide transitions. The parent view shifts spatially to track which child is active. Use <code>goTo(name, { mode: 'lateral' })</code> to navigate and <code>back()</code> to return through the lateral history.</p>
+      <div class="pg">
+        <div class="pg-bar">
+          <span class="tag">Same-level navigation</span>
+          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
+        </div>
+        <div class="pg-canvas" style="height:380px">
+          <div class="zumly-canvas" id="demo-lateral"></div>
+        </div>
+        <div class="pg-code">
+<pre><code><span class="cm">// Parent view has triggers pointing to each sibling:</span>
+<span class="kw">const</span> menu = <span class="str">`
+  &lt;div class="z-view" style="width:600px; height:400px"&gt;
+    &lt;div class="zoom-me" data-to="page1"&gt;Page 1&lt;/div&gt;
+    &lt;div class="zoom-me" data-to="page2"&gt;Page 2&lt;/div&gt;
+    &lt;div class="zoom-me" data-to="page3"&gt;Page 3&lt;/div&gt;
+  &lt;/div&gt;`</span>;
+
+<span class="cm">// Zoom into page1 first, then navigate laterally:</span>
+app.<span class="fn">goTo</span>(<span class="str">'page2'</span>, { <span class="prop">mode</span>: <span class="str">'lateral'</span> });
+app.<span class="fn">goTo</span>(<span class="str">'page3'</span>, { <span class="prop">mode</span>: <span class="str">'lateral'</span> });
+
+<span class="cm">// back() pops lateral history, then zooms out</span>
+app.<span class="fn">back</span>(); <span class="cm">// → page2</span>
+app.<span class="fn">back</span>(); <span class="cm">// → page1</span>
+app.<span class="fn">back</span>(); <span class="cm">// → menu (zoom out)</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ VIEW SOURCES ═══════════════ -->
+    <section id="view-sources">
+      <h2>View Sources</h2>
+      <p class="desc">Views can be defined in many ways. The resolver detects the type automatically.</p>
+      <div class="pg">
+        <div class="pg-bar">
+          <span class="tag">All view types</span>
+          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
+        </div>
+        <div class="pg-canvas" style="height:380px">
+          <div class="zumly-canvas" id="demo-sources"></div>
+        </div>
+        <div class="pg-code">
+<pre><code><span class="cm">// 1. HTML string</span>
+<span class="kw">const</span> myView = <span class="str">'&lt;div class="z-view"&gt;Hello&lt;/div&gt;'</span>;
+
+<span class="cm">// 2. Function → string or HTMLElement</span>
+<span class="kw">function</span> <span class="fn">myView</span>({ target }) {
+  <span class="kw">return</span> <span class="str">`&lt;div class="z-view"&gt;${Date.now()}&lt;/div&gt;`</span>;
+}
+
+<span class="cm">// 3. Async function (fetch, API call, etc.)</span>
+<span class="kw">async function</span> <span class="fn">myView</span>() {
+  <span class="kw">const</span> html = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'/partial.html'</span>).<span class="fn">then</span>(r => r.<span class="fn">text</span>());
+  <span class="kw">return</span> html;
+}
+
+<span class="cm">// 4. Object with render() and optional mounted()</span>
+<span class="kw">const</span> myView = {
+  <span class="fn">render</span>(ctx) { <span class="kw">return</span> <span class="str">'&lt;div class="z-view"&gt;...&lt;/div&gt;'</span>; },
+  <span class="fn">mounted</span>() { console.<span class="fn">log</span>(<span class="str">'inserted!'</span>); }
+};
+
+<span class="cm">// 5. HTMLElement (cloned each time)</span>
+<span class="kw">const</span> el = document.<span class="fn">createElement</span>(<span class="str">'div'</span>);
+
+<span class="cm">// 6. URL (fetched with 5-min cache)</span>
+<span class="kw">const</span> myView = <span class="str">'/views/detail.html'</span>;</code></pre>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Type</th><th>Example</th><th>Cached</th></tr></thead>
+          <tbody>
+            <tr><td>HTML string</td><td><code>'&lt;div class="z-view"&gt;...&lt;/div&gt;'</code></td><td>Indefinitely</td></tr>
+            <tr><td>URL</td><td><code>'/views/detail.html'</code></td><td>5 min TTL</td></tr>
+            <tr><td>Function</td><td><code>(ctx) => '&lt;div&gt;..&lt;/div&gt;'</code></td><td>No</td></tr>
+            <tr><td>Async function</td><td><code>async () => await fetch(...)</code></td><td>No</td></tr>
+            <tr><td>Object</td><td><code>{ render(ctx) { return '...' } }</code></td><td>No</td></tr>
+            <tr><td>HTMLElement</td><td><code>document.createElement('div')</code></td><td>Cloned</td></tr>
+            <tr><td>Web component</td><td><code>'my-component'</code></td><td>No</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════════ EVENTS ═══════════════ -->
+    <section id="events">
+      <h2>Lifecycle Events</h2>
+      <p class="desc">Hook into the zoom lifecycle with <code>.on()</code> and <code>.off()</code>. Interact with the demo to see events fire in real time.</p>
+      <div class="pg">
+        <div class="pg-bar">
+          <span class="tag">Event log</span>
+          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
+        </div>
+        <div class="pg-canvas" style="height:340px">
+          <div style="display:flex; height:100%">
+            <div class="zumly-canvas" id="demo-events" style="flex:1"></div>
+            <div id="event-log" style="
+              width:220px; background:rgba(0,0,0,0.5); padding:14px;
+              font-size:0.7rem; font-family:var(--mono); overflow-y:auto;
+              color:#8890b0; border-left:1px solid var(--border);
+              line-height:1.7;
+            "><span style="color:var(--text-dim)">Interact to see events...</span></div>
+          </div>
+        </div>
+        <div class="pg-code">
+<pre><code>app.<span class="fn">on</span>(<span class="str">'viewMounted'</span>,  ({ viewName, node }) => { <span class="cm">/*...*/</span> });
+app.<span class="fn">on</span>(<span class="str">'beforeZoomIn'</span>, ({ viewName }) => { <span class="cm">/*...*/</span> });
+app.<span class="fn">on</span>(<span class="str">'afterZoomIn'</span>,  ({ viewName, zoomLevel }) => { <span class="cm">/*...*/</span> });
+app.<span class="fn">on</span>(<span class="str">'beforeZoomOut'</span>,({ zoomLevel }) => { <span class="cm">/*...*/</span> });
+app.<span class="fn">on</span>(<span class="str">'afterZoomOut'</span>, ({ zoomLevel }) => { <span class="cm">/*...*/</span> });
+app.<span class="fn">on</span>(<span class="str">'beforeLateral'</span>,({ viewName, from, isBack }) => { <span class="cm">/*...*/</span> });
+app.<span class="fn">on</span>(<span class="str">'afterLateral'</span>, ({ viewName, from, isBack }) => { <span class="cm">/*...*/</span> });
+app.<span class="fn">on</span>(<span class="str">'destroy'</span>,       () => { <span class="cm">/*...*/</span> });</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ API REFERENCE ═══════════════ -->
+    <section id="api">
+      <h2>API Reference</h2>
+
+      <h3>Constructor Options</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>mount</code></td><td>string</td><td>Yes</td><td>CSS selector (must have <code>zumly-canvas</code> class)</td></tr>
+            <tr><td><code>initialView</code></td><td>string</td><td>Yes</td><td>First view name</td></tr>
+            <tr><td><code>views</code></td><td>object</td><td>Yes</td><td>Map of view names to sources</td></tr>
+            <tr><td><code>preload</code></td><td>string[]</td><td></td><td>Views to resolve on init</td></tr>
+            <tr><td><code>transitions</code></td><td>object</td><td></td><td>driver, duration, ease, cover, effects, parallax, stagger, hideTrigger, threshold</td></tr>
+            <tr><td><code>deferred</code></td><td>boolean</td><td></td><td>Defer content rendering until after animation</td></tr>
+            <tr><td><code>debug</code></td><td>boolean</td><td></td><td>Enable debug logging</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Transitions</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>driver</code></td><td>string | fn</td><td><code>'css'</code></td><td><code>'css'</code> <code>'waapi'</code> <code>'anime'</code> <code>'gsap'</code> <code>'motion'</code> <code>'none'</code> or custom</td></tr>
+            <tr><td><code>duration</code></td><td>string</td><td><code>'1s'</code></td><td>CSS duration string</td></tr>
+            <tr><td><code>ease</code></td><td>string</td><td><code>'ease-in-out'</code></td><td>CSS easing function</td></tr>
+            <tr><td><code>cover</code></td><td>string</td><td><code>'width'</code></td><td><code>'width'</code> or <code>'height'</code></td></tr>
+            <tr><td><code>effects</code></td><td>[str,str]</td><td></td><td>CSS filters for [previous, last] views</td></tr>
+            <tr><td><code>parallax</code></td><td>0-1</td><td><code>0</code></td><td>Background displacement intensity</td></tr>
+            <tr><td><code>stagger</code></td><td>number</td><td><code>0</code></td><td>Delay (ms) between layers</td></tr>
+            <tr><td><code>hideTrigger</code></td><td>bool|str</td><td><code>false</code></td><td><code>true</code> or <code>'fade'</code></td></tr>
+            <tr><td><code>threshold</code></td><td>object</td><td></td><td><code>{ enabled, duration, commitAt }</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Methods</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>init()</code></td><td>Promise</td><td>Initialize and render initial view</td></tr>
+            <tr><td><code>zoomTo(name, opts?)</code></td><td>Promise</td><td>Programmatic zoom</td></tr>
+            <tr><td><code>goTo(name, opts?)</code></td><td>Promise</td><td>Navigate: <code>{ mode: 'depth' | 'lateral' }</code></td></tr>
+            <tr><td><code>back()</code></td><td>Promise</td><td>Pop lateral history or zoom out</td></tr>
+            <tr><td><code>on(event, fn)</code></td><td>this</td><td>Register lifecycle hook</td></tr>
+            <tr><td><code>off(event, fn?)</code></td><td>this</td><td>Remove hook(s)</td></tr>
+            <tr><td><code>getCurrentViewName()</code></td><td>string</td><td>Active view name</td></tr>
+            <tr><td><code>zoomLevel()</code></td><td>number</td><td>Depth (1 = root)</td></tr>
+            <tr><td><code>destroy()</code></td><td>void</td><td>Clean up</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Per-Trigger Attributes</h3>
+<pre><code><span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="str">"zoom-me"</span>
+     <span class="attr">data-to</span>=<span class="str">"detail"</span>
+     <span class="attr">data-with-duration</span>=<span class="str">"2s"</span>
+     <span class="attr">data-with-ease</span>=<span class="str">"cubic-bezier(.4,0,.2,1)"</span>
+     <span class="attr">data-with-effects</span>=<span class="str">"blur(5px)|blur(10px)"</span>
+     <span class="attr">data-deferred</span><span class="tag">&gt;</span>
+  Zoom in
+<span class="tag">&lt;/div&gt;</span></code></pre>
+    </section>
+
+    <!-- ═══════════════ INSTALL ═══════════════ -->
+    <section id="install">
+      <h2>Installation</h2>
+      <h3>NPM</h3>
+      <div class="install-cmd" onclick="navigator.clipboard.writeText('npm install zumly')">
+        <span class="prompt">$</span> npm install zumly
+        <span class="hint">click to copy</span>
+      </div>
+      <h3>CDN</h3>
+<pre><code><span class="tag">&lt;link</span> <span class="attr">rel</span>=<span class="str">"stylesheet"</span> <span class="attr">href</span>=<span class="str">"https://unpkg.com/zumly/dist/zumly.css"</span><span class="tag">&gt;</span>
+<span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="str">"https://unpkg.com/zumly/dist/zumly.js"</span><span class="tag">&gt;&lt;/script&gt;</span></code></pre>
+      <h3>ES Module</h3>
+<pre><code><span class="kw">import</span> Zumly <span class="kw">from</span> <span class="str">'zumly'</span>;
+<span class="kw">import</span> <span class="str">'zumly/css'</span>;</code></pre>
+    </section>
+  </main>
+
+  <!-- ═══════════════ FOOTER ═══════════════ -->
+  <footer>
+    <strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a>
+    &middot; <a href="https://github.com/zumerlab/zumly">GitHub</a>
+    &middot; <a href="https://www.npmjs.com/package/zumly">npm</a>
+    &middot; MIT License
+  </footer>
+
+  <!-- ═══════════════ SCRIPTS ═══════════════ -->
+  <script src="../dist/zumly.js"></script>
+  <script>
+  ;(function () {
+    'use strict'
+    var Z = window.Zumly || globalThis.Zumly
+    if (!Z) { console.error('Zumly not loaded'); return }
+
+    // ─── Helpers ────────────────────────────────
+    function dv (title, bg, w, h, content) {
+      return '<div class="z-view dv" style="width:' + w + 'px;height:' + h + 'px;' +
+        'background:linear-gradient(135deg,' + bg + ')">' +
+        '<h3>' + title + '</h3>' + (content || '') + '</div>'
+    }
+
+    function trig (label, to) {
+      return '<div class="zoom-me trig" data-to="' + to + '">' + label + '</div>'
+    }
+
+    function toggleCode (btn) {
+      var panel = btn.closest('.pg').querySelector('.pg-code')
+      panel.classList.toggle('open')
+      btn.textContent = panel.classList.contains('open') ? 'Hide code' : 'Show code'
+    }
+    window.toggleCode = toggleCode
+
+    // ─── 1. PLAYGROUND ─────────────────────────────
+    var pgApp = null
+
+    var pgViews = {
+      home: dv('Playground', '#0d1225, #1a2444', 600, 340,
+        '<p>Try changing the controls above, then zoom in.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        trig('Dashboard', 'dashboard') +
+        trig('Analytics', 'analytics') +
+        trig('Settings', 'settings') +
+        '</div>'),
+      dashboard: dv('Dashboard', '#1a2d5e, #0d1a3e', 520, 300,
+        '<p>A second-level view. Parent blurs behind you.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        trig('Revenue', 'revenue') +
+        trig('Users', 'users') +
+        '</div>'),
+      analytics: dv('Analytics', '#2d1a4e, #1a0d3e', 520, 300,
+        '<p>Another branch from the home view.</p>' +
+        trig('Metrics', 'metrics')),
+      settings: dv('Settings', '#3e2d1a, #2e1d0a', 520, 300,
+        '<p>Third branch. Navigate freely.</p>'),
+      revenue: dv('Revenue Detail', '#0d3e2d, #0a2e1d', 440, 250,
+        '<p>Third level. Zoom out twice to return home.</p>'),
+      users: dv('User Stats', '#3e0d2d, #2e0a1d', 440, 250,
+        '<p>Another third-level view.</p>'),
+      metrics: dv('Metrics Deep', '#1a3e3e, #0d2e2e', 440, 250,
+        '<p>Deep into analytics.</p>'),
+    }
+
+    function startPlayground () {
+      var mount = document.getElementById('pg-mount')
+      mount.innerHTML = ''
+      if (pgApp) { pgApp.destroy(); pgApp = null }
+
+      var driver = (document.querySelector('input[name="pg-drv"]:checked') || {}).value || 'css'
+      var cover = (document.querySelector('input[name="pg-cov"]:checked') || {}).value || 'width'
+      var dur = document.getElementById('pg-dur').value
+      var par = document.getElementById('pg-par').value / 100
+      var stag = parseInt(document.getElementById('pg-stag').value, 10)
+      var useFx = document.getElementById('pg-fx').checked
+      var blurP = document.getElementById('pg-blur-p').value
+      var blurL = document.getElementById('pg-blur-l').value
+      var htVal = document.getElementById('pg-ht').value
+      var elastic = document.getElementById('pg-elastic').checked
+      var deferred = document.getElementById('pg-deferred').checked
+
+      var transitions = {
+        driver: driver,
+        duration: driver === 'none' ? '0s' : dur + 'ms',
+        ease: 'ease-in-out',
+        cover: cover,
+      }
+      if (useFx) {
+        transitions.effects = [
+          'blur(' + blurP + 'px) brightness(0.7)',
+          'blur(' + blurL + 'px) brightness(0.4) saturate(0)'
+        ]
+      }
+      if (par > 0) transitions.parallax = par
+      if (stag > 0) transitions.stagger = stag
+      if (htVal === 'fade') transitions.hideTrigger = 'fade'
+      else if (htVal === 'true') transitions.hideTrigger = true
+      if (elastic) transitions.threshold = { enabled: true, duration: 400, commitAt: 0.4 }
+
+      pgApp = new Z({
+        mount: '#pg-mount',
+        initialView: 'home',
+        views: pgViews,
+        transitions: transitions,
+        deferred: deferred,
+        debug: false,
+      })
+      pgApp.init()
+    }
+
+    // Bind all playground controls
+    document.querySelectorAll('#pg-driver input, input[name="pg-cov"]').forEach(function (r) {
+      r.addEventListener('change', startPlayground)
+    })
+
+    var sliders = [
+      ['pg-dur', 'pg-dur-val', function (v) { return v + 'ms' }],
+      ['pg-par', 'pg-par-val', function (v) { return (v / 100).toFixed(2) }],
+      ['pg-stag', 'pg-stag-val', function (v) { return v + 'ms' }],
+      ['pg-blur-p', 'pg-blur-p-val', function (v) { return v + 'px' }],
+      ['pg-blur-l', 'pg-blur-l-val', function (v) { return v + 'px' }],
+    ]
+    sliders.forEach(function (s) {
+      var el = document.getElementById(s[0])
+      var label = document.getElementById(s[1])
+      el.addEventListener('input', function () {
+        label.textContent = s[2](el.value)
+        startPlayground()
+      })
+    })
+
+    document.getElementById('pg-fx').addEventListener('change', function () {
+      document.getElementById('pg-fx-controls').style.display = this.checked ? 'flex' : 'none'
+      startPlayground()
+    })
+
+    ;['pg-ht', 'pg-elastic', 'pg-deferred'].forEach(function (id) {
+      document.getElementById(id).addEventListener('change', startPlayground)
+    })
+
+    startPlayground()
+
+    // ─── 2. HELLO WORLD ────────────────────────────
+    ;(function () {
+      new Z({
+        mount: '#demo-hello', initialView: 'hello',
+        views: {
+          hello: dv('Hello World', '#1a1a3e, #2d1b4e', 500, 240,
+            '<p>Click the button to zoom in.</p>' + trig('Zoom to World', 'world')),
+          world: dv('World', '#1a3e2d, #1b4e3a', 400, 200,
+            '<p>Click outside or press Escape to zoom out.</p>' + trig('Go deeper', 'deep')),
+          deep: dv('Deep View', '#3e1a2d, #4e1b3a', 350, 180,
+            '<p>Third level!</p>'),
+        },
+        transitions: { duration: '600ms', ease: 'ease-in-out', cover: 'height' }
+      }).init()
+    })()
+
+    // ─── 3. DEEP ZOOM ──────────────────────────────
+    ;(function () {
+      new Z({
+        mount: '#demo-deep', initialView: 'continent',
+        views: {
+          continent: dv('Europe', '#0d1225, #1a2444', 620, 340,
+            '<p>A continent with countries. Click to zoom in.</p>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+            trig('Spain', 'spain') + trig('France', 'france') + trig('Italy', 'italy') + '</div>'),
+          spain: dv('Spain', '#3e1a1a, #4e2b1b', 500, 280,
+            '<p>Pick a city.</p>' + trig('Madrid', 'madrid') + trig('Barcelona', 'barcelona')),
+          france: dv('France', '#1a1a3e, #1b2b4e', 500, 280,
+            '<p>Pick a city.</p>' + trig('Paris', 'paris')),
+          italy: dv('Italy', '#1a3e1a, #2b4e1b', 500, 280,
+            '<p>Pick a city.</p>' + trig('Rome', 'rome')),
+          madrid: dv('Madrid', '#4e1b1b, #3e0f0f', 400, 220, '<p>You\'re 3 levels deep!</p>'),
+          barcelona: dv('Barcelona', '#4e3a1b, #3e2f0f', 400, 220, '<p>Level 3: Barcelona</p>'),
+          paris: dv('Paris', '#1b1b4e, #0f0f3e', 400, 220, '<p>Level 3: Paris</p>'),
+          rome: dv('Rome', '#1b4e1b, #0f3e0f', 400, 220, '<p>Level 3: Rome</p>'),
+        },
+        transitions: {
+          duration: '600ms', ease: 'ease-in-out', cover: 'height',
+          effects: ['blur(3px) brightness(0.7)', 'blur(8px) brightness(0.4)'],
+          parallax: 0.3, hideTrigger: 'fade',
+        }
+      }).init()
+    })()
+
+    // ─── 4. LATERAL NAVIGATION ──────────────────────
+    ;(function () {
+      function navBtn (name, label) {
+        return '<div class="trig" style="cursor:pointer;display:inline-block" ' +
+          'onclick="window._latApp.goTo(\'' + name + '\', {mode:\'lateral\'})">' + label + '</div>'
+      }
+      function backBtn () {
+        return '<div class="trig" style="cursor:pointer;display:inline-block;border-color:#ff6b6b;color:#ff6b6b" ' +
+          'onclick="window._latApp.back()">Back</div>'
+      }
+
+      var menu = dv('Menu', '#0d1225, #1a2444', 600, 300,
+        '<p>Zoom into a page, then use lateral nav to slide between siblings.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        trig('Page 1', 'p1') + trig('Page 2', 'p2') + trig('Page 3', 'p3') + '</div>')
+
+      var p1 = dv('Page 1', '#1a1a3e, #2d1b4e', 500, 250,
+        '<p>First page. Navigate laterally to siblings.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        navBtn('p2', 'Go to Page 2') + navBtn('p3', 'Go to Page 3') + '</div>')
+
+      var p2 = dv('Page 2', '#1a3e2d, #1b4e3a', 500, 250,
+        '<p>Slid in from the right. The parent shifts behind.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        navBtn('p1', 'Page 1') + navBtn('p3', 'Page 3') + backBtn() + '</div>')
+
+      var p3 = dv('Page 3', '#3e3a1a, #4e4b1b', 500, 250,
+        '<p>Third page at same zoom level.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        navBtn('p1', 'Page 1') + navBtn('p2', 'Page 2') + backBtn() + '</div>')
+
+      var app = new Z({
+        mount: '#demo-lateral', initialView: 'menu',
+        views: { menu: menu, p1: p1, p2: p2, p3: p3 },
+        transitions: { duration: '500ms', ease: 'ease-in-out', cover: 'height' }
+      })
+      app.init()
+      window._latApp = app
+    })()
+
+    // ─── 5. VIEW SOURCES ────────────────────────────
+    ;(function () {
+      function funcView () {
+        return dv('Function View', '#059669, #1a3e2d', 500, 220,
+          '<p>Generated at ' + new Date().toLocaleTimeString() + '. Fresh every time.</p>' +
+          trig('Back', 'menu'))
+      }
+
+      var objView = {
+        render: function () {
+          return dv('Object { render() }', '#d97706, #3e3a1a', 500, 220,
+            '<p>Component-like pattern with optional <code style="color:var(--accent)">mounted()</code> callback.</p>' +
+            trig('Back', 'menu'))
+        }
+      }
+
+      async function asyncView () {
+        await new Promise(function (r) { setTimeout(r, 200) })
+        return dv('Async Function', '#8b5cf6, #2d1a3e', 500, 220,
+          '<p>Loaded after 200ms simulated delay.</p>' +
+          trig('Back', 'menu'))
+      }
+
+      var elemView = document.createElement('div')
+      elemView.className = 'z-view dv'
+      elemView.style.cssText = 'width:500px;height:220px;background:linear-gradient(135deg,#0284c7,#1a2d3e)'
+      elemView.innerHTML = '<h3>HTMLElement</h3><p>Pre-built DOM node, cloned each time.</p>' +
+        '<div class="zoom-me trig" data-to="menu">Back</div>'
+
+      new Z({
+        mount: '#demo-sources', initialView: 'menu',
+        views: {
+          menu: dv('View Sources', '#0d1225, #1a2444', 580, 310,
+            '<p>Each card zooms to a view defined differently.</p>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+            trig('HTML String', 'htmlV') + trig('Function', 'funcV') +
+            trig('Object', 'objV') + trig('Async', 'asyncV') +
+            trig('HTMLElement', 'elemV') + '</div>'),
+          htmlV: dv('HTML String', '#7c3aed, #1a1a3e', 500, 220,
+            '<p>The simplest: a template literal parsed into DOM.</p>' + trig('Back', 'menu')),
+          funcV: funcView,
+          objV: objView,
+          asyncV: asyncView,
+          elemV: elemView,
+        },
+        transitions: { duration: '600ms', ease: 'ease-in-out', cover: 'height' }
+      }).init()
+    })()
+
+    // ─── 6. EVENTS ──────────────────────────────────
+    ;(function () {
+      var log = document.getElementById('event-log')
+      function logEvt (name, data) {
+        var d = document.createElement('div')
+        d.style.cssText = 'margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.04)'
+        var info = data ? ' <span style="color:#6670a0">' + JSON.stringify(data) + '</span>' : ''
+        d.innerHTML = '<span style="color:var(--accent)">' + name + '</span>' + info
+        log.appendChild(d)
+        log.scrollTop = log.scrollHeight
+      }
+
+      var app = new Z({
+        mount: '#demo-events', initialView: 'home',
+        views: {
+          home: dv('Event Demo', '#0d1225, #1a2444', 340, 260, trig('Zoom in', 'detail')),
+          detail: dv('Detail', '#1a3e2d, #1b4e3a', 300, 200, trig('Deeper', 'deep')),
+          deep: dv('Deep', '#3e1a2d, #4e1b3a', 260, 170, '<p>Zoom out to see events.</p>'),
+        },
+        transitions: { duration: '600ms', ease: 'ease-in-out', cover: 'height' }
+      })
+
+      ;['viewMounted', 'beforeZoomIn', 'afterZoomIn', 'beforeZoomOut', 'afterZoomOut'].forEach(function (evt) {
+        app.on(evt, function (data) { logEvt(evt, data) })
+      })
+
+      app.init()
+    })()
+
+  })()
+  </script>
+</body>
+
+</html>
