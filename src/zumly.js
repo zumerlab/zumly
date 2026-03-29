@@ -90,6 +90,7 @@ export class Zumly {
     this._onTouchEnd = this.onTouchEnd.bind(this)
     this._onKeyUp = this.onKeyUp.bind(this)
     this._onWheel = this.onWheel.bind(this)
+    this._wheelCooldown = false
     this._onPrefetchTrigger = (e) => {
       if (e.target.classList.contains('zoom-me') && e.target.dataset.to) {
         this.prefetcher.prefetch(e.target.dataset.to, { trigger: e.target, ...e.target.dataset })
@@ -126,7 +127,7 @@ export class Zumly {
     canvas.addEventListener('touchstart', this._onTouchStart, { passive: true })
     canvas.addEventListener('touchend', this._onTouchEnd, false)
     canvas.addEventListener('keyup', this._onKeyUp, false)
-    canvas.addEventListener('wheel', this._onWheel, { passive: true })
+    canvas.addEventListener('wheel', this._onWheel, { passive: false })
     canvas.addEventListener('mouseover', this._onPrefetchTrigger, { passive: true })
     canvas.addEventListener('focusin', this._onPrefetchTrigger, { passive: true })
 
@@ -1358,16 +1359,17 @@ export class Zumly {
 
   onWheel (event) {
     if (this._destroyed) return
-    if (!this.blockEvents) {
-      this.tracing('onWheel()')
-      if (event.deltaY > 0) {
-        // Don't zoom-out if the wheel target is inside a scrollable element
-        // that still has room to scroll down.
-        if (this._isInsideScrollable(event.target, event.deltaY)) return
-        if (this.storedViews.length > 1 && !this.blockEvents) {
-          this.zoomOut()
-        }
-      }
+    // Don't intercept wheel if target is inside a scrollable element
+    if (this._isInsideScrollable(event.target, event.deltaY)) return
+    // Prevent browser scroll on the canvas — it causes jank during zoom transitions
+    event.preventDefault()
+    if (this.blockEvents || this._wheelCooldown) return
+    if (event.deltaY > 0 && this.storedViews.length > 1) {
+      // Leading-edge: fire immediately on first wheel event, then ignore the rest
+      this.tracing('onWheel() → zoomOut')
+      this._wheelCooldown = true
+      setTimeout(() => { this._wheelCooldown = false }, 500)
+      this.zoomOut()
     }
   }
 
