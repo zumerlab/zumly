@@ -191,6 +191,75 @@ Each entry in `views` is a **view source**. The resolver detects the type and re
 
 **View pipeline:** Resolve → normalize `.z-view` → insert into canvas → call `mounted()` (if present). Static/URL views are cloned from cache on each `get()` so consumers cannot mutate the stored node.
 
+### Framework integration
+
+Zumly is framework-agnostic. Since views resolve to DOM elements, any framework that can mount into a container works out of the box. Use **function views** or **object views** to bridge your framework:
+
+**React**
+
+```jsx
+import { createRoot } from 'react-dom/client'
+import Dashboard from './Dashboard'
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: {
+    home: '<div class="z-view"><div class="zoom-me" data-to="dashboard" data-id="42">Open</div></div>',
+    dashboard: ({ target, props }) => {
+      const root = createRoot(target)
+      root.render(<Dashboard id={props.id} />)
+    }
+  }
+})
+```
+
+**Vue**
+
+```js
+import { createApp } from 'vue'
+import Dashboard from './Dashboard.vue'
+
+views: {
+  dashboard: ({ target, props }) => {
+    createApp(Dashboard, { id: props.id }).mount(target)
+  }
+}
+```
+
+**Svelte**
+
+```js
+import Dashboard from './Dashboard.svelte'
+
+views: {
+  dashboard: ({ target, props }) => {
+    new Dashboard({ target, props: { id: props.id } })
+  }
+}
+```
+
+**Angular**
+
+```ts
+views: {
+  dashboard: ({ target, props }) => {
+    const compRef = viewContainerRef.createComponent(DashboardComponent)
+    compRef.instance.id = props.id
+    target.appendChild(compRef.location.nativeElement)
+  }
+}
+```
+
+**Key points:**
+
+- The `target` parameter is a fresh `<div>` created by Zumly — mount your component there.
+- `props` contains data attributes from the trigger element (`data-id="42"` → `props.id`).
+- `componentContext` (constructor option) is passed as `context` to all function/object views — use it for shared state (router, store, API client).
+- Function views are **never cached** — they resolve fresh each time, so framework components get proper lifecycle management.
+- Use `mounted()` (object views) for post-insertion setup — it runs after the node is in the DOM.
+- Zumly handles wrapped elements (e.g. Svelte's extra parent div) in its cleanup logic.
+
 ### Preload and prefetch
 
 - **Eager preload:** `preload: ['viewA', 'viewB']` — those views are resolved and cached during `init()`.
