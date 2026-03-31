@@ -128,8 +128,9 @@ await app.init();
 | `transitions` | object | No | Duration, ease, cover, driver, effects, stagger, hideTrigger for zoom transitions. |
 | `deferred` | boolean | No | Defer content rendering until after animation completes (default: `false`). |
 | `debug` | boolean | No | Enable debug messages (default: `false`). |
-| `lateralNav` | boolean \| object | No | Lateral navigation UI: `{ arrows, dots, keepAlive }`. |
+| `lateralNav` | boolean \| object | No | Lateral navigation UI: `{ mode, arrows, dots, keepAlive }`. |
 | `depthNav` | boolean \| object | No | Depth navigation UI: `{ button, indicator }`. |
+| `navPosition` | string | No | Nav bar position preset (default: `'bottom-center'`). |
 | `inputs` | boolean \| object | No | Input methods: `{ click, keyboard, wheel, touch }`. |
 | `componentContext` | object | No | Context passed to component-style views. |
 
@@ -169,6 +170,41 @@ const app = new Zumly({
   transitions: { driver: 'none', duration: '0s' },
 });
 ```
+
+**Lateral navigation:**
+
+```js
+lateralNav: true                            // mode: 'auto' (default)
+lateralNav: false                           // disabled
+lateralNav: { mode: 'always' }              // always show when siblings exist
+lateralNav: { mode: 'auto', dots: false }   // auto mode, no dots
+```
+
+| Mode | Description |
+|------|-------------|
+| `'auto'` (default) | Shows lateral nav only when the current view doesn't cover the full canvas — preserving spatial context. |
+| `'always'` | Always shows lateral nav when siblings exist, regardless of coverage. |
+
+In `'auto'` mode, when a view covers 100% of the canvas the user perceives a new independent space, so the lateral nav is suppressed to avoid a floating control with no visual context.
+
+**Navigation position (`navPosition`):**
+
+```js
+navPosition: 'bottom-center'   // default
+```
+
+| Preset | Position | Layout |
+|--------|----------|--------|
+| `'bottom-center'` | Bottom center | Horizontal |
+| `'bottom-left'` | Bottom left | Horizontal |
+| `'bottom-right'` | Bottom right | Horizontal |
+| `'top-center'` | Top center | Horizontal |
+| `'top-left'` | Top left | Horizontal |
+| `'top-right'` | Top right | Horizontal |
+| `'middle-left'` | Left center | Vertical |
+| `'middle-right'` | Right center | Vertical |
+
+The `'middle-left'` and `'middle-right'` presets render the nav bar vertically with rotated arrows.
 
 **Zoomable elements:**
 
@@ -293,7 +329,7 @@ views: {
 
 ### Limitations and non-goals
 
-- **Lateral navigation:** Supported via `goTo(name, { mode: 'lateral' })` and `back()`. Configure UI with `lateralNav: { arrows, dots, keepAlive }`.
+- **Lateral navigation:** Supported via `goTo(name, { mode: 'lateral' })` and `back()`. Configure UI with `lateralNav: { mode, arrows, dots, keepAlive }`.
 - **No router/URL sync:** Deep views are not reflected in the URL; no built-in back/forward history.
 - **Resize handling:** Cheap correction when canvas resizes—translate and origin scaled by ratio; scale preserved. Correction is deferred if a transition is running.
 - **Remote views:** URL-backed views use `innerHTML`; sanitize external content to avoid XSS.

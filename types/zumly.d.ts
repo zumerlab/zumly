@@ -104,6 +104,8 @@ export interface TransitionOptions {
 
 /** Lateral navigation UI configuration. */
 export interface LateralNavOptions {
+  /** Display mode. 'auto' = only when view doesn't cover full canvas. 'always' = whenever siblings exist. Default: 'auto'. */
+  mode?: 'auto' | 'always'
   /** Show prev/next arrow buttons. Default: true. */
   arrows?: boolean
   /** Show dot indicators. Default: true. */
@@ -154,6 +156,17 @@ export interface ZoomToOptions {
   props?: Record<string, unknown>
 }
 
+/** Navigation bar position presets. */
+export type NavPosition =
+  | 'bottom-center'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'top-center'
+  | 'top-left'
+  | 'top-right'
+  | 'middle-left'
+  | 'middle-right'
+
 /** Zumly constructor options. */
 export interface ZumlyOptions {
   /** CSS selector for the canvas element (must have class zumly-canvas). */
@@ -174,6 +187,8 @@ export interface ZumlyOptions {
   lateralNav?: boolean | LateralNavOptions
   /** Depth navigation UI. true = default, false = disabled. */
   depthNav?: boolean | DepthNavOptions
+  /** Navigation bar position. Default: 'bottom-center'. 'middle-left' and 'middle-right' render vertically. */
+  navPosition?: NavPosition
   /** Input types to enable/disable. All enabled by default. */
   inputs?: InputsOptions
   /** Enable deferred rendering (view content inserted after zoom animation). */

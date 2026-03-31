@@ -215,19 +215,27 @@ export function checkParameters (parameters, instance) {
   }
 
   // Lateral navigation UI: auto-generated arrows and dots when siblings exist.
-  // true = default (arrows + dots), false = disabled,
-  // or object: { arrows: true, dots: true }
+  // true = default (mode: 'auto'), false = disabled,
+  // or object: { mode: 'auto'|'always', arrows: true, dots: true }
+  // mode: 'auto' — only show lateral nav when current view doesn't cover the full canvas.
+  // mode: 'always' — always show lateral nav when siblings exist.
   const lnIn = parameters.lateralNav
   if (lnIn === false) {
     instance.lateralNav = false
   } else if (lnIn && typeof lnIn === 'object') {
+    const modeIn = typeof lnIn.mode === 'string' ? lnIn.mode.toLowerCase() : null
+    const modeOk = modeIn === 'auto' || modeIn === 'always'
+    if (modeIn && !modeOk) {
+      notification(false, '\'lateralNav.mode\' must be "auto" or "always". Falling back to "auto".', 'warn')
+    }
     instance.lateralNav = {
+      mode: modeOk ? modeIn : 'auto',
       arrows: typeof lnIn.arrows === 'boolean' ? lnIn.arrows : true,
       dots: typeof lnIn.dots === 'boolean' ? lnIn.dots : true,
       keepAlive: (lnIn.keepAlive === true || lnIn.keepAlive === 'visible') ? lnIn.keepAlive : false
     }
   } else {
-    instance.lateralNav = { arrows: true, dots: true, keepAlive: false }
+    instance.lateralNav = { mode: 'auto', arrows: true, dots: true, keepAlive: false }
   }
 
   // Depth navigation UI: zoom-out button + level indicator.
@@ -243,6 +251,20 @@ export function checkParameters (parameters, instance) {
     }
   } else {
     instance.depthNav = { button: true, indicator: true }
+  }
+
+  // Navigation position: where to place the unified nav bar.
+  // 8 presets: 'bottom-center' (default), 'bottom-left', 'bottom-right',
+  // 'top-center', 'top-left', 'top-right', 'middle-left', 'middle-right'
+  const npIn = parameters.navPosition
+  const npAllowed = ['bottom-center', 'bottom-left', 'bottom-right', 'top-center', 'top-left', 'top-right', 'middle-left', 'middle-right']
+  if (typeof npIn === 'string' && npAllowed.includes(npIn)) {
+    instance.navPosition = npIn
+  } else {
+    instance.navPosition = 'bottom-center'
+    if (npIn !== undefined && npIn !== null) {
+      notification(false, `'navPosition' must be one of: ${npAllowed.join(', ')}. Falling back to "bottom-center".`, 'warn')
+    }
   }
 
   // Navigation inputs: control which user interactions trigger zoom/navigation.
