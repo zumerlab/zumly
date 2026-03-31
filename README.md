@@ -125,18 +125,25 @@ await app.init();
 | `initialView` | string | Yes | Name of the first view to show. |
 | `views` | object | Yes | Map of view names to view sources (see View sources below). |
 | `preload` | string[] | No | View names to resolve and cache when the app initializes. |
-| `transitions` | object | No | Duration, ease, cover, and driver for zoom transitions. |
+| `transitions` | object | No | Duration, ease, cover, driver, effects, stagger, hideTrigger for zoom transitions. |
+| `deferred` | boolean | No | Defer content rendering until after animation completes (default: `false`). |
 | `debug` | boolean | No | Enable debug messages (default: `false`). |
+| `lateralNav` | boolean \| object | No | Lateral navigation UI: `{ arrows, dots, keepAlive }`. |
+| `depthNav` | boolean \| object | No | Depth navigation UI: `{ button, indicator }`. |
+| `inputs` | boolean \| object | No | Input methods: `{ click, keyboard, wheel, touch }`. |
 | `componentContext` | object | No | Context passed to component-style views. |
 
 **Transitions (optional):**
 
 ```js
 transitions: {
-  driver: 'css',   // 'css' | 'waapi' | 'anime' | 'gsap' | 'motion' | 'none' or custom function(spec, onComplete)
-  cover: 'width',  // or 'height' — how the previous view scales to cover the trigger
+  driver: 'css',       // 'css' | 'waapi' | 'anime' | 'gsap' | 'motion' | 'none' or custom function(spec, onComplete)
+  cover: 'width',      // or 'height' — how the previous view scales to cover the trigger
   duration: '1s',
   ease: 'ease-in-out',
+  effects: ['blur(3px) brightness(0.7)', 'blur(8px) saturate(0)'],  // CSS filters for [previous, last] background views
+  stagger: 0,          // delay (ms) between layers during transition
+  hideTrigger: false,  // false | true (visibility:hidden) | 'fade' (opacity crossfade)
 }
 ```
 
@@ -167,11 +174,28 @@ const app = new Zumly({
 
 - Give the view root the class `z-view`.
 - Add class `zoom-me` and `data-to="viewName"` to the element that triggers zoom-in.
-- Optional per-trigger: `data-with-duration`, `data-with-ease`.
+- Per-trigger overrides via `data-*` attributes:
+
+| Attribute | Description |
+|-----------|-------------|
+| `data-to` | **Required.** Target view name. |
+| `data-with-duration` | Override transition duration (e.g. `"2s"`). |
+| `data-with-ease` | Override easing function. |
+| `data-with-cover` | Override cover dimension (`"width"` or `"height"`). |
+| `data-with-stagger` | Override stagger delay in ms (e.g. `"100"`). |
+| `data-with-effects` | Override effects (pipe-separated: `"blur(5px)\|blur(10px)"`). |
+| `data-hide-trigger` | Override hideTrigger (`"fade"` or presence = hide). |
+| `data-deferred` | Override deferred rendering (presence = true). |
+| `data-*` | Any other data attribute becomes a prop in `ViewContext.props`. |
 
 ```html
 <div class="z-view">
-  <div class="zoom-me" data-to="detail" data-with-duration="2s" data-with-ease="ease-in">
+  <div class="zoom-me" data-to="detail"
+       data-with-duration="2s"
+       data-with-ease="ease-in"
+       data-with-cover="height"
+       data-with-stagger="100"
+       data-id="42">
     Zoom in
   </div>
 </div>
@@ -269,7 +293,7 @@ views: {
 
 ### Limitations and non-goals
 
-- **Lateral navigation:** Supported via `goTo(name, { mode: 'lateral' })` and `back()`.
+- **Lateral navigation:** Supported via `goTo(name, { mode: 'lateral' })` and `back()`. Configure UI with `lateralNav: { arrows, dots, keepAlive }`.
 - **No router/URL sync:** Deep views are not reflected in the URL; no built-in back/forward history.
 - **Resize handling:** Cheap correction when canvas resizes—translate and origin scaled by ratio; scale preserved. Correction is deferred if a transition is running.
 - **Remote views:** URL-backed views use `innerHTML`; sanitize external content to avoid XSS.
