@@ -722,6 +722,8 @@ export class Zumly {
 
     const duration = el ? (el.dataset.withDuration || this.duration) : (triggerOrDescriptor.duration ?? this.duration)
     const ease = el ? (el.dataset.withEase || this.ease) : (triggerOrDescriptor.ease ?? this.ease)
+    const cover = el ? (el.dataset.withCover || this.cover) : (triggerOrDescriptor.cover ?? this.cover)
+    const stagger = el ? (parseInt(el.dataset.withStagger, 10) || this.stagger) : (triggerOrDescriptor.stagger ?? this.stagger)
 
     const previousView = canvas.querySelector('.is-current-view')
     const lastView = canvas.querySelector('.is-previous-view')
@@ -774,7 +776,7 @@ export class Zumly {
       const currentViewRect = { width: cc.width, height: cc.height }
 
       const coverResult = computeCoverScale(
-        triggerRect.width, triggerRect.height, cc.width, cc.height, this.cover
+        triggerRect.width, triggerRect.height, cc.width, cc.height, cover
       )
       coverScale = coverResult.scale
       const coverScaleInv = coverResult.scaleInv
@@ -906,7 +908,7 @@ export class Zumly {
       removedEntry
     )
     snapShoot.scale = coverScale
-    snapShoot.stagger = this.stagger || 0
+    snapShoot.stagger = stagger || 0
     this.storeViews(snapShoot)
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     this.tracing('setCSSVariables()')
