@@ -212,10 +212,33 @@ export interface ZumlyEventMap {
 
 export type ZumlyEventName = keyof ZumlyEventMap
 
+// ─── Plugin system ──────────────────────────────────────────────────
+
+/** A Zumly plugin: object with install(), or a plain function. */
+export interface ZumlyPlugin<T = unknown> {
+  install(instance: Zumly, options?: T): void
+}
+
+export type ZumlyPluginFunction<T = unknown> = (instance: Zumly, options?: T) => void
+
+// ─── Router plugin ──────────────────────────────────────────────────
+
+export interface RouterOptions {
+  /** Character used to join view path segments in the hash. Default: '/'. */
+  separator?: string
+  /** Prefix before the path in the hash. Default: '/'. */
+  prefix?: string
+}
+
+export const ZumlyRouter: ZumlyPlugin<RouterOptions>
+
 // ─── Zumly class ────────────────────────────────────────────────────
 
 export class Zumly {
   constructor(options: ZumlyOptions)
+
+  /** Static reference to the Router plugin. */
+  static Router: ZumlyPlugin<RouterOptions>
 
   /** Whether the instance was initialized with valid options. */
   readonly isValid: boolean
@@ -237,6 +260,12 @@ export class Zumly {
    * @returns this (chainable)
    */
   off<E extends ZumlyEventName>(event: E, fn?: (data: ZumlyEventMap[E]) => void): this
+
+  /**
+   * Register a plugin. Plugins are installed during init(), or immediately if already initialized.
+   * @returns this (chainable)
+   */
+  use<T>(plugin: ZumlyPlugin<T> | ZumlyPluginFunction<T>, options?: T): this
 
   /** Get the current zoom depth (number of stored snapshots). */
   zoomLevel(): number

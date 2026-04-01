@@ -3,4 +3,5 @@ import {ZumlyRouter} from './plugins/router.js'
 
 Zumly.Router = ZumlyRouter
 
-window.Zumly = Zumly
+export { Zumly, ZumlyRouter }
+export default Zumly

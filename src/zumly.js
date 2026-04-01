@@ -69,6 +69,8 @@ export class Zumly {
     this._destroyed = false
     /** Lifecycle hooks: { eventName: [fn, ...] } */
     this._hooks = {}
+    /** Registered plugins */
+    this._plugins = []
 
     // Validate options
     checkParameters(options, this)
@@ -446,6 +448,35 @@ export class Zumly {
   }
 
   /**
+   * Register a plugin. The plugin's install() method is called during init().
+   * If the instance is already initialized, install() runs immediately.
+   * @param {object|function} plugin - Object with install(instance, options) or a function
+   * @param {object} [options] - Options passed to plugin.install()
+   * @returns {this}
+   */
+  use (plugin, options) {
+    if (!plugin) return this
+    const entry = { plugin, options }
+    this._plugins.push(entry)
+    if (this._initialized) this._installPlugin(entry)
+    return this
+  }
+
+  /** @private */
+  _installPlugin (entry) {
+    const { plugin, options } = entry
+    try {
+      if (typeof plugin === 'function') {
+        plugin(this, options)
+      } else if (typeof plugin.install === 'function') {
+        plugin.install(this, options)
+      }
+    } catch (e) {
+      this.notify(`plugin install error: ${e.message}`, 'error')
+    }
+  }
+
+  /**
    * Remove a lifecycle hook. If fn is omitted, removes all hooks for that event.
    * @param {string} event
    * @param {function} [fn]
@@ -600,6 +631,10 @@ export class Zumly {
     })
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     this._recordCanvasSize()
+
+    // Install plugins
+    this._initialized = true
+    for (const entry of this._plugins) this._installPlugin(entry)
   }
 
   /**

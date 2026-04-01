@@ -327,10 +327,55 @@ views: {
 - **Focus prefetch:** `focusin` on a `.zoom-me[data-to]` also prefetches (for keyboard/accessibility).
 - **Scan prefetch:** When a view becomes current, all `.zoom-me[data-to]` targets inside it are prefetched in the background. This works on touch devices where hover is unavailable.
 
+### Plugins
+
+Zumly has a lightweight plugin system. Register plugins with `.use()` before or after `init()`:
+
+```js
+app.use(plugin, options)
+```
+
+A plugin is an object with `install(instance, options)` or a plain function `(instance, options) => void`.
+
+#### Router plugin
+
+Syncs the browser URL hash with Zumly's navigation state. Browser back triggers zoom-out or lateral navigation. Forward is intentionally blocked — in a ZUI, zoom-in requires a trigger element for proper origin and animation context.
+
+```js
+// Script tag
+const app = new Zumly({ ... })
+app.use(Zumly.Router)
+await app.init()
+
+// ES Module
+import { Zumly, ZumlyRouter } from 'zumly'
+const app = new Zumly({ ... })
+app.use(ZumlyRouter)
+await app.init()
+```
+
+**Options:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `separator` | string | `'/'` | Character used to join view path segments in the hash. |
+| `prefix` | string | `'/'` | Prefix before the path in the hash. |
+
+**Behavior:**
+
+| Action | Hash update | History |
+|--------|-------------|---------|
+| Zoom in | `pushState` | Enables browser back |
+| Lateral | `pushState` | Enables browser back |
+| Zoom out | `replaceState` | No forward entry |
+| Browser back | Triggers `zoomOut()` or lateral `goTo()` | — |
+| Browser forward | Blocked (`history.back()`) | — |
+
+**Example URL:** `#/home/showcases/mercedes`
+
 ### Limitations and non-goals
 
 - **Lateral navigation:** Supported via `goTo(name, { mode: 'lateral' })` and `back()`. Configure UI with `lateralNav: { mode, arrows, dots, keepAlive }`.
-- **No router/URL sync:** Deep views are not reflected in the URL; no built-in back/forward history.
 - **Resize handling:** Cheap correction when canvas resizes—translate and origin scaled by ratio; scale preserved. Correction is deferred if a transition is running.
 - **Remote views:** URL-backed views use `innerHTML`; sanitize external content to avoid XSS.
 
@@ -379,7 +424,7 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 - Additional view/template adapters
 - ~~Lateral navigation (same zoom level)~~ done: `goTo(name, { mode: 'lateral' })`
 - Navigation widget (~~programmatic navigation~~ done)
-- Router integration (e.g. URL sync)
+- ~~Router integration (e.g. URL sync)~~ done: `Zumly.Router` plugin (hash-based, back/lateral support)
 - ~~Resize correction~~ done: cheap translate/origin scaling when canvas size changes
 
 Details and more topics: [docs/roadMap.md](docs/roadMap.md). Driver contract and helpers: [docs/DRIVER_API.md](docs/DRIVER_API.md).
