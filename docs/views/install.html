@@ -1,0 +1,41 @@
+<div class="z-view v v-section v-install">
+  <h2>Get Started</h2>
+  <p class="sdesc">Add Zumly to your project in seconds.</p>
+  <div class="install-grid">
+    <div class="install-block">
+      <h3>NPM</h3>
+      <div class="code-wrap">
+        <pre>npm install zumly</pre>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('pre').textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+      </div>
+    </div>
+    <div class="install-block">
+      <h3>CDN</h3>
+      <div class="code-wrap">
+<pre>&lt;link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css"&gt;
+&lt;script src="https://unpkg.com/zumly/dist/zumly.js"&gt;&lt;/script&gt;</pre>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('pre').textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+      </div>
+    </div>
+    <div class="install-block">
+      <h3>ES Module</h3>
+      <div class="code-wrap">
+<pre><span class="kw">import</span> Zumly <span class="kw">from</span> <span class="str">'zumly'</span>
+<span class="kw">import</span> <span class="str">'zumly/css'</span></pre>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('pre').textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+      </div>
+    </div>
+    <div class="install-block">
+      <h3>Hello World</h3>
+      <div class="code-wrap">
+<pre><span class="kw">const</span> app = <span class="kw">new</span> Zumly({
+  mount: <span class="str">'.canvas'</span>,
+  initialView: <span class="str">'home'</span>,
+  views: { home, detail }
+})
+<span class="kw">await</span> app.init()</pre>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('pre').textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -4,13 +4,13 @@
 <head>
   <title>Zumly - Zoom-based navigation for the web</title>
   <meta name="description"
-    content="Zumly is a JavaScript library for building hierarchical zoom navigation interfaces. Create spatial, zoom-driven view transitions using web standards." />
+    content="Zumly is a JavaScript library that turns any website into a zoom interface with just HTML. Independent views, infinite zoom levels, and spatial navigation built in." />
   <meta name="keywords"
     content="zumly, zooming user interface, ZUI, zoom navigation, spatial UI, javascript, web components, animation drivers" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Zumly - Zoom-based navigation for the web" />
   <meta property="og:description"
-    content="Build hierarchical zoom interfaces with pluggable animation drivers, multiple view sources, and smooth spatial transitions." />
+    content="Turn any website into a zoom interface with just HTML. Independent views, infinite zoom levels, and spatial navigation built in." />
   <meta property="og:url" content="https://zumerlab.github.io/zumly/" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta charset="UTF-8" />
@@ -20,6 +20,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="../dist/zumly.css" />
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -39,1039 +47,532 @@
       --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
       --radius: 16px;
       --radius-sm: 10px;
-      --max-w: 820px;
-      --playground-h: 380px;
+    }
+
+    html.light {
+      --bg: #f4f6fb;
+      --bg-card: rgba(15,25,60,0.04);
+      --bg-card-hover: rgba(15,25,60,0.07);
+      --border: rgba(15,25,60,0.10);
+      --border-accent: rgba(60,100,220,0.30);
+      --accent: #3366dd;
+      --accent-glow: rgba(60,100,220,0.08);
+      --text: #0e1225;
+      --text-dim: rgba(14,18,37,0.55);
+      --text-mid: rgba(14,18,37,0.72);
+      --code-bg: rgba(15,25,60,0.06);
     }
 
     html { scroll-behavior: smooth; }
-
     body {
       font-family: var(--font);
       background: var(--bg);
       color: var(--text);
-      line-height: 1.65;
+      margin: 0; overflow: hidden;
+      height: 100vh; width: 100vw;
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
+    }
+    #app {
+      position: absolute; inset: 0;
     }
 
-    /* ━━━ Hero ━━━ */
-    .hero {
-      position: relative;
-      text-align: center;
-      padding: 6rem 1.5rem 4rem;
+    /* ━━━ Theme toggle ━━━ */
+    .theme-toggle {
+      position: fixed; top: 14px; right: 14px; z-index: 9999;
+      background: rgba(0,0,0,0.4); backdrop-filter: blur(10px);
+      border: 1px solid var(--border); color: var(--text-dim);
+      cursor: pointer; width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; transition: all 0.2s;
+    }
+    .theme-toggle:hover { border-color: var(--border-accent); color: var(--text); }
+    html.light .theme-toggle { background: rgba(255,255,255,0.6); border-color: rgba(15,25,60,0.12); color: rgba(14,18,37,0.55); }
+    html.light .theme-toggle:hover { border-color: rgba(60,100,220,0.3); color: #3366dd; }
+
+    /* ━━━ Base view ━━━ */
+    .v {
+      width: 100%; height: 100%; box-sizing: border-box;
+      font-family: var(--font); color: var(--text);
+      display: flex; flex-direction: column;
       overflow: hidden;
     }
 
-    .hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
+    /* ━━━ HOME ━━━ */
+    .v-home {
+      align-items: center; justify-content: center; text-align: center;
+      background: linear-gradient(170deg, #0a0e1a 0%, #0d1225 40%, #111830 100%);
+      position: relative; padding: 40px 24px;
+    }
+    .v-home::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
       background:
-        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(240,180,40,0.07), transparent 70%),
-        radial-gradient(ellipse 40% 60% at 80% 20%, rgba(80,60,200,0.05), transparent 60%),
-        radial-gradient(ellipse 40% 60% at 20% 80%, rgba(40,180,200,0.04), transparent 60%);
-      pointer-events: none;
+        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(240,180,40,0.06), transparent 70%),
+        radial-gradient(ellipse 40% 60% at 80% 20%, rgba(80,60,200,0.04), transparent 60%),
+        radial-gradient(ellipse 40% 60% at 20% 80%, rgba(40,180,200,0.03), transparent 60%);
     }
-
-    .hero-badge {
-      display: inline-block;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--accent);
-      background: var(--accent-glow);
-      padding: 5px 14px;
-      border-radius: 20px;
-      margin-bottom: 1.2rem;
+    html.light .v-home {
+      background: linear-gradient(170deg, #f0f2fa 0%, #e8ecf6 40%, #f4f6fb 100%);
     }
-
-    .hero h1 {
-      font-size: clamp(3rem, 8vw, 5.5rem);
-      font-weight: 900;
-      letter-spacing: -2px;
-      line-height: 1;
-      margin-bottom: 1rem;
+    html.light .v-home::before {
+      background:
+        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(60,100,220,0.05), transparent 70%),
+        radial-gradient(ellipse 40% 60% at 80% 20%, rgba(120,60,220,0.03), transparent 60%);
+    }
+    .home-gh-badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      text-decoration: none; color: var(--text);
+      font-weight: 700; font-size: 0.9rem;
+      background: rgba(255,255,255,0.04); padding: 7px 18px;
+      border-radius: 100px; border: 1px solid var(--border);
+      transition: all 0.2s; font-family: var(--mono); margin-bottom: 1rem;
+    }
+    .home-gh-badge:hover { border-color: var(--accent); transform: translateY(-1px); }
+    html.light .home-gh-badge { background: rgba(15,25,60,0.04); }
+    .home-gh-stars {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(240,180,40,0.15); padding: 3px 10px;
+      border-radius: 100px; font-weight: 800; color: #f0b428; font-size: 0.82rem;
+    }
+    html.light .home-gh-stars { color: #c08a00; background: rgba(200,150,20,0.12); }
+    .home-title-wrap { position: relative; display: inline-block; margin-bottom: 0.8rem; }
+    .home-title {
+      font-size: clamp(3rem, 9vw, 6rem); font-weight: 900;
+      letter-spacing: -3px; line-height: 1;
       background: linear-gradient(135deg, #f0c040 10%, #ff8a50 50%, #f06040 90%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
-    .hero .sub {
-      font-size: clamp(1rem, 2.5vw, 1.25rem);
-      color: var(--text-mid);
-      max-width: 520px;
-      margin: 0 auto 2.5rem;
-      line-height: 1.6;
+    html.light .home-title {
+      background: linear-gradient(135deg, #2244bb 10%, #5544cc 50%, #3366dd 90%);
+      -webkit-background-clip: text; background-clip: text;
     }
-
-    .hero-actions {
-      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    .home-version {
+      position: absolute; bottom: -2px; right: -36px;
+      font-size: 0.58rem; font-weight: 700; letter-spacing: 1px;
+      color: var(--accent); background: var(--accent-glow);
+      padding: 2px 8px; border-radius: 10px;
+    }
+    .home-sub {
+      font-size: clamp(0.88rem, 2vw, 1.1rem); color: var(--text-mid);
+      max-width: 480px; line-height: 1.6; margin-bottom: 2.5rem;
+    }
+    .targets {
+      display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+      max-width: 700px; position: relative;
+    }
+    .zt {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      width: 120px; padding: 20px 12px; border-radius: var(--radius);
+      background: var(--bg-card); border: 1px solid var(--border);
+      cursor: zoom-in; transition: all 0.2s; text-align: center;
       position: relative;
     }
+    .zt:hover {
+      border-color: var(--border-accent); transform: translateY(-3px) scale(1.03);
+      background: var(--bg-card-hover);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .zt::after {
+      content: ''; position: absolute; top: 6px; right: 6px;
+      width: 14px; height: 14px; opacity: 0; transition: opacity 0.2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(240,180,40,0.7)' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='16' y1='16' x2='22' y2='22'/%3E%3Cline x1='8' y1='11' x2='14' y2='11'/%3E%3Cline x1='11' y1='8' x2='11' y2='14'/%3E%3C/svg%3E");
+      background-size: contain;
+    }
+    .zt:hover::after { opacity: 1; }
+    html.light .zt::after {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(51,102,221,0.7)' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cline x1='16' y1='16' x2='22' y2='22'/%3E%3Cline x1='8' y1='11' x2='14' y2='11'/%3E%3Cline x1='11' y1='8' x2='11' y2='14'/%3E%3C/svg%3E");
+    }
+    .zt-icon { font-size: 1.6rem; display: block; margin-bottom: 2px; }
+    .zt-title { font-size: 0.78rem; font-weight: 700; }
+    .zt-desc { font-size: 0.62rem; color: var(--text-dim); line-height: 1.4; }
+    .home-hint {
+      margin-top: 1.4rem; font-size: 0.68rem; color: var(--text-dim);
+      display: flex; align-items: center; gap: 6px; opacity: 0.7;
+    }
+    .home-hint svg { flex-shrink: 0; }
+    .home-links {
+      margin-top: 2rem; display: flex; gap: 16px; font-size: 0.75rem;
+    }
+    .home-links a { color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
+    .home-links a:hover { color: var(--accent); }
+    .home-built {
+      margin-top: 1.2rem; font-size: 0.7rem; color: var(--text-dim);
+    }
+    .home-built a { color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+    .home-built a:hover { color: var(--accent); }
 
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 0.7rem 1.6rem; border-radius: var(--radius-sm);
-      font-weight: 600; font-size: 0.9rem; text-decoration: none;
-      transition: all 0.2s; cursor: pointer; border: none;
-      font-family: var(--font);
+    /* ━━━ Section views ━━━ */
+    .v-section {
+      padding: 48px 40px; overflow-y: auto;
+      background: linear-gradient(170deg, #0a0e1a 0%, #0d1225 50%, #101628 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    .btn:hover { transform: translateY(-2px); }
-    .btn-primary {
-      background: linear-gradient(135deg, #f0c040, #e09520);
-      color: #1a1000;
-      box-shadow: 0 8px 30px rgba(240,180,40,0.2);
+    html.light .v-section {
+      background: linear-gradient(170deg, #f0f2fa 0%, #edf0f8 50%, #f4f6fb 100%);
     }
-    .btn-primary:hover { box-shadow: 0 12px 40px rgba(240,180,40,0.3); }
-    .btn-ghost {
-      background: transparent; color: var(--text-mid);
-      border: 1px solid var(--border);
+    .v-section h2 {
+      font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.4rem;
+      text-align: center; width: 100%;
     }
-    .btn-ghost:hover { color: var(--text); border-color: var(--border-accent); }
-
-    /* ━━━ Sticky nav ━━━ */
-    .site-nav {
-      position: sticky; top: 0; z-index: 200;
-      background: rgba(7,8,15,0.8);
-      backdrop-filter: blur(16px) saturate(1.4);
-      border-bottom: 1px solid var(--border);
+    .v-section .sdesc {
+      color: var(--text-dim); font-size: 0.88rem; margin-bottom: 1.8rem;
+      text-align: center;
     }
-    .nav-inner {
-      max-width: var(--max-w); margin: 0 auto;
-      display: flex; align-items: center;
-      padding: 0 1.5rem; height: 44px; gap: 4px;
-      overflow-x: auto; scrollbar-width: none;
+    .v-api-wrap {
+      background: linear-gradient(170deg, #0a0e1a 0%, #0d1225 50%, #101628 100%);
     }
-    .nav-inner::-webkit-scrollbar { display: none; }
-    .nav-inner a {
-      color: var(--text-dim); text-decoration: none;
-      font-size: 0.78rem; font-weight: 500; white-space: nowrap;
-      padding: 5px 10px; border-radius: 6px;
-      transition: all 0.15s;
-    }
-    .nav-inner a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-
-    /* ━━━ Layout ━━━ */
-    main { max-width: var(--max-w); margin: 0 auto; padding: 3rem 1.5rem 5rem; }
-
-    section { margin-bottom: 4rem; }
-    section h2 {
-      font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px;
-      margin-bottom: 0.4rem;
-    }
-    section > .desc {
-      color: var(--text-dim); font-size: 0.92rem; margin-bottom: 1.8rem;
-    }
-    h3 { font-size: 1.05rem; font-weight: 700; margin: 2rem 0 0.6rem; }
-
-    /* ━━━ Feature grid ━━━ */
-    .grid { display: grid; gap: 14px; margin-bottom: 2rem; }
-    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-
-    .card {
-      padding: 22px; border-radius: var(--radius);
-      background: var(--bg-card); border: 1px solid var(--border);
-      transition: all 0.2s;
-    }
-    .card:hover { border-color: var(--border-accent); transform: translateY(-2px); background: var(--bg-card-hover); }
-    .card h4 { font-size: 0.92rem; font-weight: 700; margin-bottom: 6px; }
-    .card p { font-size: 0.8rem; color: var(--text-dim); line-height: 1.55; }
-    .card .icon { font-size: 1.3rem; margin-bottom: 8px; display: block; }
-
-    /* ━━━ Playground (shared) ━━━ */
-    .pg {
-      border: 1px solid var(--border); border-radius: var(--radius);
-      overflow: hidden; margin-bottom: 1.5rem;
-      background: var(--bg-card);
-    }
-    .pg-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px;
-      background: rgba(0,0,0,0.25);
-      border-bottom: 1px solid var(--border);
-      gap: 12px; flex-wrap: wrap;
-    }
-    .pg-bar .tag {
-      font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 1px; color: var(--text-dim);
-    }
-    .pg-canvas {
-      position: relative; width: 100%; height: var(--playground-h); overflow: hidden;
-    }
-    .pg-canvas .zumly-canvas { position: absolute; inset: 0; }
-
-    .pg-code {
-      border-top: 1px solid var(--border);
-      max-height: 0; overflow: hidden; transition: max-height 0.35s ease;
-    }
-    .pg-code.open { max-height: 700px; overflow-y: auto; }
-
-    .btn-code {
-      background: none; border: none; color: var(--accent);
-      cursor: pointer; font-family: var(--font);
-      font-size: 0.72rem; font-weight: 600;
-      padding: 3px 8px; border-radius: 4px;
-      transition: background 0.15s;
-    }
-    .btn-code:hover { background: var(--accent-glow); }
-
-    /* ━━━ Playground controls ━━━ */
-    .ctrl-row {
-      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-    }
-    .ctrl-group {
-      display: flex; align-items: center; gap: 6px;
-    }
-    .ctrl-label {
-      font-size: 0.7rem; font-weight: 600; color: var(--text-dim);
-      white-space: nowrap;
-    }
-    .ctrl-group input[type="radio"],
-    .ctrl-group input[type="checkbox"] {
-      accent-color: var(--accent); margin: 0; cursor: pointer;
-    }
-    .ctrl-group label {
-      display: inline-flex; align-items: center; gap: 3px;
-      font-size: 0.72rem; color: var(--text-mid); cursor: pointer;
-    }
-    .ctrl-group select {
-      background: rgba(0,0,0,0.4); color: var(--text-mid);
-      border: 1px solid var(--border); border-radius: 4px;
-      padding: 2px 6px; font-size: 0.72rem; font-family: var(--font);
-      cursor: pointer;
-    }
-    input[type="range"] {
-      -webkit-appearance: none; appearance: none;
-      width: 70px; height: 4px; border-radius: 2px;
-      background: rgba(255,255,255,0.1);
-      cursor: pointer;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 14px; height: 14px;
-      border-radius: 50%; background: var(--accent);
-      box-shadow: 0 0 8px rgba(240,180,40,0.3);
-    }
-    .ctrl-val {
-      font-size: 0.68rem; font-family: var(--mono);
-      color: var(--accent); min-width: 28px; text-align: right;
-    }
-    .ctrl-sep {
-      width: 1px; height: 16px; background: var(--border); flex-shrink: 0;
+    html.light .v-api-wrap {
+      background: linear-gradient(170deg, #f0f2fa 0%, #edf0f8 50%, #f4f6fb 100%);
     }
 
-    /* ━━━ Code ━━━ */
-    pre {
-      background: var(--code-bg); border-radius: var(--radius-sm);
-      padding: 18px 22px; overflow-x: auto;
-      font-size: 0.8rem; line-height: 1.7; color: #b8c0e0;
-      margin: 0;
+    /* ━━━ Showcases ━━━ */
+    .sc-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px; width: 100%; max-width: 900px;
     }
-    code { font-family: var(--mono); font-size: 0.84em; }
-    :not(pre) > code {
-      background: rgba(0,0,0,0.4); padding: 2px 7px; border-radius: 5px;
-      color: var(--accent);
+    .sc-card {
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border); background: var(--bg-card);
+      cursor: zoom-in; transition: all 0.25s;
     }
-    .kw { color: #c792ea; } .str { color: #c3e88d; } .fn { color: #82aaff; }
-    .cm { color: #546e7a; } .num { color: #f78c6c; } .tag { color: #f07178; }
-    .attr { color: #ffcb6b; } .prop { color: #82aaff; }
+    .sc-card:hover {
+      border-color: var(--border-accent); transform: translateY(-3px);
+      box-shadow: 0 16px 50px rgba(0,0,0,0.4);
+    }
+    .sc-preview { position: relative; height: 160px; overflow: hidden; }
+    .sc-preview iframe {
+      width: 200%; height: 200%; border: none;
+      transform: scale(0.5); transform-origin: 0 0; pointer-events: none;
+    }
+    .sc-preview::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, transparent 40%, rgba(7,8,15,0.85) 100%);
+      pointer-events: none;
+    }
+    html.light .sc-preview::after {
+      background: linear-gradient(180deg, transparent 40%, rgba(244,246,251,0.9) 100%);
+    }
+    .sc-label { padding: 0 16px 14px; position: relative; z-index: 1; margin-top: -32px; }
+    .sc-tag {
+      font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; padding: 2px 7px; border-radius: 4px;
+      display: inline-block; margin-bottom: 4px;
+    }
+    .sc-tag--silver { background: rgba(176,176,176,0.12); color: #b0b0b0; }
+    .sc-tag--cyan { background: rgba(0,229,255,0.12); color: #00e5ff; }
+    .sc-tag--blue { background: rgba(74,158,255,0.15); color: #4a9eff; }
+    html.light .sc-tag--silver { background: rgba(15,25,60,0.07); color: #4a5068; }
+    html.light .sc-tag--blue { background: rgba(50,80,200,0.10); color: #2850a0; }
+    html.light .sc-tag--cyan { background: rgba(0,140,180,0.08); color: #007888; }
+    .sc-label h4 { font-size: 0.88rem; font-weight: 700; margin: 0; }
+    .sc-label p { font-size: 0.7rem; color: var(--text-dim); margin: 3px 0 0; }
 
-    /* ━━━ Tables ━━━ */
-    .table-wrap { overflow-x: auto; margin-bottom: 1.5rem; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
-    th {
-      color: var(--text-dim); font-weight: 600;
-      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;
+    /* ━━━ Showcase demo views ━━━ */
+    .v-demo { position: relative; background: #0a0b14; }
+    .v-demo iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+    .demo-ext {
+      position: absolute; top: 12px; right: 50px; z-index: 10;
+      font-size: 0.68rem; font-weight: 600; color: var(--accent);
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+      padding: 5px 12px; border-radius: 6px; text-decoration: none; transition: background 0.2s;
     }
+    .demo-ext:hover { background: rgba(0,0,0,0.8); }
+
+    /* ━━━ Features ━━━ */
+    .feat-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px; width: 100%; max-width: 900px;
+    }
+    .feat {
+      padding: 20px; border-radius: var(--radius);
+      background: var(--bg-card); border: 1px solid var(--border); transition: all 0.2s;
+    }
+    .feat:hover { border-color: var(--border-accent); background: var(--bg-card-hover); }
+    .feat-icon { font-size: 1.2rem; margin-bottom: 6px; display: block; }
+    .feat h4 { font-size: 0.88rem; font-weight: 700; margin-bottom: 4px; }
+    .feat p { font-size: 0.76rem; color: var(--text-dim); line-height: 1.5; }
 
     /* ━━━ Install ━━━ */
-    .install-cmd {
-      display: flex; align-items: center; gap: 12px;
-      background: var(--code-bg); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 14px 20px;
-      font-family: var(--mono); font-size: 0.88rem;
-      color: #b8c0e0; cursor: pointer; transition: border-color 0.2s;
-      margin-bottom: 1rem;
+    .v-install { max-width: 720px; width: 100%; }
+    .install-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; width: 100%;
     }
-    .install-cmd:hover { border-color: var(--border-accent); }
-    .install-cmd .prompt { color: var(--accent); user-select: none; }
-    .install-cmd .hint { margin-left: auto; font-size: 0.65rem; color: var(--text-dim); font-family: var(--font); }
+    .install-block { display: flex; flex-direction: column; }
+    .install-block h3 {
+      font-size: 0.75rem; font-weight: 700; margin: 0 0 8px;
+      color: var(--text-mid); text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .code-wrap {
+      position: relative; flex: 1; display: flex;
+    }
+    .v-install pre {
+      background: var(--code-bg); border-radius: var(--radius-sm);
+      padding: 16px 18px; overflow: visible; white-space: pre-wrap; word-break: break-all;
+      font-size: 0.8rem; line-height: 1.7; color: #b8c0e0;
+      margin: 0; font-family: var(--mono); flex: 1;
+    }
+    html.light .v-install pre { background: rgba(15,25,60,0.05); color: #2a3050; }
+    .v-install code { font-family: var(--mono); font-size: 0.84em; }
+    .copy-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      color: var(--text-dim); font-size: 0.7rem; font-family: var(--font);
+      padding: 3px 10px; border-radius: 6px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.15); color: var(--text); }
+    html.light .copy-btn { background: rgba(15,25,60,0.06); border-color: rgba(15,25,60,0.12); color: rgba(14,18,37,0.45); }
+    html.light .copy-btn:hover { background: rgba(15,25,60,0.12); color: #0e1225; }
+    .kw { color: #c792ea; } .str { color: #c3e88d; } .tag { color: #f07178; } .attr { color: #ffcb6b; }
+    html.light .kw { color: #7b30d0; } html.light .str { color: #2a7e3b; }
+    html.light .tag { color: #c03040; } html.light .attr { color: #9a6e10; }
 
-    /* ━━━ Demo view styles (inside playgrounds) ━━━ */
-    .dv {
-      width: 100%; height: 100%; box-sizing: border-box;
-      padding: 28px; color: #dde1f0; font-family: var(--font);
+    /* ━━━ Playground ━━━ */
+    .v-pg {
+      padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(170deg, #0a0e1a, #0d1225 50%, #101628);
     }
-    .dv h3 { margin: 0 0 6px; font-weight: 700; font-size: 1.2em; }
-    .dv p { margin: 0 0 14px; color: var(--text-mid); font-size: 0.82rem; }
+    html.light .v-pg { background: linear-gradient(170deg, #f0f2fa, #edf0f8 50%, #f4f6fb); }
+    .pg-title {
+      font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px;
+      text-align: center;
+    }
+    .pg-editor {
+      flex: 1; width: 100%; max-width: 1100px; min-height: 0;
+      display: flex; flex-direction: row;
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--border); background: rgba(0,0,0,0.15);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    }
+    html.light .pg-editor { background: rgba(255,255,255,0.6); box-shadow: 0 8px 40px rgba(0,0,0,0.08); }
+    .pg-sidebar {
+      width: 220px; flex-shrink: 0; overflow-y: auto;
+      background: rgba(0,0,0,0.25); border-right: 1px solid var(--border);
+      padding: 8px 0;
+    }
+    html.light .pg-sidebar { background: rgba(15,25,60,0.04); }
+    .pg-group { padding: 8px 14px; }
+    .pg-group + .pg-group { border-top: 1px solid var(--border); }
+    .pg-group-title {
+      font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--accent); margin-bottom: 8px;
+    }
+    .pg-field { margin-bottom: 7px; }
+    .pg-field:last-child { margin-bottom: 0; }
+    .pg-field-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .pg-label {
+      display: block; font-size: 0.65rem; font-weight: 600;
+      color: var(--text-dim); margin-bottom: 3px; white-space: nowrap;
+    }
+    .pg-field-row .pg-label { margin-bottom: 0; }
+    html.light .pg-label { color: rgba(14,18,37,0.55); }
+    .pg-pills { display: flex; gap: 0; }
+    .pg-pill { cursor: pointer; display: flex; align-items: center; }
+    .pg-pill input { display: none; }
+    .pg-pill span {
+      font-size: 0.62rem; font-weight: 600; padding: 3px 8px;
+      background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      color: var(--text-dim); transition: all 0.15s;
+    }
+    .pg-pill:first-child span { border-radius: 4px 0 0 4px; }
+    .pg-pill:last-child span { border-radius: 0 4px 4px 0; }
+    .pg-pill:not(:first-child) span { border-left: none; }
+    .pg-pill input:checked + span { background: var(--accent); color: #fff; border-color: var(--accent); }
+    html.light .pg-pill span { background: rgba(15,25,60,0.03); }
+    html.light .pg-pill input:checked + span { background: #3366dd; border-color: #3366dd; }
+    .pg-range-wrap { display: flex; align-items: center; gap: 6px; }
+    .pg-range-wrap input[type="range"] { flex: 1; }
+    .pg-val {
+      font-size: 0.62rem; font-weight: 700; color: var(--accent);
+      font-family: var(--mono); min-width: 36px; text-align: right;
+    }
+    html.light .pg-val { color: #3366dd; }
+    .pg-sidebar select {
+      width: 100%; background: rgba(0,0,0,0.3); color: var(--text-mid);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 3px 6px; font-size: 0.65rem; font-family: var(--font); cursor: pointer;
+    }
+    html.light .pg-sidebar select {
+      background: rgba(15,25,60,0.04); color: rgba(14,18,37,0.72);
+      border-color: rgba(15,25,60,0.12);
+    }
+    .pg-check, .pg-check-sm {
+      display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+    }
+    .pg-check span, .pg-check-sm span { font-size: 0.65rem; color: var(--text-mid); }
+    html.light .pg-check span, html.light .pg-check-sm span { color: rgba(14,18,37,0.72); }
+    .pg-check input, .pg-check-sm input { accent-color: var(--accent); margin: 0; cursor: pointer; }
+    html.light .pg-check input, html.light .pg-check-sm input { accent-color: #3366dd; }
+    .pg-canvas-wrap { flex: 1; position: relative; min-height: 0; }
+    .pg-canvas-wrap .zumly-canvas { position: absolute; inset: 0; }
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none;
+      width: 60px; height: 3px; border-radius: 2px;
+      background: rgba(255,255,255,0.1); cursor: pointer;
+    }
+    html.light input[type="range"] { background: rgba(15,25,60,0.10); }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px;
+      border-radius: 50%; background: var(--accent);
+    }
+    html.light input[type="range"]::-webkit-slider-thumb { background: #3366dd; }
+
+    /* ━━━ Playground demo views ━━━ */
+    .dv {
+      box-sizing: border-box; padding: 24px; color: #dde1f0;
+      font-family: var(--font); border-radius: 12px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .dv h3 { margin: 0 0 6px; font-weight: 700; font-size: 1.1em; }
+    .dv p { margin: 0 0 10px; color: var(--text-mid); font-size: 0.78rem; }
     .dv .trig {
-      display: inline-block; padding: 10px 20px;
-      border-radius: var(--radius-sm);
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--border-accent);
-      color: var(--accent); font-weight: 600; font-size: 0.82rem;
-      cursor: zoom-in; transition: all 0.15s;
-      margin: 3px 4px 3px 0;
+      display: inline-block; padding: 8px 16px; border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border-accent);
+      color: var(--accent); font-weight: 600; font-size: 0.76rem;
+      cursor: zoom-in; transition: all 0.15s; margin: 2px 4px 2px 0;
     }
     .dv .trig:hover { background: rgba(255,255,255,0.1); transform: scale(1.03); }
-
-    /* ━━━ Footer ━━━ */
-    footer {
-      text-align: center; padding: 3rem 1.5rem;
-      border-top: 1px solid var(--border);
-      color: var(--text-dim); font-size: 0.8rem;
+    html.light .dv .trig {
+      border-color: rgba(60,100,220,0.25); color: #3366dd; background: rgba(60,100,220,0.05);
     }
-    footer a { color: var(--accent); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
 
     /* ━━━ Responsive ━━━ */
     @media (max-width: 640px) {
-      .hero { padding: 3.5rem 1rem 2.5rem; }
-      .hero h1 { font-size: 2.8rem; }
-      .pg-canvas { height: 300px; }
-      .grid-3 { grid-template-columns: 1fr; }
-      .ctrl-row { gap: 8px; }
+      .targets { gap: 10px; }
+      .zt { width: 100px; padding: 14px 8px; }
+      .sc-grid { grid-template-columns: 1fr; }
+      .feat-grid { grid-template-columns: 1fr; }
+      .install-grid { grid-template-columns: 1fr; }
+      .v-section { padding: 32px 20px; }
     }
   </style>
 </head>
 
 <body>
-  <!-- ═══════════════ HERO ═══════════════ -->
-  <section class="hero">
-    <span class="hero-badge">v0.18</span>
-    <h1>Zumly</h1>
-    <p class="sub">
-      Build hierarchical, zoom-driven navigation for the web.
-      Spatial transitions that preserve context, powered by pluggable animation drivers.
-    </p>
-    <div class="hero-actions">
-      <a class="btn btn-primary" href="#playground">Try the Playground</a>
-      <a class="btn btn-ghost" href="https://github.com/zumerlab/zumly">GitHub</a>
-      <a class="btn btn-ghost" href="https://www.npmjs.com/package/zumly">npm</a>
-    </div>
-  </section>
+  <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+  <div class="zumly-canvas" id="app"></div>
 
-  <!-- ═══════════════ NAV ═══════════════ -->
-  <nav class="site-nav">
-    <div class="nav-inner">
-      <a href="#playground">Playground</a>
-      <a href="#hello-world">Hello World</a>
-      <a href="#deep-zoom">Deep Zoom</a>
-      <a href="#lateral">Lateral Nav</a>
-      <a href="#view-sources">View Sources</a>
-      <a href="#events">Events</a>
-      <a href="#api">API</a>
-      <a href="#install">Install</a>
-    </div>
-  </nav>
-
-  <main>
-    <!-- ═══════════════ WHY ═══════════════ -->
-    <section>
-      <h2>Why Zumly</h2>
-      <p class="desc">Everything you need for zoom-based navigation, nothing you don't.</p>
-      <div class="grid grid-3">
-        <div class="card"><span class="icon">&#10070;</span><h4>Spatial Continuity</h4><p>Users zoom into elements to explore deeper content. Context is preserved through smooth hierarchical transitions.</p></div>
-        <div class="card"><span class="icon">&#9881;</span><h4>Pluggable Drivers</h4><p>CSS, WAAPI, GSAP, Anime.js, Motion, or your own. Swap without touching app code.</p></div>
-        <div class="card"><span class="icon">&#9641;</span><h4>Multiple View Sources</h4><p>HTML strings, URLs, async functions, render objects, HTMLElements, web components.</p></div>
-        <div class="card"><span class="icon">&#9889;</span><h4>Smart Prefetching</h4><p>Eager preload, hover prefetch, scan prefetch. Views are ready before the user clicks.</p></div>
-        <div class="card"><span class="icon">&#8596;</span><h4>Lateral Navigation</h4><p>Same-depth view swaps with spatial slide transitions. Navigate sideways at any zoom level.</p></div>
-        <div class="card"><span class="icon">&#9898;</span><h4>Zero Dependencies</h4><p>Core has no deps. Animation libraries are optional, loaded only if you use their driver.</p></div>
-      </div>
-    </section>
-
-    <!-- ═══════════════ PLAYGROUND ═══════════════ -->
-    <section id="playground">
-      <h2>Playground</h2>
-      <p class="desc">Tweak every option in real time. Change the driver, effects, parallax, stagger, and more.</p>
-
-      <div class="pg">
-        <!-- Controls bar 1: driver -->
-        <div class="pg-bar">
-          <div class="ctrl-row">
-            <span class="ctrl-label">Driver</span>
-            <div class="ctrl-group" id="pg-driver">
-              <label><input type="radio" name="pg-drv" value="css" checked> CSS</label>
-              <label><input type="radio" name="pg-drv" value="waapi"> WAAPI</label>
-              <label><input type="radio" name="pg-drv" value="none"> None</label>
-            </div>
-            <div class="ctrl-sep"></div>
-            <span class="ctrl-label">Cover</span>
-            <div class="ctrl-group" id="pg-cover">
-              <label><input type="radio" name="pg-cov" value="width" checked> width</label>
-              <label><input type="radio" name="pg-cov" value="height"> height</label>
-            </div>
-          </div>
-        </div>
-        <!-- Controls bar 2: sliders -->
-        <div class="pg-bar" style="border-bottom:1px solid var(--border)">
-          <div class="ctrl-row">
-            <div class="ctrl-group">
-              <span class="ctrl-label">Duration</span>
-              <input type="range" id="pg-dur" min="100" max="2000" value="700" step="50">
-              <span class="ctrl-val" id="pg-dur-val">700ms</span>
-            </div>
-            <div class="ctrl-sep"></div>
-            <div class="ctrl-group">
-              <span class="ctrl-label">Parallax</span>
-              <input type="range" id="pg-par" min="0" max="100" value="0">
-              <span class="ctrl-val" id="pg-par-val">0</span>
-            </div>
-            <div class="ctrl-sep"></div>
-            <div class="ctrl-group">
-              <span class="ctrl-label">Stagger</span>
-              <input type="range" id="pg-stag" min="0" max="300" value="0" step="10">
-              <span class="ctrl-val" id="pg-stag-val">0ms</span>
-            </div>
-          </div>
-        </div>
-        <!-- Controls bar 3: effects -->
-        <div class="pg-bar" style="border-bottom:1px solid var(--border)">
-          <div class="ctrl-row">
-            <div class="ctrl-group">
-              <label><input type="checkbox" id="pg-fx"> <span class="ctrl-label">Effects</span></label>
-            </div>
-            <div class="ctrl-group" id="pg-fx-controls" style="display:none">
-              <span class="ctrl-label">Blur prev</span>
-              <input type="range" id="pg-blur-p" min="0" max="15" value="3">
-              <span class="ctrl-val" id="pg-blur-p-val">3px</span>
-              <span class="ctrl-label">last</span>
-              <input type="range" id="pg-blur-l" min="0" max="15" value="8">
-              <span class="ctrl-val" id="pg-blur-l-val">8px</span>
-            </div>
-            <div class="ctrl-sep"></div>
-            <div class="ctrl-group">
-              <span class="ctrl-label">Hide trigger</span>
-              <select id="pg-ht">
-                <option value="">off</option>
-                <option value="true">hide</option>
-                <option value="fade" selected>fade</option>
-              </select>
-            </div>
-            <div class="ctrl-sep"></div>
-            <div class="ctrl-group">
-              <label><input type="checkbox" id="pg-elastic"> <span class="ctrl-label">Elastic zoom</span></label>
-            </div>
-            <div class="ctrl-sep"></div>
-            <div class="ctrl-group">
-              <label><input type="checkbox" id="pg-deferred"> <span class="ctrl-label">Deferred render</span></label>
-            </div>
-          </div>
-        </div>
-        <!-- Canvas -->
-        <div class="pg-canvas" style="height:420px">
-          <div class="zumly-canvas" id="pg-mount"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════ HELLO WORLD ═══════════════ -->
-    <section id="hello-world">
-      <h2>Hello World</h2>
-      <p class="desc">The simplest Zumly app: two views, click to zoom in, click outside to zoom out.</p>
-      <div class="pg">
-        <div class="pg-bar">
-          <span class="tag">Live</span>
-          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
-        </div>
-        <div class="pg-canvas" style="height:320px">
-          <div class="zumly-canvas" id="demo-hello"></div>
-        </div>
-        <div class="pg-code">
-<pre><code><span class="kw">const</span> hello = <span class="str">`
-  &lt;div class="z-view" style="width:500px; height:250px"&gt;
-    &lt;h3&gt;Hello World&lt;/h3&gt;
-    &lt;span class="zoom-me" data-to="world"&gt;Zoom&lt;/span&gt;
-  &lt;/div&gt;`</span>;
-
-<span class="kw">const</span> world = <span class="str">`
-  &lt;div class="z-view" style="width:400px; height:200px"&gt;
-    &lt;h3&gt;World&lt;/h3&gt;
-    &lt;p&gt;Click outside or press Escape to zoom out&lt;/p&gt;
-  &lt;/div&gt;`</span>;
-
-<span class="kw">new</span> <span class="fn">Zumly</span>({
-  <span class="prop">mount</span>: <span class="str">'#my-canvas'</span>,
-  <span class="prop">initialView</span>: <span class="str">'hello'</span>,
-  <span class="prop">views</span>: { hello, world },
-}).<span class="fn">init</span>();</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════ DEEP ZOOM ═══════════════ -->
-    <section id="deep-zoom">
-      <h2>Deep Zoom</h2>
-      <p class="desc">Navigate multiple levels deep. Each zoom preserves the spatial context of parent views with blur and parallax.</p>
-      <div class="pg">
-        <div class="pg-bar">
-          <span class="tag">3 levels &middot; effects &middot; parallax</span>
-          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
-        </div>
-        <div class="pg-canvas" style="height:400px">
-          <div class="zumly-canvas" id="demo-deep"></div>
-        </div>
-        <div class="pg-code">
-<pre><code><span class="kw">new</span> <span class="fn">Zumly</span>({
-  <span class="prop">mount</span>: <span class="str">'#canvas'</span>,
-  <span class="prop">initialView</span>: <span class="str">'continent'</span>,
-  <span class="prop">views</span>: { continent, country, city },
-  <span class="prop">transitions</span>: {
-    <span class="prop">duration</span>: <span class="str">'600ms'</span>,
-    <span class="prop">cover</span>: <span class="str">'height'</span>,
-    <span class="prop">effects</span>: [<span class="str">'blur(3px) brightness(0.7)'</span>, <span class="str">'blur(8px) brightness(0.4)'</span>],
-    <span class="prop">parallax</span>: <span class="num">0.3</span>,
-    <span class="prop">hideTrigger</span>: <span class="str">'fade'</span>,
-  },
-}).<span class="fn">init</span>();</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════ LATERAL NAV ═══════════════ -->
-    <section id="lateral">
-      <h2>Lateral Navigation</h2>
-      <p class="desc">Swap views at the same zoom level with slide transitions. The parent view shifts spatially to track which child is active. Use <code>goTo(name, { mode: 'lateral' })</code> to navigate and <code>back()</code> to return through the lateral history.</p>
-      <div class="pg">
-        <div class="pg-bar">
-          <span class="tag">Same-level navigation</span>
-          <div class="ctrl-group">
-            <span class="ctrl-label">keepAlive</span>
-            <select id="lat-keepalive">
-              <option value="">off</option>
-              <option value="true">hidden</option>
-              <option value="visible">visible</option>
-            </select>
-          </div>
-          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
-        </div>
-        <div class="pg-canvas" style="height:380px">
-          <div class="zumly-canvas" id="demo-lateral"></div>
-        </div>
-        <div class="pg-code">
-<pre><code><span class="cm">// Parent view has triggers pointing to each sibling:</span>
-<span class="kw">const</span> menu = <span class="str">`
-  &lt;div class="z-view" style="width:600px; height:400px"&gt;
-    &lt;div class="zoom-me" data-to="page1"&gt;Page 1&lt;/div&gt;
-    &lt;div class="zoom-me" data-to="page2"&gt;Page 2&lt;/div&gt;
-    &lt;div class="zoom-me" data-to="page3"&gt;Page 3&lt;/div&gt;
-  &lt;/div&gt;`</span>;
-
-<span class="cm">// Zoom into page1 first, then navigate laterally:</span>
-app.<span class="fn">goTo</span>(<span class="str">'page2'</span>, { <span class="prop">mode</span>: <span class="str">'lateral'</span> });
-app.<span class="fn">goTo</span>(<span class="str">'page3'</span>, { <span class="prop">mode</span>: <span class="str">'lateral'</span> });
-
-<span class="cm">// back() pops lateral history, then zooms out</span>
-app.<span class="fn">back</span>(); <span class="cm">// → page2</span>
-app.<span class="fn">back</span>(); <span class="cm">// → page1</span>
-app.<span class="fn">back</span>(); <span class="cm">// → menu (zoom out)</span>
-
-<span class="cm">// keepAlive: views stay in DOM when navigating laterally</span>
-<span class="prop">lateralNav</span>: { <span class="prop">keepAlive</span>: <span class="kw">true</span> }</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════ VIEW SOURCES ═══════════════ -->
-    <section id="view-sources">
-      <h2>View Sources</h2>
-      <p class="desc">Views can be defined in many ways. The resolver detects the type automatically.</p>
-      <div class="pg">
-        <div class="pg-bar">
-          <span class="tag">All view types</span>
-          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
-        </div>
-        <div class="pg-canvas" style="height:380px">
-          <div class="zumly-canvas" id="demo-sources"></div>
-        </div>
-        <div class="pg-code">
-<pre><code><span class="cm">// 1. HTML string</span>
-<span class="kw">const</span> myView = <span class="str">'&lt;div class="z-view"&gt;Hello&lt;/div&gt;'</span>;
-
-<span class="cm">// 2. Function → string or HTMLElement</span>
-<span class="kw">function</span> <span class="fn">myView</span>({ target }) {
-  <span class="kw">return</span> <span class="str">`&lt;div class="z-view"&gt;${Date.now()}&lt;/div&gt;`</span>;
-}
-
-<span class="cm">// 3. Async function (fetch, API call, etc.)</span>
-<span class="kw">async function</span> <span class="fn">myView</span>() {
-  <span class="kw">const</span> html = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'/partial.html'</span>).<span class="fn">then</span>(r => r.<span class="fn">text</span>());
-  <span class="kw">return</span> html;
-}
-
-<span class="cm">// 4. Object with render() and optional mounted()</span>
-<span class="kw">const</span> myView = {
-  <span class="fn">render</span>(ctx) { <span class="kw">return</span> <span class="str">'&lt;div class="z-view"&gt;...&lt;/div&gt;'</span>; },
-  <span class="fn">mounted</span>() { console.<span class="fn">log</span>(<span class="str">'inserted!'</span>); }
-};
-
-<span class="cm">// 5. HTMLElement (cloned each time)</span>
-<span class="kw">const</span> el = document.<span class="fn">createElement</span>(<span class="str">'div'</span>);
-
-<span class="cm">// 6. URL (fetched with 5-min cache)</span>
-<span class="kw">const</span> myView = <span class="str">'/views/detail.html'</span>;</code></pre>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Type</th><th>Example</th><th>Cached</th></tr></thead>
-          <tbody>
-            <tr><td>HTML string</td><td><code>'&lt;div class="z-view"&gt;...&lt;/div&gt;'</code></td><td>Indefinitely</td></tr>
-            <tr><td>URL</td><td><code>'/views/detail.html'</code></td><td>5 min TTL</td></tr>
-            <tr><td>Function</td><td><code>(ctx) => '&lt;div&gt;..&lt;/div&gt;'</code></td><td>No</td></tr>
-            <tr><td>Async function</td><td><code>async () => await fetch(...)</code></td><td>No</td></tr>
-            <tr><td>Object</td><td><code>{ render(ctx) { return '...' } }</code></td><td>No</td></tr>
-            <tr><td>HTMLElement</td><td><code>document.createElement('div')</code></td><td>Cloned</td></tr>
-            <tr><td>Web component</td><td><code>'my-component'</code></td><td>No</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ═══════════════ EVENTS ═══════════════ -->
-    <section id="events">
-      <h2>Lifecycle Events</h2>
-      <p class="desc">Hook into the zoom lifecycle with <code>.on()</code> and <code>.off()</code>. Interact with the demo to see events fire in real time.</p>
-      <div class="pg">
-        <div class="pg-bar">
-          <span class="tag">Event log</span>
-          <button class="btn-code" onclick="toggleCode(this)">Show code</button>
-        </div>
-        <div class="pg-canvas" style="height:340px">
-          <div style="display:flex; height:100%">
-            <div class="zumly-canvas" id="demo-events" style="flex:1"></div>
-            <div id="event-log" style="
-              width:220px; background:rgba(0,0,0,0.5); padding:14px;
-              font-size:0.7rem; font-family:var(--mono); overflow-y:auto;
-              color:#8890b0; border-left:1px solid var(--border);
-              line-height:1.7;
-            "><span style="color:var(--text-dim)">Interact to see events...</span></div>
-          </div>
-        </div>
-        <div class="pg-code">
-<pre><code>app.<span class="fn">on</span>(<span class="str">'viewMounted'</span>,  ({ viewName, node }) => { <span class="cm">/*...*/</span> });
-app.<span class="fn">on</span>(<span class="str">'beforeZoomIn'</span>, ({ viewName }) => { <span class="cm">/*...*/</span> });
-app.<span class="fn">on</span>(<span class="str">'afterZoomIn'</span>,  ({ viewName, zoomLevel }) => { <span class="cm">/*...*/</span> });
-app.<span class="fn">on</span>(<span class="str">'beforeZoomOut'</span>,({ zoomLevel }) => { <span class="cm">/*...*/</span> });
-app.<span class="fn">on</span>(<span class="str">'afterZoomOut'</span>, ({ zoomLevel }) => { <span class="cm">/*...*/</span> });
-app.<span class="fn">on</span>(<span class="str">'beforeLateral'</span>,({ viewName, from, isBack }) => { <span class="cm">/*...*/</span> });
-app.<span class="fn">on</span>(<span class="str">'afterLateral'</span>, ({ viewName, from, isBack }) => { <span class="cm">/*...*/</span> });
-app.<span class="fn">on</span>(<span class="str">'destroy'</span>,       () => { <span class="cm">/*...*/</span> });</code></pre>
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══════════════ API REFERENCE ═══════════════ -->
-    <section id="api">
-      <h2>API Reference</h2>
-
-      <h3>Constructor Options</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Option</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
-          <tbody>
-            <tr><td><code>mount</code></td><td>string</td><td>Yes</td><td>CSS selector (must have <code>zumly-canvas</code> class)</td></tr>
-            <tr><td><code>initialView</code></td><td>string</td><td>Yes</td><td>First view name</td></tr>
-            <tr><td><code>views</code></td><td>object</td><td>Yes</td><td>Map of view names to sources</td></tr>
-            <tr><td><code>preload</code></td><td>string[]</td><td></td><td>Views to resolve on init</td></tr>
-            <tr><td><code>transitions</code></td><td>object</td><td></td><td>driver, duration, ease, cover, effects, parallax, stagger, hideTrigger, threshold</td></tr>
-            <tr><td><code>deferred</code></td><td>boolean</td><td></td><td>Defer content rendering until after animation</td></tr>
-            <tr><td><code>debug</code></td><td>boolean</td><td></td><td>Enable debug logging</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>Transitions</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
-          <tbody>
-            <tr><td><code>driver</code></td><td>string | fn</td><td><code>'css'</code></td><td><code>'css'</code> <code>'waapi'</code> <code>'anime'</code> <code>'gsap'</code> <code>'motion'</code> <code>'none'</code> or custom</td></tr>
-            <tr><td><code>duration</code></td><td>string</td><td><code>'1s'</code></td><td>CSS duration string</td></tr>
-            <tr><td><code>ease</code></td><td>string</td><td><code>'ease-in-out'</code></td><td>CSS easing function</td></tr>
-            <tr><td><code>cover</code></td><td>string</td><td><code>'width'</code></td><td><code>'width'</code> or <code>'height'</code></td></tr>
-            <tr><td><code>effects</code></td><td>[str,str]</td><td></td><td>CSS filters for [previous, last] views</td></tr>
-            <tr><td><code>parallax</code></td><td>0-1</td><td><code>0</code></td><td>Background displacement intensity</td></tr>
-            <tr><td><code>stagger</code></td><td>number</td><td><code>0</code></td><td>Delay (ms) between layers</td></tr>
-            <tr><td><code>hideTrigger</code></td><td>bool|str</td><td><code>false</code></td><td><code>true</code> or <code>'fade'</code></td></tr>
-            <tr><td><code>threshold</code></td><td>object</td><td></td><td><code>{ enabled, duration, commitAt }</code></td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>Methods</h3>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
-          <tbody>
-            <tr><td><code>init()</code></td><td>Promise</td><td>Initialize and render initial view</td></tr>
-            <tr><td><code>zoomTo(name, opts?)</code></td><td>Promise</td><td>Programmatic zoom</td></tr>
-            <tr><td><code>goTo(name, opts?)</code></td><td>Promise</td><td>Navigate: <code>{ mode: 'depth' | 'lateral' }</code></td></tr>
-            <tr><td><code>back()</code></td><td>Promise</td><td>Pop lateral history or zoom out</td></tr>
-            <tr><td><code>on(event, fn)</code></td><td>this</td><td>Register lifecycle hook</td></tr>
-            <tr><td><code>off(event, fn?)</code></td><td>this</td><td>Remove hook(s)</td></tr>
-            <tr><td><code>getCurrentViewName()</code></td><td>string</td><td>Active view name</td></tr>
-            <tr><td><code>zoomLevel()</code></td><td>number</td><td>Depth (1 = root)</td></tr>
-            <tr><td><code>destroy()</code></td><td>void</td><td>Clean up</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3>Per-Trigger Attributes</h3>
-<pre><code><span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="str">"zoom-me"</span>
-     <span class="attr">data-to</span>=<span class="str">"detail"</span>
-     <span class="attr">data-with-duration</span>=<span class="str">"2s"</span>
-     <span class="attr">data-with-ease</span>=<span class="str">"cubic-bezier(.4,0,.2,1)"</span>
-     <span class="attr">data-with-effects</span>=<span class="str">"blur(5px)|blur(10px)"</span>
-     <span class="attr">data-deferred</span><span class="tag">&gt;</span>
-  Zoom in
-<span class="tag">&lt;/div&gt;</span></code></pre>
-    </section>
-
-    <!-- ═══════════════ INSTALL ═══════════════ -->
-    <section id="install">
-      <h2>Installation</h2>
-      <h3>NPM</h3>
-      <div class="install-cmd" onclick="navigator.clipboard.writeText('npm install zumly')">
-        <span class="prompt">$</span> npm install zumly
-        <span class="hint">click to copy</span>
-      </div>
-      <h3>CDN</h3>
-<pre><code><span class="tag">&lt;link</span> <span class="attr">rel</span>=<span class="str">"stylesheet"</span> <span class="attr">href</span>=<span class="str">"https://unpkg.com/zumly/dist/zumly.css"</span><span class="tag">&gt;</span>
-<span class="tag">&lt;script</span> <span class="attr">src</span>=<span class="str">"https://unpkg.com/zumly/dist/zumly.js"</span><span class="tag">&gt;&lt;/script&gt;</span></code></pre>
-      <h3>ES Module</h3>
-<pre><code><span class="kw">import</span> Zumly <span class="kw">from</span> <span class="str">'zumly'</span>;
-<span class="kw">import</span> <span class="str">'zumly/css'</span>;</code></pre>
-    </section>
-  </main>
-
-  <!-- ═══════════════ FOOTER ═══════════════ -->
-  <footer>
-    <strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a>
-    &middot; <a href="https://github.com/zumerlab/zumly">GitHub</a>
-    &middot; <a href="https://www.npmjs.com/package/zumly">npm</a>
-    &middot; MIT License
-  </footer>
-
-  <!-- ═══════════════ SCRIPTS ═══════════════ -->
   <script src="../dist/zumly.js"></script>
+  <script src="js/playground.js"></script>
   <script>
   ;(function () {
     'use strict'
     var Z = window.Zumly || globalThis.Zumly
     if (!Z) { console.error('Zumly not loaded'); return }
 
-    // ─── Helpers ────────────────────────────────
-    function dv (title, bg, w, h, content) {
-      return '<div class="z-view dv" style="width:' + w + 'px;height:' + h + 'px;' +
-        'background:linear-gradient(135deg,' + bg + ')">' +
-        '<h3>' + title + '</h3>' + (content || '') + '</div>'
+    // ─── HOME VIEW (only inline view) ─────────────────────────────
+
+    var viewHome = '<div class="z-view v v-home">' +
+      '<a href="https://github.com/zumerlab/zumly" target="_blank" class="home-gh-badge">' +
+        '<span>zumerlab/zumly</span>' +
+        '<span class="home-gh-stars"><svg width="14" height="14" viewBox="0 0 576 512" fill="currentColor"><path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329l-24.6 145.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329l104.2-103.1c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z"/></svg> <span id="gh-star-count">&hellip;</span></span>' +
+      '</a>' +
+      '<div class="home-title-wrap"><h1 class="home-title">Zumly</h1><span class="home-version">v0.18</span></div>' +
+      '<p class="home-sub">Turn any website into a zoom interface with just HTML.<br>' +
+      'Independent views, infinite zoom levels, and spatial navigation built in.</p>' +
+      '<div class="targets">' +
+        '<div class="zt zoom-me" data-to="showcases" data-with-duration="800ms">' +
+          '<span class="zt-icon">&#10070;</span><span class="zt-title">Showcases</span>' +
+          '<span class="zt-desc">Real-world interfaces</span></div>' +
+        '<div class="zt zoom-me" data-to="playground" data-with-duration="700ms">' +
+          '<span class="zt-icon">&#9881;</span><span class="zt-title">Playground</span>' +
+          '<span class="zt-desc">Every option, live</span></div>' +
+        '<div class="zt zoom-me" data-to="why" data-with-duration="700ms">' +
+          '<span class="zt-icon">&#9889;</span><span class="zt-title">Why Zumly</span>' +
+          '<span class="zt-desc">Features overview</span></div>' +
+        '<div class="zt zoom-me" data-to="api" data-with-duration="700ms">' +
+          '<span class="zt-icon">&#9641;</span><span class="zt-title">API</span>' +
+          '<span class="zt-desc">Full reference</span></div>' +
+        '<div class="zt zoom-me" data-to="install" data-with-duration="700ms">' +
+          '<span class="zt-icon">&#9655;</span><span class="zt-title">Get Started</span>' +
+          '<span class="zt-desc">Install &amp; setup</span></div>' +
+      '</div>' +
+      '<div class="home-hint">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="22" y2="22"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>' +
+        'Click any card to zoom in' +
+      '</div>' +
+      '<div class="home-links">' +
+        '<a href="https://github.com/zumerlab/zumly">GitHub</a>' +
+        '<a href="https://www.npmjs.com/package/zumly">npm</a>' +
+      '</div>' +
+      '<div class="home-built">Built by <a href="https://github.com/zumerlab">Zumerlab</a></div>' +
+    '</div>'
+
+    // ─── API VIEW (full document, needs DOMParser) ────────────────
+
+    var viewAPI = async function () {
+      var res = await fetch('views/api.html')
+      var html = await res.text()
+      var doc = new DOMParser().parseFromString(html, 'text/html')
+      var styles = ''
+      doc.querySelectorAll('style').forEach(function (s) { styles += s.outerHTML })
+      var body = doc.body.innerHTML
+      return '<div class="z-view v-api-wrap" style="width:100%;height:100%;overflow-y:auto">' +
+        styles + body + '</div>'
     }
 
-    function trig (label, to) {
-      return '<div class="zoom-me trig" data-to="' + to + '">' + label + '</div>'
-    }
+    // ─── PLAYGROUND (loaded from js/playground.js) ─────────────
 
-    function toggleCode (btn) {
-      var panel = btn.closest('.pg').querySelector('.pg-code')
-      panel.classList.toggle('open')
-      btn.textContent = panel.classList.contains('open') ? 'Hide code' : 'Show code'
-    }
-    window.toggleCode = toggleCode
+    // ─── VIEWS MAP ────────────────────────────────────────────────
 
-    // ─── 1. PLAYGROUND ─────────────────────────────
-    var pgApp = null
-
-    var pgViews = {
-      home: dv('Playground', '#0d1225, #1a2444', 600, 340,
-        '<p>Try changing the controls above, then zoom in.</p>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-        trig('Dashboard', 'dashboard') +
-        trig('Analytics', 'analytics') +
-        trig('Settings', 'settings') +
-        '</div>'),
-      dashboard: dv('Dashboard', '#1a2d5e, #0d1a3e', 520, 300,
-        '<p>A second-level view. Parent blurs behind you.</p>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-        trig('Revenue', 'revenue') +
-        trig('Users', 'users') +
-        '</div>'),
-      analytics: dv('Analytics', '#2d1a4e, #1a0d3e', 520, 300,
-        '<p>Another branch from the home view.</p>' +
-        trig('Metrics', 'metrics')),
-      settings: dv('Settings', '#3e2d1a, #2e1d0a', 520, 300,
-        '<p>Third branch. Navigate freely.</p>'),
-      revenue: dv('Revenue Detail', '#0d3e2d, #0a2e1d', 440, 250,
-        '<p>Third level. Zoom out twice to return home.</p>'),
-      users: dv('User Stats', '#3e0d2d, #2e0a1d', 440, 250,
-        '<p>Another third-level view.</p>'),
-      metrics: dv('Metrics Deep', '#1a3e3e, #0d2e2e', 440, 250,
-        '<p>Deep into analytics.</p>'),
-    }
-
-    function startPlayground () {
-      var mount = document.getElementById('pg-mount')
-      mount.innerHTML = ''
-      if (pgApp) { pgApp.destroy(); pgApp = null }
-
-      var driver = (document.querySelector('input[name="pg-drv"]:checked') || {}).value || 'css'
-      var cover = (document.querySelector('input[name="pg-cov"]:checked') || {}).value || 'width'
-      var dur = document.getElementById('pg-dur').value
-      var par = document.getElementById('pg-par').value / 100
-      var stag = parseInt(document.getElementById('pg-stag').value, 10)
-      var useFx = document.getElementById('pg-fx').checked
-      var blurP = document.getElementById('pg-blur-p').value
-      var blurL = document.getElementById('pg-blur-l').value
-      var htVal = document.getElementById('pg-ht').value
-      var elastic = document.getElementById('pg-elastic').checked
-      var deferred = document.getElementById('pg-deferred').checked
-
-      var transitions = {
-        driver: driver,
-        duration: driver === 'none' ? '0s' : dur + 'ms',
-        ease: 'ease-in-out',
-        cover: cover,
-      }
-      if (useFx) {
-        transitions.effects = [
-          'blur(' + blurP + 'px) brightness(0.7)',
-          'blur(' + blurL + 'px) brightness(0.4) saturate(0)'
-        ]
-      }
-      if (par > 0) transitions.parallax = par
-      if (stag > 0) transitions.stagger = stag
-      if (htVal === 'fade') transitions.hideTrigger = 'fade'
-      else if (htVal === 'true') transitions.hideTrigger = true
-      if (elastic) transitions.threshold = { enabled: true, duration: 400, commitAt: 0.4 }
-
-      pgApp = new Z({
-        mount: '#pg-mount',
-        initialView: 'home',
-        views: pgViews,
-        transitions: transitions,
-        deferred: deferred,
-        debug: false,
-      })
-      pgApp.init()
-    }
-
-    // Bind all playground controls
-    document.querySelectorAll('#pg-driver input, input[name="pg-cov"]').forEach(function (r) {
-      r.addEventListener('change', startPlayground)
-    })
-
-    var sliders = [
-      ['pg-dur', 'pg-dur-val', function (v) { return v + 'ms' }],
-      ['pg-par', 'pg-par-val', function (v) { return (v / 100).toFixed(2) }],
-      ['pg-stag', 'pg-stag-val', function (v) { return v + 'ms' }],
-      ['pg-blur-p', 'pg-blur-p-val', function (v) { return v + 'px' }],
-      ['pg-blur-l', 'pg-blur-l-val', function (v) { return v + 'px' }],
-    ]
-    sliders.forEach(function (s) {
-      var el = document.getElementById(s[0])
-      var label = document.getElementById(s[1])
-      el.addEventListener('input', function () {
-        label.textContent = s[2](el.value)
-        startPlayground()
-      })
-    })
-
-    document.getElementById('pg-fx').addEventListener('change', function () {
-      document.getElementById('pg-fx-controls').style.display = this.checked ? 'flex' : 'none'
-      startPlayground()
-    })
-
-    ;['pg-ht', 'pg-elastic', 'pg-deferred'].forEach(function (id) {
-      document.getElementById(id).addEventListener('change', startPlayground)
-    })
-
-    startPlayground()
-
-    // ─── 2. HELLO WORLD ────────────────────────────
-    ;(function () {
-      new Z({
-        mount: '#demo-hello', initialView: 'hello',
-        views: {
-          hello: dv('Hello World', '#1a1a3e, #2d1b4e', 500, 240,
-            '<p>Click the button to zoom in.</p>' + trig('Zoom to World', 'world')),
-          world: dv('World', '#1a3e2d, #1b4e3a', 400, 200,
-            '<p>Click outside or press Escape to zoom out.</p>' + trig('Go deeper', 'deep')),
-          deep: dv('Deep View', '#3e1a2d, #4e1b3a', 350, 180,
-            '<p>Third level!</p>'),
-        },
-        transitions: { duration: '600ms', ease: 'ease-in-out', cover: 'height' }
-      }).init()
-    })()
-
-    // ─── 3. DEEP ZOOM ──────────────────────────────
-    ;(function () {
-      new Z({
-        mount: '#demo-deep', initialView: 'continent',
-        views: {
-          continent: dv('Europe', '#0d1225, #1a2444', 620, 340,
-            '<p>A continent with countries. Click to zoom in.</p>' +
-            '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-            trig('Spain', 'spain') + trig('France', 'france') + trig('Italy', 'italy') + '</div>'),
-          spain: dv('Spain', '#3e1a1a, #4e2b1b', 500, 280,
-            '<p>Pick a city.</p>' + trig('Madrid', 'madrid') + trig('Barcelona', 'barcelona')),
-          france: dv('France', '#1a1a3e, #1b2b4e', 500, 280,
-            '<p>Pick a city.</p>' + trig('Paris', 'paris')),
-          italy: dv('Italy', '#1a3e1a, #2b4e1b', 500, 280,
-            '<p>Pick a city.</p>' + trig('Rome', 'rome')),
-          madrid: dv('Madrid', '#4e1b1b, #3e0f0f', 400, 220, '<p>You\'re 3 levels deep!</p>'),
-          barcelona: dv('Barcelona', '#4e3a1b, #3e2f0f', 400, 220, '<p>Level 3: Barcelona</p>'),
-          paris: dv('Paris', '#1b1b4e, #0f0f3e', 400, 220, '<p>Level 3: Paris</p>'),
-          rome: dv('Rome', '#1b4e1b, #0f3e0f', 400, 220, '<p>Level 3: Rome</p>'),
-        },
-        transitions: {
-          duration: '600ms', ease: 'ease-in-out', cover: 'height',
-          effects: ['blur(3px) brightness(0.7)', 'blur(8px) brightness(0.4)'],
-          parallax: 0.3, hideTrigger: 'fade',
-        }
-      }).init()
-    })()
-
-    // ─── 4. LATERAL NAVIGATION ──────────────────────
-    ;(function () {
-      function navBtn (name, label) {
-        return '<div class="trig" style="cursor:pointer;display:inline-block" ' +
-          'onclick="window._latApp.goTo(\'' + name + '\', {mode:\'lateral\'})">' + label + '</div>'
-      }
-      function backBtn () {
-        return '<div class="trig" style="cursor:pointer;display:inline-block;border-color:#ff6b6b;color:#ff6b6b" ' +
-          'onclick="window._latApp.back()">Back</div>'
-      }
-
-      var menu = dv('Menu', '#0d1225, #1a2444', 600, 300,
-        '<p>Zoom into a page, then use lateral nav to slide between siblings.</p>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-        trig('Page 1', 'p1') + trig('Page 2', 'p2') + trig('Page 3', 'p3') + '</div>')
-
-      function counterWidget () {
-        return '<div style="display:inline-flex;align-items:center;gap:8px;margin:8px 0;padding:6px 12px;border-radius:8px;background:rgba(255,255,255,0.08);font-size:0.85rem">' +
-          '<span style="color:rgba(255,255,255,0.5)">Clicks:</span> ' +
-          '<span class="click-count" style="font-weight:700;color:#f0b428">0</span> ' +
-          '<div class="trig" style="cursor:pointer;display:inline-block;padding:4px 12px;font-size:0.8rem" ' +
-          'onclick="var c=this.parentElement.querySelector(\'.click-count\');c.textContent=+c.textContent+1">+1</div>' +
-          '<span style="color:rgba(255,255,255,0.35);font-size:0.75rem">(keepAlive preserves this state)</span></div>'
-      }
-
-      var p1 = dv('Page 1', '#1a1a3e, #2d1b4e', 500, 250,
-        '<p>First page. Navigate laterally to siblings.</p>' +
-        counterWidget() +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-        navBtn('p2', 'Go to Page 2') + navBtn('p3', 'Go to Page 3') + '</div>')
-
-      var p2 = dv('Page 2', '#1a3e2d, #1b4e3a', 500, 250,
-        '<p>Slid in from the right. The parent shifts behind.</p>' +
-        counterWidget() +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-        navBtn('p1', 'Page 1') + navBtn('p3', 'Page 3') + backBtn() + '</div>')
-
-      var p3 = dv('Page 3', '#3e3a1a, #4e4b1b', 500, 250,
-        '<p>Third page at same zoom level.</p>' +
-        counterWidget() +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-        navBtn('p1', 'Page 1') + navBtn('p2', 'Page 2') + backBtn() + '</div>')
-
-      var views = { menu: menu, p1: p1, p2: p2, p3: p3 }
-      function initLateral (keepAlive) {
-        if (window._latApp) { window._latApp.destroy(); document.getElementById('demo-lateral').innerHTML = '' }
-        var app = new Z({
-          mount: '#demo-lateral', initialView: 'menu',
-          views: views,
-          transitions: { duration: '500ms', ease: 'ease-in-out', cover: 'height' },
-          lateralNav: { arrows: true, dots: true, keepAlive: keepAlive }
-        })
-        app.init()
-        window._latApp = app
-      }
-      initLateral(false)
-      document.getElementById('lat-keepalive').addEventListener('change', function () {
-        var v = this.value
-        initLateral(v === 'visible' ? 'visible' : v === 'true' ? true : false)
-      })
-    })()
-
-    // ─── 5. VIEW SOURCES ────────────────────────────
-    ;(function () {
-      function funcView () {
-        return dv('Function View', '#059669, #1a3e2d', 500, 220,
-          '<p>Generated at ' + new Date().toLocaleTimeString() + '. Fresh every time.</p>' +
-          trig('Back', 'menu'))
-      }
-
-      var objView = {
+    var views = {
+      home: viewHome,
+      showcases: 'views/showcases.html',
+      mercedes: 'views/mercedes.html',
+      'home-assistant': 'views/home-assistant.html',
+      'mission-control': 'views/mission-control.html',
+      why: 'views/why.html',
+      install: 'views/install.html',
+      api: viewAPI,
+      playground: {
         render: function () {
-          return dv('Object { render() }', '#d97706, #3e3a1a', 500, 220,
-            '<p>Component-like pattern with optional <code style="color:var(--accent)">mounted()</code> callback.</p>' +
-            trig('Back', 'menu'))
+          return fetch('views/playground.html').then(function (r) { return r.text() })
+        },
+        mounted: function () {
+          Playground.bind()
+          Playground.setup()
         }
       }
+    }
 
-      async function asyncView () {
-        await new Promise(function (r) { setTimeout(r, 200) })
-        return dv('Async Function', '#8b5cf6, #2d1a3e', 500, 220,
-          '<p>Loaded after 200ms simulated delay.</p>' +
-          trig('Back', 'menu'))
-      }
+    // ─── MAIN APP ─────────────────────────────────────────────────
 
-      var elemView = document.createElement('div')
-      elemView.className = 'z-view dv'
-      elemView.style.cssText = 'width:500px;height:220px;background:linear-gradient(135deg,#0284c7,#1a2d3e)'
-      elemView.innerHTML = '<h3>HTMLElement</h3><p>Pre-built DOM node, cloned each time.</p>' +
-        '<div class="zoom-me trig" data-to="menu">Back</div>'
+    var app = new Z({
+      mount: '#app',
+      initialView: 'home',
+      views: views,
+      transitions: {
+        duration: '800ms',
+        ease: 'cubic-bezier(.4,0,.2,1)',
+        effects: ['blur(4px) brightness(0.6)', 'blur(10px) brightness(0.3)'],
+        hideTrigger: false,
+        driver: 'css',
+      },
+      depthNav: { button: true, indicator: true },
+      lateralNav: { arrows: true, dots: true },
+      navPosition: 'bottom-right',
+    })
 
-      new Z({
-        mount: '#demo-sources', initialView: 'menu',
-        views: {
-          menu: dv('View Sources', '#0d1225, #1a2444', 580, 310,
-            '<p>Each card zooms to a view defined differently.</p>' +
-            '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-            trig('HTML String', 'htmlV') + trig('Function', 'funcV') +
-            trig('Object', 'objV') + trig('Async', 'asyncV') +
-            trig('HTMLElement', 'elemV') + '</div>'),
-          htmlV: dv('HTML String', '#7c3aed, #1a1a3e', 500, 220,
-            '<p>The simplest: a template literal parsed into DOM.</p>' + trig('Back', 'menu')),
-          funcV: funcView,
-          objV: objView,
-          asyncV: asyncView,
-          elemV: elemView,
-        },
-        transitions: { duration: '600ms', ease: 'ease-in-out', cover: 'height' }
-      }).init()
-    })()
+    app.use(Z.Router)
 
-    // ─── 6. EVENTS ──────────────────────────────────
-    ;(function () {
-      var log = document.getElementById('event-log')
-      function logEvt (name, data) {
-        var d = document.createElement('div')
-        d.style.cssText = 'margin-bottom:4px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.04)'
-        var info = data ? ' <span style="color:#6670a0">' + JSON.stringify(data) + '</span>' : ''
-        d.innerHTML = '<span style="color:var(--accent)">' + name + '</span>' + info
-        log.appendChild(d)
-        log.scrollTop = log.scrollHeight
-      }
+    app.on('beforeZoomOut', function () {
+      if (app.getCurrentViewName() === 'playground') Playground.destroy()
+    })
 
-      var app = new Z({
-        mount: '#demo-events', initialView: 'home',
-        views: {
-          home: dv('Event Demo', '#0d1225, #1a2444', 340, 260, trig('Zoom in', 'detail')),
-          detail: dv('Detail', '#1a3e2d, #1b4e3a', 300, 200, trig('Deeper', 'deep')),
-          deep: dv('Deep', '#3e1a2d, #4e1b3a', 260, 170, '<p>Zoom out to see events.</p>'),
-        },
-        transitions: { duration: '600ms', ease: 'ease-in-out', cover: 'height' }
+    app.init()
+
+    // Theme icon sync
+    var tb = document.getElementById('theme-btn')
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;'
+
+    // GitHub stars
+    fetch('https://api.github.com/repos/zumerlab/zumly')
+      .then(function (r) { return r.json() })
+      .then(function (d) {
+        var el = document.getElementById('gh-star-count')
+        if (el && d.stargazers_count) el.textContent = d.stargazers_count
       })
-
-      ;['viewMounted', 'beforeZoomIn', 'afterZoomIn', 'beforeZoomOut', 'afterZoomOut'].forEach(function (evt) {
-        app.on(evt, function (data) { logEvt(evt, data) })
-      })
-
-      app.init()
-    })()
+      .catch(function () {})
 
   })()
   </script>

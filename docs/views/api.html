@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Zumly API Reference</title>
+  <meta name="description" content="Complete API reference for Zumly with interactive demos for every option." />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #07080f;
+      --bg-card: rgba(255,255,255,0.025);
+      --bg-card-hover: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.06);
+      --border-accent: rgba(240,180,40,0.25);
+      --accent: #f0b428;
+      --accent-glow: rgba(240,180,40,0.12);
+      --text: #dde1f0;
+      --text-dim: rgba(220,224,240,0.45);
+      --text-mid: rgba(220,224,240,0.7);
+      --code-bg: rgba(0,0,0,0.5);
+      --nav-bg: rgba(7,8,15,0.85);
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --max-w: 900px;
+    }
+
+    html.light {
+      --bg: #f4f6fb;
+      --bg-card: rgba(15,25,60,0.04);
+      --bg-card-hover: rgba(15,25,60,0.07);
+      --border: rgba(15,25,60,0.10);
+      --border-accent: rgba(60,100,220,0.30);
+      --accent: #3366dd;
+      --accent-glow: rgba(60,100,220,0.08);
+      --text: #0e1225;
+      --text-dim: rgba(14,18,37,0.55);
+      --text-mid: rgba(14,18,37,0.72);
+      --code-bg: rgba(15,25,60,0.06);
+      --nav-bg: rgba(244,246,251,0.88);
+    }
+    html.light .page-title {
+      background: linear-gradient(135deg, #2244bb 10%, #5544cc 50%, #3366dd 90%);
+      -webkit-background-clip: text; background-clip: text;
+    }
+    html.light .nav-inner a {
+      color: rgba(14,18,37,0.55);
+    }
+    html.light .nav-inner a:hover {
+      color: #0e1225;
+      background: rgba(15,25,60,0.05);
+    }
+    html.light .nav-inner a.back {
+      color: #3366dd;
+    }
+    html.light .api-name { color: #3366dd; }
+    html.light .api-type { background: rgba(15,25,60,0.05); }
+    html.light pre { background: rgba(15,25,60,0.05); color: #2a3050; }
+    html.light :not(pre) > code { background: rgba(15,25,60,0.06); color: #3366dd; }
+    html.light .theme-toggle { border-color: rgba(15,25,60,0.12); color: rgba(14,18,37,0.55); }
+    html.light .theme-toggle:hover { border-color: rgba(60,100,220,0.3); color: #3366dd; }
+    html.light footer { border-color: rgba(15,25,60,0.08); }
+    html.light footer a { color: #3366dd; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ━━━ Sticky nav ━━━ */
+    .site-nav {
+      position: sticky; top: 0; z-index: 200;
+      background: var(--nav-bg);
+      backdrop-filter: blur(16px) saturate(1.4);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: var(--max-w); margin: 0 auto;
+      display: flex; align-items: center;
+      padding: 0 1.5rem; height: 44px; gap: 4px;
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .nav-inner::-webkit-scrollbar { display: none; }
+    .nav-inner a {
+      color: var(--text-dim); text-decoration: none;
+      font-size: 0.78rem; font-weight: 500; white-space: nowrap;
+      padding: 5px 10px; border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .nav-inner a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    .nav-inner a.back {
+      color: var(--accent); font-weight: 600;
+      margin-right: auto;
+    }
+
+    /* ━━━ Theme toggle ━━━ */
+    .theme-toggle {
+      margin-left: auto;
+      background: none; border: 1px solid var(--border);
+      color: var(--text-dim); cursor: pointer;
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; transition: all 0.2s; flex-shrink: 0;
+    }
+    .theme-toggle:hover { border-color: var(--border-accent); color: var(--text); }
+
+    /* ━━━ Layout ━━━ */
+    main { max-width: var(--max-w); margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+    .page-title {
+      font-size: 2.2rem; font-weight: 900; letter-spacing: -1px;
+      margin-bottom: 0.3rem;
+      background: linear-gradient(135deg, #f0c040 10%, #ff8a50 50%, #f06040 90%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-sub { color: var(--text-dim); font-size: 0.92rem; margin-bottom: 2.5rem; }
+
+    section { margin-bottom: 3.5rem; }
+    section h2 {
+      font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px;
+      margin-bottom: 0.3rem;
+      padding-top: 1rem;
+    }
+    section > .desc {
+      color: var(--text-dim); font-size: 0.88rem; margin-bottom: 1.5rem;
+    }
+    h3 {
+      font-size: 1rem; font-weight: 700; margin: 1.8rem 0 0.5rem;
+      color: var(--text-mid);
+    }
+
+    /* ━━━ API Entry ━━━ */
+    .api-entry {
+      margin-bottom: 2.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+    .api-entry-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    }
+    .api-name {
+      font-family: var(--mono); font-size: 0.95rem; font-weight: 700;
+      color: var(--accent);
+    }
+    .api-type {
+      font-size: 0.72rem; color: var(--text-dim);
+      font-family: var(--mono);
+      background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px;
+    }
+    .api-default {
+      font-size: 0.72rem; color: var(--text-mid);
+      font-family: var(--mono);
+    }
+    .api-desc {
+      padding: 12px 20px;
+      font-size: 0.84rem; color: var(--text-mid);
+      line-height: 1.6;
+    }
+    /* ━━━ Code ━━━ */
+    pre {
+      background: var(--code-bg); border-radius: var(--radius-sm);
+      padding: 14px 18px; overflow-x: auto;
+      font-size: 0.78rem; line-height: 1.7; color: #b8c0e0;
+      margin: 0.8rem 0;
+    }
+    code { font-family: var(--mono); font-size: 0.84em; }
+    :not(pre) > code {
+      background: rgba(0,0,0,0.4); padding: 2px 7px; border-radius: 5px;
+      color: var(--accent);
+    }
+
+    /* ━━━ Tables ━━━ */
+    .table-wrap { overflow-x: auto; margin: 1rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    th {
+      color: var(--text-dim); font-weight: 600;
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    td code { font-size: 0.8em; }
+
+    /* ━━━ Footer ━━━ */
+    footer {
+      text-align: center; padding: 3rem 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim); font-size: 0.8rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+
+    /* ━━━ Responsive ━━━ */
+    @media (max-width: 640px) {
+      .page-title { font-size: 1.6rem; }
+      .api-entry-header { flex-direction: column; gap: 4px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a class="back" href="index.html">&larr; Zumly</a>
+      <a href="#constructor">Constructor</a>
+      <a href="#transitions">Transitions</a>
+      <a href="#navigation">Navigation</a>
+      <a href="#methods">Methods</a>
+      <a href="#events">Events</a>
+      <a href="#views">View Sources</a>
+      <a href="#triggers">Triggers</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+    <h1 class="page-title">API Reference</h1>
+    <p class="page-sub">Complete reference for every option, method, and event.</p>
+
+    <!-- ═══════════════ CONSTRUCTOR ═══════════════ -->
+    <section id="constructor">
+      <h2>Constructor Options</h2>
+      <p class="desc">Required and optional parameters passed to <code>new Zumly({...})</code>.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>Type</th><th>Required</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>mount</code></td><td>string</td><td>Yes</td><td></td><td>CSS selector for the canvas element (must have <code>zumly-canvas</code> class)</td></tr>
+            <tr><td><code>initialView</code></td><td>string</td><td>Yes</td><td></td><td>Name of the first view to display</td></tr>
+            <tr><td><code>views</code></td><td>object</td><td>Yes</td><td></td><td>Map of view names to view sources</td></tr>
+            <tr><td><code>preload</code></td><td>string[]</td><td></td><td><code>[]</code></td><td>Views to resolve and cache eagerly during init()</td></tr>
+            <tr><td><code>deferred</code></td><td>boolean</td><td></td><td><code>false</code></td><td>Defer content rendering until after animation completes</td></tr>
+            <tr><td><code>debug</code></td><td>boolean</td><td></td><td><code>false</code></td><td>Enable debug logging to console</td></tr>
+            <tr><td><code>componentContext</code></td><td>Map | object</td><td></td><td><code>new Map()</code></td><td>Shared context passed to function/object view sources</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="api-entry" id="opt-deferred">
+        <div class="api-entry-header">
+          <span class="api-name">deferred</span>
+          <span class="api-type">boolean</span>
+          <span class="api-default">default: false</span>
+        </div>
+        <div class="api-desc">When enabled, view content is inserted <em>after</em> the zoom animation completes instead of before. Useful for heavy views that might cause jank during animation. Per-trigger override via <code>data-deferred</code> attribute.</div>
+      </div>
+
+      <div class="api-entry" id="opt-preload">
+        <div class="api-entry-header">
+          <span class="api-name">preload</span>
+          <span class="api-type">string[]</span>
+          <span class="api-default">default: []</span>
+        </div>
+        <div class="api-desc">Resolves and caches listed views during <code>init()</code>. Improves perceived performance for views with async sources or URL fetches. Compare with and without preload to see the loading difference.</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ TRANSITIONS ═══════════════ -->
+    <section id="transitions">
+      <h2>Transitions</h2>
+      <p class="desc">Configure how zoom animations look and feel. All nested under <code>transitions: {...}</code>.</p>
+
+      <div class="api-entry" id="opt-driver">
+        <div class="api-entry-header">
+          <span class="api-name">driver</span>
+          <span class="api-type">string | function</span>
+          <span class="api-default">default: 'css'</span>
+        </div>
+        <div class="api-desc">The animation engine used for zoom transitions. Built-in: <code>'css'</code>, <code>'waapi'</code>, <code>'none'</code>. External (require library): <code>'anime'</code>, <code>'gsap'</code>, <code>'motion'</code>. Or pass a custom <code>(spec, onComplete) => void</code> function.</div>
+      </div>
+
+      <div class="api-entry" id="opt-duration">
+        <div class="api-entry-header">
+          <span class="api-name">duration</span>
+          <span class="api-type">string</span>
+          <span class="api-default">default: '1s'</span>
+        </div>
+        <div class="api-desc">CSS duration string for animations (<code>'500ms'</code>, <code>'1.5s'</code>). Per-trigger override via <code>data-with-duration</code>.</div>
+      </div>
+
+      <div class="api-entry" id="opt-ease">
+        <div class="api-entry-header">
+          <span class="api-name">ease</span>
+          <span class="api-type">string</span>
+          <span class="api-default">default: 'ease-in-out'</span>
+        </div>
+        <div class="api-desc">CSS easing function. Any valid CSS value: <code>'ease'</code>, <code>'linear'</code>, <code>'cubic-bezier(...)'</code>. Per-trigger override via <code>data-with-ease</code>.</div>
+      </div>
+
+      <div class="api-entry" id="opt-cover">
+        <div class="api-entry-header">
+          <span class="api-name">cover</span>
+          <span class="api-type">'width' | 'height'</span>
+          <span class="api-default">default: 'width'</span>
+        </div>
+        <div class="api-desc">Which dimension of the trigger element determines the zoom scale. <code>'width'</code> scales based on trigger width, <code>'height'</code> scales based on trigger height. Most visible with non-square triggers.</div>
+      </div>
+
+      <div class="api-entry" id="opt-effects">
+        <div class="api-entry-header">
+          <span class="api-name">effects</span>
+          <span class="api-type">[string, string]</span>
+          <span class="api-default">default: ['none', 'none']</span>
+        </div>
+        <div class="api-desc">CSS filter strings applied to background views during zoom. First value for the previous view, second for the last (deepest background) view. Example: <code>['blur(3px) brightness(0.7)', 'blur(8px) saturate(0)']</code>.</div>
+      </div>
+
+      <div class="api-entry" id="opt-stagger">
+        <div class="api-entry-header">
+          <span class="api-name">stagger</span>
+          <span class="api-type">number</span>
+          <span class="api-default">default: 0</span>
+        </div>
+        <div class="api-desc">Progressive delay (ms) between view layers during transitions. Current view starts immediately, previous after 1&times;stagger, last after 2&times;stagger. Creates a cascading animation effect.</div>
+      </div>
+
+      <div class="api-entry" id="opt-hidetrigger">
+        <div class="api-entry-header">
+          <span class="api-name">hideTrigger</span>
+          <span class="api-type">boolean | 'fade'</span>
+          <span class="api-default">default: false</span>
+        </div>
+        <div class="api-desc">How to hide the clicked trigger element during zoom-in. <code>false</code> = visible, <code>true</code> = <code>visibility:hidden</code>, <code>'fade'</code> = smooth opacity crossfade.</div>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════ NAVIGATION ═══════════════ -->
+    <section id="navigation">
+      <h2>Navigation Options</h2>
+      <p class="desc">Control lateral, depth, and input navigation behavior.</p>
+
+      <h3>lateralNav</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>arrows</code></td><td>boolean</td><td><code>true</code></td><td>Show prev/next arrow buttons</td></tr>
+            <tr><td><code>dots</code></td><td>boolean</td><td><code>true</code></td><td>Show dot indicators for siblings</td></tr>
+            <tr><td><code>keepAlive</code></td><td>boolean | 'visible'</td><td><code>false</code></td><td>Keep views in DOM: false = remove, true = hidden, 'visible' = visible</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="api-entry" id="opt-lateral">
+        <div class="api-entry-header">
+          <span class="api-name">lateralNav</span>
+          <span class="api-type">boolean | object</span>
+          <span class="api-default">default: true</span>
+        </div>
+        <div class="api-desc">Enable same-level navigation between sibling views using <code>goTo(name, { mode: 'lateral' })</code>. Parent view shifts spatially to track which child is active.</div>
+      </div>
+
+      <div class="api-entry" id="opt-keepalive">
+        <div class="api-entry-header">
+          <span class="api-name">keepAlive</span>
+          <span class="api-type">boolean | 'visible'</span>
+          <span class="api-default">default: false</span>
+        </div>
+        <div class="api-desc">Controls whether lateral views are preserved in the DOM after navigating away. <code>true</code> keeps them hidden (display:none), <code>'visible'</code> keeps them visible in the background. Use the counter to see state preservation.</div>
+      </div>
+
+      <h3>depthNav</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>button</code></td><td>boolean</td><td><code>true</code></td><td>Show zoom-out back button</td></tr>
+            <tr><td><code>indicator</code></td><td>boolean</td><td><code>true</code></td><td>Show depth level dots</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="api-entry" id="opt-depthnav">
+        <div class="api-entry-header">
+          <span class="api-name">depthNav</span>
+          <span class="api-type">boolean | object</span>
+          <span class="api-default">default: true</span>
+        </div>
+        <div class="api-desc">Controls the depth navigation UI: a back button and depth indicator dots. Pass <code>false</code> to disable all depth UI, or an object to selectively toggle.</div>
+      </div>
+
+      <h3>inputs</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>click</code></td><td>boolean</td><td><code>true</code></td><td>Enable click/tap zoom-in on .zoom-me elements</td></tr>
+            <tr><td><code>keyboard</code></td><td>boolean</td><td><code>true</code></td><td>Arrow keys for lateral, up for zoom-out</td></tr>
+            <tr><td><code>wheel</code></td><td>boolean</td><td><code>true</code></td><td>Mouse wheel zoom-out</td></tr>
+            <tr><td><code>touch</code></td><td>boolean</td><td><code>true</code></td><td>Touch zoom-in and swipe lateral</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="api-entry" id="opt-inputs">
+        <div class="api-entry-header">
+          <span class="api-name">inputs</span>
+          <span class="api-type">boolean | object</span>
+          <span class="api-default">default: true</span>
+        </div>
+        <div class="api-desc">Selectively enable or disable input methods. Pass <code>false</code> to disable all, or an object to toggle individual inputs. Useful for kiosk mode or custom input handling.</div>
+      </div>
+    </section>
+
+    <!-- ═══════════════ METHODS ═══════════════ -->
+    <section id="methods">
+      <h2>Methods</h2>
+      <p class="desc">Instance methods for programmatic control.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Returns</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>init()</code></td><td>Promise</td><td>Initialize and render the initial view</td></tr>
+            <tr><td><code>zoomTo(name, opts?)</code></td><td>Promise</td><td>Programmatic zoom into a named view</td></tr>
+            <tr><td><code>goTo(name, opts?)</code></td><td>Promise</td><td>Navigate: <code>{ mode: 'depth' | 'lateral' }</code></td></tr>
+            <tr><td><code>back()</code></td><td>Promise | void</td><td>Pop lateral history first, then zoom out</td></tr>
+            <tr><td><code>zoomIn(el)</code></td><td>Promise</td><td>Zoom into the view indicated by a trigger element</td></tr>
+            <tr><td><code>zoomOut()</code></td><td>void</td><td>Zoom out one level. No-op at root</td></tr>
+            <tr><td><code>zoomLevel()</code></td><td>number</td><td>Current zoom depth (0 = root)</td></tr>
+            <tr><td><code>getCurrentViewName()</code></td><td>string | null</td><td>Name of the currently active view</td></tr>
+            <tr><td><code>on(event, fn)</code></td><td>this</td><td>Subscribe to lifecycle event (chainable)</td></tr>
+            <tr><td><code>off(event, fn?)</code></td><td>this</td><td>Unsubscribe. Omit fn to remove all for that event</td></tr>
+            <tr><td><code>destroy()</code></td><td>void</td><td>Clean up all listeners and state</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="api-entry" id="opt-programmatic">
+        <div class="api-entry-header">
+          <span class="api-name">zoomTo() / goTo() / back()</span>
+          <span class="api-type">Promise</span>
+        </div>
+        <div class="api-desc">Navigate programmatically without user clicks. <code>zoomTo()</code> for depth navigation, <code>goTo()</code> with <code>{ mode: 'lateral' }</code> for same-level, <code>back()</code> to go back.</div>
+      </div>
+
+<pre><code>// Programmatic navigation
+const app = new Zumly({ mount: '#canvas', initialView: 'home', views });
+await app.init();
+
+await app.zoomTo('detail');         // zoom in
+await app.zoomTo('deep');           // zoom deeper
+app.back();                         // zoom out
+
+await app.goTo('page2', { mode: 'lateral' });  // slide to sibling
+app.back();                         // back to previous sibling
+
+console.log(app.zoomLevel());           // 2
+console.log(app.getCurrentViewName());  // 'detail'
+</code></pre>
+    </section>
+
+    <!-- ═══════════════ EVENTS ═══════════════ -->
+    <section id="events">
+      <h2>Lifecycle Events</h2>
+      <p class="desc">Hook into the zoom lifecycle with <code>.on()</code> and <code>.off()</code>.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Event</th><th>Payload</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>viewMounted</code></td><td><code>{ viewName, node }</code></td><td>View inserted into DOM and mounted() hook (if any) complete</td></tr>
+            <tr><td><code>beforeZoomIn</code></td><td><code>{ viewName }</code></td><td>Just before zoom-in animation starts</td></tr>
+            <tr><td><code>afterZoomIn</code></td><td><code>{ viewName, zoomLevel }</code></td><td>After zoom-in animation completes</td></tr>
+            <tr><td><code>beforeZoomOut</code></td><td><code>{ zoomLevel }</code></td><td>Just before zoom-out animation starts</td></tr>
+            <tr><td><code>afterZoomOut</code></td><td><code>{ zoomLevel }</code></td><td>After zoom-out animation completes</td></tr>
+            <tr><td><code>beforeLateral</code></td><td><code>{ viewName, from, isBack }</code></td><td>Before lateral navigation animation</td></tr>
+            <tr><td><code>afterLateral</code></td><td><code>{ viewName, from, isBack }</code></td><td>After lateral navigation animation</td></tr>
+            <tr><td><code>destroy</code></td><td><code>{}</code></td><td>When destroy() is called</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="api-entry" id="opt-events">
+        <div class="api-entry-header">
+          <span class="api-name">Lifecycle Events</span>
+          <span class="api-type">.on() / .off()</span>
+        </div>
+        <div class="api-desc">Interact with the demo and watch events fire in real time in the log panel.</div>
+      </div>
+
+<pre><code>app.on('viewMounted',  ({ viewName, node }) => { /* ... */ });
+app.on('beforeZoomIn', ({ viewName }) => { /* ... */ });
+app.on('afterZoomIn',  ({ viewName, zoomLevel }) => { /* ... */ });
+app.on('beforeZoomOut', ({ zoomLevel }) => { /* ... */ });
+app.on('afterZoomOut',  ({ zoomLevel }) => { /* ... */ });
+app.on('beforeLateral', ({ viewName, from, isBack }) => { /* ... */ });
+app.on('afterLateral',  ({ viewName, from, isBack }) => { /* ... */ });
+app.on('destroy',       () => { /* ... */ });
+</code></pre>
+    </section>
+
+    <!-- ═══════════════ VIEW SOURCES ═══════════════ -->
+    <section id="views">
+      <h2>View Sources</h2>
+      <p class="desc">Views can be defined in many ways. The resolver detects the type automatically.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Type</th><th>Example</th><th>Cached</th></tr></thead>
+          <tbody>
+            <tr><td>HTML string</td><td><code>'&lt;div class="z-view"&gt;...&lt;/div&gt;'</code></td><td>Indefinitely</td></tr>
+            <tr><td>URL</td><td><code>'/views/detail.html'</code></td><td>5 min TTL</td></tr>
+            <tr><td>Function</td><td><code>(ctx) =&gt; '&lt;div&gt;..&lt;/div&gt;'</code></td><td>No</td></tr>
+            <tr><td>Async function</td><td><code>async () =&gt; await fetch(...)</code></td><td>No</td></tr>
+            <tr><td>Object</td><td><code>{ render(ctx) { return '...' } }</code></td><td>No</td></tr>
+            <tr><td>HTMLElement</td><td><code>document.createElement('div')</code></td><td>Cloned</td></tr>
+            <tr><td>Web component</td><td><code>'my-component'</code></td><td>No</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="api-entry" id="opt-views">
+        <div class="api-entry-header">
+          <span class="api-name">View Sources</span>
+          <span class="api-type">Multiple formats</span>
+        </div>
+        <div class="api-desc">Each card zooms into a view created from a different source type. Compare HTML strings, functions, objects with render(), and async sources.</div>
+      </div>
+
+<pre><code>// HTML string
+const myView = '&lt;div class="z-view"&gt;Hello&lt;/div&gt;';
+
+// Function (called fresh each time)
+function myView({ target, props }) {
+  return `&lt;div class="z-view"&gt;${Date.now()}&lt;/div&gt;`;
+}
+
+// Async function
+async function myView() {
+  const html = await fetch('/partial.html').then(r => r.text());
+  return html;
+}
+
+// Object with render() and optional mounted()
+const myView = {
+  render(ctx) { return '&lt;div class="z-view"&gt;...&lt;/div&gt;'; },
+  mounted() { console.log('inserted!'); }
+};
+
+// URL (fetched and cached for 5 minutes)
+const myView = '/views/detail.html';
+</code></pre>
+    </section>
+
+    <!-- ═══════════════ TRIGGERS ═══════════════ -->
+    <section id="triggers">
+      <h2>Per-Trigger Attributes</h2>
+      <p class="desc">Override global settings on individual trigger elements using data attributes.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Attribute</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>data-to</code></td><td><strong>Required.</strong> Target view name to zoom into</td></tr>
+            <tr><td><code>data-with-duration</code></td><td>Override transition duration (e.g. <code>"2s"</code>)</td></tr>
+            <tr><td><code>data-with-ease</code></td><td>Override easing function</td></tr>
+            <tr><td><code>data-with-effects</code></td><td>Override effects (pipe-separated: <code>"blur(5px)|blur(10px)"</code>)</td></tr>
+            <tr><td><code>data-deferred</code></td><td>Override global deferred setting for this trigger</td></tr>
+            <tr><td><code>data-*</code></td><td>Any data attribute becomes a prop in <code>ViewContext.props</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+<pre><code>&lt;div class="zoom-me"
+     data-to="detail"
+     data-with-duration="2s"
+     data-with-ease="cubic-bezier(.4,0,.2,1)"
+     data-with-effects="blur(5px)|blur(10px)"
+     data-deferred
+     data-id="42"
+     data-category="settings"&gt;
+  Zoom in
+&lt;/div&gt;
+
+// In the target view function:
+function detail({ props }) {
+  console.log(props.id);       // "42"
+  console.log(props.category); // "settings"
+}
+</code></pre>
+
+      <h3>Required Classes</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Class</th><th>Element</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>zumly-canvas</code></td><td>Container</td><td>Required on the mount element</td></tr>
+            <tr><td><code>z-view</code></td><td>View root</td><td>Required on view root elements (auto-added if missing)</td></tr>
+            <tr><td><code>zoom-me</code></td><td>Trigger</td><td>Required on clickable zoom-in elements</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a>
+    &middot; <a href="https://github.com/zumerlab/zumly">GitHub</a>
+    &middot; <a href="https://www.npmjs.com/package/zumly">npm</a>
+    &middot; MIT License
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+</body>
+</html>

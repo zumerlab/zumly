@@ -1,0 +1,142 @@
+<div class="z-view v v-pg">
+  <h2 class="pg-title">Playground</h2>
+  <div class="pg-editor">
+    <div class="pg-sidebar">
+      <div class="pg-group">
+        <div class="pg-group-title">Animation</div>
+        <div class="pg-field">
+          <span class="pg-label">Driver</span>
+          <div class="pg-pills" id="pg-driver">
+            <label class="pg-pill"><input type="radio" name="pg-drv" value="css" checked><span>CSS</span></label>
+            <label class="pg-pill"><input type="radio" name="pg-drv" value="waapi"><span>WAAPI</span></label>
+            <label class="pg-pill"><input type="radio" name="pg-drv" value="none"><span>None</span></label>
+          </div>
+        </div>
+        <div class="pg-field">
+          <span class="pg-label">Cover</span>
+          <div class="pg-pills">
+            <label class="pg-pill"><input type="radio" name="pg-cov" value="width" checked><span>Width</span></label>
+            <label class="pg-pill"><input type="radio" name="pg-cov" value="height"><span>Height</span></label>
+          </div>
+        </div>
+        <div class="pg-field">
+          <span class="pg-label">Duration</span>
+          <div class="pg-range-wrap">
+            <input type="range" id="pg-dur" min="100" max="2000" value="700" step="50">
+            <span class="pg-val" id="pg-dur-val">700ms</span>
+          </div>
+        </div>
+        <div class="pg-field">
+          <span class="pg-label">Ease</span>
+          <select id="pg-ease">
+            <option value="ease-in-out" selected>ease-in-out</option>
+            <option value="ease">ease</option>
+            <option value="linear">linear</option>
+            <option value="cubic-bezier(.4,0,.2,1)">material</option>
+            <option value="cubic-bezier(.68,-.55,.27,1.55)">bounce</option>
+          </select>
+        </div>
+        <div class="pg-field">
+          <span class="pg-label">Stagger</span>
+          <div class="pg-range-wrap">
+            <input type="range" id="pg-stag" min="0" max="300" value="0" step="10">
+            <span class="pg-val" id="pg-stag-val">0ms</span>
+          </div>
+        </div>
+      </div>
+      <div class="pg-group">
+        <div class="pg-group-title">Effects</div>
+        <div class="pg-field">
+          <label class="pg-check"><input type="checkbox" id="pg-fx"><span>Enable</span></label>
+        </div>
+        <div id="pg-fx-controls" style="display:none">
+          <div class="pg-field">
+            <span class="pg-label">Blur</span>
+            <div class="pg-range-wrap">
+              <input type="range" id="pg-blur" min="0" max="15" value="5">
+              <span class="pg-val" id="pg-blur-val">5px</span>
+            </div>
+          </div>
+          <div class="pg-field">
+            <span class="pg-label">Brightness</span>
+            <div class="pg-range-wrap">
+              <input type="range" id="pg-bright" min="20" max="100" value="60">
+              <span class="pg-val" id="pg-bright-val">60%</span>
+            </div>
+          </div>
+          <div class="pg-field">
+            <span class="pg-label">Grayscale</span>
+            <div class="pg-range-wrap">
+              <input type="range" id="pg-gray" min="0" max="100" value="0">
+              <span class="pg-val" id="pg-gray-val">0%</span>
+            </div>
+          </div>
+          <div class="pg-field">
+            <span class="pg-label">Sepia</span>
+            <div class="pg-range-wrap">
+              <input type="range" id="pg-sepia" min="0" max="100" value="0">
+              <span class="pg-val" id="pg-sepia-val">0%</span>
+            </div>
+          </div>
+          <div class="pg-field">
+            <span class="pg-label">Contrast</span>
+            <div class="pg-range-wrap">
+              <input type="range" id="pg-contrast" min="50" max="200" value="100">
+              <span class="pg-val" id="pg-contrast-val">100%</span>
+            </div>
+          </div>
+          <div class="pg-field">
+            <span class="pg-label">Saturate</span>
+            <div class="pg-range-wrap">
+              <input type="range" id="pg-saturate" min="0" max="200" value="100">
+              <span class="pg-val" id="pg-saturate-val">100%</span>
+            </div>
+          </div>
+        </div>
+        <div class="pg-field">
+          <span class="pg-label">Trigger</span>
+          <select id="pg-ht">
+            <option value="">off</option>
+            <option value="true">hide</option>
+            <option value="fade" selected>fade</option>
+          </select>
+        </div>
+      </div>
+      <div class="pg-group">
+        <div class="pg-group-title">Navigation</div>
+        <div class="pg-field pg-field-row">
+          <span class="pg-label">Lateral</span>
+          <label class="pg-check-sm"><input type="checkbox" id="pg-lat-arrows" checked><span>arrows</span></label>
+          <label class="pg-check-sm"><input type="checkbox" id="pg-lat-dots" checked><span>dots</span></label>
+        </div>
+        <div class="pg-field">
+          <span class="pg-label">keepAlive</span>
+          <select id="pg-keepalive">
+            <option value="false" selected>false</option>
+            <option value="true">hidden</option>
+            <option value="visible">visible</option>
+          </select>
+        </div>
+        <div class="pg-field pg-field-row">
+          <span class="pg-label">Depth</span>
+          <label class="pg-check-sm"><input type="checkbox" id="pg-depth-btn" checked><span>back</span></label>
+          <label class="pg-check-sm"><input type="checkbox" id="pg-depth-ind" checked><span>dots</span></label>
+        </div>
+      </div>
+      <div class="pg-group">
+        <div class="pg-group-title">Options</div>
+        <div class="pg-field pg-field-row">
+          <span class="pg-label">Inputs</span>
+          <label class="pg-check-sm"><input type="checkbox" id="pg-inp-click" checked><span>click</span></label>
+          <label class="pg-check-sm"><input type="checkbox" id="pg-inp-kb" checked><span>kb</span></label>
+          <label class="pg-check-sm"><input type="checkbox" id="pg-inp-wheel" checked><span>wheel</span></label>
+          <label class="pg-check-sm"><input type="checkbox" id="pg-inp-touch" checked><span>touch</span></label>
+        </div>
+        <div class="pg-field">
+          <label class="pg-check"><input type="checkbox" id="pg-deferred"><span>Deferred rendering</span></label>
+        </div>
+      </div>
+    </div>
+    <div class="pg-canvas-wrap"><div class="zumly-canvas" id="pg-mount"></div></div>
+  </div>
+</div>
