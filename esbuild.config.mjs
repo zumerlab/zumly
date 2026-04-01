@@ -47,7 +47,7 @@ async function buildLegacy () {
 async function buildESM () {
   await build({
     ...common,
-    entryPoints: ['src/entry.js'],
+    entryPoints: ['src/entry-esm.js'],
     outfile: 'dist/zumly.mjs',
     format: 'esm',
     minify: true,
