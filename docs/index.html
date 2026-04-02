@@ -13,11 +13,11 @@
     content="Turn any website into a zoom interface with just HTML. Independent views, infinite zoom levels, and spatial navigation built in." />
   <meta property="og:url" content="https://zumerlab.github.io/zumly/" />
   <meta name="twitter:card" content="summary_large_image" />
-  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="shortcut icon" href="/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-<link rel="manifest" href="/site.webmanifest" />
+  <link rel="icon" type="image/png" href="zumly/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="zumly/favicon.svg" />
+<link rel="shortcut icon" href="zumly/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="zumly/apple-touch-icon.png" />
+<link rel="manifest" href="zumly/site.webmanifest" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -248,10 +248,10 @@
       border-color: var(--border-accent); transform: translateY(-3px);
       box-shadow: 0 16px 50px rgba(0,0,0,0.4);
     }
-    .sc-preview { position: relative; height: 160px; overflow: hidden; }
+    .sc-preview { position: relative; height: 160px; overflow: hidden; pointer-events: none; }
     .sc-preview iframe {
       width: 200%; height: 200%; border: none;
-      transform: scale(0.5); transform-origin: 0 0; pointer-events: none;
+      transform: scale(0.5); transform-origin: 0 0;
     }
     .sc-preview::after {
       content: ''; position: absolute; inset: 0;
@@ -448,6 +448,10 @@
 
     /* ━━━ Responsive ━━━ */
     @media (max-width: 640px) {
+      .home-logo { width: 100px; }
+      .home-gh-badge { font-size: 0.75rem; padding: 5px 12px; gap: 6px; }
+      .home-gh-stars { font-size: 0.7rem; padding: 2px 7px; }
+      .home-tagline { font-size: 0.8rem; letter-spacing: 2px; }
       .targets { gap: 10px; }
       .zt { width: 100px; padding: 14px 8px; }
       .sc-grid { grid-template-columns: 1fr; }
@@ -576,12 +580,12 @@
     var tb = document.getElementById('theme-btn')
     if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;'
 
-    // GitHub stars
-    fetch('https://api.github.com/repos/zumerlab/zumly')
+    // GitHub stars (shields.io JSON to avoid GitHub API rate limits)
+    fetch('https://img.shields.io/github/stars/zumerlab/zumly.json')
       .then(function (r) { return r.json() })
       .then(function (d) {
         var el = document.getElementById('gh-star-count')
-        if (el && d.stargazers_count) el.textContent = d.stargazers_count
+        if (el && d.value) el.textContent = d.value
       })
       .catch(function () {})
 
