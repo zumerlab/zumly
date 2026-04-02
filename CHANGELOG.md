@@ -2,12 +2,26 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v0.92.2](https://github.com/zumerlab/zumly/compare/v0.92.1...v0.92.2)
+
+> 2 April 2026
+
+- Refactor navigation UI to separate depth and lateral components [`a5c9ff5`](https://github.com/zumerlab/zumly/commit/a5c9ff587fdb3623f559e686bc3bd1e08becb338)
+- Remove redundant navigation removal calls in zoom methods [`ddfc9fb`](https://github.com/zumerlab/zumly/commit/ddfc9fb22015f636163d2bf3bf3dbe76c7dd7be8)
+
+
 #### [v0.92.1](https://github.com/zumerlab/zumly/compare/v0.92.0...v0.92.1)
 
 > 2 April 2026
 
+- update [`3ae4c07`](https://github.com/zumerlab/zumly/commit/3ae4c0770dd657fdf49ac3dc52c6d9ecc11e1aaf)
+- Bumped version [`5e7d7f9`](https://github.com/zumerlab/zumly/commit/5e7d7f9bf84fccb3f7ebcd1488ba93c6419c93ab)
+- update [`c4cf42e`](https://github.com/zumerlab/zumly/commit/c4cf42e8e0946bb6af0376519b50229ead478c03)
+- ad favico [`bccad7f`](https://github.com/zumerlab/zumly/commit/bccad7f8a6327ff56cab9399f9e9781270a6acae)
+- update [`faa7d49`](https://github.com/zumerlab/zumly/commit/faa7d49b54ddd395b7ce86dd86d2bd5a8acd5563)
 - refactor: improve zoom handling logic in Zumly class [`977910b`](https://github.com/zumerlab/zumly/commit/977910b780528f56137b4dcd7c35e09d4ff3bdfe)
-
+- update [`1aabbb8`](https://github.com/zumerlab/zumly/commit/1aabbb89474c5f3b7b227d09ccf979f54dd75273)
+- update [`f38bd3b`](https://github.com/zumerlab/zumly/commit/f38bd3bcac5481fbd6f18326143132c2b71e5255)
 
 #### [v0.92.0](https://github.com/zumerlab/zumly/compare/v0.18.1...v0.92.0)
 
