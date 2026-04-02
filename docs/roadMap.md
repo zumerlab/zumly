@@ -2,21 +2,23 @@
 
 Working document to prioritize and design improvements. Not a closed task list but a map of topics to analyze.
 
-**Related:** [README](../README.md) · **[Writing a transition driver](DRIVER_API.md)** (`runTransition`, helpers, lateral spec)
+**Product framing:** [README](../README.md) — *Z over XY* · focus-driven navigation · zoom into what matters.
+
+**Related:** [README](../README.md) · **[Writing a transition driver](DRIVER_API.md)** (`runTransition`, helpers, lateral spec) · [Geometry optimization](geometry-optimization.md) (reflow reduction in zoom-out planning)
 
 ---
 
 ## 1. Architecture
 
 ### Current state
-- **Single module**: `Zumly` does everything: state (storedViews, scales), geometry (transforms), events (click, touch, wheel, key), and orchestrates render + animation.
-- **renderView** in `utils.js`: mixes view type detection (string / object / function), DOM creation, and class assignment; it's async but "wait for render/mounted" is still a TODO.
-- **Snapshot** (snapShoot): built inside `zoomIn` with data for the 3–4 views; the structure is good but coupled to the zoom flow.
+- **Single module**: `Zumly` orchestrates state (`storedViews`, scales), geometry (transforms), inputs, navigation UI, plugins, and hands transitions to **drivers** (`src/drivers/`).
+- **`renderView`** in `utils.js` is **deprecated**; the live path is **ViewPrefetcher** + **ViewResolver** + **`prepareAndInsertView()`** (see §3).
+- **Snapshot** (snapShoot): built inside `zoomIn` with data for the 3–4 views; structure is coupled to the zoom flow.
 
 ### Decisions to make
 - **Separation of concerns**: ZUI state engine vs transition orchestrator vs render layer? That would allow swapping animation (CSS vs JS vs SnapDOM) without touching the view model.
 - **Source of truth**: Is state just `storedViews` + `storedPreviousScale`, or should we have an explicit state (e.g. stack of viewIds + transforms) that is then "projected" to DOM/animation?
-- **Events**: Everything currently goes to instance methods. Internal event bus, hooks (onBeforeZoomIn, onAfterZoomOut), or both?
+- **Events**: Public **`on` / `off`** hooks exist for lifecycle events; internal flow still calls instance methods. Whether to add an internal bus remains open.
 - **Multiple instances**: Already supported via mount selector; ensure there is no global state (e.g. unique IDs per instance if needed).
 
 ---
@@ -26,7 +28,7 @@ Working document to prioritize and design improvements. Not a closed task list b
 ### Current state
 - **Navigation**: in/out (zoom, back) + ~~lateral~~ done. `goTo(viewName, { mode: 'depth'|'lateral' })`, `zoomTo()`, `back()`, `getCurrentViewName()`, `getZoomLevel()`. Lateral uses `lateralHistory`; back() pops laterally first, then zoomOut.
 - **View**: unit shown at one zoom level; identified by name (`viewName`) and stored in snapshot with `backwardState` / `forwardState`.
-- **Trigger**: `.zoom-me` + `data-to="viewName"`. Optional `data-with-duration`, `data-with-ease` (current typo in code: `data-with-eease`).
+- **Trigger**: `.zoom-me` + `data-to="viewName"`. Optional `data-with-duration`, `data-with-ease`, etc. (camelCased on `dataset` as `withDuration`, `withEase`, …).
 
 ### Topics to consolidate
 - **Formal definition of "view"**: minimum contract (name, how content is resolved, optional metadata for preload/animation).
@@ -58,35 +60,31 @@ Working document to prioritize and design improvements. Not a closed task list b
 
 ## 4. Animation
 
-### Current state
-- **CSS only**: keyframes `zoom-current-view`, `zoom-previous-view`, `zoom-last-view` (and `-reverse`); variables `--zoom-duration`, `--zoom-ease`, `--*-transform-start`, `--*-transform-end`.
-- **Flow**: in `zoomIn` start/end transforms are computed, variables are set, classes are added to trigger animation; on `animationend` final states are applied and classes cleared.
+### Current state (implemented)
+- **Drivers**: Pluggable **`transitions.driver`**: built-in **`css`**, **`waapi`**, **`none`**, plus **`anime`**, **`gsap`**, **`motion`** (globals) or a **custom function** `(spec, onComplete) => void`. Default remains CSS keyframes + `animationend`.
+- **CSS driver**: keyframes `zoom-current-view`, `zoom-previous-view`, `zoom-last-view` (and `-reverse`); variables `--zoom-duration`, `--zoom-ease`, `--*-transform-start`, `--*-transform-end`; **effects** applied as filters on background layers.
+- **WAAPI driver**: `element.animate()` for the same states; **lateral** transitions are animated (not only instant).
 - **Real DOM nodes** are animated (several views at once with transforms).
 
 ### Topics to analyze
-- **Performance**: animating many nodes with transform is fine, but for heavy views the SnapDOM idea (capture view → animate image) still holds. Options:
-  - Keep current DOM animation as default.
-  - "Snapshot" plugin or strategy: before animating, capture view to canvas/image, animate that layer, then show real DOM (or not, depending on design).
-- **Animation engine**: Always CSS or allow JS (Web Animations API, libraries)? An abstract "animation driver" (set start/end, duration, ease, return Promise or onEnd callback) would allow trying WAAPI or SnapDOM without rewriting the core.
-- **Easing and duration**: already supported per transition (`data-with-duration`, `data-with-ease`) and global (`transitions`); fix typo `withEease` and document.
-- **Effects (blur, sepia, saturate)**: declared in options but not clearly used in current CSS variable flow; check if they are wired and whether to keep in core or as optional "effect layer".
+- **Performance**: for very heavy DOM trees, a **SnapDOM** (or similar) snapshot layer may still be worth a dedicated strategy (see §8).
+- **Idle / dynamic parallax**: engine currently keeps **`parallax` fixed off**; revisiting animated parallax is a product decision.
 
-### Decoupling from CSS animations (recommended direction)
+### Historical note: decoupling from CSS-only (achieved)
 
-Today Zumly is tightly coupled to CSS animations and their events:
+Previously the core was tightly coupled to CSS animations and their events:
 
 1. **Computation** (in `zoomIn` / `zoomOut`): transforms and snapshot are computed; then the code sets CSS variables (`--zoom-duration`, `--zoom-ease`, `--*-transform-start`, `--*-transform-end`) and adds classes (`zoom-current-view`, `zoom-previous-view`, `zoom-last-view`, and `-reverse` for zoom out).
 2. **Execution**: the browser runs the keyframes defined in `style.css`; no way to swap for WAAPI, GSAP, or instant transitions.
 3. **Lifecycle**: the engine relies on `animationstart` and `animationend` to set `blockEvents = true` at start and, at end, remove the old current view from DOM, apply final transforms, clear classes, set `blockEvents = false`.
 
-This removes freedom to use other animation systems or no animation.
+That old shape made it hard to swap animation engines or disable motion.
 
-**Proposed approach: animation driver**
+**Implemented: animation driver abstraction**
 
-- Introduce a **transition driver** abstraction. The core only: (1) computes the snapshot (current, previous, last views and their from/to transforms, duration, ease), (2) calls `driver.runTransition(spec, onComplete)` instead of setting CSS vars and adding classes, (3) in `onComplete`, performs the same cleanup as today.
-- **Default driver**: current CSS-based implementation (set variables + classes, listen to `animationend`), so behavior stays the same.
-- **Alternative drivers** (pluggable via e.g. `transitions.driver`): **CSS** (default), **WAAPI** (`element.animate()` per view, then `onComplete`), **none** (set final transforms immediately + `onComplete`), or **custom** function `(spec, onComplete) => void`.
-- **Spec shape**: e.g. `{ type: 'zoomIn'|'zoomOut', currentView, previousView, lastView, currentStage, duration, ease }` with `currentStage.views[i].forwardState`/`backwardState` (transform, origin). Driver applies from/to and calls `onComplete()` when done.
+- The core (1) computes the snapshot, (2) calls **`runTransition(spec, onComplete)`** on the selected driver, (3) on `onComplete`, performs DOM cleanup as before.
+- **Default**: CSS driver (variables + classes + `animationend`).
+- **Also built-in**: **WAAPI**, **none**, **anime**, **gsap**, **motion**, or a **custom** function. Spec includes `type: 'zoomIn' | 'zoomOut' | 'lateral'` and lateral-only fields when relevant.
 
 **Implementation steps** (done)
 
@@ -120,16 +118,16 @@ Authoring guide: [DRIVER_API.md](DRIVER_API.md).
 - **zoomOut and reAttachView**: `this.currentStage.views[3]` is used and `canvas.prepend(reAttachView.viewName)`. In the snapshot, `gonev = { viewName: removeView }` stores the **DOM node** in the property named `viewName`, so prepend does reattach the node. The logic is **fragile**: the detached node loses scroll position and event listeners when reattached; it should be redesigned (e.g. keep node reference or re-render view by name).
 - **Typo**: `data-with-ease` vs `dataset.withEease`; unify.
 - **console.log** in `storeViews`; remove or gate with `debug`.
-- **mounted()**: in utils, check that `views[viewName].mounted` is a function before calling it; currently `typeof views[viewName].mounted() === 'function'` is wrong (it checks the return of `mounted()`, not `mounted`).
+- **mounted()**: `prepareAndInsertView` uses `typeof views[viewName].mounted === 'function'` before invoking.
 
 ### DX and project
-- **Scripts**: add `dev` (watch + serve) and `test` (jest) in `package.json`.
-- **README**: update status ("under improvement" instead of "outdated / from scratch" if current code is the base); link to this doc or a ROADMAP.
-- **Tests**: extend for zoomOut (with/without lastView, reAttach); and for renderView (string, object with render, mounted).
+- **Scripts**: `package.json` has `dev`, `compile`, `test` (Vitest + browser), etc.
+- **README**: kept in sync with the public API; links this doc and DRIVER_API / geometry notes.
+- **Tests**: Vitest + Playwright; extend coverage for edge cases (zoomOut reattach, resolver types) as needed.
 
 ### Navigation and product
 - ~~**Programmatic**~~ **Done**: `zoomTo(viewName)`, `back()`, `getCurrentViewName()`, `getZoomLevel()`.
-- **Router**: sync URL with level/view (hash or history) so deep views can be shared; depends on state model.
+- **Router**: **hash router plugin** shipped (`Zumly.Router` / `ZumlyRouter`) — syncs hash, browser back, forward blocked; **deep-linking** (cold load at depth) still planned.
 - ~~**Resize**~~ **Done**: cheap resize correction via translate/origin scaling; scale preserved; deferred when transitioning.
 
 ### Accessibility and SEO
@@ -146,7 +144,7 @@ Authoring guide: [DRIVER_API.md](DRIVER_API.md).
 3. **View contract**: define "view source" adapters (string, async render, URL, etc.) and unify who creates `.z-view`.
 4. **Preload**: API design and policy (what/when) using that contract.
 5. **Animation**: abstract driver and/or "snapshot" strategy (SnapDOM) as a performance option.
-6. **Router, resize, lateral navigation**: once the model and API are stable.
+6. ~~**Router, resize, lateral navigation**~~ — largely done; remaining: deep-linking, a11y polish.
 
 ---
 
@@ -201,11 +199,14 @@ app.init()
 ### Target file layout (implemented)
 ```
 src/
-├── zumly.js           (orchestrates init, zoomIn, zoomOut; uses prefetcher)
+├── zumly.js           (orchestrates init, zoomIn, zoomOut, nav UI, plugins; uses prefetcher + drivers)
 ├── utils.js           (prepareAndInsertView, checkParameters; renderView deprecated)
+├── geometry.js        (transform math; includes reflow-saving helpers for zoom-out)
 ├── view-resolver.js   type detection and resolve to DOM node
 ├── view-cache.js      cache with TTL; clone on get, has() without cloning
-└── view-prefetcher.js orchestrates A+B+C; get, preloadEager, prefetch, scanAndPrefetch
+├── view-prefetcher.js orchestrates A+B+C; get, preloadEager, prefetch, scanAndPrefetch
+├── drivers/           css, waapi, none, anime, gsap, motion, driver-helpers
+└── plugins/           e.g. router.js (hash sync)
 ```
 
 ### Left for later (from that analysis)
@@ -217,10 +218,9 @@ src/
 
 ## 8. Transition physics and depth effects
 
-### Parallax (implemented — needs refinement)
-- `transitions.parallax: 0-1` reduces translation displacement for background views during zoom, creating depth illusion.
-- Previous view moves `(1 - parallax)` of normal displacement; last view moves `(1 - 2*parallax)`.
-- **Current limitation**: The effect modifies the forward state transform only, so it's a static position offset rather than a dynamic motion during the transition. With only 2 zoom levels the difference is barely perceptible. For a convincing parallax, it would need to be animated dynamically during the transition (e.g. an offset that grows with animation progress) or applied as an idle effect on mousemove/device tilt. Revisit when 3+ level demos exist or when idle parallax is designed.
+### Parallax (reserved)
+- **Current engine behavior**: `checkParameters` forces **`parallax` to `0`**; the option is reserved for a future design. Older docs describing non-zero parallax reflect intent, not active behavior.
+- **Future**: dynamic motion during the transition or idle parallax would need a dedicated spec and driver cooperation.
 
 ### Stagger delay (implemented)
 - `transitions.stagger: N` (ms) adds progressive delay between view layers during zoom transitions.
@@ -260,13 +260,6 @@ Each wrapper would be ~100-200 lines:
 
 **Limitations to document**: No SSR/hydration support (Zumly requires real DOM). Custom drivers within frameworks may need access to framework context.
 
-### TypeScript definitions (planned)
+### TypeScript definitions (**shipped**)
 
-Generate `.d.ts` type definitions for the public API. Key types needed:
-- `ZumlyOptions` (constructor config)
-- `TransitionOptions` (driver, duration, ease, cover, effects, stagger, parallax)
-- `InputsOptions` (wheel, keyboard, click, touch)
-- `ViewSource` (string | Function | object with render() | HTMLElement)
-- `ZumlyEvent` union type for event names
-- `ZumlyInstance` (public methods and properties)
-- Export types for driver authors: `TransitionSpec`, `DriverFunction`
+Public typings live in [`types/zumly.d.ts`](../types/zumly.d.ts): `ZumlyOptions`, `TransitionOptions`, `ViewContext`, `TransitionSpec`, plugins (`ZumlyRouter`), and the `Zumly` class API. Regenerate or extend when the public surface changes.

@@ -2,6 +2,10 @@
 
 ## Technical Report: Eliminating Forced Reflows in Zoom Transitions
 
+**Context in the product:** [README](../README.md) positions Zumly as **Z over XY** — depth (Z) navigation with spatial continuity on the plane (XY). This note is about **performance**: shrinking synchronous layout work before those transitions run.
+
+**Related:** [roadMap.md](roadMap.md) (architecture) · [DRIVER_API.md](DRIVER_API.md) (what runs after transforms are computed)
+
 ### Context
 
 Zumly is a Zoomable User Interface (ZUI) engine that manages stacked views at different zoom depths. When the user clicks a `.zoom-me` trigger, the engine computes CSS transforms for up to three view layers — **currentView** (incoming), **previousView** (zooming out), and **lastView** (deepest background) — so that each view animates smoothly to its target position.

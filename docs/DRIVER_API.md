@@ -1,6 +1,8 @@
 # Writing a Zumly Transition Driver
 
-A transition driver controls **how** views animate during zoom-in, zoom-out, and lateral navigation. Zumly computes **what** moves where (transforms, origins, states); the driver decides **how** to get there — CSS keyframes, WAAPI, GSAP, SnapDOM, canvas, whatever you want.
+**Zumly** (*Z over XY* — focus-driven navigation, zoom into what matters) delegates animation to **transition drivers**. A driver controls **how** views move during zoom-in, zoom-out, and lateral navigation. The engine computes **what** moves where (transforms, origins, snapshot); the driver applies motion — CSS keyframes, WAAPI, GSAP, Motion, Anime.js, or a custom timeline.
+
+**See also:** [README.md](../README.md) (options, built-in drivers, plugins) · [geometry-optimization.md](geometry-optimization.md) (how zoom-out layout reads are batched before the driver runs).
 
 ## Quick start
 
@@ -167,7 +169,7 @@ Your driver receives `spec.type` which is one of:
 - `'zoomOut'` — go back
 - `'lateral'` — same-level swap
 
-For lateral, you can use the instant fallback if you don't want to animate it:
+For lateral, the built-in **`waapi`** driver runs a **slide animation**. If you author a minimal custom driver and want **no** lateral motion, call the instant helper:
 
 ```js
 import { runLateralInstant } from 'zumly/driver-helpers'

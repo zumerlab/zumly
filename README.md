@@ -1,46 +1,46 @@
 <p align="center">
-  <a href="https://zumly.org">
-    <img src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/logo-zumly.png" width="200">
+  <a href="https://github.com/zumerlab/zumly">
+    <!-- Built from docs/zumly-logo.png in this repo; raw URL so the image works on npm too -->
+    <img src="https://raw.githubusercontent.com/zumerlab/zumly/main/docs/zumly-logo.png" alt="Zumly" width="200">
   </a>
 </p>
 
+<h1 align="center">Z over XY</h1>
+
+<p align="center"><strong>Focus-driven navigation.</strong></p>
+<p align="center"><strong>Zoom into what matters.</strong></p>
+
 <p align="center">
-  Zumly is a JavaScript library for building hierarchical zoom navigation interfaces. Create spatial, zoom-driven view transitions using web standards.
+  <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg" alt="npm version"></a>
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg"></a>
+  <strong>Zumly</strong> is a JavaScript library for <strong>hierarchical zoom navigation</strong>: you move in <strong>Z</strong> (depth) through discrete views laid out in the <strong>XY</strong> plane, with spatial transitions instead of flat screen swaps. It is inspired by <a href="https://en.wikipedia.org/wiki/Zooming_user_interface">zoomable user interfaces (ZUI)</a> but targets <strong>structured, trigger-driven</strong> zoom—not infinite pan/zoom canvases.
 </p>
 
 ## Status
 
-Zumly is under active development and **not yet ready for production**. It’s a great time for curious developers to experiment: view preloading, prefetch on hover, and multiple view sources (HTML, URL, async functions, web components) are supported.
+Zumly is under active development. The core stack is stable: depth and lateral navigation, pluggable transition drivers (CSS, WAAPI, none, Anime.js, GSAP, Motion, custom), unified nav UI (depth + lateral, eight positions), view resolver and prefetch cache, optional **plugin** API (<code>.use()</code>), and the **hash router** plugin. View sources include HTML strings, URLs, async functions, objects with <code>render()</code>, DOM nodes, and web component tags.
 
-**Docs:** [Roadmap & topics](docs/roadMap.md) · [Custom transition drivers (`spec`, `onComplete`, helpers)](docs/DRIVER_API.md)
+Zoom-out geometry uses batched DOM reads plus pure math where possible to cut layout thrash before animations (see [Geometry optimization](docs/geometry-optimization.md)).
+
+**Docs:** [Roadmap & topics](docs/roadMap.md) · [Transition drivers](docs/DRIVER_API.md) · [Geometry notes](docs/geometry-optimization.md)
 
 ## Overview
 
-Zumly is a frontend library for creating **zoom-based navigation interfaces** inspired by **zoomable user interfaces** ([ZUI](https://en.wikipedia.org/wiki/Zooming_user_interface)).
+Unlike free-pan ZUIs, Zumly focuses on **discrete, hierarchical navigation**: users zoom into a focused element (<code>.zoom-me</code>) to open the next view, so **attention** (focus) and **depth** (Z) stay aligned with **layout** (XY).
 
-Unlike free-pan, infinite-canvas ZUI systems, Zumly focuses on **discrete, hierarchical navigation between views**. Users zoom into interactive elements to move deeper into nested content, preserving spatial context while keeping navigation structured and intentional.
-
-Zumly can be understood as a **hierarchical zoom navigation engine**: a way to move between related views through spatially continuous transitions, without requiring freeform map-like navigation.
-
-The library focuses on **zoom transitions** and stays **UI-agnostic**—you bring your own CSS and layout. Any design system or custom styling works with Zumly.
+The engine is **UI-agnostic**—you supply markup and CSS. Transforms and timing are handled for you; design systems and frameworks integrate by resolving each view to a DOM subtree (see **View sources** and **Framework integration** below).
 
 ## What Zumly is
 
-Zumly is not a freeform zooming canvas or map-like navigation system.
+Zumly is **not** a freeform zooming canvas or map-like navigation system. It is a **discrete, hierarchical zoom interface**: screens are **views** at different depths, connected by **triggers**, with continuous motion between them.
 
-It is a **discrete, hierarchical zoom interface** for moving between nested views. Instead of abruptly switching screens, users zoom into elements to reveal the next level of content.
+It fits especially well when:
 
-This makes Zumly especially useful for:
-
-* immersive navigation
-* storytelling interfaces
-* visual menus
-* structured exploration
-* any UI where preserving context between views matters
+* you want **focus-driven** flow (zoom into what matters)
+* **spatial context** between parent and child should persist
+* you are building menus, stories, dashboards, or exploratory UIs without a classic router-only metaphor
 
 ## Installation
 
@@ -145,8 +145,11 @@ transitions: {
   effects: ['blur(3px) brightness(0.7)', 'blur(8px) saturate(0)'],  // CSS filters for [previous, last] background views
   stagger: 0,          // delay (ms) between layers during transition
   hideTrigger: false,  // false | true (visibility:hidden) | 'fade' (opacity crossfade)
+  // threshold: { enabled: true, duration: 300, commitAt: 0.5 }  // parsed but not wired in the engine yet
 }
 ```
+
+`transitions.parallax` is accepted for compatibility but **not applied** (reserved; intensity is fixed to `0` in the engine).
 
 **Transition drivers:** Zoom animations are handled by a pluggable driver (`transitions.driver`). You can swap implementations without changing app logic. To author your own, see [docs/DRIVER_API.md](docs/DRIVER_API.md) and the `zumly/driver-helpers` export.
 
@@ -347,12 +350,14 @@ const app = new Zumly({ ... })
 app.use(Zumly.Router)
 await app.init()
 
-// ES Module
+// ES Module (named export from the package entry)
 import { Zumly, ZumlyRouter } from 'zumly'
 const app = new Zumly({ ... })
 app.use(ZumlyRouter)
 await app.init()
 ```
+
+The UMD/IIFE bundle attaches the same plugin as `Zumly.Router`. There is no separate published subpath for the router; import it from `'zumly'` or use `Zumly.Router` on `window` when using a script tag.
 
 **Options:**
 
@@ -375,8 +380,8 @@ await app.init()
 
 ### Limitations and non-goals
 
-- **Lateral navigation:** Supported via `goTo(name, { mode: 'lateral' })` and `back()`. Configure UI with `lateralNav: { mode, arrows, dots, keepAlive }`.
-- **Resize handling:** Cheap correction when canvas resizes—translate and origin scaled by ratio; scale preserved. Correction is deferred if a transition is running.
+- **No deep-linking:** The router plugin syncs hash on navigation and supports browser back, but does not support forward or deep-linking (entering a multi-level URL directly). In a ZUI, zoom-in requires a trigger element for proper spatial context.
+- **Resize handling:** Cheap correction when canvas resizes — translate and origin scaled by ratio; scale preserved. Correction is deferred if a transition is running.
 - **Remote views:** URL-backed views use `innerHTML`; sanitize external content to avoid XSS.
 
 ## Development
@@ -421,11 +426,19 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## Roadmap
 
-- Additional view/template adapters
-- ~~Lateral navigation (same zoom level)~~ done: `goTo(name, { mode: 'lateral' })`
-- Navigation widget (~~programmatic navigation~~ done)
-- ~~Router integration (e.g. URL sync)~~ done: `Zumly.Router` plugin (hash-based, back/lateral support)
-- ~~Resize correction~~ done: cheap translate/origin scaling when canvas size changes
+**Done:**
+- Depth and lateral navigation (`zoomIn`, `zoomOut`, `goTo`, `back`, `zoomTo`)
+- Lateral nav UI (`lateralNav`: `mode` auto/always, arrows, dots, `keepAlive`)
+- Depth nav UI (`depthNav`) and `navPosition` presets
+- Inputs toggles (`inputs`: wheel, keyboard, click, touch)
+- Plugin system (`use()`), router plugin (hash sync, back, forward blocked)
+- Resize correction (translate/origin scaling; deferred while transitioning)
+- Pluggable drivers (CSS, WAAPI, none, Anime.js, GSAP, Motion, custom)
+- Batched zoom-out reads + math helpers to reduce reflow (see [geometry-optimization.md](docs/geometry-optimization.md))
+
+**Planned:**
+- Router deep-linking (open a multi-level hash cold)
+- Accessibility (focus moves, broader ARIA)
 
 Details and more topics: [docs/roadMap.md](docs/roadMap.md). Driver contract and helpers: [docs/DRIVER_API.md](docs/DRIVER_API.md).
 
@@ -435,7 +448,7 @@ Details and more topics: [docs/roadMap.md](docs/roadMap.md). Driver contract and
 
 ## Origin
 
-Zumly is a reimagined, framework-agnostic zoom engine inspired by [Zircle UI](https://github.com/zircleUI/zircleUI). It can be used together with [Orbit](https://github.com/zumerlab/orbit) for radial layouts.
+Zumly is a reimagined, framework-agnostic zoom engine inspired by [Zircle UI](https://github.com/zircleUI/zircleUI). Part of the [Zumerlab](https://github.com/zumerlab) ecosystem — use it with [Orbit](https://github.com/zumerlab/orbit) for radial layouts and [SnapDOM](https://github.com/zumerlab/snapdom) for lightweight DOM diffing.
 
 ## License
 
