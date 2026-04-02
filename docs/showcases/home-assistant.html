@@ -616,6 +616,80 @@
         border: 1px solid var(--ha-border); color: var(--ha-text);
       }
       .scene-dev.active { border-color: var(--ha-green); color: var(--ha-green); }
+
+      /* ── Responsive ──────────────────────────────────────── */
+      @media (max-width: 768px) {
+        /* Orbit views: reduce force so items stay on screen */
+        .cam-view .gravity-spot { --o-force: 180px; }
+        .section-view .gravity-spot { --o-force: 180px; }
+
+        /* Camera cards: smaller to fit orbit */
+        .cam-card { width: 100px; height: 80px; gap: 4px; }
+        .cam-feed { width: 85px; height: 48px; }
+        .cam-name { font-size: 6px; }
+        .cam-status { font-size: 5px; }
+        .cam-rec { font-size: 5px; }
+        .cam-res { font-size: 4px; }
+        .cam-title { font-size: 9px; }
+        .cam-title .cam-count { font-size: 16px; }
+
+        /* Camera detail: single column */
+        .cam-detail {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto auto 1fr auto;
+          padding: 14px;
+          gap: 10px;
+          overflow-y: auto;
+        }
+        .cam-detail .cam-header h1 { font-size: 12px; }
+        .cam-detail .cam-preview { min-height: 140px; }
+        .cam-detail .cam-preview .cam-rec { font-size: 8px; top: 8px; left: 10px; }
+        .cam-detail .cam-preview .cam-overlay { font-size: 7px; bottom: 8px; left: 10px; right: 10px; }
+        .cam-detail .cam-panel { padding: 10px; }
+        .cam-detail .cam-panel h3 { font-size: 7px; }
+        .cam-detail .stat-label { font-size: 6px; }
+        .cam-detail .stat-val { font-size: 11px; }
+        .cam-detail .tl-item { font-size: 7px; }
+        .cam-detail .ctrl-btn { font-size: 7px; padding: 5px 12px; }
+
+        /* Section cards: smaller */
+        .sec-card { width: 90px; padding: 8px; }
+        .sec-card .sec-icon { font-size: 16px; }
+        .sec-card .sec-icon svg { width: 16px; height: 16px; }
+        .sec-card .sec-name { font-size: 6px; }
+        .sec-card .sec-state { font-size: 7px; }
+        .sec-card .sec-meta { font-size: 5px; }
+        .sec-title { font-size: 9px; }
+        .sec-title .sec-count { font-size: 16px; }
+
+        /* Detail view: single column */
+        .detail-view {
+          grid-template-columns: 1fr;
+          grid-template-rows: auto;
+          padding: 14px;
+          gap: 10px;
+          overflow-y: auto;
+        }
+        .detail-view .detail-header h1 { font-size: 12px; }
+        .detail-view .detail-header .detail-badge { font-size: 7px; }
+        .detail-view .d-panel { padding: 10px; }
+        .detail-view .d-panel h3 { font-size: 7px; }
+        .detail-view .d-panel .stat-label { font-size: 6px; }
+        .detail-view .d-panel .stat-val { font-size: 11px; }
+        .detail-view .d-panel.full { grid-column: 1; }
+        .alarm-zone { font-size: 8px; }
+        .scene-dev { font-size: 6px; }
+      }
+
+      @media (max-width: 480px) {
+        .cam-view .gravity-spot { --o-force: 130px; }
+        .section-view .gravity-spot { --o-force: 130px; }
+        .cam-card { width: 80px; height: 65px; }
+        .cam-feed { width: 68px; height: 38px; }
+        .sec-card { width: 72px; padding: 6px; }
+        .cam-detail { padding: 10px; }
+        .detail-view { padding: 10px; }
+      }
     </style>
 </head>
 <body>
