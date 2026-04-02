@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zumly - Mercedes-Benz Truck Production Line</title>
+    <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
+    <style>
+      :root {
+        --mb-black: #0a0a14;
+        --mb-dark: #12122a;
+        --mb-surface: rgba(255, 255, 255, 0.04);
+        --mb-border: rgba(255, 255, 255, 0.07);
+        --mb-silver: #b0b0b0;
+        --mb-accent: #00adef;
+        --mb-green: #27ae60;
+        --mb-green-bg: rgba(39, 174, 96, 0.12);
+        --mb-yellow: #f1c40f;
+        --mb-yellow-bg: rgba(241, 196, 15, 0.10);
+        --mb-red: #e74c3c;
+        --mb-red-bg: rgba(231, 76, 60, 0.10);
+        --mb-orange: #e67e22;
+        --mb-orange-bg: rgba(230, 126, 34, 0.10);
+        --mb-text: #e0e4f0;
+        --mb-muted: rgba(224, 228, 240, 0.45);
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: var(--mb-black);
+        color: var(--mb-text);
+        overflow: hidden;
+      }
+
+      .mount {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+
+      .canvas {
+        width: 100%;
+        height: 100%;
+      }
+
+      /* ── Shared ──────────────────────────────────────────── */
+      .v {
+        width: 100%; height: 100%;
+        padding: 28px 32px;
+        background: linear-gradient(160deg, var(--mb-dark), var(--mb-black));
+        overflow: hidden;
+      }
+
+      .hdr {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .hdr h1 {
+        font-size: 1.35em;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+
+      .hdr h1 small {
+        font-weight: 300;
+        opacity: 0.4;
+        font-size: 0.55em;
+        margin-left: 8px;
+      }
+
+      .logo {
+        width: 36px; height: 36px;
+        border-radius: 50%;
+        border: 2px solid var(--mb-silver);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 9px;
+        color: var(--mb-silver);
+        letter-spacing: 1px;
+        flex-shrink: 0;
+      }
+
+      .bc {
+        font-size: 0.7em;
+        color: var(--mb-muted);
+        margin-bottom: 14px;
+      }
+
+      .bc span { opacity: 0.35; margin: 0 4px; }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.68em;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 3px 9px;
+        border-radius: 4px;
+      }
+
+      .badge::before {
+        content: '';
+        width: 6px; height: 6px;
+        border-radius: 50%;
+      }
+
+      .badge-g { background: var(--mb-green-bg); color: var(--mb-green); }
+      .badge-g::before { background: var(--mb-green); }
+      .badge-y { background: var(--mb-yellow-bg); color: var(--mb-yellow); }
+      .badge-y::before { background: var(--mb-yellow); }
+      .badge-r { background: var(--mb-red-bg); color: var(--mb-red); }
+      .badge-r::before { background: var(--mb-red); animation: blink 1.4s infinite; }
+      .badge-o { background: var(--mb-orange-bg); color: var(--mb-orange); }
+      .badge-o::before { background: var(--mb-orange); }
+
+      @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+      /* ── KPIs ─────────────────────────────────────────────── */
+      .kpis {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+
+      .kpi {
+        background: var(--mb-surface);
+        border: 1px solid var(--mb-border);
+        border-radius: 8px;
+        padding: 10px 14px;
+        min-width: 115px;
+        flex: 1;
+      }
+
+      .kpi-l {
+        font-size: 0.6em;
+        color: var(--mb-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 2px;
+      }
+
+      .kpi-v {
+        font-size: 1.3em;
+        font-weight: 700;
+      }
+
+      .kpi-v.c-a { color: var(--mb-accent); }
+      .kpi-v.c-g { color: var(--mb-green); }
+      .kpi-v.c-y { color: var(--mb-yellow); }
+      .kpi-v.c-r { color: var(--mb-red); }
+
+      .sm { font-size: 0.65em; font-weight: 400; opacity: 0.6; }
+
+      /* ── Production line grid ────────────────────────────── */
+      .line-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: 10px;
+        height: calc(100% - 130px);
+      }
+
+      .truck {
+        background: var(--mb-surface);
+        border: 1px solid var(--mb-border);
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        transition: border-color 0.2s;
+      }
+
+      .truck.ok {
+        border-color: rgba(39, 174, 96, 0.25);
+      }
+
+      .truck.warn {
+        border-color: rgba(241, 196, 15, 0.35);
+        background: var(--mb-yellow-bg);
+      }
+
+      .truck.warn.zoom-me:hover {
+        border-color: var(--mb-yellow);
+      }
+
+      .truck.fail {
+        border-color: rgba(231, 76, 60, 0.35);
+        background: var(--mb-red-bg);
+      }
+
+      .truck.fail.zoom-me:hover {
+        border-color: var(--mb-red);
+      }
+
+      .truck.maint {
+        border-color: rgba(230, 126, 34, 0.30);
+        background: var(--mb-orange-bg);
+      }
+
+      .truck.maint.zoom-me:hover {
+        border-color: var(--mb-orange);
+      }
+
+      .truck-id {
+        font-size: 0.72em;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+      }
+
+      .truck-pos {
+        font-size: 0.58em;
+        color: var(--mb-muted);
+      }
+
+      .truck-icon {
+        width: 42px;
+        height: 22px;
+        opacity: 0.75;
+      }
+
+      /* ── Unit SVG schema (Level 2) ───────────────────────── */
+      .unit-layout {
+        display: grid;
+        grid-template-columns: 1fr 280px;
+        gap: 20px;
+        height: calc(100% - 150px);
+      }
+
+      .svg-wrap {
+        background: var(--mb-surface);
+        border: 1px solid var(--mb-border);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .svg-wrap svg {
+        width: 100%;
+        height: 100%;
+        max-height: 400px;
+        overflow: visible;
+      }
+
+      /* Clickable hit areas over SVG subsystems */
+      .svg-hit {
+        border-radius: 6px;
+        transition: background 0.2s;
+      }
+      .svg-hit:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .issues-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow-y: auto;
+      }
+
+      .issue-card {
+        background: var(--mb-surface);
+        border: 1px solid var(--mb-border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        transition: border-color 0.2s;
+      }
+
+      .issue-card.zoom-me:hover {
+        border-color: rgba(0, 173, 239, 0.4);
+      }
+
+      .issue-title {
+        font-size: 0.82em;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+
+      .issue-desc {
+        font-size: 0.7em;
+        color: var(--mb-muted);
+        line-height: 1.4;
+      }
+
+      /* ── Issue detail (Level 3) ──────────────────────────── */
+      .detail-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr;
+        gap: 16px;
+        height: calc(100% - 150px);
+      }
+
+      .detail-box {
+        background: var(--mb-surface);
+        border: 1px solid var(--mb-border);
+        border-radius: 10px;
+        padding: 14px 16px;
+      }
+
+      .detail-box h3 {
+        font-size: 0.7em;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--mb-muted);
+        margin-bottom: 10px;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid var(--mb-border);
+        font-size: 0.8em;
+      }
+
+      .row:last-child { border-bottom: none; }
+      .row-l { color: var(--mb-muted); }
+
+      .timeline {
+        font-size: 0.75em;
+      }
+
+      .tl-item {
+        display: flex;
+        gap: 10px;
+        padding: 5px 0;
+        border-left: 2px solid var(--mb-border);
+        padding-left: 12px;
+        margin-left: 4px;
+        position: relative;
+      }
+
+      .tl-item::before {
+        content: '';
+        position: absolute;
+        left: -5px; top: 9px;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--mb-accent);
+      }
+
+      .tl-item.warn::before { background: var(--mb-yellow); }
+      .tl-item.err::before { background: var(--mb-red); }
+
+      .tl-t {
+        color: var(--mb-muted);
+        white-space: nowrap;
+        min-width: 44px;
+      }
+
+      .svg-detail-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .svg-detail-wrap svg {
+        width: 100%;
+        max-height: 220px;
+      }
+
+      /* ── Animated conveyor ───────────────────────────────── */
+      .conveyor-bar {
+        height: 3px;
+        background: var(--mb-border);
+        border-radius: 2px;
+        margin-bottom: 16px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .conveyor-bar::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -30%;
+        width: 30%; height: 100%;
+        background: linear-gradient(90deg, transparent, var(--mb-accent), transparent);
+        animation: convey 2.5s linear infinite;
+      }
+
+      .conveyor-bar.paused::after {
+        animation-play-state: paused;
+      }
+
+      @keyframes convey {
+        0% { left: -30%; }
+        100% { left: 100%; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="mount">
+      <div class="canvas zumly-canvas"></div>
+    </div>
+
+    <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+    <script>
+      const ZumlyLib = window.Zumly || globalThis.Zumly
+
+      // ── Inline SVG helpers ──────────────────────────────
+      function truckSVG (color = '#27ae60') {
+        return `<svg class="truck-icon" viewBox="0 0 60 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="4" width="38" height="20" rx="2" stroke="${color}" stroke-width="1.5" fill="none"/>
+          <rect x="39" y="10" width="16" height="14" rx="2" stroke="${color}" stroke-width="1.5" fill="none"/>
+          <line x1="39" y1="14" x2="55" y2="14" stroke="${color}" stroke-width="1" opacity="0.4"/>
+          <circle cx="12" cy="26" r="3" stroke="${color}" stroke-width="1.2" fill="none"/>
+          <circle cx="30" cy="26" r="3" stroke="${color}" stroke-width="1.2" fill="none"/>
+          <circle cx="50" cy="26" r="3" stroke="${color}" stroke-width="1.2" fill="none"/>
+        </svg>`
+      }
+
+      // Full truck schema SVG for unit detail view
+      // truckId is used to build zoom-me data-to targets for clickable subsystems
+      function truckSchema (highlights, truckId) {
+        // highlights: { engine, brake, electric, suspension, exhaust, cabin }
+        // each is 'ok' | 'warn' | 'fail'
+        const c = (k) => {
+          if (highlights[k] === 'fail') return '#e74c3c'
+          if (highlights[k] === 'warn') return '#f1c40f'
+          return '#27ae60'
+        }
+        const pulse = (k) => highlights[k] === 'fail'
+          ? `<animate attributeName="opacity" values="1;0.3;1" dur="1.2s" repeatCount="indefinite"/>`
+          : ''
+        // foreignObject hit area for clickable subsystems (only if warn/fail)
+        const hit = (k, x, y, w, h) => {
+          if (highlights[k] === 'ok') return ''
+          return `<foreignObject x="${x}" y="${y}" width="${w}" height="${h}">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="zoom-me svg-hit" data-to="issue_${truckId}_${k}" style="width:100%;height:100%;cursor:zoom-in"></div>
+          </foreignObject>`
+        }
+
+        return `<svg viewBox="0 0 520 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Chassis frame -->
+          <rect x="30" y="80" width="380" height="70" rx="4" stroke="#555" stroke-width="1.5" fill="rgba(255,255,255,0.02)"/>
+          <text x="220" y="120" text-anchor="middle" fill="#555" font-size="11" font-family="system-ui">CHASSIS</text>
+
+          <!-- Cabin -->
+          <rect x="370" y="50" width="100" height="100" rx="6" stroke="${c('cabin')}" stroke-width="2" fill="rgba(255,255,255,0.02)">
+            ${pulse('cabin')}
+          </rect>
+          <line x1="380" y1="80" x2="460" y2="80" stroke="${c('cabin')}" stroke-width="1" opacity="0.4"/>
+          <text x="420" y="72" text-anchor="middle" fill="${c('cabin')}" font-size="10" font-family="system-ui" font-weight="600">CABIN</text>
+          <rect x="385" y="85" width="55" height="30" rx="3" stroke="${c('cabin')}" stroke-width="1" opacity="0.5" fill="none"/>
+          <text x="412" y="104" text-anchor="middle" fill="${c('cabin')}" font-size="8" font-family="system-ui" opacity="0.6">windshield</text>
+          ${hit('cabin', 370, 50, 100, 100)}
+
+          <!-- Engine -->
+          <rect x="280" y="90" width="70" height="50" rx="4" stroke="${c('engine')}" stroke-width="2" fill="rgba(255,255,255,0.03)">
+            ${pulse('engine')}
+          </rect>
+          <text x="315" y="120" text-anchor="middle" fill="${c('engine')}" font-size="10" font-family="system-ui" font-weight="600">ENGINE</text>
+          ${hit('engine', 275, 85, 80, 60)}
+
+          <!-- Transmission -->
+          <rect x="210" y="95" width="55" height="40" rx="3" stroke="#666" stroke-width="1.2" fill="none"/>
+          <text x="237" y="118" text-anchor="middle" fill="#666" font-size="8" font-family="system-ui">TRANSM</text>
+
+          <!-- Exhaust -->
+          <rect x="50" y="60" width="90" height="20" rx="3" stroke="${c('exhaust')}" stroke-width="1.5" fill="rgba(255,255,255,0.02)">
+            ${pulse('exhaust')}
+          </rect>
+          <text x="95" y="74" text-anchor="middle" fill="${c('exhaust')}" font-size="9" font-family="system-ui">EXHAUST</text>
+          ${hit('exhaust', 45, 55, 100, 30)}
+
+          <!-- Electric -->
+          <path d="M 360 100 L 360 60 L 280 60 L 180 60 L 100 60" stroke="${c('electric')}" stroke-width="1.5" stroke-dasharray="4 3" fill="none">
+            ${pulse('electric')}
+          </path>
+          <text x="230" y="55" text-anchor="middle" fill="${c('electric')}" font-size="9" font-family="system-ui">WIRING</text>
+          ${hit('electric', 100, 45, 265, 22)}
+
+          <!-- Suspension -->
+          <!-- Front axle -->
+          <line x1="350" y1="150" x2="350" y2="185" stroke="${c('suspension')}" stroke-width="2">
+            ${pulse('suspension')}
+          </line>
+          <path d="M 335 155 Q 350 175 365 155" stroke="${c('suspension')}" stroke-width="1.5" fill="none"/>
+          <!-- Rear axle -->
+          <line x1="100" y1="150" x2="100" y2="185" stroke="${c('suspension')}" stroke-width="2"/>
+          <path d="M 85 155 Q 100 175 115 155" stroke="${c('suspension')}" stroke-width="1.5" fill="none"/>
+          <line x1="160" y1="150" x2="160" y2="185" stroke="${c('suspension')}" stroke-width="2"/>
+          <path d="M 145 155 Q 160 175 175 155" stroke="${c('suspension')}" stroke-width="1.5" fill="none"/>
+          <text x="130" y="175" text-anchor="middle" fill="${c('suspension')}" font-size="9" font-family="system-ui">SUSPENSION</text>
+          ${hit('suspension', 80, 148, 290, 40)}
+
+          <!-- Brakes -->
+          <circle cx="100" cy="195" r="16" stroke="${c('brake')}" stroke-width="2" fill="rgba(255,255,255,0.02)">
+            ${pulse('brake')}
+          </circle>
+          <circle cx="100" cy="195" r="6" stroke="${c('brake')}" stroke-width="1" fill="none"/>
+          <circle cx="160" cy="195" r="16" stroke="${c('brake')}" stroke-width="2" fill="rgba(255,255,255,0.02)"/>
+          <circle cx="160" cy="195" r="6" stroke="${c('brake')}" stroke-width="1" fill="none"/>
+          <circle cx="350" cy="195" r="16" stroke="${c('brake')}" stroke-width="2" fill="rgba(255,255,255,0.02)"/>
+          <circle cx="350" cy="195" r="6" stroke="${c('brake')}" stroke-width="1" fill="none"/>
+          <text x="350" y="225" text-anchor="middle" fill="${c('brake')}" font-size="9" font-family="system-ui">BRAKES</text>
+          <text x="130" y="225" text-anchor="middle" fill="${c('brake')}" font-size="9" font-family="system-ui">BRAKES</text>
+          ${hit('brake', 80, 175, 290, 55)}
+
+          <!-- Labels legend -->
+          <circle cx="490" cy="20" r="5" fill="#27ae60"/>
+          <text x="500" y="24" fill="#888" font-size="9" font-family="system-ui">OK</text>
+          <circle cx="490" cy="36" r="5" fill="#f1c40f"/>
+          <text x="500" y="40" fill="#888" font-size="9" font-family="system-ui">Warning</text>
+          <circle cx="490" cy="52" r="5" fill="#e74c3c"/>
+          <text x="500" y="56" fill="#888" font-size="9" font-family="system-ui">Failure</text>
+        </svg>`
+      }
+
+      // Detail SVG: close-up of a specific subsystem
+      function engineDetailSVG () {
+        return `<svg viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="20" y="20" width="220" height="140" rx="6" stroke="#e74c3c" stroke-width="2" fill="rgba(231,76,60,0.05)"/>
+          <text x="130" y="50" text-anchor="middle" fill="#e74c3c" font-size="12" font-family="system-ui" font-weight="600">ENGINE OM 457 LA</text>
+          <!-- Cylinders -->
+          <g>
+            <rect x="40" y="70" width="28" height="50" rx="3" stroke="#e74c3c" stroke-width="1.5" fill="rgba(231,76,60,0.08)">
+              <animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite"/>
+            </rect>
+            <text x="54" y="100" text-anchor="middle" fill="#e74c3c" font-size="8" font-family="system-ui">C3</text>
+          </g>
+          <rect x="78" y="70" width="28" height="50" rx="3" stroke="#27ae60" stroke-width="1" fill="none"/>
+          <text x="92" y="100" text-anchor="middle" fill="#27ae60" font-size="8" font-family="system-ui">C4</text>
+          <rect x="116" y="70" width="28" height="50" rx="3" stroke="#27ae60" stroke-width="1" fill="none"/>
+          <text x="130" y="100" text-anchor="middle" fill="#27ae60" font-size="8" font-family="system-ui">C5</text>
+          <rect x="154" y="70" width="28" height="50" rx="3" stroke="#f1c40f" stroke-width="1.5" fill="rgba(241,196,15,0.06)"/>
+          <text x="168" y="100" text-anchor="middle" fill="#f1c40f" font-size="8" font-family="system-ui">C6</text>
+          <rect x="192" y="70" width="28" height="50" rx="3" stroke="#27ae60" stroke-width="1" fill="none"/>
+          <text x="206" y="100" text-anchor="middle" fill="#27ae60" font-size="8" font-family="system-ui">C1</text>
+          <!-- Annotations -->
+          <line x1="54" y1="125" x2="54" y2="145" stroke="#e74c3c" stroke-width="1"/>
+          <text x="54" y="155" text-anchor="middle" fill="#e74c3c" font-size="8" font-family="system-ui">Misfire</text>
+          <line x1="168" y1="125" x2="168" y2="145" stroke="#f1c40f" stroke-width="1"/>
+          <text x="168" y="155" text-anchor="middle" fill="#f1c40f" font-size="8" font-family="system-ui">Temp +12%</text>
+        </svg>`
+      }
+
+      function brakeDetailSVG () {
+        return `<svg viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="130" y="25" text-anchor="middle" fill="#f1c40f" font-size="12" font-family="system-ui" font-weight="600">BRAKE SYSTEM</text>
+          <!-- Disc -->
+          <circle cx="90" cy="105" r="50" stroke="#666" stroke-width="1.5" fill="none"/>
+          <circle cx="90" cy="105" r="35" stroke="#666" stroke-width="1" fill="none"/>
+          <circle cx="90" cy="105" r="12" stroke="#666" stroke-width="1" fill="none"/>
+          <!-- Pad - warn -->
+          <rect x="55" y="60" width="12" height="40" rx="2" stroke="#f1c40f" stroke-width="2" fill="rgba(241,196,15,0.1)">
+            <animate attributeName="opacity" values="1;0.5;1" dur="1.5s" repeatCount="indefinite"/>
+          </rect>
+          <text x="35" y="82" text-anchor="middle" fill="#f1c40f" font-size="8" font-family="system-ui">2.1mm</text>
+          <!-- Caliper -->
+          <path d="M 48 55 Q 35 80 48 105 Q 35 130 48 155" stroke="#666" stroke-width="1.5" fill="none"/>
+          <!-- Info -->
+          <text x="200" y="65" fill="#f1c40f" font-size="10" font-family="system-ui" font-weight="600">Front left axle</text>
+          <text x="200" y="82" fill="#888" font-size="9" font-family="system-ui">Pad: 2.1mm</text>
+          <text x="200" y="96" fill="#e74c3c" font-size="9" font-family="system-ui">Min. allowed: 3.0mm</text>
+          <text x="200" y="116" fill="#888" font-size="9" font-family="system-ui">Disc: 38.2mm OK</text>
+          <text x="200" y="130" fill="#888" font-size="9" font-family="system-ui">Fluid: DOT4 OK</text>
+          <line x1="145" y1="70" x2="185" y2="70" stroke="#f1c40f" stroke-width="1" stroke-dasharray="3 2"/>
+        </svg>`
+      }
+
+      function electricDetailSVG () {
+        return `<svg viewBox="0 0 260 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="130" y="22" text-anchor="middle" fill="#e74c3c" font-size="12" font-family="system-ui" font-weight="600">ELECTRICAL WIRING</text>
+          <!-- Harness path -->
+          <path d="M 30 60 L 80 60 L 120 45 L 200 45 L 230 60" stroke="#666" stroke-width="2" fill="none"/>
+          <path d="M 120 45 L 120 90" stroke="#666" stroke-width="1.5" fill="none"/>
+          <path d="M 200 45 L 200 90" stroke="#666" stroke-width="1.5" fill="none"/>
+          <!-- Fault point -->
+          <circle cx="155" cy="45" r="12" stroke="#e74c3c" stroke-width="2" fill="rgba(231,76,60,0.1)">
+            <animate attributeName="r" values="12;15;12" dur="1.2s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="1;0.4;1" dur="1.2s" repeatCount="indefinite"/>
+          </circle>
+          <text x="155" y="49" text-anchor="middle" fill="#e74c3c" font-size="8" font-family="system-ui" font-weight="700">X</text>
+          <!-- Connectors -->
+          <rect x="70" y="52" width="16" height="16" rx="2" stroke="#27ae60" stroke-width="1.2" fill="none"/>
+          <text x="78" y="64" text-anchor="middle" fill="#27ae60" font-size="7" font-family="system-ui">C1</text>
+          <rect x="192" y="52" width="16" height="16" rx="2" stroke="#27ae60" stroke-width="1.2" fill="none"/>
+          <text x="200" y="64" text-anchor="middle" fill="#27ae60" font-size="7" font-family="system-ui">C2</text>
+          <!-- Info panel -->
+          <rect x="30" y="100" width="200" height="65" rx="4" stroke="rgba(255,255,255,0.1)" stroke-width="1" fill="rgba(255,255,255,0.02)"/>
+          <text x="40" y="118" fill="#e74c3c" font-size="9" font-family="system-ui" font-weight="600">Short circuit in MAP sensor harness</text>
+          <text x="40" y="133" fill="#888" font-size="8" font-family="system-ui">Location: section C1-C2, connector J14</text>
+          <text x="40" y="146" fill="#888" font-size="8" font-family="system-ui">Resistance: 0.2 ohm (expected: >10k ohm)</text>
+          <text x="40" y="159" fill="#888" font-size="8" font-family="system-ui">Diagnosis: insulation damaged by friction</text>
+        </svg>`
+      }
+
+      // ── Truck data ─────────────────────────────────────
+      const trucks = []
+      for (let i = 0; i < 24; i++) {
+        const id = `ACT-${(2800 + i).toString()}`
+        const pos = `E${Math.floor(i / 8) + 1}-P${(i % 8) + 1}`
+        // Most are OK, a few have issues
+        let status = 'ok'
+        let issues = null
+        if (i === 5) {
+          status = 'fail'
+          issues = {
+            highlights: { engine: 'fail', brake: 'ok', electric: 'fail', suspension: 'ok', exhaust: 'ok', cabin: 'ok' },
+            list: [
+              { key: 'engine', severity: 'fail', title: 'Engine: cylinder 3 misfire', desc: 'Misfire detected. Cylinder 3 not combusting. Cylinder 6 temperature elevated +12%.' },
+              { key: 'electric', severity: 'fail', title: 'Wiring: MAP sensor short circuit', desc: 'Short circuit in MAP sensor harness. Connector J14. Insulation damaged.' }
+            ]
+          }
+        } else if (i === 11) {
+          status = 'warn'
+          issues = {
+            highlights: { engine: 'ok', brake: 'warn', electric: 'ok', suspension: 'ok', exhaust: 'ok', cabin: 'ok' },
+            list: [
+              { key: 'brake', severity: 'warn', title: 'Brakes: pad below minimum', desc: 'Front left axle pad at 2.1mm. Minimum allowed 3.0mm. Replacement required.' }
+            ]
+          }
+        } else if (i === 18) {
+          status = 'maint'
+          issues = {
+            highlights: { engine: 'ok', brake: 'ok', electric: 'warn', suspension: 'warn', exhaust: 'ok', cabin: 'ok' },
+            list: [
+              { key: 'electric', severity: 'warn', title: 'Wiring: elevated resistance', desc: 'Connector C7 with out-of-range resistance. May cause erratic readings.' },
+              { key: 'suspension', severity: 'warn', title: 'Suspension: rear axle play', desc: 'Play of 1.8mm in right rear axle silent block. Limit: 1.5mm.' }
+            ]
+          }
+        }
+        trucks.push({ id, pos, status, issues })
+      }
+
+      // ── Build views ─────────────────────────────────────
+      const views = {}
+
+      // Level 1: Production line overview
+      const truckCells = trucks.map(t => {
+        const color = t.status === 'fail' ? '#e74c3c' : t.status === 'warn' ? '#f1c40f' : t.status === 'maint' ? '#e67e22' : '#27ae60'
+        const cls = t.status !== 'ok' ? `truck ${t.status} zoom-me` : 'truck ok'
+        const dataTo = t.status !== 'ok' ? `data-to="unit_${t.id}"` : ''
+        const badgeCls = t.status === 'fail' ? 'badge-r' : t.status === 'warn' ? 'badge-y' : t.status === 'maint' ? 'badge-o' : 'badge-g'
+        const badgeText = t.status === 'fail' ? 'Failure' : t.status === 'warn' ? 'Warning' : t.status === 'maint' ? 'Maint' : 'OK'
+        return `<div class="${cls}" ${dataTo}>
+          ${truckSVG(color)}
+          <div class="truck-id">${t.id}</div>
+          <div class="truck-pos">${t.pos}</div>
+          <span class="badge ${badgeCls}">${badgeText}</span>
+        </div>`
+      }).join('\n')
+
+      const failCount = trucks.filter(t => t.status === 'fail').length
+      const warnCount = trucks.filter(t => t.status === 'warn').length
+      const maintCount = trucks.filter(t => t.status === 'maint').length
+      const okCount = trucks.filter(t => t.status === 'ok').length
+
+      views.line = `
+        <div class="z-view v">
+          <div class="hdr">
+            <div class="logo">MB</div>
+            <h1>Production Line <small>Mercedes-Benz Trucks</small></h1>
+            <span class="badge badge-g" style="margin-left:auto">${okCount} OK</span>
+            <span class="badge badge-y">${warnCount}</span>
+            <span class="badge badge-r">${failCount}</span>
+            <span class="badge badge-o">${maintCount}</span>
+          </div>
+          <div class="kpis">
+            <div class="kpi"><div class="kpi-l">Units on line</div><div class="kpi-v c-a">${trucks.length}</div></div>
+            <div class="kpi"><div class="kpi-l">Rate</div><div class="kpi-v">4.2 <span class="sm">u/h</span></div></div>
+            <div class="kpi"><div class="kpi-l">Efficiency</div><div class="kpi-v c-g">91.3%</div></div>
+            <div class="kpi"><div class="kpi-l">Alerts</div><div class="kpi-v c-y">${warnCount + failCount + maintCount}</div></div>
+          </div>
+          <div class="conveyor-bar" id="conveyor"></div>
+          <div class="line-grid">
+            ${truckCells}
+          </div>
+        </div>
+      `
+
+      // Level 2: Unit detail views (only for trucks with issues)
+      trucks.filter(t => t.issues).forEach(t => {
+        const issueCards = t.issues.list.map(iss => {
+          const bc = iss.severity === 'fail' ? 'badge-r' : 'badge-y'
+          return `<div class="issue-card zoom-me" data-to="issue_${t.id}_${iss.key}">
+            <div class="issue-title"><span class="badge ${bc}">${iss.severity === 'fail' ? 'Failure' : 'Warning'}</span> ${iss.title}</div>
+            <div class="issue-desc">${iss.desc}</div>
+          </div>`
+        }).join('\n')
+
+        const badgeCls = t.status === 'fail' ? 'badge-r' : t.status === 'warn' ? 'badge-y' : 'badge-o'
+        const badgeText = t.status === 'fail' ? 'Failure' : t.status === 'warn' ? 'Warning' : 'Maintenance'
+
+        views[`unit_${t.id}`] = `
+          <div class="z-view v">
+            <div class="bc">Line <span>&rsaquo;</span> ${t.id}</div>
+            <div class="hdr">
+              <h1>${t.id} <small>${t.pos}</small></h1>
+              <span class="badge ${badgeCls}" style="margin-left:auto">${badgeText}</span>
+            </div>
+            <div class="kpis">
+              <div class="kpi"><div class="kpi-l">Model</div><div class="kpi-v sm" style="font-size:1em">Actros 2651</div></div>
+              <div class="kpi"><div class="kpi-l">Issues</div><div class="kpi-v c-r">${t.issues.list.length}</div></div>
+              <div class="kpi"><div class="kpi-l">Downtime</div><div class="kpi-v c-y">${t.status === 'fail' ? '34' : '12'} <span class="sm">min</span></div></div>
+            </div>
+            <div class="unit-layout">
+              <div class="svg-wrap">
+                ${truckSchema(t.issues.highlights, t.id)}
+              </div>
+              <div class="issues-panel">
+                <div style="font-size:0.75em;color:var(--mb-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Detected issues</div>
+                ${issueCards}
+              </div>
+            </div>
+          </div>
+        `
+
+        // Level 3: Issue detail views
+        t.issues.list.forEach(iss => {
+          let detailSVG = ''
+          if (iss.key === 'engine') detailSVG = engineDetailSVG()
+          else if (iss.key === 'brake') detailSVG = brakeDetailSVG()
+          else if (iss.key === 'electric') detailSVG = electricDetailSVG()
+          else detailSVG = `<svg viewBox="0 0 200 100"><text x="100" y="55" text-anchor="middle" fill="#888" font-size="12" font-family="system-ui">Diagram not available</text></svg>`
+
+          const bc2 = iss.severity === 'fail' ? 'badge-r' : 'badge-y'
+
+          views[`issue_${t.id}_${iss.key}`] = `
+            <div class="z-view v">
+              <div class="bc">Line <span>&rsaquo;</span> ${t.id} <span>&rsaquo;</span> ${iss.key}</div>
+              <div class="hdr">
+                <h1>${iss.title}</h1>
+                <span class="badge ${bc2}" style="margin-left:auto">${iss.severity === 'fail' ? 'Critical failure' : 'Warning'}</span>
+              </div>
+              <div class="kpis">
+                <div class="kpi"><div class="kpi-l">Unit</div><div class="kpi-v sm" style="font-size:1em">${t.id}</div></div>
+                <div class="kpi"><div class="kpi-l">System</div><div class="kpi-v sm" style="font-size:1em">${iss.key.charAt(0).toUpperCase() + iss.key.slice(1)}</div></div>
+                <div class="kpi"><div class="kpi-l">Priority</div><div class="kpi-v ${iss.severity === 'fail' ? 'c-r' : 'c-y'}">${iss.severity === 'fail' ? 'High' : 'Medium'}</div></div>
+                <div class="kpi"><div class="kpi-l">Detected</div><div class="kpi-v sm" style="font-size:1em">14:${Math.floor(Math.random() * 50 + 10)}</div></div>
+              </div>
+              <div class="detail-layout">
+                <div class="detail-box svg-detail-wrap">
+                  ${detailSVG}
+                </div>
+                <div class="detail-box">
+                  <h3>Diagnosis</h3>
+                  <div class="row"><span class="row-l">Description</span></div>
+                  <div style="font-size:0.78em;padding:6px 0;color:var(--mb-text);line-height:1.5">${iss.desc}</div>
+                  <div class="row"><span class="row-l">Required action</span><span>${iss.severity === 'fail' ? 'Immediate stop' : 'Schedule replacement'}</span></div>
+                  <div class="row"><span class="row-l">Responsible</span><span>Maint. Line 1</span></div>
+                  <div class="row"><span class="row-l">Est. time</span><span>${iss.severity === 'fail' ? '45 min' : '20 min'}</span></div>
+                </div>
+                <div class="detail-box" style="grid-column: 1 / -1">
+                  <h3>History</h3>
+                  <div class="timeline">
+                    <div class="tl-item err"><span class="tl-t">14:23</span><span>Failure detected by diagnostic system</span></div>
+                    <div class="tl-item warn"><span class="tl-t">14:25</span><span>Unit stopped automatically</span></div>
+                    <div class="tl-item"><span class="tl-t">14:28</span><span>Notification sent to line supervisor</span></div>
+                    <div class="tl-item"><span class="tl-t">14:32</span><span>Technician assigned: R. Fernandez</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `
+        })
+      })
+
+      // ── Conveyor pause/resume on zoom ──────────────────
+      function pauseConveyor () {
+        const el = document.getElementById('conveyor')
+        if (el) el.classList.add('paused')
+      }
+
+      function resumeConveyor () {
+        const el = document.getElementById('conveyor')
+        if (el) el.classList.remove('paused')
+      }
+
+      // ── Init ───────────────────────────────────────────
+      const app = new ZumlyLib({
+        mount: '.canvas',
+        initialView: 'line',
+        views,
+        transitions: {
+          duration: '700ms',
+          ease: 'ease-in-out',
+          cover: 'width',
+          effects: ['blur(2px) brightness(0.7)', 'blur(5px) brightness(0.4)'],
+          hideTrigger: 'fade',
+        },
+        navPosition: 'middle-left',
+        debug: false,
+      })
+
+      app.init()
+
+      // Pause conveyor animation during zoom navigation
+      app.on('beforeZoomIn', pauseConveyor)
+      app.on('afterZoomOut', () => {
+        // Resume only when back at the top level (line view)
+        if (app.zoomLevel() <= 1) resumeConveyor()
+      })
+    </script>
+  </body>
+</html>

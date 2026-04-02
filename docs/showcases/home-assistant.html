@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zumly - Home Assistant + Orbit CSS</title>
+    <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
+    <link rel="stylesheet" href="https://unpkg.com/@zumer/orbit@latest/dist/orbit.css" />
+    <style>
+      :root {
+        --ha-bg: #0a0a18;
+        --ha-blue: #3498db;
+        --ha-cyan: #00c8ff;
+        --ha-green: #2ecc71;
+        --ha-green-light: #6fcf97;
+        --ha-text: #c8d0e0;
+        --ha-muted: rgba(200, 208, 224, 0.35);
+        --ha-surface: rgba(255, 255, 255, 0.03);
+        --ha-border: rgba(255, 255, 255, 0.06);
+        --fx-color: var(--ha-blue);
+        --fx-font: var(--ha-blue);
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        background: var(--ha-bg);
+        color: var(--ha-text);
+        font-family: system-ui, -apple-system, sans-serif;
+        font-weight: 300;
+        overflow: hidden;
+      }
+
+      .mount { position: absolute; inset: 0; overflow: hidden; }
+      .canvas { width: 100%; height: 100%; }
+
+      /* ── Base view ──────────────────────────────────────── */
+      .v {
+        width: 100%; height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at 50% 50%, #0d0d28 0%, var(--ha-bg) 70%);
+      }
+
+      /* ── Orbit CSS overrides ────────────────────────────── */
+      .satellite { border: none; }
+
+      .ring { border-width: 2px; border-style: solid; }
+      .ring.glow { border-color: var(--fx-color); }
+      .ring.bold { border-width: 3px; }
+
+      .vector.glow { background-color: var(--fx-color); }
+
+      .satellite.glow {
+        border: none;
+        color: var(--fx-color);
+      }
+
+      o-arc.glow { --o-fill: var(--fx-color); }
+      o-arc.transparent { --o-fill: none; }
+
+      .translucid { opacity: 0.5; }
+
+      .label { color: var(--fx-font); font-size: 11px; }
+      .emphasis { font-weight: bold; font-size: 20px; }
+
+      .eye-info {
+        width: 200px;
+        text-align: center;
+        color: var(--fx-font);
+        flex-direction: column;
+      }
+
+      /* Menu items */
+      .menu-item {
+        border: none;
+        cursor: pointer;
+      }
+      .menu-item .capsule {
+        overflow: visible;
+      }
+      .menu-item .fx-icon { fill: var(--fx-font); }
+
+      /* Selector arcs */
+      .selector {
+        opacity: 0;
+        color: var(--fx-font);
+        --o-fill: var(--fx-color);
+        --o-stroke: var(--fx-color);
+      }
+      .selector:hover,
+      .selector.active {
+        transition: opacity 1s;
+        opacity: 1;
+        --o-fill: none;
+        --o-stroke: var(--fx-color);
+      }
+
+      /* ── Cameras view ───────────────────────────────────── */
+      .cam-view {
+        width: 100%; height: 100%;
+        background: transparent;
+      }
+
+      .cam-view .gravity-spot {
+        --o-force: 320px;
+      }
+
+      .cam-view .satellite { border: none; overflow: visible; }
+      .cam-view .capsule { overflow: visible; }
+
+      /* Camera card */
+      .cam-card {
+        width: 140px;
+        height: 110px;
+        border-radius: 12px;
+        border: 1.5px solid rgba(52, 152, 219, 0.3);
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(8px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: default;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        position: relative;
+        overflow: hidden;
+      }
+      .cam-card:hover {
+        border-color: var(--ha-cyan);
+        box-shadow: 0 0 20px rgba(0, 200, 255, 0.15);
+      }
+
+      /* Simulated camera feed */
+      .cam-feed {
+        width: 120px;
+        height: 68px;
+        border-radius: 6px;
+        overflow: hidden;
+        position: relative;
+      }
+      .cam-feed-bg {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #1a1a3a 0%, #0d1a2a 100%);
+        position: relative;
+      }
+      /* Scanline effect */
+      .cam-feed-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 200, 255, 0.02) 2px,
+          rgba(0, 200, 255, 0.02) 4px
+        );
+        animation: scanline 4s linear infinite;
+      }
+      @keyframes scanline {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(8px); }
+      }
+
+      /* Room silhouettes in cam feed */
+      .cam-silhouette {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0.15;
+      }
+
+      /* REC indicator */
+      .cam-rec {
+        position: absolute;
+        top: 4px;
+        left: 6px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 6px;
+        font-family: monospace;
+        font-weight: 700;
+        color: #ff4444;
+        letter-spacing: 0.5px;
+      }
+      .cam-rec-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: #ff4444;
+        animation: rec-blink 1.2s ease-in-out infinite;
+      }
+      @keyframes rec-blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.2; }
+      }
+
+      /* Resolution label */
+      .cam-res {
+        position: absolute;
+        bottom: 3px;
+        right: 5px;
+        font-size: 5px;
+        font-family: monospace;
+        color: rgba(0, 200, 255, 0.4);
+      }
+
+      .cam-name {
+        font-size: 8px;
+        font-family: monospace;
+        color: var(--ha-cyan);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .cam-status {
+        font-size: 6px;
+        color: var(--ha-green);
+        font-family: monospace;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .cam-status-dot {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--ha-green);
+      }
+
+      /* Title in cam view */
+      .cam-title {
+        text-align: center;
+        color: var(--fx-font);
+        flex-direction: column;
+        font-size: 12px;
+        font-weight: 300;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      .cam-title .cam-count {
+        font-size: 22px;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      /* Orbit ring styling in cam view */
+      .cam-view [class*="orbit-"] {
+        border-color: rgba(52, 152, 219, 0.08) !important;
+        border-style: dashed !important;
+      }
+      .cam-view .orbit-ring {
+        border-color: rgba(0, 200, 255, 0.12) !important;
+        border-style: solid !important;
+        border-width: 1px !important;
+      }
+
+      /* Decorative arc ring around cameras */
+      .cam-view o-arc.cam-arc {
+        --o-fill: rgba(52, 152, 219, 0.06);
+        --o-stroke: rgba(0, 200, 255, 0.1);
+      }
+
+      /* ── Camera detail view (Level 3) ───────────────────── */
+      .cam-detail {
+        width: 100%; height: 100%;
+        background: radial-gradient(ellipse at 50% 50%, rgba(13,13,40,0.95) 0%, rgba(10,10,24,0.92) 70%);
+        padding: 24px;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        grid-template-rows: auto 1fr auto;
+        gap: 16px;
+        font-family: monospace;
+      }
+
+      .cam-detail .cam-header {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .cam-detail .cam-header h1 {
+        font-size: 16px;
+        font-weight: 400;
+        color: var(--ha-cyan);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      .cam-detail .cam-header .cam-badge {
+        margin-left: auto;
+        font-size: 9px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        border: 1px solid var(--ha-green);
+        color: var(--ha-green);
+        letter-spacing: 1px;
+      }
+
+      .cam-detail .cam-preview {
+        border-radius: 10px;
+        border: 1px solid var(--ha-border);
+        background: linear-gradient(135deg, #0d0d28 0%, #0a0a18 100%);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 200px;
+      }
+      .cam-detail .cam-preview .cam-feed-bg {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        inset: 0;
+      }
+      .cam-detail .cam-preview .cam-silhouette { opacity: 0.08; }
+      .cam-detail .cam-preview .cam-rec {
+        position: absolute;
+        top: 10px;
+        left: 14px;
+        font-size: 9px;
+      }
+      .cam-detail .cam-preview .cam-overlay {
+        position: absolute;
+        bottom: 10px;
+        left: 14px;
+        right: 14px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 8px;
+        color: var(--ha-muted);
+      }
+
+      .cam-detail .cam-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .cam-detail .cam-panel {
+        border: 1px solid var(--ha-border);
+        border-radius: 8px;
+        background: var(--ha-surface);
+        padding: 12px;
+      }
+      .cam-detail .cam-panel h3 {
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--ha-muted);
+        margin-bottom: 8px;
+        font-weight: 400;
+      }
+
+      .cam-detail .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .cam-detail .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .cam-detail .stat-label {
+        font-size: 7px;
+        color: var(--ha-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .cam-detail .stat-val {
+        font-size: 12px;
+        color: var(--ha-text);
+      }
+      .cam-detail .stat-val.accent { color: var(--ha-cyan); }
+      .cam-detail .stat-val.green { color: var(--ha-green); }
+      .cam-detail .stat-val.warn { color: #ffd740; }
+
+      .cam-detail .controls {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+      }
+      .cam-detail .ctrl-btn {
+        font-size: 8px;
+        font-family: monospace;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 6px 16px;
+        border-radius: 20px;
+        border: 1px solid var(--ha-border);
+        background: var(--ha-surface);
+        color: var(--ha-text);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .cam-detail .ctrl-btn .dot {
+        width: 5px; height: 5px;
+        border-radius: 50%;
+      }
+      .cam-detail .ctrl-btn .dot.on { background: var(--ha-green); }
+      .cam-detail .ctrl-btn .dot.off { background: var(--ha-muted); }
+
+      .cam-detail .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .cam-detail .tl-item {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        font-size: 8px;
+        color: var(--ha-text);
+      }
+      .cam-detail .tl-time {
+        color: var(--ha-muted);
+        min-width: 45px;
+      }
+      .cam-detail .tl-type {
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-size: 7px;
+        letter-spacing: 0.5px;
+      }
+      .cam-detail .tl-type.motion { background: rgba(0,200,255,0.1); color: var(--ha-cyan); }
+      .cam-detail .tl-type.person { background: rgba(0,230,118,0.1); color: var(--ha-green); }
+      .cam-detail .tl-type.sound { background: rgba(255,215,64,0.1); color: #ffd740; }
+
+      /* ── Generic section view (Devices, Rooms, Scenes, Alarm) ── */
+      .section-view {
+        width: 100%; height: 100%;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .section-view .gravity-spot { --o-force: 340px; }
+      .section-view .satellite { border: none; overflow: visible; }
+      .section-view .capsule { overflow: visible; }
+      .section-view [class*="orbit-"] {
+        border-color: rgba(52,152,219,0.06) !important;
+        border-style: dashed !important;
+      }
+
+      /* Section card (device, room, scene items) */
+      .sec-card {
+        width: 120px;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid var(--ha-border);
+        background: rgba(255,255,255,0.02);
+        backdrop-filter: blur(6px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        font-family: monospace;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        cursor: zoom-in;
+      }
+      .sec-card:hover {
+        border-color: var(--ha-cyan);
+        box-shadow: 0 0 16px rgba(0,200,255,0.1);
+      }
+      .sec-card .sec-icon {
+        font-size: 20px;
+        margin-bottom: 2px;
+      }
+      .sec-card .sec-icon svg { width: 20px; height: 20px; }
+      .sec-card .sec-name {
+        font-size: 7px;
+        color: var(--ha-cyan);
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        text-align: center;
+      }
+      .sec-card .sec-state {
+        font-size: 8px;
+        color: var(--ha-text);
+      }
+      .sec-card .sec-meta {
+        font-size: 6px;
+        color: var(--ha-muted);
+      }
+      .sec-card .sec-state.on { color: var(--ha-green); }
+      .sec-card .sec-state.off { color: var(--ha-muted); }
+      .sec-card .sec-state.warn { color: #ffd740; }
+      .sec-card .sec-state.active { color: var(--ha-cyan); }
+
+      /* Section title at center */
+      .sec-title {
+        text-align: center;
+        color: var(--fx-font);
+        flex-direction: column;
+        font-size: 11px;
+        font-weight: 300;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-family: monospace;
+      }
+      .sec-title .sec-count {
+        font-size: 20px;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      /* ── Detail panel (reused across device/room/scene detail) ── */
+      .detail-view {
+        width: 100%; height: 100%;
+        background: radial-gradient(ellipse at 50% 50%, rgba(13,13,40,0.95) 0%, rgba(10,10,24,0.92) 70%);
+        padding: 24px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr;
+        gap: 14px;
+        font-family: monospace;
+      }
+      .detail-view .detail-header {
+        grid-column: 1 / -1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .detail-view .detail-header h1 {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--ha-cyan);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+      }
+      .detail-view .detail-header .detail-badge {
+        margin-left: auto;
+        font-size: 8px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        border: 1px solid;
+        letter-spacing: 1px;
+      }
+      .detail-view .detail-header .detail-badge.on { border-color: var(--ha-green); color: var(--ha-green); }
+      .detail-view .detail-header .detail-badge.off { border-color: var(--ha-muted); color: var(--ha-muted); }
+      .detail-view .detail-header .detail-badge.armed { border-color: #ff5252; color: #ff5252; }
+
+      .detail-view .d-panel {
+        border: 1px solid var(--ha-border);
+        border-radius: 8px;
+        background: var(--ha-surface);
+        padding: 12px;
+      }
+      .detail-view .d-panel h3 {
+        font-size: 8px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--ha-muted);
+        margin-bottom: 8px;
+        font-weight: 400;
+      }
+      .detail-view .d-panel .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .detail-view .d-panel .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .detail-view .d-panel .stat-label {
+        font-size: 7px;
+        color: var(--ha-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .detail-view .d-panel .stat-val {
+        font-size: 12px;
+        color: var(--ha-text);
+      }
+      .detail-view .d-panel .stat-val.accent { color: var(--ha-cyan); }
+      .detail-view .d-panel .stat-val.green { color: var(--ha-green); }
+      .detail-view .d-panel .stat-val.warn { color: #ffd740; }
+      .detail-view .d-panel .stat-val.red { color: #ff5252; }
+
+      .detail-view .d-panel.full { grid-column: 1 / -1; }
+
+      /* Alarm specific */
+      .alarm-zones { display: flex; flex-direction: column; gap: 6px; }
+      .alarm-zone {
+        display: flex; align-items: center; gap: 8px;
+        font-size: 9px; color: var(--ha-text);
+        padding: 6px 8px;
+        border: 1px solid var(--ha-border);
+        border-radius: 6px;
+      }
+      .alarm-zone .az-dot { width: 6px; height: 6px; border-radius: 50%; }
+      .alarm-zone .az-dot.armed { background: var(--ha-green); }
+      .alarm-zone .az-dot.disarmed { background: var(--ha-muted); }
+      .alarm-zone .az-dot.triggered { background: #ff5252; animation: rec-blink 1s infinite; }
+      .alarm-zone .az-status { margin-left: auto; font-size: 7px; color: var(--ha-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+      /* Scene activation bar */
+      .scene-bar {
+        display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
+      }
+      .scene-dev {
+        font-size: 7px; padding: 3px 8px; border-radius: 12px;
+        border: 1px solid var(--ha-border); color: var(--ha-text);
+      }
+      .scene-dev.active { border-color: var(--ha-green); color: var(--ha-green); }
+    </style>
+</head>
+<body>
+    <div class="mount">
+      <div class="canvas zumly-canvas"></div>
+    </div>
+
+    <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+    <script src="https://unpkg.com/@zumer/orbit@latest/dist/orbit.js"></script>
+    <script>
+      const ZumlyLib = window.Zumly || globalThis.Zumly
+
+      // ── Camera data ─────────────────────────────────────
+      const cameras = [
+        { id: 'cam1', name: 'Living Room', res: '1080p', fps: 30, status: 'online', uptime: '99.8%', storage: '42.1 GB', events: 12, lastEvent: '2 min ago', model: 'Reolink RLC-810A', ip: '192.168.1.41', nightVision: 'Auto', motion: true, audio: true },
+        { id: 'cam2', name: 'Front Door', res: '2K', fps: 25, status: 'online', uptime: '99.9%', storage: '38.7 GB', events: 27, lastEvent: '14 min ago', model: 'Reolink Doorbell', ip: '192.168.1.42', nightVision: 'On', motion: true, audio: true },
+        { id: 'cam3', name: 'Garage', res: '1080p', fps: 30, status: 'online', uptime: '98.2%', storage: '51.3 GB', events: 5, lastEvent: '1 hr ago', model: 'Amcrest IP4M', ip: '192.168.1.43', nightVision: 'Off', motion: true, audio: false },
+        { id: 'cam4', name: 'Backyard', res: '4K', fps: 15, status: 'online', uptime: '97.5%', storage: '89.6 GB', events: 8, lastEvent: '22 min ago', model: 'Reolink RLC-823A', ip: '192.168.1.44', nightVision: 'Auto', motion: true, audio: true },
+      ]
+
+      // Room silhouette SVGs for each camera feed
+      function roomSilhouette (type) {
+        if (type === 'living') return `<svg class="cam-silhouette" width="100" height="40" viewBox="0 0 100 40" fill="white">
+          <rect x="10" y="15" width="30" height="25" rx="2"/>
+          <rect x="45" y="20" width="15" height="20" rx="1"/>
+          <rect x="65" y="10" width="25" height="30" rx="2"/>
+        </svg>`
+        if (type === 'door') return `<svg class="cam-silhouette" width="100" height="40" viewBox="0 0 100 40" fill="white">
+          <rect x="30" y="2" width="40" height="38" rx="2"/>
+          <circle cx="62" cy="22" r="2"/>
+          <rect x="10" y="30" width="80" height="10" rx="1"/>
+        </svg>`
+        if (type === 'garage') return `<svg class="cam-silhouette" width="100" height="40" viewBox="0 0 100 40" fill="white">
+          <rect x="15" y="8" width="70" height="32" rx="3"/>
+          <line x1="15" y1="18" x2="85" y2="18" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+          <line x1="15" y1="28" x2="85" y2="28" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
+        </svg>`
+        return `<svg class="cam-silhouette" width="100" height="40" viewBox="0 0 100 40" fill="white">
+          <path d="M10 35 Q25 10 50 15 Q75 10 90 35 Z"/>
+          <circle cx="30" cy="28" r="4"/>
+          <circle cx="70" cy="25" r="3"/>
+        </svg>`
+      }
+
+      const silhouettes = ['living', 'door', 'garage', 'yard']
+
+      // ── Device data ─────────────────────────────────────
+      const devices = [
+        { id: 'light_living', name: 'Living Room Lights', type: 'light', room: 'Living Room', state: 'on', icon: 'lightbulb', brightness: 80, color: '#ffd740', power: '12W' },
+        { id: 'light_bed', name: 'Bedroom Light', type: 'light', room: 'Bedroom', state: 'off', icon: 'lightbulb', brightness: 0, color: '#fff', power: '0W' },
+        { id: 'thermo_main', name: 'Thermostat', type: 'climate', room: 'Hallway', state: '22°C', icon: 'thermostat', target: '22°C', mode: 'Auto', humidity: '48%' },
+        { id: 'lock_front', name: 'Front Door Lock', type: 'lock', room: 'Entrance', state: 'locked', icon: 'lock', battery: '87%', lastUnlock: '6h ago' },
+        { id: 'sensor_motion', name: 'Motion Sensor', type: 'sensor', room: 'Hallway', state: 'clear', icon: 'sensors', battery: '92%', lastTriggered: '14m ago' },
+        { id: 'plug_tv', name: 'TV Smart Plug', type: 'switch', room: 'Living Room', state: 'on', icon: 'power', power: '145W', energy: '2.4 kWh' },
+        { id: 'speaker_kitchen', name: 'Kitchen Speaker', type: 'media', room: 'Kitchen', state: 'idle', icon: 'speaker', volume: 30, source: 'Spotify' },
+        { id: 'blind_living', name: 'Living Blinds', type: 'cover', room: 'Living Room', state: 'open', icon: 'blinds', position: '100%' },
+      ]
+
+      // ── Room data ───────────────────────────────────────
+      const rooms = [
+        { id: 'living', name: 'Living Room', temp: '23.1°C', humidity: '45%', lights: 3, lightsOn: 2, devices: 5, power: '157W', co2: '412 ppm' },
+        { id: 'bedroom', name: 'Bedroom', temp: '21.8°C', humidity: '52%', lights: 2, lightsOn: 0, devices: 3, power: '8W', co2: '380 ppm' },
+        { id: 'kitchen', name: 'Kitchen', temp: '24.2°C', humidity: '55%', lights: 2, lightsOn: 1, devices: 4, power: '1250W', co2: '520 ppm' },
+        { id: 'garage', name: 'Garage', temp: '18.5°C', humidity: '62%', lights: 1, lightsOn: 0, devices: 2, power: '0W', co2: '390 ppm' },
+        { id: 'entrance', name: 'Entrance', temp: '22.0°C', humidity: '44%', lights: 1, lightsOn: 1, devices: 3, power: '12W', co2: '405 ppm' },
+      ]
+
+      // ── Scene data ──────────────────────────────────────
+      const scenes = [
+        { id: 'morning', name: 'Good Morning', icon: '☀', desc: 'Blinds open, lights warm 60%, coffee machine on', devices: 4, lastUsed: 'Today 7:30' },
+        { id: 'movie', name: 'Movie Night', icon: '🎬', desc: 'Living lights off, TV backlight on, blinds closed', devices: 3, lastUsed: 'Yesterday 21:00' },
+        { id: 'away', name: 'Away Mode', icon: '🔒', desc: 'All lights off, lock doors, arm alarm, cameras active', devices: 8, lastUsed: 'Today 9:15' },
+        { id: 'sleep', name: 'Good Night', icon: '🌙', desc: 'All lights off, lock doors, thermostat 20°C, alarm armed', devices: 6, lastUsed: 'Yesterday 23:30' },
+        { id: 'party', name: 'Party Mode', icon: '🎉', desc: 'Living lights RGB, speaker on, blinds open', devices: 4, lastUsed: '3 days ago' },
+        { id: 'eco', name: 'Eco Mode', icon: '🌱', desc: 'Minimize energy: dim lights, thermostat 19°C, standby off', devices: 10, lastUsed: 'Active now' },
+      ]
+
+      // ── Camera card builder ─────────────────────────────
+      function camCard (cam, i) {
+        return `<div class="cam-card zoom-me" data-to="cam_${cam.id}" style="cursor:zoom-in;">
+          <div class="cam-feed">
+            <div class="cam-feed-bg">
+              ${roomSilhouette(silhouettes[i])}
+              <div class="cam-rec"><div class="cam-rec-dot"></div>REC</div>
+              <div class="cam-res">${cam.res} ${cam.fps}fps</div>
+            </div>
+          </div>
+          <div class="cam-name">${cam.name}</div>
+          <div class="cam-status"><div class="cam-status-dot"></div>${cam.status}</div>
+        </div>`
+      }
+
+      // ── Build views ─────────────────────────────────────
+      const views = {}
+
+      // Level 1: Home Assistant dashboard (based on d3.html Orbit layout)
+      views.dashboard = `
+        <div class="z-view v">
+          <div class="bigbang">
+            <div class="gravity-spot">
+              <div class="orbit-0">
+                <div class="satellite at-center">
+                  <div class="gravity-spot gyro">
+                    <!-- Decorative vectors (radial lines) -->
+                    <div class="orbit-7 shrink-70 translucid range-150 from-240">
+                      ${Array(30).fill('<div class="vector shrink-60 inner-orbit glow"></div>').join('\n')}
+                    </div>
+                    <!-- Center (eco icon placeholder) -->
+                    <div class="orbit-3">
+                      <div class="satellite grow-2x at-center">
+                        <div class="capsule"></div>
+                      </div>
+                    </div>
+                    <!-- Arc decorations -->
+                    <div class="orbit-4 from-310 range-240 ring translucid">
+                      ${Array(24).fill('<o-arc class="glow gap-10 shrink-70"></o-arc>').join('\n')}
+                    </div>
+                    <div class="orbit-4 from-190 range-80">
+                      <o-arc class="glow inner-orbit shrink-90 translucid"></o-arc>
+                    </div>
+                    <div class="orbit-4 from-270 range-40 translucid">
+                      <o-arc class="glow shrink-70"></o-arc>
+                    </div>
+                    <!-- Issue indicator -->
+                    <div class="orbit-5">
+                      <div class="vector grow-2x outer-orbit angle-45" style="background-color: orange;"></div>
+                      <div class="satellite grow-2x outer-orbit angle-45" style="color: orange;">
+                        <div class="capsule" style="font-size:10px; color:orange;">0 problems</div>
+                      </div>
+                    </div>
+                    <!-- Mode arc -->
+                    <div class="orbit-5 range-180 from-45 ring bold glow">
+                      <o-arc class="glow outer-orbit"></o-arc>
+                      <o-arc class="outer-orbit transparent"></o-arc>
+                      <o-arc class="glow outer-orbit flip" style="font-weight:bold;">Eco Mode</o-arc>
+                    </div>
+                    <!-- Center info -->
+                    <div class="orbit-5">
+                      <div class="satellite at-center">
+                        <div class="capsule eye-info">
+                          <span>11:53 AM<br>Monday, Oct.</span>
+                          <br>
+                          <span>Outside 29°C<br>cloudy</span>
+                        </div>
+                      </div>
+                    </div>
+                     <!-- Selector arcs (hidden for now) -->
+                    <div class="orbit-11 from-68 range-180 fit-range" >
+                      <o-arc flip class="inner-orbit grow-2.2x selector"></o-arc>
+                      <o-arc flip class="inner-orbit grow-2.2x selector"></o-arc>
+                      <o-arc flip class="inner-orbit grow-2.2x selector"></o-arc>
+                      <o-arc flip class="inner-orbit grow-2.2x selector"></o-arc>
+                      <o-arc flip class="inner-orbit grow-2.2x selector"></o-arc>
+                    </div>
+                    <!-- Menu items -->
+                    <div class="orbit-9 shrink-20 from-90 range-180 fit-range">
+                      <div class="satellite grow-4x menu-item zoom-me" data-to="devices" style="cursor:zoom-in;">
+                        <div class="capsule">
+                          <svg class="fx-icon" height="24px" viewBox="0 -960 960 960" width="24px" fill="var(--fx-font)"><path d="M221-240q42 0 71-29t29-71q0-24-11-47t-33-37l-36-24v-252q0-9-5.5-14.5T221-720q-9 0-14.5 5.5T201-700v252l-36 24q-22 15-33 37t-11 47q0 42 29 71t71 29Zm0 80q-75 0-127.5-52T41-340q0-48 22-86t58-62v-212q0-42 29-71t71-29q42 0 71 29t29 71v212q36 24 58 62t22 86q0 75-52.5 127.5T221-160Zm327-200q-48-33-78-85t-30-115q0-100 70-170t170-70q100 0 170 70t70 170q0 63-30 115t-78 85H548Zm28-80h212q27-24 39.5-54t12.5-66q0-66-47-113t-113-47q-66 0-113 47t-47 113q0 36 14.5 66t41.5 54Zm104 280q-24 0-42-18t-18-42h120q0 24-18 42t-42 18Zm-120-80v-80h240v80H560ZM221-340Zm459-240Z"/></svg>
+                        </div>
+                        <div class="gravity-spot"><div class="orbit"><div class="satellite angle-180"><div class="capsule label">Devices</div></div></div></div>
+                      </div>
+                      <div class="satellite grow-4x menu-item zoom-me" data-to="cameras" style="cursor:zoom-in;">
+                        <div class="capsule">
+                          <svg class="fx-icon" height="24px" viewBox="0 -960 960 960" width="24px" fill="var(--fx-font)"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Zm0-80h480v-480H160v480Zm0 0v-480 480Z"/></svg>
+                        </div>
+                        <div class="gravity-spot"><div class="orbit"><div class="satellite angle-180"><div class="capsule label">${cameras.length} Cameras</div></div></div></div>
+                      </div>
+                      <div class="satellite grow-4x menu-item zoom-me" data-to="alarm" style="cursor:zoom-in;">
+                        <div class="capsule">
+                          <svg class="fx-icon" height="24px" viewBox="0 -960 960 960" width="24px" fill="var(--fx-font)"><path d="M480-440q17 0 28.5-11.5T520-480q0-17-11.5-28.5T480-520q-17 0-28.5 11.5T440-480q0 17 11.5 28.5T480-440Zm120 0q17 0 28.5-11.5T640-480q0-17-11.5-28.5T600-520q-17 0-28.5 11.5T560-480q0 17 11.5 28.5T600-440Zm-240 0q17 0 28.5-11.5T400-480q0-17-11.5-28.5T360-520q-17 0-28.5 11.5T320-480q0 17 11.5 28.5T360-440Zm120 120q17 0 28.5-11.5T520-360q0-17-11.5-28.5T480-400q-17 0-28.5 11.5T440-360q0 17 11.5 28.5T480-320Zm120 0q17 0 28.5-11.5T640-360q0-17-11.5-28.5T600-400q-17 0-28.5 11.5T560-360q0 17 11.5 28.5T600-320Zm-240 0q17 0 28.5-11.5T400-360q0-17-11.5-28.5T360-400q-17 0-28.5 11.5T320-360q0 17 11.5 28.5T360-320ZM480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Zm0-320Z"/></svg>
+                        </div>
+                        <div class="gravity-spot"><div class="orbit"><div class="satellite angle-180"><div class="capsule label">Alarm</div></div></div></div>
+                      </div>
+                      <div class="satellite grow-4x menu-item zoom-me" data-to="rooms" style="cursor:zoom-in;">
+                        <div class="capsule">
+                          <svg class="fx-icon" height="24px" viewBox="0 -960 960 960" width="24px" fill="var(--fx-font)"><path d="M160-120v-480l320-240 320 240v480H160Zm80-80h280v-120H240v120Zm360 0h120v-120H600v120ZM240-400h120v-119H240v119Zm200 0h280v-119H440v119ZM292-599h376L480-740 292-599Z"/></svg>
+                        </div>
+                        <div class="gravity-spot"><div class="orbit"><div class="satellite angle-180"><div class="capsule label">Rooms</div></div></div></div>
+                      </div>
+                      <div class="satellite grow-4x menu-item zoom-me" data-to="scenes" style="cursor:zoom-in;">
+                        <div class="capsule">
+                          <svg class="fx-icon" height="24px" viewBox="0 -960 960 960" width="24px" fill="var(--fx-font)"><path d="M120-120v-80h80v-640h400v40h160v240h-80v-160h-80v240h-80v-280H280v560h200v80H120Zm560 40-12-60q-12-5-22.5-11T625-165l-58 20-40-69 45-40q-2-15-2-25.5t2-25.5l-45-40 40-69 58 20q10-8 20.5-14.5T668-420l12-60h80l12 60q12 5 22.5 11t20.5 14l58-20 40 69-45 40q2 15 2 25.5t-2 25.5l45 40-40 69-58-19q-10 8-20.5 14T772-140l-12 60h-80Zm40-120q33 0 56.5-23.5T800-280q0-33-23.5-56.5T720-360q-33 0-56.5 23.5T640-280q0 33 23.5 56.5T720-200ZM440-440q-17 0-28.5-11.5T400-480q0-17 11.5-28.5T440-520q17 0 28.5 11.5T480-480q0 17-11.5 28.5T440-440ZM280-200v-560 560Z"/></svg>
+                        </div>
+                        <div class="gravity-spot"><div class="orbit"><div class="satellite angle-180"><div class="capsule label">Scenes</div></div></div></div>
+                      </div>
+                    </div>
+                   
+                  </div>
+                </div>
+              </div>
+              <!-- Outer decorative ring -->
+              <div class="orbit-12">
+                <div class="satellite"></div>
+                <div class="satellite"></div>
+                <div class="satellite"></div>
+                <div class="satellite"></div>
+                <div class="satellite"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+
+      // Level 2: Cameras view — 4 cameras in Orbit CSS layout
+      views.cameras = `
+        <div class="z-view cam-view">
+          <div class="bigbang">
+            <div class="gravity-spot" style="--o-force: 360px">
+              <!-- Center title -->
+              <div class="orbit-0">
+                <div class="satellite at-center">
+                  <div class="capsule cam-title">
+                    <span class="cam-count">${cameras.length}</span>
+                    Cameras Online
+                  </div>
+                </div>
+              </div>
+              <!-- Inner decorative ring -->
+              <div class="orbit-2 ring" style="border-color: rgba(52,152,219,0.1) !important; border-style: solid !important; border-width: 1px !important;">
+              </div>
+              <!-- Cameras on orbit-4, pushed outward to avoid overlap -->
+              <div class="orbit-4 orbit-ring">
+                ${cameras.map((cam, i) => `
+                  <div class="satellite outer-orbit grow-3x">
+                    <div class="capsule">
+                      ${camCard(cam, i)}
+                    </div>
+                  </div>
+                `).join('\n')}
+              </div>
+              <!-- Outer decorative arcs -->
+              <div class="orbit-7 from-0 range-360" style="border: none !important;">
+                ${Array(12).fill('<o-arc class="cam-arc shrink-50"></o-arc>').join('\n')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+
+      // Level 3: Camera detail views
+      const eventTypes = ['motion', 'person', 'sound']
+      const eventLabels = { motion: 'Motion detected', person: 'Person detected', sound: 'Sound detected' }
+
+      cameras.forEach((cam, i) => {
+        // Generate fake recent events
+        const events = Array.from({ length: 5 }, (_, j) => {
+          const type = eventTypes[Math.floor(Math.random() * eventTypes.length)]
+          const mins = j * 12 + Math.floor(Math.random() * 10)
+          const h = Math.floor(mins / 60)
+          const m = mins % 60
+          const time = h > 0 ? `${h}h ${m}m ago` : `${m}m ago`
+          return { type, time, label: eventLabels[type] }
+        })
+
+        views[`cam_${cam.id}`] = `
+          <div class="z-view cam-detail">
+            <div class="cam-header">
+              <svg height="18px" viewBox="0 -960 960 960" width="18px" fill="var(--ha-cyan)"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Zm0-80h480v-480H160v480Zm0 0v-480 480Z"/></svg>
+              <h1>${cam.name}</h1>
+              <span class="cam-badge">${cam.status.toUpperCase()}</span>
+            </div>
+
+            <div class="cam-preview">
+              <div class="cam-feed-bg">
+                ${roomSilhouette(silhouettes[i])}
+              </div>
+              <div class="cam-rec"><div class="cam-rec-dot"></div>REC</div>
+              <div class="cam-overlay">
+                <span>${cam.res} · ${cam.fps}fps</span>
+                <span>${new Date().toLocaleTimeString()}</span>
+              </div>
+            </div>
+
+            <div class="cam-sidebar">
+              <div class="cam-panel">
+                <h3>Device Info</h3>
+                <div class="stat-grid">
+                  <div class="stat"><span class="stat-label">Model</span><span class="stat-val">${cam.model}</span></div>
+                  <div class="stat"><span class="stat-label">IP Address</span><span class="stat-val accent">${cam.ip}</span></div>
+                  <div class="stat"><span class="stat-label">Resolution</span><span class="stat-val">${cam.res}</span></div>
+                  <div class="stat"><span class="stat-label">Frame Rate</span><span class="stat-val">${cam.fps} fps</span></div>
+                </div>
+              </div>
+
+              <div class="cam-panel">
+                <h3>Statistics</h3>
+                <div class="stat-grid">
+                  <div class="stat"><span class="stat-label">Uptime</span><span class="stat-val green">${cam.uptime}</span></div>
+                  <div class="stat"><span class="stat-label">Storage</span><span class="stat-val ${parseFloat(cam.storage) > 80 ? 'warn' : ''}">${cam.storage}</span></div>
+                  <div class="stat"><span class="stat-label">Events (24h)</span><span class="stat-val accent">${cam.events}</span></div>
+                  <div class="stat"><span class="stat-label">Last Event</span><span class="stat-val">${cam.lastEvent}</span></div>
+                </div>
+              </div>
+
+              <div class="cam-panel">
+                <h3>Recent Events</h3>
+                <div class="timeline">
+                  ${events.map(ev => `
+                    <div class="tl-item">
+                      <span class="tl-time">${ev.time}</span>
+                      <span class="tl-type ${ev.type}">${ev.type}</span>
+                      <span>${ev.label}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <div class="controls">
+              <div class="ctrl-btn"><div class="dot ${cam.motion ? 'on' : 'off'}"></div>Motion</div>
+              <div class="ctrl-btn"><div class="dot ${cam.audio ? 'on' : 'off'}"></div>Audio</div>
+              <div class="ctrl-btn"><div class="dot ${cam.nightVision !== 'Off' ? 'on' : 'off'}"></div>Night Vision: ${cam.nightVision}</div>
+              <div class="ctrl-btn"><div class="dot on"></div>Recording</div>
+            </div>
+          </div>
+        `
+      })
+
+      // ══════════════════════════════════════════════════════
+      // DEVICES
+      // ══════════════════════════════════════════════════════
+
+      function deviceIcon (type) {
+        const icons = {
+          light: '<svg viewBox="0 -960 960 960" fill="var(--ha-cyan)"><path d="M480-80q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-200v-80h320v80H320Zm10-120q-69-41-109.5-110T180-580q0-125 87.5-212.5T480-880q125 0 212.5 87.5T780-580q0 81-40.5 150T630-320H330Z"/></svg>',
+          climate: '<svg viewBox="0 -960 960 960" fill="var(--ha-cyan)"><path d="M480-120q-83 0-141.5-58.5T280-320q0-48 21-89.5t59-70.5v-280q0-50 35-85t85-35q50 0 85 35t35 85v280q38 29 59 70.5t21 89.5q0 83-58.5 141.5T480-120Z"/></svg>',
+          lock: '<svg viewBox="0 -960 960 960" fill="var(--ha-cyan)"><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm240-200q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80Z"/></svg>',
+          sensor: '<svg viewBox="0 -960 960 960" fill="var(--ha-cyan)"><path d="M120-120v-80l80-80v160h-80Zm160 0v-240l80-80v320h-80Zm160 0v-320l80 81v239h-80Zm160 0v-239l80-80v319h-80Zm160 0v-400l80-80v480h-80ZM120-327v-113l280-280 160 160 280-280v113L560-447 400-607 120-327Z"/></svg>',
+          switch: '<svg viewBox="0 -960 960 960" fill="var(--ha-cyan)"><path d="M280-400q-33 0-56.5-23.5T200-480q0-33 23.5-56.5T280-560q33 0 56.5 23.5T360-480q0 33-23.5 56.5T280-400Zm0 160q-100 0-170-70T40-480q0-100 70-170t170-70h400q100 0 170 70t70 170q0 100-70 170t-170 70H280Z"/></svg>',
+          media: '<svg viewBox="0 -960 960 960" fill="var(--ha-cyan)"><path d="M560-131v-82q90-26 145-100t55-168q0-94-55-168T560-749v-82q124 28 202 125.5T840-481q0 127-78 224.5T560-131ZM120-360v-240h160l200-200v640L280-360H120Zm440 40v-322q47 22 73.5 66t26.5 96q0 51-26.5 94.5T560-320Z"/></svg>',
+          cover: '<svg viewBox="0 -960 960 960" fill="var(--ha-cyan)"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0 0v-560 560Zm80-80h400v-60H280v60Zm0-120h400v-60H280v60Zm0-120h400v-60H280v60Z"/></svg>',
+        }
+        return icons[type] || icons.sensor
+      }
+
+      function devStateClass (dev) {
+        if (dev.state === 'on' || dev.state === 'locked' || dev.state === 'open') return 'on'
+        if (dev.state === 'off' || dev.state === 'closed') return 'off'
+        return 'active'
+      }
+
+      views.devices = `
+        <div class="z-view section-view">
+          <div class="bigbang">
+            <div class="gravity-spot" style="--o-force: 380px">
+              <div class="orbit-0">
+                <div class="satellite at-center">
+                  <div class="capsule sec-title">
+                    <span class="sec-count">${devices.length}</span>
+                    Devices
+                  </div>
+                </div>
+              </div>
+              <div class="orbit-5">
+                ${devices.map(dev => `
+                  <div class="satellite outer-orbit grow-3x">
+                    <div class="capsule">
+                      <div class="sec-card zoom-me" data-to="dev_${dev.id}">
+                        <div class="sec-icon">${deviceIcon(dev.type)}</div>
+                        <div class="sec-name">${dev.name}</div>
+                        <div class="sec-state ${devStateClass(dev)}">${dev.state}</div>
+                        <div class="sec-meta">${dev.room}</div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+
+      // Device detail views
+      devices.forEach(dev => {
+        const stateClass = devStateClass(dev)
+        const extraStats = []
+        if (dev.brightness !== undefined) extraStats.push({ l: 'Brightness', v: dev.brightness + '%', c: '' })
+        if (dev.power) extraStats.push({ l: 'Power', v: dev.power, c: 'accent' })
+        if (dev.energy) extraStats.push({ l: 'Energy Today', v: dev.energy, c: '' })
+        if (dev.battery) extraStats.push({ l: 'Battery', v: dev.battery, c: parseInt(dev.battery) < 30 ? 'warn' : 'green' })
+        if (dev.target) extraStats.push({ l: 'Target', v: dev.target, c: 'accent' })
+        if (dev.mode) extraStats.push({ l: 'Mode', v: dev.mode, c: '' })
+        if (dev.humidity) extraStats.push({ l: 'Humidity', v: dev.humidity, c: '' })
+        if (dev.volume !== undefined) extraStats.push({ l: 'Volume', v: dev.volume + '%', c: '' })
+        if (dev.source) extraStats.push({ l: 'Source', v: dev.source, c: 'accent' })
+        if (dev.position) extraStats.push({ l: 'Position', v: dev.position, c: '' })
+        if (dev.lastUnlock) extraStats.push({ l: 'Last Unlock', v: dev.lastUnlock, c: '' })
+        if (dev.lastTriggered) extraStats.push({ l: 'Last Triggered', v: dev.lastTriggered, c: '' })
+
+        views[`dev_${dev.id}`] = `
+          <div class="z-view detail-view">
+            <div class="detail-header">
+              <div style="width:18px;height:18px;">${deviceIcon(dev.type)}</div>
+              <h1>${dev.name}</h1>
+              <span class="detail-badge ${stateClass}">${dev.state.toUpperCase()}</span>
+            </div>
+            <div class="d-panel">
+              <h3>Device Info</h3>
+              <div class="stat-grid">
+                <div class="stat"><span class="stat-label">Type</span><span class="stat-val">${dev.type}</span></div>
+                <div class="stat"><span class="stat-label">Room</span><span class="stat-val accent">${dev.room}</span></div>
+                <div class="stat"><span class="stat-label">State</span><span class="stat-val ${stateClass}">${dev.state}</span></div>
+                <div class="stat"><span class="stat-label">Entity ID</span><span class="stat-val" style="font-size:9px;">${dev.type}.${dev.id}</span></div>
+              </div>
+            </div>
+            <div class="d-panel">
+              <h3>Properties</h3>
+              <div class="stat-grid">
+                ${extraStats.map(s => `<div class="stat"><span class="stat-label">${s.l}</span><span class="stat-val ${s.c}">${s.v}</span></div>`).join('')}
+              </div>
+            </div>
+            <div class="d-panel full">
+              <h3>Activity Log</h3>
+              <div class="timeline" style="display:flex;flex-direction:column;gap:5px;">
+                <div class="tl-item" style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">2m ago</span><span>State changed to ${dev.state}</span></div>
+                <div class="tl-item" style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">1h ago</span><span>Automation triggered</span></div>
+                <div class="tl-item" style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">3h ago</span><span>Manual control via app</span></div>
+                <div class="tl-item" style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">6h ago</span><span>State changed</span></div>
+              </div>
+            </div>
+          </div>
+        `
+      })
+
+      // ══════════════════════════════════════════════════════
+      // ALARM
+      // ══════════════════════════════════════════════════════
+
+      const alarmZones = [
+        { name: 'Front Door', status: 'armed', sensor: 'Contact sensor', lastTriggered: '6h ago' },
+        { name: 'Back Door', status: 'armed', sensor: 'Contact sensor', lastTriggered: '2d ago' },
+        { name: 'Garage Door', status: 'armed', sensor: 'Contact sensor', lastTriggered: '12h ago' },
+        { name: 'Living Room', status: 'armed', sensor: 'Motion + Glass break', lastTriggered: '14m ago' },
+        { name: 'Bedroom Window', status: 'disarmed', sensor: 'Contact sensor', lastTriggered: '5d ago' },
+        { name: 'Kitchen', status: 'armed', sensor: 'Smoke + CO', lastTriggered: 'Never' },
+      ]
+
+      views.alarm = `
+        <div class="z-view detail-view">
+          <div class="detail-header">
+            <svg height="18px" viewBox="0 -960 960 960" width="18px" fill="#ff5252"><path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"/></svg>
+            <h1>Alarm System</h1>
+            <span class="detail-badge armed">ARMED HOME</span>
+          </div>
+          <div class="d-panel">
+            <h3>System Status</h3>
+            <div class="stat-grid">
+              <div class="stat"><span class="stat-label">Mode</span><span class="stat-val red">Armed Home</span></div>
+              <div class="stat"><span class="stat-label">Zones</span><span class="stat-val accent">${alarmZones.length}</span></div>
+              <div class="stat"><span class="stat-label">Armed</span><span class="stat-val green">${alarmZones.filter(z => z.status === 'armed').length}/${alarmZones.length}</span></div>
+              <div class="stat"><span class="stat-label">Last Trigger</span><span class="stat-val">14m ago</span></div>
+              <div class="stat"><span class="stat-label">Siren</span><span class="stat-val green">Ready</span></div>
+              <div class="stat"><span class="stat-label">Battery Backup</span><span class="stat-val green">100%</span></div>
+              <div class="stat"><span class="stat-label">Monitoring</span><span class="stat-val accent">24/7 Active</span></div>
+              <div class="stat"><span class="stat-label">Code Required</span><span class="stat-val">Yes</span></div>
+            </div>
+          </div>
+          <div class="d-panel">
+            <h3>Zones</h3>
+            <div class="alarm-zones">
+              ${alarmZones.map(z => `
+                <div class="alarm-zone">
+                  <div class="az-dot ${z.status}"></div>
+                  <span>${z.name}</span>
+                  <span style="font-size:7px;color:var(--ha-muted);">${z.sensor}</span>
+                  <span class="az-status">${z.status}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="d-panel full">
+            <h3>Recent Activity</h3>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">14m ago</span><span style="padding:1px 5px;border-radius:3px;font-size:7px;background:rgba(0,200,255,0.1);color:var(--ha-cyan);">motion</span><span>Living Room motion detected</span></div>
+              <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">6h ago</span><span style="padding:1px 5px;border-radius:3px;font-size:7px;background:rgba(0,230,118,0.1);color:var(--ha-green);">open</span><span>Front Door opened</span></div>
+              <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">6h ago</span><span style="padding:1px 5px;border-radius:3px;font-size:7px;background:rgba(0,230,118,0.1);color:var(--ha-green);">close</span><span>Front Door closed</span></div>
+              <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">9h ago</span><span style="padding:1px 5px;border-radius:3px;font-size:7px;background:rgba(255,82,82,0.1);color:#ff5252;">armed</span><span>System armed (Away mode)</span></div>
+              <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">9h ago</span><span style="padding:1px 5px;border-radius:3px;font-size:7px;background:rgba(255,215,64,0.1);color:#ffd740;">disarm</span><span>System disarmed by Martin</span></div>
+            </div>
+          </div>
+        </div>
+      `
+
+      // ══════════════════════════════════════════════════════
+      // ROOMS
+      // ══════════════════════════════════════════════════════
+
+      views.rooms = `
+        <div class="z-view section-view">
+          <div class="bigbang">
+            <div class="gravity-spot" style="--o-force: 340px">
+              <div class="orbit-0">
+                <div class="satellite at-center">
+                  <div class="capsule sec-title">
+                    <span class="sec-count">${rooms.length}</span>
+                    Rooms
+                  </div>
+                </div>
+              </div>
+              <div class="orbit-4">
+                ${rooms.map(r => `
+                  <div class="satellite outer-orbit grow-3x">
+                    <div class="capsule">
+                      <div class="sec-card zoom-me" data-to="room_${r.id}">
+                        <div class="sec-icon"><svg viewBox="0 -960 960 960" fill="var(--ha-cyan)"><path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z"/></svg></div>
+                        <div class="sec-name">${r.name}</div>
+                        <div class="sec-state active">${r.temp}</div>
+                        <div class="sec-meta">${r.lightsOn}/${r.lights} lights · ${r.power}</div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+
+      // Room detail views
+      rooms.forEach(r => {
+        const roomDevices = devices.filter(d => d.room === r.name)
+        views[`room_${r.id}`] = `
+          <div class="z-view detail-view">
+            <div class="detail-header">
+              <svg height="18px" viewBox="0 -960 960 960" width="18px" fill="var(--ha-cyan)"><path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z"/></svg>
+              <h1>${r.name}</h1>
+              <span class="detail-badge on">${r.lightsOn}/${r.lights} LIGHTS</span>
+            </div>
+            <div class="d-panel">
+              <h3>Environment</h3>
+              <div class="stat-grid">
+                <div class="stat"><span class="stat-label">Temperature</span><span class="stat-val accent">${r.temp}</span></div>
+                <div class="stat"><span class="stat-label">Humidity</span><span class="stat-val">${r.humidity}</span></div>
+                <div class="stat"><span class="stat-label">CO₂</span><span class="stat-val ${parseInt(r.co2) > 500 ? 'warn' : ''}">${r.co2}</span></div>
+                <div class="stat"><span class="stat-label">Power Draw</span><span class="stat-val accent">${r.power}</span></div>
+              </div>
+            </div>
+            <div class="d-panel">
+              <h3>Devices (${roomDevices.length})</h3>
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                ${roomDevices.length > 0 ? roomDevices.map(d => `
+                  <div style="display:flex;align-items:center;gap:8px;font-size:8px;padding:5px 8px;border:1px solid var(--ha-border);border-radius:6px;">
+                    <div style="width:14px;height:14px;">${deviceIcon(d.type)}</div>
+                    <span style="color:var(--ha-text);">${d.name}</span>
+                    <span style="margin-left:auto;color:${d.state === 'on' || d.state === 'locked' || d.state === 'open' ? 'var(--ha-green)' : 'var(--ha-muted)'};font-size:7px;text-transform:uppercase;">${d.state}</span>
+                  </div>
+                `).join('') : '<div style="font-size:8px;color:var(--ha-muted);">No devices assigned</div>'}
+              </div>
+            </div>
+            <div class="d-panel full">
+              <h3>24h Summary</h3>
+              <div class="stat-grid">
+                <div class="stat"><span class="stat-label">Avg Temp</span><span class="stat-val">${r.temp}</span></div>
+                <div class="stat"><span class="stat-label">Peak Power</span><span class="stat-val warn">${parseInt(r.power) > 100 ? (parseInt(r.power) * 1.8).toFixed(0) + 'W' : r.power}</span></div>
+                <div class="stat"><span class="stat-label">Motion Events</span><span class="stat-val accent">${Math.floor(Math.random() * 20 + 5)}</span></div>
+                <div class="stat"><span class="stat-label">Occupancy</span><span class="stat-val">${Math.floor(Math.random() * 60 + 20)}%</span></div>
+              </div>
+            </div>
+          </div>
+        `
+      })
+
+      // ══════════════════════════════════════════════════════
+      // SCENES
+      // ══════════════════════════════════════════════════════
+
+      views.scenes = `
+        <div class="z-view section-view">
+          <div class="bigbang">
+            <div class="gravity-spot" style="--o-force: 360px">
+              <div class="orbit-0">
+                <div class="satellite at-center">
+                  <div class="capsule sec-title">
+                    <span class="sec-count">${scenes.length}</span>
+                    Scenes
+                  </div>
+                </div>
+              </div>
+              <div class="orbit-5">
+                ${scenes.map(s => `
+                  <div class="satellite outer-orbit grow-3x">
+                    <div class="capsule">
+                      <div class="sec-card zoom-me" data-to="scene_${s.id}">
+                        <div class="sec-icon" style="font-size:24px;">${s.icon}</div>
+                        <div class="sec-name">${s.name}</div>
+                        <div class="sec-state ${s.lastUsed.includes('Active') ? 'on' : ''}">${s.lastUsed.includes('Active') ? 'Active' : 'Ready'}</div>
+                        <div class="sec-meta">${s.devices} devices</div>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `
+
+      // Scene detail views
+      scenes.forEach(s => {
+        const affectedDevices = devices.slice(0, s.devices)
+        views[`scene_${s.id}`] = `
+          <div class="z-view detail-view">
+            <div class="detail-header">
+              <span style="font-size:18px;">${s.icon}</span>
+              <h1>${s.name}</h1>
+              <span class="detail-badge ${s.lastUsed.includes('Active') ? 'on' : 'off'}">${s.lastUsed.includes('Active') ? 'ACTIVE' : 'READY'}</span>
+            </div>
+            <div class="d-panel">
+              <h3>Scene Info</h3>
+              <div class="stat-grid">
+                <div class="stat"><span class="stat-label">Devices</span><span class="stat-val accent">${s.devices}</span></div>
+                <div class="stat"><span class="stat-label">Last Used</span><span class="stat-val">${s.lastUsed}</span></div>
+              </div>
+              <div style="margin-top:8px;font-size:8px;color:var(--ha-text);line-height:1.6;">${s.desc}</div>
+            </div>
+            <div class="d-panel">
+              <h3>Affected Devices</h3>
+              <div class="scene-bar">
+                ${affectedDevices.map(d => `<div class="scene-dev active">${d.name}</div>`).join('')}
+              </div>
+            </div>
+            <div class="d-panel full">
+              <h3>Execution History</h3>
+              <div style="display:flex;flex-direction:column;gap:5px;">
+                <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:70px;">${s.lastUsed}</span><span>Scene activated</span></div>
+                <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:70px;">2 days ago</span><span>Scene activated by automation</span></div>
+                <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:70px;">4 days ago</span><span>Scene modified: added ${affectedDevices[0]?.name || 'device'}</span></div>
+              </div>
+            </div>
+          </div>
+        `
+      })
+
+      // ── Init ───────────────────────────────────────────
+      const app = new ZumlyLib({
+        mount: '.canvas',
+        initialView: 'dashboard',
+        views,
+        transitions: {
+          duration: '800ms',
+          ease: 'ease-in-out',
+          cover: 'width',
+          effects: ['blur(4px) brightness(0.5)', 'blur(8px) brightness(0.3)'],
+          hideTrigger: 'fade',
+        },
+        navPosition: 'middle-left',
+        debug: false,
+      })
+
+      app.init()
+
+      // Activate selector arc on camera satellite hover (delegated)
+      document.querySelector('.canvas').addEventListener('mouseover', (e) => {
+        const camSat = e.target.closest('.zoom-me[data-to="cameras"]')
+        const camArc = document.querySelectorAll('.orbit-11 .selector')[1]
+        if (camArc) camArc.classList.toggle('active', !!camSat)
+      })
+    </script>
+</body>
+</html>
