@@ -21,7 +21,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="../dist/zumly.css" />
   <script>
-    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light')})();
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
     function toggleTheme(){
       var h=document.documentElement;h.classList.toggle('light');
       localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
@@ -100,23 +100,23 @@
     /* ━━━ HOME ━━━ */
     .v-home {
       align-items: center; justify-content: center; text-align: center;
-      background: linear-gradient(170deg, #0a0e1a 0%, #0d1225 40%, #111830 100%);
+      background: radial-gradient(ellipse 30% 50% at 50% 33%, #3760ff63 0%, #111d33 50%, #020408 100%);
       position: relative; padding: 40px 24px;
     }
     .v-home::before {
       content: ''; position: absolute; inset: 0; pointer-events: none;
       background:
-        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(240,180,40,0.06), transparent 70%),
-        radial-gradient(ellipse 40% 60% at 80% 20%, rgba(80,60,200,0.04), transparent 60%),
-        radial-gradient(ellipse 40% 60% at 20% 80%, rgba(40,180,200,0.03), transparent 60%);
+        radial-gradient(ellipse 35% 30% at 50% 20%, rgba(100,160,255,0.12), transparent 70%),
+        radial-gradient(ellipse 50% 40% at 50% 22%, rgba(60,120,220,0.06), transparent 80%),
+        radial-gradient(ellipse 25% 25% at 50% 18%, rgba(180,220,255,0.08), transparent 60%);
     }
     html.light .v-home {
-      background: linear-gradient(170deg, #f0f2fa 0%, #e8ecf6 40%, #f4f6fb 100%);
+      background: radial-gradient(ellipse 60% 50% at 50% 22%, #e8ecfa 0%, #d8ddf0 50%, #c8cee6 100%);
     }
     html.light .v-home::before {
       background:
-        radial-gradient(ellipse 70% 50% at 50% 0%, rgba(60,100,220,0.05), transparent 70%),
-        radial-gradient(ellipse 40% 60% at 80% 20%, rgba(120,60,220,0.03), transparent 60%);
+        radial-gradient(ellipse 35% 30% at 50% 20%, rgba(60,100,220,0.08), transparent 70%),
+        radial-gradient(ellipse 50% 40% at 50% 22%, rgba(80,120,240,0.04), transparent 80%);
     }
     .home-gh-badge {
       display: inline-flex; align-items: center; gap: 10px;
@@ -134,7 +134,12 @@
       border-radius: 100px; font-weight: 800; color: #f0b428; font-size: 0.82rem;
     }
     html.light .home-gh-stars { color: #c08a00; background: rgba(200,150,20,0.12); }
-    .home-title-wrap { position: relative; display: inline-block; margin-bottom: 0.8rem; }
+    .home-logo { width: 160px; height: auto; margin-bottom: 0.5rem; }
+    .home-tagline {
+      font-size: 1rem; font-weight: 600; letter-spacing: 3px; 
+      opacity: 0.5; margin: 0 0 0.3rem;
+    }
+    .home-title-wrap { position: relative; display: inline-block; margin-bottom: 0.4rem; }
     .home-title {
       font-size: clamp(3rem, 9vw, 6rem); font-weight: 900;
       letter-spacing: -3px; line-height: 1;
@@ -185,8 +190,8 @@
     .zt-title { font-size: 0.78rem; font-weight: 700; }
     .zt-desc { font-size: 0.62rem; color: var(--text-dim); line-height: 1.4; }
     .home-hint {
-      margin-top: 1.4rem; font-size: 0.68rem; color: var(--text-dim);
-      display: flex; align-items: center; gap: 6px; opacity: 0.7;
+      margin-top: 1.4rem; font-size: 0.9rem; color: var(--text-dim);
+      display: flex; align-items: center; gap: 8px; opacity: 0.7;
     }
     .home-hint svg { flex-shrink: 0; }
     .home-links {
@@ -245,13 +250,13 @@
     }
     .sc-preview::after {
       content: ''; position: absolute; inset: 0;
-      background: linear-gradient(180deg, transparent 40%, rgba(7,8,15,0.85) 100%);
+      background: linear-gradient(180deg, transparent 70%, rgba(7,8,15,0.4) 100%);
       pointer-events: none;
     }
     html.light .sc-preview::after {
-      background: linear-gradient(180deg, transparent 40%, rgba(244,246,251,0.9) 100%);
+      background: linear-gradient(180deg, transparent 70%, rgba(244,246,251,0.4) 100%);
     }
-    .sc-label { padding: 0 16px 14px; position: relative; z-index: 1; margin-top: -32px; }
+    .sc-label { padding: 10px 16px 14px; position: relative; z-index: 1; }
     .sc-tag {
       font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 1px; padding: 2px 7px; border-radius: 4px;
@@ -467,9 +472,10 @@
         '<span>zumerlab/zumly</span>' +
         '<span class="home-gh-stars"><svg width="14" height="14" viewBox="0 0 576 512" fill="currentColor"><path d="M316.9 18C311.6 7 300.4 0 288.1 0s-23.4 7-28.8 18L195 150.3 51.4 171.5c-12 1.8-22 10.2-25.7 21.7s-.7 24.2 7.9 32.7L137.8 329l-24.6 145.7c-2 12 3 24.2 12.9 31.3s23 8 33.8 2.3l128.3-68.5 128.3 68.5c10.8 5.7 23.9 4.9 33.8-2.3s14.9-19.3 12.9-31.3L438.5 329l104.2-103.1c8.6-8.5 11.7-21.2 7.9-32.7s-13.7-19.9-25.7-21.7L381.2 150.3 316.9 18z"/></svg> <span id="gh-star-count">&hellip;</span></span>' +
       '</a>' +
-      '<div class="home-title-wrap"><h1 class="home-title">Zumly</h1><span class="home-version">v0.18</span></div>' +
-      '<p class="home-sub">Turn any website into a zoom interface with just HTML.<br>' +
-      'Independent views, infinite zoom levels, and spatial navigation built in.</p>' +
+      '<img class="home-logo" src="zumly-logo.png" alt="Zumly">' +
+      '<div class="home-title-wrap"><h1 class="home-title">ZUMLY</h1><span class="home-version" id="npm-version"></span></div>' +
+      '<p class="home-tagline">Z over XY</p>' +
+      '<p class="home-sub">Focus-driven navigation.<br>Zoom into what matters.</p>' +
       '<div class="targets">' +
         '<div class="zt zoom-me" data-to="showcases" data-with-duration="800ms">' +
           '<span class="zt-icon">&#10070;</span><span class="zt-title">Showcases</span>' +
@@ -488,7 +494,7 @@
           '<span class="zt-desc">Install &amp; setup</span></div>' +
       '</div>' +
       '<div class="home-hint">' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="22" y2="22"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="22" y2="22"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>' +
         'Click any card to zoom in' +
       '</div>' +
       '<div class="home-links">' +
@@ -571,6 +577,15 @@
       .then(function (d) {
         var el = document.getElementById('gh-star-count')
         if (el && d.stargazers_count) el.textContent = d.stargazers_count
+      })
+      .catch(function () {})
+
+    // npm version
+    fetch('https://registry.npmjs.org/zumly/latest')
+      .then(function (r) { return r.json() })
+      .then(function (d) {
+        var el = document.getElementById('npm-version')
+        if (el && d.version) el.textContent = 'v' + d.version
       })
       .catch(function () {})
 
