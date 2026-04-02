@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v0.92.1](https://github.com/zumerlab/zumly/compare/v0.92.0...v0.92.1)
+
+> 2 April 2026
+
+- refactor: improve zoom handling logic in Zumly class [`977910b`](https://github.com/zumerlab/zumly/commit/977910b780528f56137b4dcd7c35e09d4ff3bdfe)
+
+
 #### [v0.92.0](https://github.com/zumerlab/zumly/compare/v0.18.1...v0.92.0)
 
 > 2 April 2026
@@ -10,6 +17,8 @@ All notable changes to this project will be documented in this file.
 - Add new HTML files for Mercedes-Benz Truck Production Line, Assembly Plant, and Mission Control [`61bf26e`](https://github.com/zumerlab/zumly/commit/61bf26e0061fd6219f25afe77f1d0bfb5ce84783)
 - docs: split site shell and load views from partials [`d4c9536`](https://github.com/zumerlab/zumly/commit/d4c95362fd2bb9a1863d6d56faef821f558430f0)
 - feat(examples): add demo pages and Mercedes line zoom targets [`6740693`](https://github.com/zumerlab/zumly/commit/67406936cf1237fa1d58d843d6e2bf10c5a47c29)
+- Add .tgz files to .gitignore to prevent packaging artifacts from being tracked [`52d33ed`](https://github.com/zumerlab/zumly/commit/52d33edf8c7e851f5630760422b753ac9bf8511e)
+- docs: add geometry optimization notes and docs landing page [`3ce2add`](https://github.com/zumerlab/zumly/commit/3ce2add3dd305b9070e92dd13b8c0a5a6be97dc0)
 - Add new HTML file for Mission Control Orbit view [`58cc888`](https://github.com/zumerlab/zumly/commit/58cc888c53644f9795d360203e322cb4d3efbdb6)
 - Add framework integration demo pages (React, Vue, Svelte, Angular) [`0ed14f3`](https://github.com/zumerlab/zumly/commit/0ed14f3e3ae41459ec281fea4e34721649e3aa5c)
 - Implement parallax and stagger features in transitions handling [`f8eaa95`](https://github.com/zumerlab/zumly/commit/f8eaa951c167ebb4ebaeba3701bf8b4979fdefb2)
@@ -19,6 +28,7 @@ All notable changes to this project will be documented in this file.
 - Implement resize correction feature with tests and documentation updates [`057f9ff`](https://github.com/zumerlab/zumly/commit/057f9ffa6ad324a30f7035bf5a42dc8d1f03b39e)
 - feat: lateral nav modes and configurable nav bar position [`070d3c8`](https://github.com/zumerlab/zumly/commit/070d3c8cee446df1eb3ba88b1c4ca3c186045110)
 - test: cover geometry helpers, lateral nav options, and lateral clicks [`8a6059d`](https://github.com/zumerlab/zumly/commit/8a6059d00e548e99ef7d9000753dcaca135caf28)
+- Bumped version [`c7c8a25`](https://github.com/zumerlab/zumly/commit/c7c8a25eee8a9769794aa5d50bc15ddd7cc74249)
 - Add geometry helper functions and corresponding tests [`5df1caf`](https://github.com/zumerlab/zumly/commit/5df1caf0244cf87a7ebe7644e141372b09f994c7)
 - Add snapshot management for zoom transitions [`8d03cd2`](https://github.com/zumerlab/zumly/commit/8d03cd2aabf15c1d440a8c1b2fb4ba4b1b6e5574)
 - Add TypeScript type definitions for public API and driver helpers [`d85d1ce`](https://github.com/zumerlab/zumly/commit/d85d1cec6a95a290dde16c1afcefdcb4546224b1)
@@ -36,13 +46,18 @@ All notable changes to this project will be documented in this file.
 - Add depth navigation UI with zoom-out button and level indicator [`a4d3ad9`](https://github.com/zumerlab/zumly/commit/a4d3ad9ed9aa6b432806946ef4e7427d321498b5)
 - Enhance lateral navigation with keepAlive functionality [`7409c57`](https://github.com/zumerlab/zumly/commit/7409c5747c2dbbb10b8794d43573e0d2e02c3596)
 - Add tests for prefetching behavior in Zumly [`50abf49`](https://github.com/zumerlab/zumly/commit/50abf49d2c34c0dfadea661a32318dab777be9e0)
+- Update README.md and enhance view rendering documentation [`d130b68`](https://github.com/zumerlab/zumly/commit/d130b689b80c2ddbb3a06fcd232a6129d9d24017)
 - refactor: update lateral navigation tests to reflect unified nav UI changes [`056f899`](https://github.com/zumerlab/zumly/commit/056f89965ee56744ec25ae38c33088bc3bc441c4)
+- Update README.md and tests to reflect changes in transitions handling [`a0e85be`](https://github.com/zumerlab/zumly/commit/a0e85be83c529cadf32539ed914c5b8b678d68ed)
 - Add framework integration guide to README [`2108763`](https://github.com/zumerlab/zumly/commit/2108763a5b84bc299c67bb6e29e7eda4f4411ed5)
 - Update content visibility handling and enhance zoom functionality [`48e277a`](https://github.com/zumerlab/zumly/commit/48e277a827c71f57af18ff0c7f19bd213d664ae4)
 - update [`385cfe3`](https://github.com/zumerlab/zumly/commit/385cfe3370551b136129c63e00916971023d2a28)
 - Enhance ViewCache functionality and tests [`1670334`](https://github.com/zumerlab/zumly/commit/1670334ae739fb90538c7214294aedc502ea6982)
 - Add keepAlive feature to lateral navigation demo [`0d3628a`](https://github.com/zumerlab/zumly/commit/0d3628acc187967aee89181823d1792bdf2deb10)
+- Update CONTRIBUTING.md, README.md, and documentation for transition drivers [`4dfe2dd`](https://github.com/zumerlab/zumly/commit/4dfe2dd2849398e7e81ec252b3e421158fbac718)
+- Enhance README with new transition options and per-trigger attributes [`4defa4b`](https://github.com/zumerlab/zumly/commit/4defa4b8562d03ddd2d6c1bbd911b72b281dda39)
 - Add framework wrappers and TypeScript definitions to roadmap [`f421b54`](https://github.com/zumerlab/zumly/commit/f421b54f91bcd06af44df8208cc2c6e8ee6cce11)
+- Enhance README.md to provide a clearer overview of Zumly's purpose and features. Updated descriptions to emphasize its role as a hierarchical zoom navigation engine, detailing its use cases and distinguishing it from freeform zooming systems. Added a new section outlining what Zumly is and is not, improving clarity for potential users. [`2acfd9e`](https://github.com/zumerlab/zumly/commit/2acfd9ea3f6bedd4ccff323db0cdf548c297b39e)
 - Improve wheel zoom-out: leading-edge trigger and preventDefault [`670e2e2`](https://github.com/zumerlab/zumly/commit/670e2e27fb458241810de60a9b5d30357346b051)
 - Add configurable inputs option to enable/disable interaction types [`736e459`](https://github.com/zumerlab/zumly/commit/736e4594b4359fac44c64004da66b64305941278)
 - Add Spain view with new CSS styles and update views configuration [`0fd3f27`](https://github.com/zumerlab/zumly/commit/0fd3f27b87d90e09c1ca60c6d9eef18c5cc57278)
@@ -52,10 +67,17 @@ All notable changes to this project will be documented in this file.
 - Refactor tests to remove deprecated storedPreviousScale and fix typo in event handler [`57b6c23`](https://github.com/zumerlab/zumly/commit/57b6c2381a62f64165b5bf98f153939d9e1127f2)
 - Refactor content visibility handling in CSS and JavaScript [`a25d9de`](https://github.com/zumerlab/zumly/commit/a25d9deb84e1ea5b0ef85007ea4cee27b8bc8f49)
 - Enhance Zumly class with cover and stagger options for transitions [`643689c`](https://github.com/zumerlab/zumly/commit/643689c309b7ff24ead83fe997a90a2172ecd349)
+- Update roadmap documentation to reflect completion of lateral navigation feature [`b2ab821`](https://github.com/zumerlab/zumly/commit/b2ab8215ea03170948d71902cbf9cd1cb6b37cf0)
+- chore(dev): serve repository root with local serve config [`a32b423`](https://github.com/zumerlab/zumly/commit/a32b423684dc425d6544ad2e6b84a805ddfef195)
 - Add keepAlive option to TypeScript definitions for transitions and lateral navigation [`7288229`](https://github.com/zumerlab/zumly/commit/728822943b51891acb11b065e43106fe137320a1)
 - Update .gitignore to include new directories for Claude and VSCode [`490c194`](https://github.com/zumerlab/zumly/commit/490c19479fc980246fd307e7be604001c3911a41)
 - Fix clicks inside current view triggering unintended zoom-out [`d136e7b`](https://github.com/zumerlab/zumly/commit/d136e7b107b79d569eaed09f426e394024c857f1)
+- Update .gitignore to include __screenshots__ directory and ensure *.tgz files are ignored [`ee6d100`](https://github.com/zumerlab/zumly/commit/ee6d100acf6e6dd819640c32cc59dd84060a385d)
 - build: use entry-esm.js for ESM bundle [`16880ab`](https://github.com/zumerlab/zumly/commit/16880ab4d76f5c59e063fb5a1d4f58426499d692)
+- Update README.md to clarify that Zumly is under active development and not yet ready for production, encouraging experimentation with its features. [`e55b0a9`](https://github.com/zumerlab/zumly/commit/e55b0a92615231b9d3e7d6ffce654c568feb6ad3)
+- Update CodePen link in README [`cd5ddbf`](https://github.com/zumerlab/zumly/commit/cd5ddbf70e12b1bfc8312dce8aa7de96fa854fd7)
+- Add .tgz to gitignore [`e910784`](https://github.com/zumerlab/zumly/commit/e9107844021cae9118b335071546674cba536fed)
+- update [`76102bb`](https://github.com/zumerlab/zumly/commit/76102bb5f7339843d89fe515b665eec34885e2fa)
 - docs: add Zumly logo image to documentation [`1c51b82`](https://github.com/zumerlab/zumly/commit/1c51b821953efd1c2af8d6bacbae566f8a7bd54f)
 
 #### [v0.18.1](https://github.com/zumerlab/zumly/compare/v0.18.0...v0.18.1)
