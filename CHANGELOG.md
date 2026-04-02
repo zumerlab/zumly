@@ -2,13 +2,29 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v0.92.3](https://github.com/zumerlab/zumly/compare/v0.92.2...v0.92.3)
+
+> 2 April 2026
+
+- Update homepage URL and include 'types' directory in package files [`15dde74`](https://github.com/zumerlab/zumly/commit/15dde74f0f04a53524583c759dcb64d93473d430)
+- Add live demo link to README [`9ee3d81`](https://github.com/zumerlab/zumly/commit/9ee3d817caae349177db35255cd6435969a80165)
+
 #### [v0.92.2](https://github.com/zumerlab/zumly/compare/v0.92.1...v0.92.2)
 
 > 2 April 2026
 
 - Refactor navigation UI to separate depth and lateral components [`a5c9ff5`](https://github.com/zumerlab/zumly/commit/a5c9ff587fdb3623f559e686bc3bd1e08becb338)
+- update [`77e0592`](https://github.com/zumerlab/zumly/commit/77e0592e6986b7ef0ddd2679689473fe129ce185)
+- update for mobile [`cece06b`](https://github.com/zumerlab/zumly/commit/cece06bc47a1508db8e9fa2f0b85314326b45b16)
+- update [`02f56ca`](https://github.com/zumerlab/zumly/commit/02f56ca0af2dd41fc20efc571c0f2064f88079e9)
+- update [`b070778`](https://github.com/zumerlab/zumly/commit/b070778261039d5fb8289677f0fd30c366876bb1)
+- update [`33ae6df`](https://github.com/zumerlab/zumly/commit/33ae6dfa1cc91bac95ce1af3bae3cd027f12dbd1)
+- Bumped version [`40ba2c1`](https://github.com/zumerlab/zumly/commit/40ba2c14ca35c1f7bae349e79c04ebb2abfb4fe7)
+- update [`62ac232`](https://github.com/zumerlab/zumly/commit/62ac2323efc6f5ad7a73ff519f992c58f4ac29d8)
 - Remove redundant navigation removal calls in zoom methods [`ddfc9fb`](https://github.com/zumerlab/zumly/commit/ddfc9fb22015f636163d2bf3bf3dbe76c7dd7be8)
-
+- update [`64e75a9`](https://github.com/zumerlab/zumly/commit/64e75a9a7225dbe3a6bae52c99c931d3bb4a2d07)
+- update [`704a5d4`](https://github.com/zumerlab/zumly/commit/704a5d47c6811da37cd1367e0105faaf06bfb802)
+- update [`d084fbb`](https://github.com/zumerlab/zumly/commit/d084fbbf00bba898fd9943f8ea87451529685ad3)
 
 #### [v0.92.1](https://github.com/zumerlab/zumly/compare/v0.92.0...v0.92.1)
 
