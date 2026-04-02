@@ -181,9 +181,52 @@
   100% { transform: var(--lateral-in-to); opacity: 1; }
 }
 
-/* ─── Unified navigation bar ───────────────────────────────────── */
+/* ─── Depth navigation (back button) ──────────────────────────── */
 
-.z-nav {
+.z-depth-nav {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.z-depth-nav > * {
+  pointer-events: auto;
+}
+
+.z-depth-nav--bottom-left {
+  bottom: 20px; left: 20px;
+}
+
+.z-depth-nav--top-left {
+  top: 20px; left: 20px;
+}
+
+.z-nav-back {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+  padding: 0;
+}
+
+.z-nav-back:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* ─── Lateral navigation (arrows + dots) ─────────────────────── */
+
+.z-lateral-nav {
   position: absolute;
   z-index: 10;
   display: flex;
@@ -197,103 +240,20 @@
   padding: 6px 10px;
 }
 
-/* ── Position presets (8 positions) ── */
-
-.z-nav--bottom-center {
-  bottom: 20px; left: 50%; transform: translateX(-50%);
-}
-.z-nav--bottom-left {
-  bottom: 20px; left: 20px;
-}
-.z-nav--bottom-right {
-  bottom: 20px; right: 20px;
-}
-.z-nav--top-center {
-  top: 20px; left: 50%; transform: translateX(-50%);
-}
-.z-nav--top-left {
-  top: 20px; left: 20px;
-}
-.z-nav--top-right {
-  top: 20px; right: 20px;
-}
-.z-nav--middle-left {
-  top: 50%; left: 16px; transform: translateY(-50%);
-  flex-direction: column;
-}
-.z-nav--middle-right {
-  top: 50%; right: 16px; transform: translateY(-50%);
-  flex-direction: column;
-}
-
-.z-nav > * {
+.z-lateral-nav > * {
   pointer-events: auto;
 }
 
-/* ── Sections ── */
-
-.z-nav-depth,
-.z-nav-lateral {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.z-lateral-nav--bottom-center {
+  bottom: 20px; left: 50%; transform: translateX(-50%);
 }
 
-/* ── Separator between depth and lateral ── */
-
-.z-nav-sep {
-  width: 1px;
-  height: 18px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 0 8px;
-  flex-shrink: 0;
+.z-lateral-nav--top-center {
+  top: 20px; left: 50%; transform: translateX(-50%);
 }
 
-/* ── Vertical layout for middle-left / middle-right ── */
+/* ── Buttons (arrows) ── */
 
-.z-nav--middle-left .z-nav-depth,
-.z-nav--middle-left .z-nav-lateral,
-.z-nav--middle-right .z-nav-depth,
-.z-nav--middle-right .z-nav-lateral {
-  flex-direction: column;
-}
-
-.z-nav--middle-left .z-nav-depth-dots,
-.z-nav--middle-left .z-nav-lateral-dots,
-.z-nav--middle-right .z-nav-depth-dots,
-.z-nav--middle-right .z-nav-lateral-dots {
-  flex-direction: column;
-}
-
-.z-nav--middle-left .z-nav-sep,
-.z-nav--middle-right .z-nav-sep {
-  width: 18px;
-  height: 1px;
-  margin: 8px 0;
-}
-
-.z-nav--middle-left .z-nav-back,
-.z-nav--middle-right .z-nav-back {
-  transform: rotate(180deg);
-}
-
-.z-nav--middle-left .z-nav-prev,
-.z-nav--middle-right .z-nav-prev {
-  transform: rotate(90deg);
-}
-
-.z-nav--middle-left .z-nav-next,
-.z-nav--middle-right .z-nav-next {
-  transform: rotate(90deg);
-}
-
-/* ── Buttons (back + arrows) ── */
-
-.z-nav-back {
-  transform: rotate(90deg);
-}
-
-.z-nav-back,
 .z-nav-arrow {
   width: 28px;
   height: 28px;
@@ -311,7 +271,6 @@
   padding: 0;
 }
 
-.z-nav-back:hover,
 .z-nav-arrow:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.18);
   border-color: rgba(255, 255, 255, 0.4);
@@ -322,9 +281,8 @@
   cursor: default;
 }
 
-/* ── Dots (shared between depth and lateral) ── */
+/* ── Lateral dots ── */
 
-.z-nav-depth-dots,
 .z-nav-lateral-dots {
   display: flex;
   align-items: center;

@@ -2,22 +2,22 @@
  * Tests for automatic lateral navigation:
  * - Click detection on sibling triggers in previous view (_findSiblingTriggerAtPoint)
  * - onZoom dispatching lateral instead of zoom-out when clicking a sibling
- * - Unified nav UI (z-nav): creation, update, removal
- * - lateralNav option parsing in checkParameters
+ * - Separate depth nav (z-depth-nav) and lateral nav (z-lateral-nav)
+ * - lateralNav and depthNav option parsing in checkParameters
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { Zumly } from '../src/zumly.js'
 import { checkParameters } from '../src/utils.js'
 
 describe('lateralNav option parsing', () => {
-  it('defaults to { mode: auto, arrows: true, dots: true, keepAlive: false } when not provided', () => {
+  it('defaults to { mode: auto, arrows: true, dots: true, keepAlive: false, position: bottom-center } when not provided', () => {
     const instance = {}
     checkParameters({
       mount: '.canvas',
       initialView: 'home',
       views: { home: '<div class="z-view"></div>' },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false })
+    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false, position: 'bottom-center' })
   })
 
   it('can be disabled with false', () => {
@@ -39,7 +39,7 @@ describe('lateralNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       lateralNav: { arrows: false },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: false, dots: true, keepAlive: false })
+    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: false, dots: true, keepAlive: false, position: 'bottom-center' })
   })
 
   it('accepts partial object { dots: false }', () => {
@@ -50,7 +50,7 @@ describe('lateralNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       lateralNav: { dots: false },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: false, keepAlive: false })
+    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: false, keepAlive: false, position: 'bottom-center' })
   })
 
   it('accepts full object { arrows: true, dots: true }', () => {
@@ -61,7 +61,7 @@ describe('lateralNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       lateralNav: { arrows: true, dots: true },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false })
+    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false, position: 'bottom-center' })
   })
 
   it('accepts mode: always', () => {
@@ -84,6 +84,51 @@ describe('lateralNav option parsing', () => {
       lateralNav: { keepAlive: 'visible' },
     }, instance)
     expect(instance.lateralNav.keepAlive).toBe('visible')
+  })
+
+  it('accepts position: top-center', () => {
+    const instance = {}
+    checkParameters({
+      mount: '.canvas',
+      initialView: 'home',
+      views: { home: '<div class="z-view"></div>' },
+      lateralNav: { position: 'top-center' },
+    }, instance)
+    expect(instance.lateralNav.position).toBe('top-center')
+  })
+})
+
+describe('depthNav option parsing', () => {
+  it('defaults to { position: bottom-left } when not provided', () => {
+    const instance = {}
+    checkParameters({
+      mount: '.canvas',
+      initialView: 'home',
+      views: { home: '<div class="z-view"></div>' },
+    }, instance)
+    expect(instance.depthNav).toEqual({ position: 'bottom-left' })
+  })
+
+  it('can be disabled with false', () => {
+    const instance = {}
+    checkParameters({
+      mount: '.canvas',
+      initialView: 'home',
+      views: { home: '<div class="z-view"></div>' },
+      depthNav: false,
+    }, instance)
+    expect(instance.depthNav).toBe(false)
+  })
+
+  it('accepts position: top-left', () => {
+    const instance = {}
+    checkParameters({
+      mount: '.canvas',
+      initialView: 'home',
+      views: { home: '<div class="z-view"></div>' },
+      depthNav: { position: 'top-left' },
+    }, instance)
+    expect(instance.depthNav).toEqual({ position: 'top-left' })
   })
 })
 
@@ -149,18 +194,17 @@ describe('lateral click navigation', () => {
     })
   })
 
-  describe('onZoom lateral detection', () => {
-    it('ignores events from .z-nav elements', async () => {
+  describe('onZoom nav element filtering', () => {
+    it('ignores events from .z-depth-nav elements', async () => {
       const app = createApp()
       await app.init()
       await app.goTo('detailA', { mode: 'depth' })
       const initialView = app.getCurrentViewName()
 
-      // Simulate a mouseup event from a nav button
       const navEl = document.createElement('button')
-      navEl.className = 'z-nav-arrow'
+      navEl.className = 'z-nav-back'
       const navContainer = document.createElement('div')
-      navContainer.className = 'z-nav'
+      navContainer.className = 'z-depth-nav'
       navContainer.appendChild(navEl)
       app.canvas.appendChild(navContainer)
 
@@ -168,35 +212,102 @@ describe('lateral click navigation', () => {
       Object.defineProperty(event, 'target', { value: navEl })
       app.onZoom(event)
 
-      // Should not have zoomed out or done anything
+      expect(app.getCurrentViewName()).toBe(initialView)
+      navContainer.remove()
+    })
+
+    it('ignores events from .z-lateral-nav elements', async () => {
+      const app = createApp()
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      const initialView = app.getCurrentViewName()
+
+      const navEl = document.createElement('button')
+      navEl.className = 'z-nav-arrow'
+      const navContainer = document.createElement('div')
+      navContainer.className = 'z-lateral-nav'
+      navContainer.appendChild(navEl)
+      app.canvas.appendChild(navContainer)
+
+      const event = new MouseEvent('mouseup', { bubbles: true })
+      Object.defineProperty(event, 'target', { value: navEl })
+      app.onZoom(event)
+
       expect(app.getCurrentViewName()).toBe(initialView)
       navContainer.remove()
     })
   })
 
-  describe('nav UI', () => {
-    it('creates nav UI after zoom-in when siblings exist', async () => {
+  describe('depth nav UI', () => {
+    it('creates depth nav after zoom-in', async () => {
       const app = createApp()
       await app.init()
-      expect(app.canvas.querySelector('.z-nav')).toBeNull()
+      expect(app.canvas.querySelector('.z-depth-nav')).toBeNull()
 
       await app.goTo('detailA', { mode: 'depth' })
-      const nav = app.canvas.querySelector('.z-nav')
+      const nav = app.canvas.querySelector('.z-depth-nav')
+      expect(nav).toBeTruthy()
+      expect(nav.querySelector('.z-nav-back')).toBeTruthy()
+    })
+
+    it('positions depth nav at bottom-left by default', async () => {
+      const app = createApp()
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      const nav = app.canvas.querySelector('.z-depth-nav')
+      expect(nav.classList.contains('z-depth-nav--bottom-left')).toBe(true)
+    })
+
+    it('positions depth nav at top-left when configured', async () => {
+      const app = createApp({ depthNav: { position: 'top-left' } })
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      const nav = app.canvas.querySelector('.z-depth-nav')
+      expect(nav.classList.contains('z-depth-nav--top-left')).toBe(true)
+    })
+
+    it('does not create depth nav when depthNav is false', async () => {
+      const app = createApp({ depthNav: false })
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      expect(app.canvas.querySelector('.z-depth-nav')).toBeNull()
+    })
+
+    it('removes depth nav after zoom-out to root', async () => {
+      const app = createApp()
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      expect(app.canvas.querySelector('.z-depth-nav')).toBeTruthy()
+
+      app.zoomOut()
+      await new Promise(r => setTimeout(r, 50))
+      expect(app.canvas.querySelector('.z-depth-nav')).toBeNull()
+    })
+  })
+
+  describe('lateral nav UI', () => {
+    it('creates lateral nav after zoom-in when siblings exist', async () => {
+      const app = createApp()
+      await app.init()
+      expect(app.canvas.querySelector('.z-lateral-nav')).toBeNull()
+
+      await app.goTo('detailA', { mode: 'depth' })
+      const nav = app.canvas.querySelector('.z-lateral-nav')
       expect(nav).toBeTruthy()
     })
 
-    it('does not create lateral section in nav when lateralNav is false', async () => {
+    it('does not create lateral nav when lateralNav is false', async () => {
       const app = createApp({ lateralNav: false })
       await app.init()
       await app.goTo('detailA', { mode: 'depth' })
-      expect(app.canvas.querySelector('.z-nav-lateral')).toBeNull()
+      expect(app.canvas.querySelector('.z-lateral-nav')).toBeNull()
     })
 
     it('creates only dots when arrows: false', async () => {
       const app = createApp({ lateralNav: { arrows: false, dots: true } })
       await app.init()
       await app.goTo('detailA', { mode: 'depth' })
-      const nav = app.canvas.querySelector('.z-nav')
+      const nav = app.canvas.querySelector('.z-lateral-nav')
       expect(nav).toBeTruthy()
       expect(nav.querySelector('.z-nav-arrow')).toBeNull()
       expect(nav.querySelector('.z-nav-lateral-dots')).toBeTruthy()
@@ -206,7 +317,7 @@ describe('lateral click navigation', () => {
       const app = createApp({ lateralNav: { arrows: true, dots: false } })
       await app.init()
       await app.goTo('detailA', { mode: 'depth' })
-      const nav = app.canvas.querySelector('.z-nav')
+      const nav = app.canvas.querySelector('.z-lateral-nav')
       expect(nav).toBeTruthy()
       expect(nav.querySelectorAll('.z-nav-arrow').length).toBe(2)
       expect(nav.querySelector('.z-nav-lateral-dots')).toBeNull()
@@ -257,27 +368,41 @@ describe('lateral click navigation', () => {
       expect(nextArrow.disabled).toBe(true)
     })
 
-    it('removes lateral section from nav after zoom-out to root', async () => {
+    it('removes lateral nav after zoom-out to root', async () => {
       const app = createApp()
       await app.init()
       await app.goTo('detailA', { mode: 'depth' })
-      expect(app.canvas.querySelector('.z-nav-lateral')).toBeTruthy()
+      expect(app.canvas.querySelector('.z-lateral-nav')).toBeTruthy()
 
       app.zoomOut()
       await new Promise(r => setTimeout(r, 50))
-      // After zoom-out to root, no siblings → lateral section gone
-      expect(app.canvas.querySelector('.z-nav-lateral')).toBeNull()
+      expect(app.canvas.querySelector('.z-lateral-nav')).toBeNull()
     })
 
-    it('is cleaned up on destroy()', async () => {
+    it('depth and lateral nav are separate elements', async () => {
       const app = createApp()
       await app.init()
       await app.goTo('detailA', { mode: 'depth' })
-      expect(app.canvas.querySelector('.z-nav')).toBeTruthy()
+      const depthNav = app.canvas.querySelector('.z-depth-nav')
+      const lateralNav = app.canvas.querySelector('.z-lateral-nav')
+      expect(depthNav).toBeTruthy()
+      expect(lateralNav).toBeTruthy()
+      expect(depthNav).not.toBe(lateralNav)
+    })
+  })
+
+  describe('cleanup', () => {
+    it('both navs are cleaned up on destroy()', async () => {
+      const app = createApp()
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      expect(app.canvas.querySelector('.z-depth-nav')).toBeTruthy()
+      expect(app.canvas.querySelector('.z-lateral-nav')).toBeTruthy()
 
       const canvas = app.canvas
       app.destroy()
-      expect(canvas.querySelector('.z-nav')).toBeNull()
+      expect(canvas.querySelector('.z-depth-nav')).toBeNull()
+      expect(canvas.querySelector('.z-lateral-nav')).toBeNull()
     })
   })
 })

@@ -112,14 +112,14 @@ export interface LateralNavOptions {
   dots?: boolean
   /** Keep lateral views alive in the DOM. true = hidden, 'visible' = visible. Default: false. */
   keepAlive?: boolean | 'visible'
+  /** Position of the lateral nav bar. Default: 'bottom-center'. */
+  position?: 'bottom-center' | 'top-center'
 }
 
 /** Depth navigation UI configuration. */
 export interface DepthNavOptions {
-  /** Show zoom-out button. Default: true. */
-  button?: boolean
-  /** Show depth level dot indicators. Default: true. */
-  indicator?: boolean
+  /** Position of the back button. Default: 'bottom-left'. */
+  position?: 'bottom-left' | 'top-left'
 }
 
 /** Input types that can be individually enabled/disabled. */
@@ -156,16 +156,11 @@ export interface ZoomToOptions {
   props?: Record<string, unknown>
 }
 
-/** Navigation bar position presets. */
-export type NavPosition =
-  | 'bottom-center'
-  | 'bottom-left'
-  | 'bottom-right'
-  | 'top-center'
-  | 'top-left'
-  | 'top-right'
-  | 'middle-left'
-  | 'middle-right'
+/** Depth nav position presets. */
+export type DepthNavPosition = 'bottom-left' | 'top-left'
+
+/** Lateral nav position presets. */
+export type LateralNavPosition = 'bottom-center' | 'top-center'
 
 /** Zumly constructor options. */
 export interface ZumlyOptions {
@@ -185,10 +180,8 @@ export interface ZumlyOptions {
   componentContext?: Map<string, unknown> | Record<string, unknown>
   /** Lateral navigation UI. true = default, false = disabled. */
   lateralNav?: boolean | LateralNavOptions
-  /** Depth navigation UI. true = default, false = disabled. */
+  /** Depth navigation UI. true = default (back button, bottom-left), false = disabled. */
   depthNav?: boolean | DepthNavOptions
-  /** Navigation bar position. Default: 'bottom-center'. 'middle-left' and 'middle-right' render vertically. */
-  navPosition?: NavPosition
   /** Input types to enable/disable. All enabled by default. */
   inputs?: InputsOptions
   /** Enable deferred rendering (view content inserted after zoom animation). */

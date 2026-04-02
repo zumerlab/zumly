@@ -238,33 +238,34 @@ export function checkParameters (parameters, instance) {
     instance.lateralNav = { mode: 'auto', arrows: true, dots: true, keepAlive: false }
   }
 
-  // Depth navigation UI: zoom-out button + level indicator.
-  // true = default (button + indicator), false = disabled,
-  // or object: { button: true, indicator: true }
+  // Depth navigation UI: zoom-out back button.
+  // true = default (enabled), false = disabled,
+  // or object: { position: 'bottom-left'|'top-left' }
   const dnIn = parameters.depthNav
   if (dnIn === false) {
     instance.depthNav = false
   } else if (dnIn && typeof dnIn === 'object') {
+    const dpIn = typeof dnIn.position === 'string' ? dnIn.position.toLowerCase() : null
+    const dpOk = dpIn === 'bottom-left' || dpIn === 'top-left'
+    if (dpIn && !dpOk) {
+      notification(false, '\'depthNav.position\' must be "bottom-left" or "top-left". Falling back to "bottom-left".', 'warn')
+    }
     instance.depthNav = {
-      button: typeof dnIn.button === 'boolean' ? dnIn.button : true,
-      indicator: typeof dnIn.indicator === 'boolean' ? dnIn.indicator : true
+      position: dpOk ? dpIn : 'bottom-left'
     }
   } else {
-    instance.depthNav = { button: true, indicator: true }
+    instance.depthNav = { position: 'bottom-left' }
   }
 
-  // Navigation position: where to place the unified nav bar.
-  // 8 presets: 'bottom-center' (default), 'bottom-left', 'bottom-right',
-  // 'top-center', 'top-left', 'top-right', 'middle-left', 'middle-right'
-  const npIn = parameters.navPosition
-  const npAllowed = ['bottom-center', 'bottom-left', 'bottom-right', 'top-center', 'top-left', 'top-right', 'middle-left', 'middle-right']
-  if (typeof npIn === 'string' && npAllowed.includes(npIn)) {
-    instance.navPosition = npIn
-  } else {
-    instance.navPosition = 'bottom-center'
-    if (npIn !== undefined && npIn !== null) {
-      notification(false, `'navPosition' must be one of: ${npAllowed.join(', ')}. Falling back to "bottom-center".`, 'warn')
+  // Lateral navigation position: 'bottom-center' (default) or 'top-center'.
+  const lnpIn = parameters.lateralNav && typeof parameters.lateralNav === 'object'
+    ? parameters.lateralNav.position : undefined
+  if (instance.lateralNav && typeof instance.lateralNav === 'object') {
+    const lpOk = lnpIn === 'bottom-center' || lnpIn === 'top-center'
+    if (lnpIn && !lpOk) {
+      notification(false, '\'lateralNav.position\' must be "bottom-center" or "top-center". Falling back to "bottom-center".', 'warn')
     }
+    instance.lateralNav.position = lpOk ? lnpIn : 'bottom-center'
   }
 
   // Navigation inputs: control which user interactions trigger zoom/navigation.

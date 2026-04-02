@@ -1265,11 +1265,13 @@ export class Zumly {
     this.transitionDriver.runTransition(spec, () => {
       this.blockEvents = false
       this._onTransitionComplete()
+      // Pop storedViews inside callback so nav update sees correct depth
+      // (with sync drivers like 'none', the callback runs before code after runTransition)
+      this.storedViews.pop()
       this._updateNav()
       this._emit('afterZoomOut', { zoomLevel: this.zoomLevel() })
       this.tracing('ended')
     })
-    this.storedViews.pop()
   }
 
   // ─── Event handling ──────────────────────────────────────────────
@@ -1281,7 +1283,7 @@ export class Zumly {
     if (event.type === 'touchend' && !this.inputs.touch) return
     const target = event.target
     // Ignore events from navigation UI
-    if (target.closest('.z-nav')) return
+    if (target.closest('.z-depth-nav') || target.closest('.z-lateral-nav')) return
     const isZoomMe = target.classList.contains('zoom-me') || target.closest('.zoom-me')
     if (!this.blockEvents && isZoomMe && !this.touching) {
       this.tracing('onZoom() → zoomIn')
@@ -1355,141 +1357,131 @@ export class Zumly {
     return { siblings, currentIndex }
   }
 
-  // ─── Unified navigation UI ─────────────────────────────────────────
+  // ─── Navigation UI (separate depth + lateral components) ─────────
 
   /**
-   * Create or update the unified navigation bar (depth + lateral in one widget).
-   * Layout: [ ↑ back ] [ ○ ○ ● depth ] | [ ‹ prev ] [ ● ○ ○ lateral dots ] [ › next ]
+   * Create or update both navigation components.
    * Called after zoom-in, zoom-out, and lateral navigation.
    * @private
    */
   _updateNav () {
     if (this._destroyed) return
     this._removeNav()
+    this._updateDepthNav()
+    this._updateLateralNav()
+  }
 
+  /**
+   * Create the depth navigation button (back arrow in a circle).
+   * Position: bottom-left (default) or top-left.
+   * @private
+   */
+  _updateDepthNav () {
+    if (!this.depthNav) return
     const depth = this.storedViews.length - 1
-    const hasDepth = this.depthNav && depth >= 1
-    const hasLateral = this.lateralNav
-    let lateralData = null
-    if (hasLateral) {
-      lateralData = this._getSiblings()
-      if (lateralData.siblings.length < 2) lateralData = null
-      // Auto mode: suppress lateral nav when the current view covers the full canvas
-      if (lateralData && this.lateralNav.mode === 'auto' && depth >= 1) {
-        const cv = this.canvas.querySelector('.z-view.is-current-view')
-        if (cv && cv.offsetWidth >= this.canvas.offsetWidth && cv.offsetHeight >= this.canvas.offsetHeight) {
-          lateralData = null
-        }
-      }
-    }
+    if (depth < 1) return
 
-    if (!hasDepth && !lateralData) return
+    // Check if a child Zumly instance inside the current view has its own depth nav.
+    // If so, hide ours to avoid duplicate back buttons.
+    const cv = this.canvas.querySelector('.z-view.is-current-view')
+    if (cv && cv.querySelector('.z-depth-nav')) return
 
+    const pos = this.depthNav.position || 'bottom-left'
     const nav = document.createElement('div')
-    nav.className = 'z-nav z-nav--' + this.navPosition
+    nav.className = 'z-depth-nav z-depth-nav--' + pos
 
-    // ── Depth section (back button + depth dots) ──
-    if (hasDepth) {
-      const depthSection = document.createElement('div')
-      depthSection.className = 'z-nav-depth'
-
-      if (this.depthNav.button !== false) {
-        const backBtn = document.createElement('button')
-        backBtn.className = 'z-nav-back'
-        backBtn.setAttribute('aria-label', 'Zoom out (go back)')
-        backBtn.innerHTML = '&#8249;'
-        backBtn.addEventListener('mouseup', (e) => {
-          e.stopPropagation()
-          if (!this.blockEvents && this.storedViews.length > 1) {
-            this.zoomOut()
-          }
-        })
-        depthSection.appendChild(backBtn)
+    const backBtn = document.createElement('button')
+    backBtn.className = 'z-nav-back'
+    backBtn.setAttribute('aria-label', 'Zoom out (go back)')
+    backBtn.innerHTML = '&#8249;'
+    backBtn.addEventListener('mouseup', (e) => {
+      e.stopPropagation()
+      if (!this.blockEvents && this.storedViews.length > 1) {
+        this.zoomOut()
       }
+    })
+    nav.appendChild(backBtn)
 
-      if (this.depthNav.indicator) {
-        const indicator = document.createElement('div')
-        indicator.className = 'z-nav-depth-dots'
-        for (let i = 0; i <= depth; i++) {
-          const dot = document.createElement('span')
-          dot.className = 'z-nav-dot' + (i === depth ? ' is-active' : '')
-          indicator.appendChild(dot)
-        }
-        depthSection.appendChild(indicator)
+    this.canvas.appendChild(nav)
+  }
+
+  /**
+   * Create the lateral navigation bar (arrows + dots).
+   * Position: bottom-center (default) or top-center.
+   * @private
+   */
+  _updateLateralNav () {
+    if (!this.lateralNav) return
+    const depth = this.storedViews.length - 1
+
+    let lateralData = this._getSiblings()
+    if (lateralData.siblings.length < 2) return
+    // Auto mode: suppress lateral nav when the current view covers the full canvas
+    if (this.lateralNav.mode === 'auto' && depth >= 1) {
+      const cv = this.canvas.querySelector('.z-view.is-current-view')
+      if (cv && cv.offsetWidth >= this.canvas.offsetWidth && cv.offsetHeight >= this.canvas.offsetHeight) {
+        return
       }
-
-      nav.appendChild(depthSection)
     }
 
-    // ── Separator ──
-    if (hasDepth && lateralData) {
-      const sep = document.createElement('div')
-      sep.className = 'z-nav-sep'
-      nav.appendChild(sep)
+    const { siblings, currentIndex } = lateralData
+    const pos = this.lateralNav.position || 'bottom-center'
+    const nav = document.createElement('div')
+    nav.className = 'z-lateral-nav z-lateral-nav--' + pos
+
+    if (this.lateralNav.arrows) {
+      const prevBtn = document.createElement('button')
+      prevBtn.className = 'z-nav-arrow z-nav-prev'
+      prevBtn.setAttribute('aria-label', 'Previous sibling view')
+      prevBtn.innerHTML = '&#8249;'
+      prevBtn.disabled = currentIndex <= 0
+      prevBtn.addEventListener('mouseup', (e) => {
+        e.stopPropagation()
+        if (currentIndex > 0) this._doLateral(siblings[currentIndex - 1])
+      })
+      nav.appendChild(prevBtn)
     }
 
-    // ── Lateral section (arrows + lateral dots) ──
-    if (lateralData) {
-      const { siblings, currentIndex } = lateralData
-      const latSection = document.createElement('div')
-      latSection.className = 'z-nav-lateral'
-
-      if (this.lateralNav.arrows) {
-        const prevBtn = document.createElement('button')
-        prevBtn.className = 'z-nav-arrow z-nav-prev'
-        prevBtn.setAttribute('aria-label', 'Previous sibling view')
-        prevBtn.innerHTML = '&#8249;'
-        prevBtn.disabled = currentIndex <= 0
-        prevBtn.addEventListener('mouseup', (e) => {
+    if (this.lateralNav.dots) {
+      const dotsContainer = document.createElement('div')
+      dotsContainer.className = 'z-nav-lateral-dots'
+      for (let i = 0; i < siblings.length; i++) {
+        const dot = document.createElement('button')
+        dot.className = 'z-nav-dot z-nav-lat-dot' + (i === currentIndex ? ' is-active' : '')
+        dot.setAttribute('aria-label', `Go to ${siblings[i]}`)
+        dot.dataset.to = siblings[i]
+        dot.addEventListener('mouseup', ((idx) => (e) => {
           e.stopPropagation()
-          if (currentIndex > 0) this._doLateral(siblings[currentIndex - 1])
-        })
-        latSection.appendChild(prevBtn)
+          if (idx !== currentIndex) this._doLateral(siblings[idx])
+        })(i))
+        dotsContainer.appendChild(dot)
       }
+      nav.appendChild(dotsContainer)
+    }
 
-      if (this.lateralNav.dots) {
-        const dotsContainer = document.createElement('div')
-        dotsContainer.className = 'z-nav-lateral-dots'
-        for (let i = 0; i < siblings.length; i++) {
-          const dot = document.createElement('button')
-          dot.className = 'z-nav-dot z-nav-lat-dot' + (i === currentIndex ? ' is-active' : '')
-          dot.setAttribute('aria-label', `Go to ${siblings[i]}`)
-          dot.dataset.to = siblings[i]
-          dot.addEventListener('mouseup', ((idx) => (e) => {
-            e.stopPropagation()
-            if (idx !== currentIndex) this._doLateral(siblings[idx])
-          })(i))
-          dotsContainer.appendChild(dot)
-        }
-        latSection.appendChild(dotsContainer)
-      }
-
-      if (this.lateralNav.arrows) {
-        const nextBtn = document.createElement('button')
-        nextBtn.className = 'z-nav-arrow z-nav-next'
-        nextBtn.setAttribute('aria-label', 'Next sibling view')
-        nextBtn.innerHTML = '&#8250;'
-        nextBtn.disabled = currentIndex >= siblings.length - 1
-        nextBtn.addEventListener('mouseup', (e) => {
-          e.stopPropagation()
-          if (currentIndex < siblings.length - 1) this._doLateral(siblings[currentIndex + 1])
-        })
-        latSection.appendChild(nextBtn)
-      }
-
-      nav.appendChild(latSection)
+    if (this.lateralNav.arrows) {
+      const nextBtn = document.createElement('button')
+      nextBtn.className = 'z-nav-arrow z-nav-next'
+      nextBtn.setAttribute('aria-label', 'Next sibling view')
+      nextBtn.innerHTML = '&#8250;'
+      nextBtn.disabled = currentIndex >= siblings.length - 1
+      nextBtn.addEventListener('mouseup', (e) => {
+        e.stopPropagation()
+        if (currentIndex < siblings.length - 1) this._doLateral(siblings[currentIndex + 1])
+      })
+      nav.appendChild(nextBtn)
     }
 
     this.canvas.appendChild(nav)
   }
 
   /**
-   * Remove the unified navigation UI from the canvas.
+   * Remove all navigation UI from the canvas.
    * @private
    */
   _removeNav () {
     if (!this.canvas) return
-    this.canvas.querySelectorAll('.z-nav').forEach(el => el.remove())
+    this.canvas.querySelectorAll('.z-depth-nav, .z-lateral-nav').forEach(el => el.remove())
   }
 
   /**

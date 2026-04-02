@@ -129,9 +129,8 @@ await app.init();
 | `transitions` | object | No | Duration, ease, cover, driver, effects, stagger, hideTrigger for zoom transitions. |
 | `deferred` | boolean | No | Defer content rendering until after animation completes (default: `false`). |
 | `debug` | boolean | No | Enable debug messages (default: `false`). |
-| `lateralNav` | boolean \| object | No | Lateral navigation UI: `{ mode, arrows, dots, keepAlive }`. |
-| `depthNav` | boolean \| object | No | Depth navigation UI: `{ button, indicator }`. |
-| `navPosition` | string | No | Nav bar position preset (default: `'bottom-center'`). |
+| `lateralNav` | boolean \| object | No | Lateral navigation UI: `{ mode, arrows, dots, keepAlive, position }`. |
+| `depthNav` | boolean \| object | No | Depth back button: `{ position }`. Default: `'bottom-left'`. |
 | `inputs` | boolean \| object | No | Input methods: `{ click, keyboard, wheel, touch }`. |
 | `componentContext` | object | No | Context passed to component-style views. |
 
@@ -175,13 +174,14 @@ const app = new Zumly({
 });
 ```
 
-**Lateral navigation:**
+**Lateral navigation (arrows + dots bar):**
 
 ```js
-lateralNav: true                            // mode: 'auto' (default)
+lateralNav: true                            // mode: 'auto' (default), bottom-center
 lateralNav: false                           // disabled
 lateralNav: { mode: 'always' }              // always show when siblings exist
 lateralNav: { mode: 'auto', dots: false }   // auto mode, no dots
+lateralNav: { position: 'top-center' }      // top instead of bottom
 ```
 
 | Mode | Description |
@@ -189,26 +189,17 @@ lateralNav: { mode: 'auto', dots: false }   // auto mode, no dots
 | `'auto'` (default) | Shows lateral nav only when the current view doesn't cover the full canvas — preserving spatial context. |
 | `'always'` | Always shows lateral nav when siblings exist, regardless of coverage. |
 
-In `'auto'` mode, when a view covers 100% of the canvas the user perceives a new independent space, so the lateral nav is suppressed to avoid a floating control with no visual context.
+Position: `'bottom-center'` (default) or `'top-center'`.
 
-**Navigation position (`navPosition`):**
+**Depth navigation (back button):**
 
 ```js
-navPosition: 'bottom-center'   // default
+depthNav: true                              // default: back button at bottom-left
+depthNav: false                             // disabled
+depthNav: { position: 'top-left' }          // top instead of bottom
 ```
 
-| Preset | Position | Layout |
-|--------|----------|--------|
-| `'bottom-center'` | Bottom center | Horizontal |
-| `'bottom-left'` | Bottom left | Horizontal |
-| `'bottom-right'` | Bottom right | Horizontal |
-| `'top-center'` | Top center | Horizontal |
-| `'top-left'` | Top left | Horizontal |
-| `'top-right'` | Top right | Horizontal |
-| `'middle-left'` | Left center | Vertical |
-| `'middle-right'` | Right center | Vertical |
-
-The `'middle-left'` and `'middle-right'` presets render the nav bar vertically with rotated arrows.
+Position: `'bottom-left'` (default) or `'top-left'`. The depth and lateral nav are separate, independently positioned components.
 
 **Zoomable elements:**
 
@@ -429,8 +420,8 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 **Done:**
 - Depth and lateral navigation (`zoomIn`, `zoomOut`, `goTo`, `back`, `zoomTo`)
-- Lateral nav UI (`lateralNav`: `mode` auto/always, arrows, dots, `keepAlive`)
-- Depth nav UI (`depthNav`) and `navPosition` presets
+- Lateral nav bar (`lateralNav`: `mode` auto/always, arrows, dots, `keepAlive`, `position`)
+- Depth back button (`depthNav`: `position` bottom-left/top-left)
 - Inputs toggles (`inputs`: wheel, keyboard, click, touch)
 - Plugin system (`use()`), router plugin (hash sync, back, forward blocked)
 - Resize correction (translate/origin scaling; deferred while transitioning)
