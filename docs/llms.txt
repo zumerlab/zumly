@@ -1,0 +1,56 @@
+# Zumly
+
+> JavaScript library for hierarchical zoom navigation (ZUI). Navigate in Z (depth) through discrete views in the XY plane with spatial transitions.
+
+## What it is
+
+Zumly is a structured, trigger-driven zoom user interface engine. Users zoom into focused elements to open the next view — attention (focus) and depth (Z) stay aligned with layout (XY). It is NOT a freeform pan/zoom canvas or map library.
+
+- Framework-agnostic: works with React, Vue, Svelte, Angular, or plain HTML
+- Pluggable transition drivers: CSS, WAAPI, Anime.js, GSAP, Motion, none, or custom
+- Plugin system with hash router included
+- Touch, keyboard, mouse, and wheel input support
+
+## Key concepts
+
+- **Canvas**: Container element with class `zumly-canvas` where views render
+- **View**: A DOM subtree with root class `z-view`. Sources: HTML strings, URLs, async functions, objects with `render()`, web components
+- **Trigger**: Element with class `zoom-me` and `data-to="viewName"` that initiates zoom-in
+- **Depth navigation**: Zoom in/out through view hierarchy (Z axis)
+- **Lateral navigation**: Navigate between sibling views at the same depth level
+- **Driver**: Pluggable animation engine for transitions
+- **Plugin**: Object with `install(instance, options)` or plain function
+
+## Quick start
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+<script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+<div class="zumly-canvas" id="app"></div>
+<script>
+  const app = new Zumly({
+    mount: '#app',
+    initialView: 'home',
+    views: {
+      home: '<div class="z-view"><div class="zoom-me" data-to="detail">Open</div></div>',
+      detail: '<div class="z-view"><p>Detail view</p></div>'
+    }
+  });
+  app.init();
+</script>
+```
+
+## Links
+
+- Live demo: https://zumerlab.github.io/zumly/
+- GitHub: https://github.com/zumerlab/zumly
+- npm: https://www.npmjs.com/package/zumly
+- Full LLM reference: https://zumerlab.github.io/zumly/llms-full.txt
+- API docs: https://zumerlab.github.io/zumly/ (zoom into API card)
+- Driver API: https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md
+- TypeScript types: https://github.com/zumerlab/zumly/blob/main/types/zumly.d.ts
+
+## Ecosystem
+
+- [Orbit CSS](https://github.com/zumerlab/orbit) — Radial/orbital CSS layout system, pairs well with Zumly
+- [SnapDOM](https://github.com/zumerlab/snapdom) — Lightweight DOM diffing library

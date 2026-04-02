@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+# LLM-friendly documentation
+# See https://llmstxt.org/
+Sitemap: https://zumerlab.github.io/zumly/llms.txt

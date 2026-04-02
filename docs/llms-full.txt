@@ -1,0 +1,1195 @@
+# Zumly — Complete LLM Reference
+
+> JavaScript library for hierarchical zoom navigation (ZUI). Navigate in Z (depth) through discrete views in the XY plane with spatial transitions.
+
+Version: 0.92.3
+License: MIT
+Author: Juan Martin Muda — Zumerlab
+Repository: https://github.com/zumerlab/zumly
+Live demo: https://zumerlab.github.io/zumly/
+npm: https://www.npmjs.com/package/zumly
+
+---
+
+## Table of Contents
+
+1. What Zumly Is (and Is Not)
+2. Installation
+3. Quick Start
+4. Constructor Options (Full Reference)
+5. View Sources
+6. View Rendering Pipeline
+7. Lifecycle Events
+8. Public API
+9. Navigation Model
+10. Transition Drivers
+11. Driver Helpers
+12. Plugin System
+13. Hash Router Plugin
+14. CSS Classes & Styling
+15. Per-Trigger Overrides
+16. Accessibility
+17. Framework Integration Patterns
+18. Ecosystem
+19. TypeScript Support
+
+---
+
+## 1. What Zumly Is (and Is Not)
+
+Zumly is a structured, trigger-driven zoom user interface engine. Users zoom into focused elements to open the next view — attention (focus) and depth (Z) stay aligned with layout (XY).
+
+It is NOT:
+- A freeform pan/zoom canvas (like Miro or Figma)
+- A map library (like Leaflet or Mapbox)
+- A slide/carousel library
+
+It IS:
+- Framework-agnostic: works with React, Vue, Svelte, Angular, or plain HTML
+- Pluggable transition drivers: CSS, WAAPI, Anime.js, GSAP, Motion, none, or custom
+- Plugin system with hash router included
+- Touch, keyboard, mouse, and wheel input support
+
+### Key Concepts
+
+- **Canvas**: Container element with class `zumly-canvas` where views render
+- **View**: A DOM subtree with root class `z-view`. Sources: HTML strings, URLs, async functions, objects with `render()`, web components
+- **Trigger**: Element with class `zoom-me` and `data-to="viewName"` that initiates zoom-in
+- **Depth navigation**: Zoom in/out through view hierarchy (Z axis)
+- **Lateral navigation**: Navigate between sibling views at the same depth level
+- **Driver**: Pluggable animation engine for transitions
+- **Plugin**: Object with `install(instance, options)` or plain function
+
+---
+
+## 2. Installation
+
+### npm / yarn / pnpm
+
+```bash
+npm install zumly
+```
+
+### ESM import
+
+```js
+import Zumly from 'zumly'
+import 'zumly/style.css'
+```
+
+### CDN (unpkg)
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+<script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+```
+
+When using the CDN, `Zumly` is available as a global (`window.Zumly`).
+
+### Package exports
+
+```
+"zumly"            → main entry (ESM: dist/zumly.mjs, CJS: dist/zumly.js)
+"zumly/style.css"  → dist/zumly.css
+"zumly/css"        → dist/zumly.css
+"zumly/drivers"    → src/drivers/index.js (all built-in drivers)
+"zumly/driver-helpers" → src/drivers/driver-helpers.js (helpers for custom drivers)
+```
+
+---
+
+## 3. Quick Start
+
+```html
+<link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+<script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+
+<div class="zumly-canvas" id="app"></div>
+
+<script>
+  const app = new Zumly({
+    mount: '#app',
+    initialView: 'home',
+    views: {
+      home: '<div class="z-view"><div class="zoom-me" data-to="detail">Open</div></div>',
+      detail: '<div class="z-view"><p>Detail view</p></div>'
+    }
+  });
+  app.init();
+</script>
+```
+
+---
+
+## 4. Constructor Options (Full Reference)
+
+```js
+new Zumly({
+  // ─── Required ────────────────────────────
+  mount: '#app',              // CSS selector for canvas element (must have class zumly-canvas)
+  initialView: 'home',       // Name of the first view to show
+  views: {                    // Map of view names → view sources
+    home: '<div class="z-view">...</div>',
+    detail: detailViewFunction,
+  },
+
+  // ─── Optional ────────────────────────────
+  preload: ['detail'],        // View names to resolve and cache on init()
+  debug: false,               // Enable debug messages in console
+  deferred: false,            // Render view content after zoom animation completes
+  componentContext: new Map(), // Context object passed to function/object view sources
+
+  // ─── Transitions ─────────────────────────
+  transitions: {
+    driver: 'css',            // 'css' | 'waapi' | 'none' | 'anime' | 'gsap' | 'motion' | Function
+    cover: 'width',           // 'width' | 'height' — which dimension to use for cover scale
+    duration: '1s',           // CSS duration string
+    ease: 'ease-in-out',      // CSS easing function
+    effects: ['blur(3px)', 'blur(8px) saturate(0)'],  // CSS filter for [previousView, lastView]
+    stagger: 0,               // Progressive delay (ms) between view layers
+    parallax: 0,              // Parallax intensity (0-1) — reserved for future use
+    hideTrigger: false,        // 'fade' | true | false — hide trigger element during zoom
+  },
+
+  // ─── Depth navigation UI ─────────────────
+  depthNav: {                 // true = default, false = disabled, or object:
+    position: 'bottom-left',  // 'bottom-left' | 'top-left'
+  },
+
+  // ─── Lateral navigation UI ───────────────
+  lateralNav: {               // true = default, false = disabled, or object:
+    mode: 'auto',             // 'auto' = only when view doesn't cover full canvas, 'always'
+    arrows: true,             // Show prev/next arrow buttons
+    dots: true,               // Show dot indicators
+    keepAlive: false,         // true = keep lateral views in DOM (hidden), 'visible' = keep visible
+    position: 'bottom-center', // 'bottom-center' | 'top-center'
+  },
+
+  // ─── Input controls ──────────────────────
+  inputs: {
+    wheel: true,              // Wheel zoom-out
+    keyboard: true,           // Arrow keys
+    click: true,              // Click/mouseup
+    touch: true,              // Touch/swipe
+  },
+})
+```
+
+### Option Details
+
+#### `transitions.driver`
+
+| Value | Description |
+|-------|-------------|
+| `'css'` | CSS transitions (default). Zero JS animation overhead. |
+| `'waapi'` | Web Animations API. JS-controlled with CSS performance. |
+| `'none'` | Instant transitions. Great for testing. |
+| `'anime'` | Anime.js (must include anime.js separately). |
+| `'gsap'` | GSAP (must include gsap separately). |
+| `'motion'` | Motion (must include motion separately). |
+| `function` | Custom driver function `(spec, onComplete) => void` |
+
+#### `transitions.cover`
+
+Controls how the zoom scale is calculated. `'width'` scales the child view so its width matches the trigger width. `'height'` uses height instead. Can be overridden per trigger with `data-with-cover="height"`.
+
+#### `transitions.effects`
+
+Array of 1-2 CSS filter strings applied to background views during zoom. First applies to previousView, second to lastView. If only one is provided, it is used for both. Can be overridden per trigger with `data-with-effects="blur(3px) | blur(8px) saturate(0)"`.
+
+#### `transitions.hideTrigger`
+
+- `false` (default): trigger stays visible during zoom
+- `true`: trigger gets `visibility: hidden` during zoom
+- `'fade'`: trigger crossfades with the incoming view (opacity transition)
+
+Can be overridden per trigger with `data-hide-trigger` or `data-hide-trigger="fade"`.
+
+#### `transitions.stagger`
+
+Progressive delay in milliseconds between view layers. Current view starts immediately, previous view after `1 * stagger` ms, last view after `2 * stagger` ms. Default: 0 (all layers animate together).
+
+#### `lateralNav.mode`
+
+- `'auto'` (default): lateral nav only appears when the current view doesn't cover the full canvas (i.e., trigger was smaller than canvas)
+- `'always'`: lateral nav appears whenever sibling views exist at current depth
+
+#### `lateralNav.keepAlive`
+
+- `false` (default): lateral views are removed from DOM when navigating away
+- `true`: views are kept in DOM with `display: none` (class `is-lateral-hidden`)
+- `'visible'`: views are kept in DOM and remain visible (for CSS-based transitions between siblings)
+
+#### `depthNav`
+
+Depth navigation is the back button. It's a standalone `<` arrow in a circle. It only appears when depth > 0 (i.e., you've zoomed in at least once). If the current view already contains a `.z-depth-nav` (e.g., from a nested Zumly instance in an iframe), the parent's depth nav is suppressed to avoid duplicates.
+
+---
+
+## 5. View Sources
+
+Views can be provided in multiple formats:
+
+### HTML string
+
+```js
+views: {
+  home: '<div class="z-view"><h1>Hello</h1><div class="zoom-me" data-to="detail">Open</div></div>'
+}
+```
+
+### URL (fetched)
+
+```js
+views: {
+  home: 'views/home.html'       // relative URL
+  // or: 'https://example.com/views/home.html'
+}
+```
+
+The HTML file should contain a single root element with class `z-view`:
+
+```html
+<div class="z-view">
+  <h1>Hello</h1>
+  <div class="zoom-me" data-to="detail">Open</div>
+</div>
+```
+
+### Function
+
+```js
+views: {
+  detail: (ctx) => {
+    // ctx.target — fresh <div> for mounting
+    // ctx.trigger — the trigger element (if from click)
+    // ctx.context — componentContext from constructor
+    // ctx.props — data attributes from trigger (data-id="42" → props.id)
+    return `<div class="z-view"><p>Detail for ${ctx.props.id}</p></div>`
+  }
+}
+```
+
+Functions can be async and can return:
+- An HTML string
+- An HTMLElement
+- `void` (if mounting into `ctx.target`)
+
+### Object with render()
+
+```js
+views: {
+  detail: {
+    render(ctx) {
+      return `<div class="z-view"><p>Detail</p></div>`
+    },
+    mounted() {
+      // Called after the view is inserted into the DOM
+      console.log('View mounted!')
+    }
+  }
+}
+```
+
+### HTMLElement
+
+```js
+const el = document.createElement('div')
+el.classList.add('z-view')
+el.innerHTML = '<h1>Hello</h1>'
+views: { home: el }  // cloned on each use
+```
+
+### Web Component
+
+```js
+views: {
+  dashboard: 'my-dashboard'  // tag name with hyphen → waits for customElements.whenDefined
+}
+```
+
+### ViewContext object
+
+All function and object view sources receive a `ViewContext`:
+
+```ts
+interface ViewContext {
+  target: HTMLDivElement     // Fresh <div> for mounting framework components
+  trigger?: HTMLElement      // The trigger element (if from a click)
+  context: Map | Object      // The componentContext from constructor
+  props: Record<string, string>  // Data attributes from trigger
+}
+```
+
+---
+
+## 6. View Rendering Pipeline
+
+The internal pipeline for rendering a view:
+
+1. **Resolve**: `ViewResolver.resolve(source, context)` → DOM node. Detects source type (html, url, function, object, element, webcomponent) and produces an HTMLElement.
+2. **Normalize**: Ensure the node has class `.z-view` (wraps if needed).
+3. **Insert**: Sets `dataset.viewName`, adds CSS classes (`is-current-view` or `is-new-current-view has-no-events hide`), appends to canvas.
+4. **Mounted**: Calls `views[viewName].mounted()` only AFTER insertion into the DOM.
+
+### Deferred Rendering
+
+When `deferred: true` (or per-trigger `data-deferred`), view content is detached before the zoom animation runs, then re-attached after the animation completes. This ensures smooth animations for heavy views.
+
+### Prefetching
+
+Zumly prefetches views on mouseover/focusin of `.zoom-me` triggers. You can also eagerly preload views with the `preload` option:
+
+```js
+new Zumly({
+  preload: ['detail', 'settings'],  // resolve and cache on init()
+  ...
+})
+```
+
+---
+
+## 7. Lifecycle Events
+
+Subscribe with `instance.on(event, callback)`. Unsubscribe with `instance.off(event, callback)`.
+
+| Event | Data | When |
+|-------|------|------|
+| `viewMounted` | `{ viewName, node }` | After a view is inserted into the DOM |
+| `beforeZoomIn` | `{ viewName }` | Before zoom-in animation starts |
+| `afterZoomIn` | `{ viewName, zoomLevel }` | After zoom-in animation completes |
+| `beforeZoomOut` | `{ zoomLevel }` | Before zoom-out animation starts |
+| `afterZoomOut` | `{ zoomLevel }` | After zoom-out animation completes |
+| `beforeLateral` | `{ viewName, from, isBack }` | Before lateral navigation starts |
+| `afterLateral` | `{ viewName, from, isBack }` | After lateral navigation completes |
+| `destroy` | `{}` | When instance is destroyed |
+
+### Example
+
+```js
+const app = new Zumly({ ... })
+
+app.on('afterZoomIn', (data) => {
+  console.log(`Zoomed into ${data.viewName} at level ${data.zoomLevel}`)
+})
+
+app.on('afterZoomOut', (data) => {
+  console.log(`Zoomed out to level ${data.zoomLevel}`)
+})
+
+app.on('afterLateral', (data) => {
+  console.log(`Navigated from ${data.from} to ${data.viewName}`)
+})
+```
+
+---
+
+## 8. Public API
+
+### `new Zumly(options: ZumlyOptions)`
+
+Creates a new instance. Does NOT initialize — call `init()` separately.
+
+### `init(): Promise<void>`
+
+Initialize: render initial view, bind events, install plugins, start prefetcher. Must be called after constructor.
+
+### `destroy(): void`
+
+Clean up: remove all event listeners, timers, navigation UI, clear state. Idempotent. Does NOT remove DOM content from canvas. After destroy, the instance is inert.
+
+### `on(event, fn): this`
+
+Subscribe to a lifecycle event. Chainable.
+
+### `off(event, fn?): this`
+
+Unsubscribe from a lifecycle event. If `fn` is omitted, removes all hooks for that event. Chainable.
+
+### `use(plugin, options?): this`
+
+Register a plugin. If called before init(), plugin installs during init(). If called after, installs immediately. Chainable.
+
+### `zoomLevel(): number`
+
+Returns the current zoom depth (number of stored snapshots). At root = 1, after first zoom-in = 2, etc.
+
+### `getZoomLevel(): number`
+
+Alias for `zoomLevel()`.
+
+### `getCurrentViewName(): string | null`
+
+Returns the name of the currently active view, or null if not initialized.
+
+### `zoomIn(el: HTMLElement): Promise<void>`
+
+Zoom into the view indicated by trigger element (must have `data-to="viewName"`).
+
+### `zoomOut(): void`
+
+Zoom out one level. No-op at root.
+
+### `zoomTo(viewName, options?): Promise<void>`
+
+Programmatic zoom to a named view. Uses a centered synthetic trigger for the transition.
+
+```js
+await app.zoomTo('detail', { duration: '500ms', ease: 'ease-out' })
+```
+
+Options: `{ duration?: string, ease?: string, props?: Record<string, unknown> }`
+
+### `goTo(viewName, options?): Promise<void>`
+
+Unified navigation API. Supports both depth and lateral navigation.
+
+```js
+// Depth (same as zoomTo)
+await app.goTo('detail')
+await app.goTo('detail', { mode: 'depth' })
+
+// Lateral
+await app.goTo('settings', { mode: 'lateral' })
+```
+
+Options: `{ mode?: 'depth' | 'lateral', duration?: string, ease?: string, props?: Record<string, unknown> }`
+
+### `back(): Promise<void> | void`
+
+Navigate back. If there is lateral history at current depth, pops lateral history first (goes back laterally). Otherwise zooms out. Returns a Promise when navigating laterally.
+
+---
+
+## 9. Navigation Model
+
+### Depth Navigation (Z axis)
+
+Zooming creates a stack of snapshots. Each snapshot stores:
+- Transform states for up to 3 visible views (current, previous, last)
+- Scale factor, stagger, effects config
+
+The visible view hierarchy at any point:
+```
+Canvas
+├── .is-last-view       (grandparent — 2 levels up)
+├── .is-previous-view   (parent — 1 level up)
+└── .is-current-view    (active view)
+```
+
+Views beyond 3 levels deep are detached from DOM and restored on zoom-out.
+
+### Lateral Navigation (XY plane)
+
+At any depth, if the parent view has multiple `.zoom-me` triggers, those targets are "siblings". The user can navigate between them:
+
+- Via lateral nav UI (arrows + dots)
+- Via clicking sibling triggers visible in the parent view
+- Programmatically via `goTo(name, { mode: 'lateral' })`
+- Via the Router plugin (browser back)
+
+Lateral history is tracked per depth level. `back()` pops lateral history before zooming out.
+
+### Input Handling
+
+| Input | Action | Enabled by |
+|-------|--------|------------|
+| Click `.zoom-me` | Zoom in to `data-to` view | `inputs.click` |
+| Click outside current view | Zoom out | `inputs.click` |
+| Click sibling trigger in parent | Lateral navigation | `inputs.click` |
+| Swipe left | Zoom out | `inputs.touch` |
+| Tap `.zoom-me` | Zoom in | `inputs.touch` |
+| Tap outside current view | Zoom out | `inputs.touch` |
+| ArrowLeft / ArrowDown | Zoom out | `inputs.keyboard` |
+| Wheel scroll down | Zoom out | `inputs.wheel` |
+
+Wheel events inside scrollable containers are not intercepted.
+
+---
+
+## 10. Transition Drivers
+
+A driver is a function that receives a transition spec and an `onComplete` callback:
+
+```js
+function runTransition(spec, onComplete) {
+  // Animate views based on spec
+  // MUST call onComplete() exactly once when done
+}
+```
+
+### Built-in Drivers
+
+| Name | Description |
+|------|-------------|
+| `css` | Pure CSS transitions. Default. Zero JS animation overhead. |
+| `waapi` | Web Animations API. JS-controlled timing with CSS-grade performance. |
+| `none` | Instant. Applies final state synchronously. Great for testing. |
+| `anime` | Anime.js integration. Requires anime.js loaded globally. |
+| `gsap` | GSAP integration. Requires gsap loaded globally. |
+| `motion` | Motion library integration. Requires motion loaded globally. |
+
+### Custom Driver
+
+```js
+new Zumly({
+  transitions: {
+    driver: (spec, onComplete) => {
+      // spec.type: 'zoomIn' | 'zoomOut' | 'lateral'
+      // spec.currentView, spec.previousView, spec.lastView
+      // spec.currentStage — snapshot with computed transforms
+      // spec.duration, spec.ease
+      // ... animate, then:
+      onComplete()
+    }
+  }
+})
+```
+
+### The Spec Object
+
+#### Common fields (all transition types)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | `'zoomIn' \| 'zoomOut' \| 'lateral'` | Transition type |
+| `currentView` | `HTMLElement` | Incoming (zoom-in) or outgoing (zoom-out) view |
+| `previousView` | `HTMLElement` | Parent view |
+| `lastView` | `HTMLElement \| null` | Grandparent (null at depth <= 2) |
+| `currentStage` | `object` | Snapshot with computed states |
+| `duration` | `string` | e.g. `'500ms'`, `'1s'` |
+| `ease` | `string` | CSS easing |
+| `canvas` | `HTMLElement` | Canvas container (zoom-out and lateral) |
+
+#### `currentStage.views[]` — Animation Data
+
+```
+views[0] → current view
+views[1] → previous view
+views[2] → last view (grandparent)
+```
+
+Each entry has:
+
+```js
+{
+  viewName: 'detail',
+  backwardState: {
+    origin: '125px 100px',
+    transform: 'translate(50px, 60px) scale(0.25)',
+    duration: '500ms',
+    ease: 'ease-in-out',
+  },
+  forwardState: {
+    origin: '125px 100px',
+    transform: 'translate(100px, 50px)',
+    duration: '500ms',
+    ease: 'ease-in-out',
+  }
+}
+```
+
+**Zoom-in**: animate `backwardState.transform` → `forwardState.transform`
+**Zoom-out**: animate `forwardState.transform` → `backwardState.transform`
+
+#### Lateral-specific fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `backView` | `HTMLElement \| null` | Parent view behind current depth |
+| `backViewState` | `{ transformStart, transformEnd }` | Slide transforms for backView |
+| `lastViewState` | `{ transformStart, transformEnd }` | Slide transforms for lastView |
+| `incomingTransformStart` | `string` | Incoming view start transform |
+| `incomingTransformEnd` | `string` | Incoming view final transform |
+| `outgoingTransform` | `string` | Outgoing view current transform |
+| `outgoingTransformEnd` | `string` | Outgoing view exit transform |
+| `slideDeltaX` | `number` | Horizontal slide distance |
+| `slideDeltaY` | `number` | Vertical slide distance |
+| `keepAlive` | `boolean` | When true, driver should NOT remove outgoing view from DOM |
+
+### Driver Contract (MUST do)
+
+1. **Call `onComplete()` exactly once** — the engine blocks all events until you do. If you never call it, the UI freezes permanently.
+2. **Apply final DOM state** — the engine does NOT do this for you. Use helper functions.
+3. **Handle all three types** — `zoomIn`, `zoomOut`, `lateral`.
+
+---
+
+## 11. Driver Helpers
+
+Import from `zumly/driver-helpers`:
+
+```js
+import {
+  parseDurationMs,
+  parseDurationSec,
+  applyZoomInEndState,
+  applyZoomOutPreviousState,
+  applyZoomOutLastState,
+  removeViewFromCanvas,
+  showViews,
+  runLateralInstant,
+  createFinishGuard,
+  SAFETY_BUFFER_MS,
+} from 'zumly/driver-helpers'
+```
+
+| Helper | Purpose |
+|--------|---------|
+| `parseDurationMs(duration)` | Parse `'1s'`/`'500ms'`/number → milliseconds |
+| `parseDurationSec(duration)` | Same but returns seconds |
+| `applyZoomInEndState(el, stage)` | Apply final classes + transforms after zoom-in |
+| `applyZoomOutPreviousState(el, state)` | Final state for previous view after zoom-out |
+| `applyZoomOutLastState(el, state)` | Final state for last view after zoom-out |
+| `removeViewFromCanvas(el, canvas)` | Safe removal (handles wrapped elements) |
+| `showViews(...elements)` | Remove `hide` class + set `contentVisibility: auto` |
+| `runLateralInstant(spec, onComplete)` | Instant lateral transition (no animation) |
+| `createFinishGuard(cleanup, timeoutMs)` | Once-only finish + safety timeout |
+| `SAFETY_BUFFER_MS` | Default safety buffer (150ms) |
+
+### Matrix interpolation toolkit
+
+| Helper | Purpose |
+|--------|---------|
+| `readComputedMatrix(el, origin, transform)` | Read browser-computed matrix |
+| `interpolateMatrix(from, to, t)` | Lerp between two matrix objects |
+| `matrixToString(m)` | `{ a,b,c,d,e,f }` → `"matrix(...)"` |
+| `parseMatrixString(str)` | `"matrix(...)"` → `{ a,b,c,d,e,f }` |
+| `identityMatrix()` | Returns identity matrix |
+| `lerp(a, b, t)` | Linear interpolation |
+
+### Minimal Custom Driver Example
+
+```js
+import {
+  parseDurationMs, showViews, applyZoomInEndState,
+  applyZoomOutPreviousState, applyZoomOutLastState,
+  removeViewFromCanvas, runLateralInstant,
+  createFinishGuard, SAFETY_BUFFER_MS,
+} from 'zumly/driver-helpers'
+
+export function runTransition(spec, onComplete) {
+  const { type, currentView, previousView, lastView, currentStage, duration, canvas } = spec
+
+  if (type === 'lateral') {
+    runLateralInstant(spec, onComplete)
+    return
+  }
+
+  const ms = parseDurationMs(duration)
+  showViews(currentView, previousView, lastView)
+
+  if (type === 'zoomIn') {
+    currentView.style.opacity = '0'
+    currentView.style.transition = `opacity ${ms}ms ease`
+    previousView.style.transition = `opacity ${ms}ms ease`
+
+    requestAnimationFrame(() => {
+      currentView.style.opacity = '1'
+      previousView.style.opacity = '0.3'
+    })
+
+    const { finish } = createFinishGuard(() => {
+      currentView.style.transition = ''
+      previousView.style.transition = ''
+      previousView.style.opacity = ''
+      applyZoomInEndState(currentView, currentStage)
+      applyZoomInEndState(previousView, currentStage)
+      if (lastView) applyZoomInEndState(lastView, currentStage)
+      onComplete()
+    }, ms + SAFETY_BUFFER_MS)
+
+    currentView.addEventListener('transitionend', finish, { once: true })
+    return
+  }
+
+  if (type === 'zoomOut') {
+    currentView.style.transition = `opacity ${ms}ms ease`
+    requestAnimationFrame(() => {
+      currentView.style.opacity = '0'
+      previousView.style.opacity = '1'
+    })
+
+    const { finish } = createFinishGuard(() => {
+      currentView.style.transition = ''
+      removeViewFromCanvas(currentView, canvas)
+      applyZoomOutPreviousState(previousView, currentStage.views[1].backwardState)
+      if (lastView) applyZoomOutLastState(lastView, currentStage.views[2].backwardState)
+      onComplete()
+    }, ms + SAFETY_BUFFER_MS)
+
+    currentView.addEventListener('transitionend', finish, { once: true })
+    return
+  }
+
+  onComplete()
+}
+```
+
+---
+
+## 12. Plugin System
+
+Plugins extend Zumly with additional behavior. A plugin can be:
+
+### Object plugin
+
+```js
+const myPlugin = {
+  install(instance, options) {
+    instance.on('afterZoomIn', (data) => {
+      console.log('Zoomed to', data.viewName)
+    })
+  }
+}
+
+app.use(myPlugin, { /* options */ })
+```
+
+### Function plugin
+
+```js
+function myPlugin(instance, options) {
+  instance.on('afterZoomIn', (data) => {
+    console.log('Zoomed to', data.viewName)
+  })
+}
+
+app.use(myPlugin)
+```
+
+Plugins are installed during `init()`, or immediately if `init()` has already been called. Always clean up in the `destroy` event:
+
+```js
+const myPlugin = {
+  install(instance) {
+    function onZoom(data) { /* ... */ }
+    instance.on('afterZoomIn', onZoom)
+    instance.on('destroy', () => {
+      instance.off('afterZoomIn', onZoom)
+    })
+  }
+}
+```
+
+---
+
+## 13. Hash Router Plugin
+
+Syncs the browser URL hash with Zumly navigation state. Supports browser back button for zoom-out and lateral back. Forward/deep-linking is intentionally not supported (in a ZUI the zoom origin depends on the trigger element which doesn't exist without context).
+
+### Usage
+
+```js
+import Zumly from 'zumly'
+
+const app = new Zumly({ ... })
+app.use(Zumly.Router, { separator: '/', prefix: '/' })
+app.init()
+```
+
+Or with script tag:
+
+```html
+<script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+<script>
+  const app = new Zumly({ ... })
+  app.use(Zumly.Router)
+  app.init()
+</script>
+```
+
+### Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `separator` | `'/'` | Character joining view path segments in hash |
+| `prefix` | `'/'` | Prefix before path in hash |
+
+### Behavior
+
+- `afterZoomIn` / `afterLateral` → `pushState` (new hash entry)
+- `afterZoomOut` → `replaceState` (updates hash without new history entry)
+- `popstate` event (browser back) → `zoomOut()` or `goTo(name, { mode: 'lateral' })`
+- Forward navigation via popstate is blocked (goes back)
+- Cleans up all listeners on `destroy`
+
+### URL format
+
+```
+#/home              → root view
+#/home/dashboard    → zoomed into dashboard from home
+#/home/settings     → lateral navigation to settings
+```
+
+---
+
+## 14. CSS Classes & Styling
+
+### Required CSS
+
+Always include `zumly.css` (or `zumly.min.css`). This provides the canvas layout, view positioning, and transition classes.
+
+### Canvas
+
+```css
+.zumly-canvas {
+  /* The container. Must have explicit dimensions. */
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100vh;
+}
+```
+
+### View classes
+
+| Class | Description |
+|-------|-------------|
+| `.z-view` | Root class for every view. Required. |
+| `.is-current-view` | The active, interactive view |
+| `.is-previous-view` | Parent view (one level up) |
+| `.is-last-view` | Grandparent view (two levels up) |
+| `.is-new-current-view` | Temporarily set during zoom-in transition |
+| `.has-no-events` | Disables pointer events during transition |
+| `.hide` | Hidden (opacity: 0, content-visibility: hidden) |
+| `.is-lateral-hidden` | Kept-alive lateral view (hidden or visible depending on mode) |
+
+### Trigger classes
+
+| Class | Description |
+|-------|-------------|
+| `.zoom-me` | Makes an element a zoom trigger. Must have `data-to="viewName"`. |
+| `.zoomed` | Added to trigger after zoom-in (marks which trigger opened current view) |
+| `.z-trigger-hidden` | Trigger hidden via `hideTrigger: true` |
+| `.z-trigger-fade` | Trigger fading out via `hideTrigger: 'fade'` |
+
+### Navigation UI classes
+
+| Class | Description |
+|-------|-------------|
+| `.z-depth-nav` | Depth navigation container (back button) |
+| `.z-depth-nav--bottom-left` | Position modifier |
+| `.z-depth-nav--top-left` | Position modifier |
+| `.z-nav-back` | Back button element |
+| `.z-lateral-nav` | Lateral navigation container |
+| `.z-lateral-nav--bottom-center` | Position modifier |
+| `.z-lateral-nav--top-center` | Position modifier |
+| `.z-nav-arrow` | Arrow button |
+| `.z-nav-prev` / `.z-nav-next` | Previous/next arrows |
+| `.z-nav-lateral-dots` | Dots container |
+| `.z-nav-dot` | Individual dot |
+| `.z-nav-lat-dot` | Lateral dot |
+| `.is-active` | Active dot indicator |
+
+### Effect classes
+
+| Class | Description |
+|-------|-------------|
+| `.has-effect` | View has a CSS filter effect applied |
+| `.has-effect-reverse` | Animating effect removal |
+| `.z-view-fade-in` | View fading in (hideTrigger: 'fade') |
+| `.z-view-fade-out` | View fading out on zoom-out |
+
+### CSS Custom Properties
+
+| Property | Set on | Description |
+|----------|--------|-------------|
+| `--z-effect-filter` | View with effect | CSS filter value |
+| `--zoom-duration` | Various | Transition duration |
+| `--zoom-ease` | Various | Transition easing |
+
+---
+
+## 15. Per-Trigger Overrides
+
+Trigger elements (`.zoom-me`) support data attributes that override global transition options:
+
+| Attribute | Overrides | Example |
+|-----------|-----------|---------|
+| `data-to` | — (required) | `data-to="detail"` |
+| `data-with-duration` | `transitions.duration` | `data-with-duration="500ms"` |
+| `data-with-ease` | `transitions.ease` | `data-with-ease="ease-out"` |
+| `data-with-cover` | `transitions.cover` | `data-with-cover="height"` |
+| `data-with-stagger` | `transitions.stagger` | `data-with-stagger="100"` |
+| `data-with-effects` | `transitions.effects` | `data-with-effects="blur(3px) \| blur(8px)"` |
+| `data-hide-trigger` | `transitions.hideTrigger` | `data-hide-trigger="fade"` |
+| `data-deferred` | `deferred` | `data-deferred` |
+
+Any data attribute on a trigger is also passed as `ctx.props` to the view function.
+
+---
+
+## 16. Accessibility
+
+Zumly includes built-in accessibility support:
+
+- Canvas gets `role="application"`, `aria-roledescription="zoomable interface"`, `aria-live="polite"`, `tabindex="0"`
+- Each view gets `aria-label="View: {viewName}"` (unless already set)
+- Navigation buttons have `aria-label` attributes
+- Focus is managed after transitions: moves to first focusable element in current view, or the view itself
+- Keyboard navigation: ArrowLeft/ArrowDown to zoom out
+- All interactive elements are keyboard-accessible
+
+---
+
+## 17. Framework Integration Patterns
+
+### React
+
+```jsx
+import Zumly from 'zumly'
+import 'zumly/style.css'
+import { useEffect, useRef } from 'react'
+import { createRoot } from 'react-dom/client'
+
+function DetailView({ id }) {
+  return <div className="z-view"><h1>Detail {id}</h1></div>
+}
+
+function App() {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const app = new Zumly({
+      mount: '#zumly-app',
+      initialView: 'home',
+      views: {
+        home: '<div class="z-view"><button class="zoom-me" data-to="detail" data-id="42">Open</button></div>',
+        detail: (ctx) => {
+          const root = createRoot(ctx.target)
+          root.render(<DetailView id={ctx.props.id} />)
+          // Return void — Zumly uses ctx.target
+        }
+      }
+    })
+    app.init()
+    ref.current = app
+    return () => app.destroy()
+  }, [])
+
+  return <div className="zumly-canvas" id="zumly-app" style={{ width: '100%', height: '100vh' }} />
+}
+```
+
+### Vue
+
+```js
+import Zumly from 'zumly'
+import 'zumly/style.css'
+import { createApp } from 'vue'
+import DetailComponent from './Detail.vue'
+
+const app = new Zumly({
+  mount: '#app',
+  initialView: 'home',
+  views: {
+    home: '<div class="z-view"><div class="zoom-me" data-to="detail">Open</div></div>',
+    detail: (ctx) => {
+      createApp(DetailComponent, { id: ctx.props.id }).mount(ctx.target)
+    }
+  }
+})
+app.init()
+```
+
+### Svelte
+
+```js
+import Zumly from 'zumly'
+import 'zumly/style.css'
+import Detail from './Detail.svelte'
+
+const app = new Zumly({
+  mount: '#app',
+  initialView: 'home',
+  views: {
+    home: '<div class="z-view"><div class="zoom-me" data-to="detail">Open</div></div>',
+    detail: (ctx) => {
+      new Detail({ target: ctx.target, props: { id: ctx.props.id } })
+    }
+  }
+})
+app.init()
+```
+
+### Web Components
+
+```js
+// Define your component
+class MyDashboard extends HTMLElement {
+  connectedCallback() {
+    this.classList.add('z-view')
+    this.innerHTML = '<h1>Dashboard</h1>'
+  }
+}
+customElements.define('my-dashboard', MyDashboard)
+
+// Use tag name as view source
+const app = new Zumly({
+  mount: '#app',
+  initialView: 'home',
+  views: {
+    home: '<div class="z-view"><div class="zoom-me" data-to="dashboard">Open</div></div>',
+    dashboard: 'my-dashboard'  // Zumly waits for customElements.whenDefined
+  }
+})
+```
+
+### SPA Lifecycle
+
+In a SPA, always destroy the instance when the component unmounts:
+
+```js
+// Create
+const app = new Zumly({ ... })
+await app.init()
+
+// Later, when unmounting:
+app.destroy()
+// Optionally clear the canvas DOM:
+document.querySelector('#app').innerHTML = ''
+```
+
+---
+
+## 18. Ecosystem
+
+### Orbit CSS
+
+[https://github.com/zumerlab/orbit](https://github.com/zumerlab/orbit)
+
+Radial/orbital CSS layout system. Pairs naturally with Zumly for creating circular/radial navigation interfaces where zoom triggers are arranged in orbits.
+
+### SnapDOM
+
+[https://github.com/zumerlab/snapdom](https://github.com/zumerlab/snapdom)
+
+Lightweight DOM diffing library. Useful for efficiently updating view content without full re-renders.
+
+---
+
+## 19. TypeScript Support
+
+Zumly ships TypeScript definitions at `types/zumly.d.ts`.
+
+### Key types
+
+```ts
+import type {
+  Zumly,
+  ZumlyOptions,
+  ViewSource,
+  ViewFunction,
+  ViewObject,
+  ViewContext,
+  TransitionOptions,
+  TransitionSpec,
+  DriverName,
+  DriverFunction,
+  DepthNavOptions,
+  LateralNavOptions,
+  InputsOptions,
+  GoToOptions,
+  ZoomToOptions,
+  ZumlyEventMap,
+  ZumlyEventName,
+  ZumlyPlugin,
+  RouterOptions,
+  ZoomSnapshot,
+  ViewState,
+  ViewEntry,
+} from 'zumly'
+```
+
+### DriverName
+
+```ts
+type DriverName = 'css' | 'waapi' | 'none' | 'anime' | 'gsap' | 'motion'
+```
+
+### DriverFunction
+
+```ts
+type DriverFunction = (spec: TransitionSpec, onComplete: () => void) => void
+```
+
+### ViewSource
+
+```ts
+type ViewSource = string | ViewFunction | ViewObject | HTMLElement
+```
+
+### ZumlyOptions
+
+```ts
+interface ZumlyOptions {
+  mount: string
+  initialView: string
+  views: Record<string, ViewSource>
+  preload?: string[]
+  transitions?: TransitionOptions
+  debug?: boolean
+  componentContext?: Map<string, unknown> | Record<string, unknown>
+  lateralNav?: boolean | LateralNavOptions
+  depthNav?: boolean | DepthNavOptions
+  inputs?: InputsOptions
+  deferred?: boolean
+  hideTrigger?: string | false
+}
+```
+
+---
+
+## Appendix: Complete Constructor Example
+
+```js
+const app = new Zumly({
+  mount: '#app',
+  initialView: 'home',
+  views: {
+    home: 'views/home.html',
+    dashboard: (ctx) => `<div class="z-view"><h1>Dashboard for ${ctx.props.id}</h1></div>`,
+    settings: {
+      render: (ctx) => '<div class="z-view"><h1>Settings</h1></div>',
+      mounted: () => console.log('Settings view mounted')
+    },
+    detail: '<div class="z-view"><p>Inline HTML detail</p></div>',
+  },
+  preload: ['dashboard'],
+  debug: false,
+  deferred: false,
+  componentContext: { api: myApiClient },
+  transitions: {
+    driver: 'waapi',
+    cover: 'width',
+    duration: '800ms',
+    ease: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    effects: ['blur(2px)', 'blur(6px) saturate(0.5)'],
+    stagger: 50,
+    hideTrigger: 'fade',
+  },
+  depthNav: { position: 'bottom-left' },
+  lateralNav: {
+    mode: 'auto',
+    arrows: true,
+    dots: true,
+    keepAlive: false,
+    position: 'bottom-center',
+  },
+  inputs: {
+    wheel: true,
+    keyboard: true,
+    click: true,
+    touch: true,
+  },
+})
+
+app.use(Zumly.Router, { separator: '/', prefix: '/' })
+
+app.on('afterZoomIn', ({ viewName, zoomLevel }) => {
+  console.log(`Entered ${viewName} at depth ${zoomLevel}`)
+})
+
+await app.init()
+```
