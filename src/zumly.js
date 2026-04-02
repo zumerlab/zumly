@@ -708,7 +708,6 @@ export class Zumly {
    */
   async _doZoomIn (targetViewName, triggerOrDescriptor) {
     if (this._destroyed) return
-    this._removeNav()
     this._cleanupLateralKeepAlive()
     this.lateralHistory = []
     this._emit('beforeZoomIn', { viewName: targetViewName })
@@ -999,7 +998,6 @@ export class Zumly {
    */
   async _doLateral (targetViewName, isBack = false, options = {}) {
     if (this._destroyed) return
-    this._removeNav()
     if (!this.isValid || !this.canvas) return
     if (!Object.prototype.hasOwnProperty.call(this.views, targetViewName)) {
       this.notify(`goTo("${targetViewName}", { mode: 'lateral' }): view not found in views. Available: ${Object.keys(this.views).join(', ')}`, 'warn')
@@ -1192,7 +1190,6 @@ export class Zumly {
 
   zoomOut () {
     if (this._destroyed) return
-    this._removeNav()
     this._cleanupLateralKeepAlive()
     this.lateralHistory = []
     this._emit('beforeZoomOut', { zoomLevel: this.zoomLevel() })
