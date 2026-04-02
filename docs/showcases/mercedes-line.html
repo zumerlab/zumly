@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-TCJ276G8QK');
+    </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Zumly - Mercedes-Benz Truck Production Line</title>
@@ -856,6 +864,15 @@
       })
 
       app.init()
+
+      // Notify parent of depth changes for seamless nav
+      function notifyDepth () {
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'zumly:depth', depth: app.zoomLevel() - 1 }, '*')
+        }
+      }
+      app.on('afterZoomIn', notifyDepth)
+      app.on('afterZoomOut', notifyDepth)
 
       // Pause conveyor animation during zoom navigation
       app.on('beforeZoomIn', pauseConveyor)

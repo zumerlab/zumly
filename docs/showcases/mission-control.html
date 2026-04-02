@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-TCJ276G8QK');
+    </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Zumly - Mission Control (Orbit CSS)</title>
@@ -738,18 +746,18 @@
             </div>
 
             <!-- LEO orbit (innermost, fast) -->
-            <div class="orbit-3 rotate-orbit rotate-time-1">
+            <div class="orbit-5 rotate-orbit rotate-time-1">
               ${satNode('AQUA-7', 'nominal', 'AQUA-7', 'LEO', 'rotate-orbit rotate-time-1 invert')}
               ${satNode('POLAR-9', 'warning', 'POLAR-9', 'SSO', 'rotate-orbit rotate-time-1 invert')}
             </div>
 
             <!-- GEO orbit (middle, slow) -->
-            <div class="orbit-5 rotate-orbit rotate-time-2">
+            <div class="orbit-9 rotate-orbit rotate-time-2">
               ${satNode('RELAY-12', 'nominal', 'RELAY-12', 'GEO', 'rotate-orbit rotate-time-2 invert')}
             </div>
 
             <!-- Deep / L-points orbit (outer, reverse — so counter is normal direction) -->
-            <div class="orbit-7 rotate-orbit rotate-time-3 invert">
+            <div class="orbit-11 rotate-orbit rotate-time-3 invert">
               ${satNode('HELIO-3', 'anomaly', 'HELIO-3', 'L1', 'rotate-orbit rotate-time-3')}
               ${satNode('COSMO-2', 'anomaly', 'COSMO-2', 'L2', 'rotate-orbit rotate-time-3')}
               ${satNode('DEEP-4', 'nominal', 'DEEP-4', 'Mars', 'rotate-orbit rotate-time-3')}
@@ -1023,6 +1031,15 @@
       })
 
       app.init()
+
+      // Notify parent of depth changes for seamless nav
+      function notifyDepth () {
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'zumly:depth', depth: app.zoomLevel() - 1 }, '*')
+        }
+      }
+      app.on('afterZoomIn', notifyDepth)
+      app.on('afterZoomOut', notifyDepth)
 
       // Pause orbit animations when zooming into a satellite
       app.on('beforeZoomIn', pauseOrbits)

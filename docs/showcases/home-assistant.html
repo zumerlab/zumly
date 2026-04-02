@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-TCJ276G8QK');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zumly - Home Assistant + Orbit CSS</title>
@@ -813,13 +821,7 @@
                     <div class="orbit-4 from-270 range-40 translucid">
                       <o-arc class="glow shrink-70"></o-arc>
                     </div>
-                    <!-- Issue indicator -->
-                    <div class="orbit-5">
-                      <div class="vector grow-2x outer-orbit angle-45" style="background-color: orange;"></div>
-                      <div class="satellite grow-2x outer-orbit angle-45" style="color: orange;">
-                        <div class="capsule" style="font-size:10px; color:orange;">0 problems</div>
-                      </div>
-                    </div>
+                    
                     <!-- Mode arc -->
                     <div class="orbit-5 range-180 from-45 ring bold glow">
                       <o-arc class="glow outer-orbit"></o-arc>
@@ -1341,6 +1343,15 @@
       })
 
       app.init()
+
+      // Notify parent of depth changes for seamless nav
+      function notifyDepth () {
+        if (window.parent !== window) {
+          window.parent.postMessage({ type: 'zumly:depth', depth: app.zoomLevel() - 1 }, '*')
+        }
+      }
+      app.on('afterZoomIn', notifyDepth)
+      app.on('afterZoomOut', notifyDepth)
 
       // Activate selector arc on camera satellite hover (delegated)
       document.querySelector('.canvas').addEventListener('mouseover', (e) => {

@@ -2,6 +2,14 @@
 <html lang="en">
 
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
   <title>Zumly - Zoom-based navigation for the web</title>
   <meta name="description"
     content="Zumly is a JavaScript library that turns any website into a zoom interface with just HTML. Independent views, infinite zoom levels, and spatial navigation built in." />
@@ -302,7 +310,7 @@
     .feat p { font-size: 0.76rem; color: var(--text-dim); line-height: 1.5; }
 
     /* ━━━ Install ━━━ */
-    .v-install { max-width: 720px; width: 100%; }
+    .v-install .install-grid { max-width: 720px; }
     .install-grid {
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 16px; width: 100%;
@@ -522,7 +530,7 @@
         '<div class="zt zoom-me" data-to="api" data-with-duration="700ms">' +
           '<span class="zt-icon">&#9641;</span><span class="zt-title">API</span>' +
           '<span class="zt-desc">Full reference</span></div>' +
-        '<div class="zt zoom-me" data-to="install" data-with-duration="700ms">' +
+        '<div class="zt zoom-me" data-to="install" data-with-duration="700ms" data-with-cover="width">' +
           '<span class="zt-icon">&#9655;</span><span class="zt-title">Get Started</span>' +
           '<span class="zt-desc">Install &amp; setup</span></div>' +
       '</div>' +
@@ -594,23 +602,22 @@
 
     app.use(Z.Router)
 
-    // Hide parent depth nav when inside a showcase (iframe has its own nav)
-    var showcaseViews = ['mercedes', 'home-assistant', 'mission-control']
     app.on('afterZoomIn', function () {
-      var name = app.getCurrentViewName()
-      if (showcaseViews.indexOf(name) !== -1) {
-        var dn = document.querySelector('.z-depth-nav')
-        if (dn) dn.style.display = 'none'
+      if (app.getCurrentViewName() === 'install') {
+        var ln = document.querySelector('.z-lateral-nav')
+        if (ln) ln.style.display = 'none'
       }
     })
     app.on('beforeZoomOut', function () {
       if (app.getCurrentViewName() === 'playground') Playground.destroy()
-      // Restore depth nav when leaving a showcase
-      var name = app.getCurrentViewName()
-      if (showcaseViews.indexOf(name) !== -1) {
-        var dn = document.querySelector('.z-depth-nav')
-        if (dn) dn.style.display = ''
-      }
+    })
+
+    // Seamless depth nav: hide parent < when a showcase iframe has its own active
+    window.addEventListener('message', function (e) {
+      if (!e.data || e.data.type !== 'zumly:depth') return
+      var dn = document.querySelector('.z-depth-nav')
+      if (!dn) return
+      dn.style.display = e.data.depth > 0 ? 'none' : ''
     })
 
     app.init()
