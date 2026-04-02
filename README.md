@@ -8,8 +8,7 @@
 <h1 align="center">ZUMLY</h1>
 <p align="center"><em>Z over XY</em></p>
 
-<p align="center"><strong>Focus-driven navigation.</strong></p>
-<p align="center"><strong>Zoom into what matters.</strong></p>
+<p align="center"><strong>Focus-driven navigation. Zoom into what matters.</strong></p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg" alt="npm version"></a>
