@@ -1599,13 +1599,14 @@ export class Zumly {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe left", 'warn')
       }
     }
-    if (isTap && !this.blockEvents && event.target.classList.contains('zoom-me') && this.touching) {
+    const trigger = event.target.classList.contains('zoom-me') ? event.target : event.target.closest('.zoom-me')
+    if (isTap && !this.blockEvents && trigger && this.touching) {
       this.touching = false
       this.tracing('tap')
       event.preventDefault()
-      this.zoomIn(event.target)
+      this.zoomIn(trigger)
     }
-    if (isTap && this.storedViews.length > 1 && !this.blockEvents && !event.target.classList.contains('zoom-me') && event.target.closest('.is-current-view') === null && this.touching) {
+    if (isTap && this.storedViews.length > 1 && !this.blockEvents && !trigger && event.target.closest('.is-current-view') === null && this.touching) {
       this.touching = false
       this.tracing('tap')
       this.zoomOut()
