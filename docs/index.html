@@ -587,15 +587,30 @@
         hideTrigger: false,
         driver: 'css',
       },
-      depthNav: { button: true, indicator: true },
-      lateralNav: { arrows: true, dots: true },
-      navPosition: 'bottom-right',
+      depthNav: { position: 'bottom-left' },
+      lateralNav: { arrows: true, dots: true, position: 'bottom-center' },
+      inputs: { wheel: false },
     })
 
     app.use(Z.Router)
 
+    // Hide parent depth nav when inside a showcase (iframe has its own nav)
+    var showcaseViews = ['mercedes', 'home-assistant', 'mission-control']
+    app.on('afterZoomIn', function () {
+      var name = app.getCurrentViewName()
+      if (showcaseViews.indexOf(name) !== -1) {
+        var dn = document.querySelector('.z-depth-nav')
+        if (dn) dn.style.display = 'none'
+      }
+    })
     app.on('beforeZoomOut', function () {
       if (app.getCurrentViewName() === 'playground') Playground.destroy()
+      // Restore depth nav when leaving a showcase
+      var name = app.getCurrentViewName()
+      if (showcaseViews.indexOf(name) !== -1) {
+        var dn = document.querySelector('.z-depth-nav')
+        if (dn) dn.style.display = ''
+      }
     })
 
     app.init()

@@ -96,7 +96,6 @@
     var latDots = document.getElementById('pg-lat-dots').checked
     var keepAliveVal = document.getElementById('pg-keepalive').value
     var depthBtn = document.getElementById('pg-depth-btn').checked
-    var depthInd = document.getElementById('pg-depth-ind').checked
     var inpClick = document.getElementById('pg-inp-click').checked
     var inpKb = document.getElementById('pg-inp-kb').checked
     var inpWheel = document.getElementById('pg-inp-wheel').checked
@@ -127,7 +126,7 @@
       mount: '#pg-mount', initialView: 'home', views: pgViews,
       transitions: transitions, deferred: deferred,
       lateralNav: { arrows: latArrows, dots: latDots, keepAlive: keepAliveVal === 'false' ? false : (keepAliveVal === 'visible' ? 'visible' : true) },
-      depthNav: { button: depthBtn, indicator: depthInd },
+      depthNav: depthBtn ? { position: 'bottom-left' } : false,
       inputs: { click: inpClick, keyboard: inpKb, wheel: inpWheel, touch: inpTouch },
     })
     pgApp.init()
@@ -135,7 +134,7 @@
 
   function bindPlaygroundControls () {
     ;['pg-ease','pg-ht','pg-deferred','pg-fx',
-      'pg-lat-arrows','pg-lat-dots','pg-keepalive','pg-depth-btn','pg-depth-ind',
+      'pg-lat-arrows','pg-lat-dots','pg-keepalive','pg-depth-btn',
       'pg-inp-click','pg-inp-kb','pg-inp-wheel','pg-inp-touch'
     ].forEach(function (id) {
       var el = document.getElementById(id)
