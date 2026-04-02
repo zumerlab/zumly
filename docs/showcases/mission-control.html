@@ -548,6 +548,77 @@
       .orbit-panel.paused .sat-node.anomaly {
         animation-play-state: paused;
       }
+
+      /* ── Responsive ──────────────────────────────────────── */
+      @media (max-width: 768px) {
+        .v { padding: 12px 10px; }
+        .hdr h1 { font-size: 0.85em; }
+        .hdr h1 small { display: none; }
+        .kpis { gap: 5px; }
+        .kpi { min-width: 65px; padding: 6px 8px; }
+        .kpi-l { font-size: 0.45em; }
+        .kpi-v { font-size: 0.9em; }
+        .sm { font-size: 0.5em; }
+        .control-layout {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr auto;
+          gap: 10px;
+          height: calc(100% - 90px);
+        }
+        .fleet-panel {
+          max-height: 180px;
+          overflow-y: auto;
+        }
+        .orbit-panel .gravity-spot {
+          --o-force: 180px;
+        }
+        .sat-node {
+          width: 28px; height: 28px;
+          min-width: 28px;
+          font-size: 4px;
+        }
+        .earth-node {
+          width: 36px; height: 36px;
+          min-width: 36px;
+          font-size: 5px;
+        }
+        .sat-layout {
+          grid-template-columns: 1fr;
+          gap: 10px;
+          height: calc(100% - 100px);
+          overflow-y: auto;
+        }
+        .sat-svg-panel svg { max-height: 180px; }
+        .issue-layout {
+          grid-template-columns: 1fr;
+          gap: 10px;
+          height: calc(100% - 110px);
+          overflow-y: auto;
+        }
+        .sat-card { padding: 8px 10px; }
+        .sat-name { font-size: 0.65em; }
+        .sat-meta { font-size: 0.5em; }
+        .sat-telemetry { font-size: 0.48em; }
+      }
+
+      @media (max-width: 480px) {
+        .v { padding: 8px 6px; }
+        .orbit-panel .gravity-spot {
+          --o-force: 130px;
+        }
+        .sat-node {
+          width: 22px; height: 22px;
+          min-width: 22px;
+          font-size: 3.5px;
+        }
+        .earth-node {
+          width: 28px; height: 28px;
+          min-width: 28px;
+          font-size: 4px;
+        }
+        .fleet-panel { max-height: 150px; }
+        .kpi { min-width: 55px; }
+      }
     </style>
   </head>
 

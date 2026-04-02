@@ -404,6 +404,58 @@
         0% { left: -30%; }
         100% { left: 100%; }
       }
+
+      /* ── Responsive ──────────────────────────────────────── */
+      @media (max-width: 768px) {
+        .v { padding: 14px 12px; }
+        .hdr h1 { font-size: 0.9em; }
+        .hdr h1 small { display: none; }
+        .kpis { gap: 6px; }
+        .kpi { min-width: 70px; padding: 6px 8px; }
+        .kpi-l { font-size: 0.5em; }
+        .kpi-v { font-size: 0.95em; }
+        .sm { font-size: 0.55em; }
+        .line-grid {
+          grid-template-columns: repeat(4, 1fr);
+          grid-template-rows: repeat(6, 1fr);
+          gap: 6px;
+          height: calc(100% - 100px);
+        }
+        .truck-icon { width: 30px; height: 16px; }
+        .truck-id { font-size: 0.6em; }
+        .truck-pos { font-size: 0.48em; }
+        .badge { font-size: 0.55em; padding: 2px 5px; }
+        .unit-layout {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr auto;
+          gap: 10px;
+          height: calc(100% - 120px);
+        }
+        .issues-panel {
+          max-height: 160px;
+          overflow-y: auto;
+        }
+        .detail-layout {
+          grid-template-columns: 1fr;
+          gap: 10px;
+          height: calc(100% - 120px);
+          overflow-y: auto;
+        }
+        .detail-box { padding: 10px 12px; }
+      }
+
+      @media (max-width: 480px) {
+        .v { padding: 10px 8px; }
+        .line-grid {
+          grid-template-columns: repeat(3, 1fr);
+          grid-template-rows: repeat(8, 1fr);
+          gap: 4px;
+        }
+        .truck { padding: 6px 4px; gap: 2px; }
+        .truck-icon { width: 24px; height: 12px; }
+        .kpis { flex-wrap: wrap; }
+        .kpi { min-width: 60px; }
+      }
     </style>
   </head>
 
