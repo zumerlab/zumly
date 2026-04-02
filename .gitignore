@@ -7,7 +7,7 @@ yarn-error.log
 package-lock.json
 *.tgz
 __screenshots__/
-.claude/
 .vscode/
+.claude/settings.json
 docs/demos/
 public/
