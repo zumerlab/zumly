@@ -5,7 +5,8 @@
   </a>
 </p>
 
-<h1 align="center">Z over XY</h1>
+<h1 align="center">ZUMLY</h1>
+<p align="center"><em>Z over XY</em></p>
 
 <p align="center"><strong>Focus-driven navigation.</strong></p>
 <p align="center"><strong>Zoom into what matters.</strong></p>
