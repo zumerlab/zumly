@@ -5,7 +5,7 @@
   "type": "module",
   "author": "Juan Martin Muda - Zumerlab",
   "license": "MIT",
-  "homepage": "https://zumerlab.github.io/zumly-docs",
+  "homepage": "https://zumerlab.github.io/zumly/",
   "repository": {
     "type": "git",
     "url": "https://github.com/zumerlab/zumly.git"
@@ -57,6 +57,7 @@
   },
   "files": [
     "dist",
+    "types",
     "src/drivers/driver-helpers.js",
     "src/drivers/index.js",
     "docs/DRIVER_API.md",
