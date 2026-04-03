@@ -58,16 +58,6 @@
       background: linear-gradient(135deg, #2244bb 10%, #5544cc 50%, #3366dd 90%);
       -webkit-background-clip: text; background-clip: text;
     }
-    html.light .nav-inner a {
-      color: rgba(14,18,37,0.55);
-    }
-    html.light .nav-inner a:hover {
-      color: #0e1225;
-      background: rgba(15,25,60,0.05);
-    }
-    html.light .nav-inner a.back {
-      color: #3366dd;
-    }
     html.light .api-name { color: #3366dd; }
     html.light .api-type { background: rgba(15,25,60,0.05); }
     html.light pre { background: rgba(15,25,60,0.05); color: #2a3050; }
@@ -96,26 +86,12 @@
     }
     .nav-inner {
       max-width: var(--max-w); margin: 0 auto;
-      display: flex; align-items: center;
+      display: flex; align-items: center; justify-content: flex-end;
       padding: 0 1.5rem; height: 44px; gap: 4px;
-      overflow-x: auto; scrollbar-width: none;
-    }
-    .nav-inner::-webkit-scrollbar { display: none; }
-    .nav-inner a {
-      color: var(--text-dim); text-decoration: none;
-      font-size: 0.78rem; font-weight: 500; white-space: nowrap;
-      padding: 5px 10px; border-radius: 6px;
-      transition: all 0.15s;
-    }
-    .nav-inner a:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-    .nav-inner a.back {
-      color: var(--accent); font-weight: 600;
-      margin-right: auto;
     }
 
     /* ━━━ Theme toggle ━━━ */
     .theme-toggle {
-      margin-left: auto;
       background: none; border: 1px solid var(--border);
       color: var(--text-dim); cursor: pointer;
       width: 30px; height: 30px; border-radius: 50%;
@@ -224,14 +200,6 @@
 
   <nav class="site-nav">
     <div class="nav-inner">
-      <a class="back" href="index.html">&larr; Zumly</a>
-      <a href="#constructor">Constructor</a>
-      <a href="#transitions">Transitions</a>
-      <a href="#navigation">Navigation</a>
-      <a href="#methods">Methods</a>
-      <a href="#events">Events</a>
-      <a href="#views">View Sources</a>
-      <a href="#triggers">Triggers</a>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" id="theme-btn">&#9790;</button>
     </div>
   </nav>
