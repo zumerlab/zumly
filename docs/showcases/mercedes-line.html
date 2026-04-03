@@ -15,12 +15,12 @@
     <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
     <style>
       :root {
-        --mb-black: #0a0a14;
-        --mb-dark: #12122a;
-        --mb-surface: rgba(255, 255, 255, 0.04);
-        --mb-border: rgba(255, 255, 255, 0.07);
-        --mb-silver: #b0b0b0;
-        --mb-accent: #00adef;
+        --mb-black: #0c0d12;
+        --mb-dark: #12141c;
+        --mb-surface: rgba(255, 255, 255, 0.035);
+        --mb-border: rgba(255, 255, 255, 0.08);
+        --mb-silver: #9aa0ae;
+        --mb-accent: #6b8fc7;
         --mb-green: #27ae60;
         --mb-green-bg: rgba(39, 174, 96, 0.12);
         --mb-yellow: #f1c40f;
@@ -36,7 +36,7 @@
       * { box-sizing: border-box; margin: 0; padding: 0; }
 
       body {
-        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
         background: var(--mb-black);
         color: var(--mb-text);
         overflow: hidden;
@@ -57,7 +57,7 @@
       .v {
         width: 100%; height: 100%;
         padding: 28px 32px;
-        background: linear-gradient(160deg, var(--mb-dark), var(--mb-black));
+        background: var(--mb-dark);
         overflow: hidden;
       }
 
@@ -289,7 +289,7 @@
       }
 
       .issue-card.zoom-me:hover {
-        border-color: rgba(0, 173, 239, 0.4);
+        border-color: rgba(107, 143, 199, 0.45);
       }
 
       .issue-title {
@@ -398,10 +398,10 @@
       .conveyor-bar::after {
         content: '';
         position: absolute;
-        top: 0; left: -30%;
-        width: 30%; height: 100%;
-        background: linear-gradient(90deg, transparent, var(--mb-accent), transparent);
-        animation: convey 2.5s linear infinite;
+        top: 0; left: -25%;
+        width: 25%; height: 100%;
+        background: rgba(255, 255, 255, 0.12);
+        animation: convey 3.2s linear infinite;
       }
 
       .conveyor-bar.paused::after {
@@ -860,6 +860,7 @@
           hideTrigger: 'fade',
         },
         depthNav: { position: 'bottom-left' },
+        inputs: { wheel: false },
         debug: false,
       })
 

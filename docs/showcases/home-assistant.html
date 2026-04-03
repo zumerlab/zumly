@@ -16,17 +16,17 @@
     <link rel="stylesheet" href="https://unpkg.com/@zumer/orbit@latest/dist/orbit.css" />
     <style>
       :root {
-        --ha-bg: #0a0a18;
-        --ha-blue: #3498db;
-        --ha-cyan: #00c8ff;
-        --ha-green: #2ecc71;
-        --ha-green-light: #6fcf97;
-        --ha-text: #c8d0e0;
-        --ha-muted: rgba(200, 208, 224, 0.35);
-        --ha-surface: rgba(255, 255, 255, 0.03);
-        --ha-border: rgba(255, 255, 255, 0.06);
+        --ha-bg: #0f1117;
+        --ha-blue: #5b7aad;
+        --ha-cyan: #8b9cb5;
+        --ha-green: #4d9d6f;
+        --ha-green-light: #6aa882;
+        --ha-text: #d2d6df;
+        --ha-muted: rgba(210, 214, 223, 0.38);
+        --ha-surface: rgba(255, 255, 255, 0.04);
+        --ha-border: rgba(255, 255, 255, 0.09);
         --fx-color: var(--ha-blue);
-        --fx-font: var(--ha-blue);
+        --fx-font: #a8b8d4;
       }
 
       * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,7 +48,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(ellipse at 50% 50%, #0d0d28 0%, var(--ha-bg) 70%);
+        background: var(--ha-bg);
       }
 
       /* ── Orbit CSS overrides ────────────────────────────── */
@@ -122,23 +122,21 @@
       .cam-card {
         width: 140px;
         height: 110px;
-        border-radius: 12px;
-        border: 1.5px solid rgba(52, 152, 219, 0.3);
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(8px);
+        border-radius: 10px;
+        border: 1px solid var(--ha-border);
+        background: var(--ha-surface);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 6px;
         cursor: default;
-        transition: border-color 0.3s, box-shadow 0.3s;
+        transition: border-color 0.2s;
         position: relative;
         overflow: hidden;
       }
       .cam-card:hover {
-        border-color: var(--ha-cyan);
-        box-shadow: 0 0 20px rgba(0, 200, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.16);
       }
 
       /* Simulated camera feed */
@@ -152,35 +150,28 @@
       .cam-feed-bg {
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, #1a1a3a 0%, #0d1a2a 100%);
+        background: #161a22;
         position: relative;
       }
-      /* Scanline effect */
-      .cam-feed-bg::after {
-        content: '';
+      .cam-feed-img {
         position: absolute;
         inset: 0;
-        background: repeating-linear-gradient(
-          0deg,
-          transparent,
-          transparent 2px,
-          rgba(0, 200, 255, 0.02) 2px,
-          rgba(0, 200, 255, 0.02) 4px
-        );
-        animation: scanline 4s linear infinite;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
       }
-      @keyframes scanline {
-        0% { transform: translateY(0); }
-        100% { transform: translateY(8px); }
-      }
-
-      /* Room silhouettes in cam feed */
-      .cam-silhouette {
+      .cam-feed-shade {
         position: absolute;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        opacity: 0.15;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.42) 0%,
+          transparent 38%,
+          transparent 58%,
+          rgba(0, 0, 0, 0.5) 100%
+        );
       }
 
       /* REC indicator */
@@ -216,7 +207,7 @@
         right: 5px;
         font-size: 5px;
         font-family: monospace;
-        color: rgba(0, 200, 255, 0.4);
+        color: rgba(180, 190, 210, 0.45);
       }
 
       .cam-name {
@@ -261,30 +252,59 @@
 
       /* Orbit ring styling in cam view */
       .cam-view [class*="orbit-"] {
-        border-color: rgba(52, 152, 219, 0.08) !important;
+        border-color: rgba(120, 135, 165, 0.1) !important;
         border-style: dashed !important;
       }
       .cam-view .orbit-ring {
-        border-color: rgba(0, 200, 255, 0.12) !important;
+        border-color: rgba(140, 155, 185, 0.14) !important;
         border-style: solid !important;
         border-width: 1px !important;
       }
 
       /* Decorative arc ring around cameras */
       .cam-view o-arc.cam-arc {
-        --o-fill: rgba(52, 152, 219, 0.06);
-        --o-stroke: rgba(0, 200, 255, 0.1);
+        --o-fill: rgba(120, 135, 165, 0.05);
+        --o-stroke: rgba(140, 155, 185, 0.1);
+      }
+
+      /* ── Detail overlays (inset sheet — parent orbit stays visible) ── */
+      .ha-detail-root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: min(5.5vh, 40px) min(4vw, 28px);
+        box-sizing: border-box;
+      }
+      .ha-detail-dim {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 17, 23, 0.42);
+        pointer-events: none;
+      }
+      .ha-detail-sheet {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: min(580px, 94vw);
+        max-height: min(448px, 68vh);
+        overflow: auto;
+        background: #12151c;
+        border: 1px solid var(--ha-border);
+        border-radius: 11px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
       }
 
       /* ── Camera detail view (Level 3) ───────────────────── */
-      .cam-detail {
-        width: 100%; height: 100%;
-        background: radial-gradient(ellipse at 50% 50%, rgba(13,13,40,0.95) 0%, rgba(10,10,24,0.92) 70%);
-        padding: 24px;
+      .ha-detail-sheet.cam-detail {
         display: grid;
-        grid-template-columns: 1.2fr 1fr;
+        grid-template-columns: 1.15fr 1fr;
         grid-template-rows: auto 1fr auto;
-        gap: 16px;
+        gap: 12px;
+        padding: 14px 16px;
         font-family: monospace;
       }
 
@@ -312,15 +332,16 @@
       }
 
       .cam-detail .cam-preview {
-        border-radius: 10px;
+        border-radius: 8px;
         border: 1px solid var(--ha-border);
-        background: linear-gradient(135deg, #0d0d28 0%, #0a0a18 100%);
+        background: #161a22;
         position: relative;
         overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 200px;
+        min-height: 118px;
+        aspect-ratio: 16 / 9;
       }
       .cam-detail .cam-preview .cam-feed-bg {
         width: 100%;
@@ -328,7 +349,6 @@
         position: absolute;
         inset: 0;
       }
-      .cam-detail .cam-preview .cam-silhouette { opacity: 0.08; }
       .cam-detail .cam-preview .cam-rec {
         position: absolute;
         top: 10px;
@@ -389,7 +409,7 @@
       }
       .cam-detail .stat-val.accent { color: var(--ha-cyan); }
       .cam-detail .stat-val.green { color: var(--ha-green); }
-      .cam-detail .stat-val.warn { color: #ffd740; }
+      .cam-detail .stat-val.warn { color: #c9a85c; }
 
       .cam-detail .controls {
         grid-column: 1 / -1;
@@ -440,9 +460,9 @@
         font-size: 7px;
         letter-spacing: 0.5px;
       }
-      .cam-detail .tl-type.motion { background: rgba(0,200,255,0.1); color: var(--ha-cyan); }
-      .cam-detail .tl-type.person { background: rgba(0,230,118,0.1); color: var(--ha-green); }
-      .cam-detail .tl-type.sound { background: rgba(255,215,64,0.1); color: #ffd740; }
+      .cam-detail .tl-type.motion { background: rgba(91,122,173,0.12); color: #a8bdd4; }
+      .cam-detail .tl-type.person { background: rgba(77,157,111,0.12); color: var(--ha-green); }
+      .cam-detail .tl-type.sound { background: rgba(200,175,95,0.12); color: #c9b878; }
 
       /* ── Generic section view (Devices, Rooms, Scenes, Alarm) ── */
       .section-view {
@@ -456,7 +476,7 @@
       .section-view .satellite { border: none; overflow: visible; }
       .section-view .capsule { overflow: visible; }
       .section-view [class*="orbit-"] {
-        border-color: rgba(52,152,219,0.06) !important;
+        border-color: rgba(120,135,165,0.08) !important;
         border-style: dashed !important;
       }
 
@@ -464,21 +484,19 @@
       .sec-card {
         width: 120px;
         padding: 10px;
-        border-radius: 10px;
+        border-radius: 8px;
         border: 1px solid var(--ha-border);
-        background: rgba(255,255,255,0.02);
-        backdrop-filter: blur(6px);
+        background: var(--ha-surface);
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 4px;
         font-family: monospace;
-        transition: border-color 0.3s, box-shadow 0.3s;
+        transition: border-color 0.2s;
         cursor: zoom-in;
       }
       .sec-card:hover {
-        border-color: var(--ha-cyan);
-        box-shadow: 0 0 16px rgba(0,200,255,0.1);
+        border-color: rgba(255,255,255,0.14);
       }
       .sec-card .sec-icon {
         font-size: 20px;
@@ -502,7 +520,7 @@
       }
       .sec-card .sec-state.on { color: var(--ha-green); }
       .sec-card .sec-state.off { color: var(--ha-muted); }
-      .sec-card .sec-state.warn { color: #ffd740; }
+      .sec-card .sec-state.warn { color: #c9a85c; }
       .sec-card .sec-state.active { color: var(--ha-cyan); }
 
       /* Section title at center */
@@ -524,14 +542,12 @@
       }
 
       /* ── Detail panel (reused across device/room/scene detail) ── */
-      .detail-view {
-        width: 100%; height: 100%;
-        background: radial-gradient(ellipse at 50% 50%, rgba(13,13,40,0.95) 0%, rgba(10,10,24,0.92) 70%);
-        padding: 24px;
+      .ha-detail-sheet.detail-view {
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto 1fr;
-        gap: 14px;
+        gap: 11px;
+        padding: 14px 16px;
         font-family: monospace;
       }
       .detail-view .detail-header {
@@ -595,7 +611,7 @@
       }
       .detail-view .d-panel .stat-val.accent { color: var(--ha-cyan); }
       .detail-view .d-panel .stat-val.green { color: var(--ha-green); }
-      .detail-view .d-panel .stat-val.warn { color: #ffd740; }
+      .detail-view .d-panel .stat-val.warn { color: #c9a85c; }
       .detail-view .d-panel .stat-val.red { color: #ff5252; }
 
       .detail-view .d-panel.full { grid-column: 1 / -1; }
@@ -642,15 +658,15 @@
         .cam-title .cam-count { font-size: 16px; }
 
         /* Camera detail: single column */
-        .cam-detail {
+        .ha-detail-sheet.cam-detail {
           grid-template-columns: 1fr;
           grid-template-rows: auto auto 1fr auto;
-          padding: 14px;
           gap: 10px;
-          overflow-y: auto;
+          padding: 12px;
+          max-height: min(520px, 78vh);
         }
         .cam-detail .cam-header h1 { font-size: 12px; }
-        .cam-detail .cam-preview { min-height: 140px; }
+        .cam-detail .cam-preview { min-height: 100px; aspect-ratio: 16 / 9; }
         .cam-detail .cam-preview .cam-rec { font-size: 8px; top: 8px; left: 10px; }
         .cam-detail .cam-preview .cam-overlay { font-size: 7px; bottom: 8px; left: 10px; right: 10px; }
         .cam-detail .cam-panel { padding: 10px; }
@@ -671,12 +687,12 @@
         .sec-title .sec-count { font-size: 16px; }
 
         /* Detail view: single column */
-        .detail-view {
+        .ha-detail-sheet.detail-view {
           grid-template-columns: 1fr;
           grid-template-rows: auto;
-          padding: 14px;
           gap: 10px;
-          overflow-y: auto;
+          padding: 12px;
+          max-height: min(520px, 78vh);
         }
         .detail-view .detail-header h1 { font-size: 12px; }
         .detail-view .detail-header .detail-badge { font-size: 7px; }
@@ -695,8 +711,9 @@
         .cam-card { width: 80px; height: 65px; }
         .cam-feed { width: 68px; height: 38px; }
         .sec-card { width: 72px; padding: 6px; }
-        .cam-detail { padding: 10px; }
-        .detail-view { padding: 10px; }
+        .ha-detail-root { padding: 10px 8px; }
+        .ha-detail-sheet.cam-detail,
+        .ha-detail-sheet.detail-view { padding: 10px; }
       }
     </style>
 </head>
@@ -712,37 +729,11 @@
 
       // ── Camera data ─────────────────────────────────────
       const cameras = [
-        { id: 'cam1', name: 'Living Room', res: '1080p', fps: 30, status: 'online', uptime: '99.8%', storage: '42.1 GB', events: 12, lastEvent: '2 min ago', model: 'Reolink RLC-810A', ip: '192.168.1.41', nightVision: 'Auto', motion: true, audio: true },
-        { id: 'cam2', name: 'Front Door', res: '2K', fps: 25, status: 'online', uptime: '99.9%', storage: '38.7 GB', events: 27, lastEvent: '14 min ago', model: 'Reolink Doorbell', ip: '192.168.1.42', nightVision: 'On', motion: true, audio: true },
-        { id: 'cam3', name: 'Garage', res: '1080p', fps: 30, status: 'online', uptime: '98.2%', storage: '51.3 GB', events: 5, lastEvent: '1 hr ago', model: 'Amcrest IP4M', ip: '192.168.1.43', nightVision: 'Off', motion: true, audio: false },
-        { id: 'cam4', name: 'Backyard', res: '4K', fps: 15, status: 'online', uptime: '97.5%', storage: '89.6 GB', events: 8, lastEvent: '22 min ago', model: 'Reolink RLC-823A', ip: '192.168.1.44', nightVision: 'Auto', motion: true, audio: true },
+        { id: 'cam1', name: 'Living Room', res: '1080p', fps: 30, status: 'online', uptime: '99.8%', storage: '42.1 GB', events: 12, lastEvent: '2 min ago', model: 'Reolink RLC-810A', ip: '192.168.1.41', nightVision: 'Auto', motion: true, audio: true, feedUrl: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&w=480&h=270&fit=crop&q=75' },
+        { id: 'cam2', name: 'Front Door', res: '2K', fps: 25, status: 'online', uptime: '99.9%', storage: '38.7 GB', events: 27, lastEvent: '14 min ago', model: 'Reolink Doorbell', ip: '192.168.1.42', nightVision: 'On', motion: true, audio: true, feedUrl: 'https://images.unsplash.com/photo-1560184897-ae75f418493e?auto=format&w=480&h=270&fit=crop&q=75' },
+        { id: 'cam3', name: 'Garage', res: '1080p', fps: 30, status: 'online', uptime: '98.2%', storage: '51.3 GB', events: 5, lastEvent: '1 hr ago', model: 'Amcrest IP4M', ip: '192.168.1.43', nightVision: 'Off', motion: true, audio: false, feedUrl: 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&w=480&h=270&fit=crop&q=75' },
+        { id: 'cam4', name: 'Backyard', res: '4K', fps: 15, status: 'online', uptime: '97.5%', storage: '89.6 GB', events: 8, lastEvent: '22 min ago', model: 'Reolink RLC-823A', ip: '192.168.1.44', nightVision: 'Auto', motion: true, audio: true, feedUrl: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&w=480&h=270&fit=crop&q=75' },
       ]
-
-      // Room silhouette SVGs for each camera feed
-      function roomSilhouette (type) {
-        if (type === 'living') return `<svg class="cam-silhouette" width="100" height="40" viewBox="0 0 100 40" fill="white">
-          <rect x="10" y="15" width="30" height="25" rx="2"/>
-          <rect x="45" y="20" width="15" height="20" rx="1"/>
-          <rect x="65" y="10" width="25" height="30" rx="2"/>
-        </svg>`
-        if (type === 'door') return `<svg class="cam-silhouette" width="100" height="40" viewBox="0 0 100 40" fill="white">
-          <rect x="30" y="2" width="40" height="38" rx="2"/>
-          <circle cx="62" cy="22" r="2"/>
-          <rect x="10" y="30" width="80" height="10" rx="1"/>
-        </svg>`
-        if (type === 'garage') return `<svg class="cam-silhouette" width="100" height="40" viewBox="0 0 100 40" fill="white">
-          <rect x="15" y="8" width="70" height="32" rx="3"/>
-          <line x1="15" y1="18" x2="85" y2="18" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
-          <line x1="15" y1="28" x2="85" y2="28" stroke="rgba(0,0,0,0.3)" stroke-width="1"/>
-        </svg>`
-        return `<svg class="cam-silhouette" width="100" height="40" viewBox="0 0 100 40" fill="white">
-          <path d="M10 35 Q25 10 50 15 Q75 10 90 35 Z"/>
-          <circle cx="30" cy="28" r="4"/>
-          <circle cx="70" cy="25" r="3"/>
-        </svg>`
-      }
-
-      const silhouettes = ['living', 'door', 'garage', 'yard']
 
       // ── Device data ─────────────────────────────────────
       const devices = [
@@ -776,11 +767,12 @@
       ]
 
       // ── Camera card builder ─────────────────────────────
-      function camCard (cam, i) {
+      function camCard (cam) {
         return `<div class="cam-card zoom-me" data-to="cam_${cam.id}" style="cursor:zoom-in;">
           <div class="cam-feed">
             <div class="cam-feed-bg">
-              ${roomSilhouette(silhouettes[i])}
+              <img class="cam-feed-img" src="${cam.feedUrl}" alt="" width="240" height="136" loading="lazy" decoding="async" />
+              <div class="cam-feed-shade" aria-hidden="true"></div>
               <div class="cam-rec"><div class="cam-rec-dot"></div>REC</div>
               <div class="cam-res">${cam.res} ${cam.fps}fps</div>
             </div>
@@ -911,14 +903,14 @@
                 </div>
               </div>
               <!-- Inner decorative ring -->
-              <div class="orbit-2 ring" style="border-color: rgba(52,152,219,0.1) !important; border-style: solid !important; border-width: 1px !important;">
+              <div class="orbit-2 ring" style="border-color: rgba(130,145,175,0.14) !important; border-style: solid !important; border-width: 1px !important;">
               </div>
               <!-- Cameras on orbit-4, pushed outward to avoid overlap -->
               <div class="orbit-4 orbit-ring">
-                ${cameras.map((cam, i) => `
+                ${cameras.map((cam) => `
                   <div class="satellite outer-orbit grow-3x">
                     <div class="capsule">
-                      ${camCard(cam, i)}
+                      ${camCard(cam)}
                     </div>
                   </div>
                 `).join('\n')}
@@ -936,7 +928,7 @@
       const eventTypes = ['motion', 'person', 'sound']
       const eventLabels = { motion: 'Motion detected', person: 'Person detected', sound: 'Sound detected' }
 
-      cameras.forEach((cam, i) => {
+      cameras.forEach((cam) => {
         // Generate fake recent events
         const events = Array.from({ length: 5 }, (_, j) => {
           const type = eventTypes[Math.floor(Math.random() * eventTypes.length)]
@@ -948,7 +940,9 @@
         })
 
         views[`cam_${cam.id}`] = `
-          <div class="z-view cam-detail">
+          <div class="z-view ha-detail-root">
+            <div class="ha-detail-dim" aria-hidden="true"></div>
+            <div class="ha-detail-sheet cam-detail">
             <div class="cam-header">
               <svg height="18px" viewBox="0 -960 960 960" width="18px" fill="var(--ha-cyan)"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h480q33 0 56.5 23.5T720-720v180l160-160v440L720-420v180q0 33-23.5 56.5T640-160H160Zm0-80h480v-480H160v480Zm0 0v-480 480Z"/></svg>
               <h1>${cam.name}</h1>
@@ -957,7 +951,8 @@
 
             <div class="cam-preview">
               <div class="cam-feed-bg">
-                ${roomSilhouette(silhouettes[i])}
+                <img class="cam-feed-img" src="${cam.feedUrl}" alt="" loading="lazy" decoding="async" />
+                <div class="cam-feed-shade" aria-hidden="true"></div>
               </div>
               <div class="cam-rec"><div class="cam-rec-dot"></div>REC</div>
               <div class="cam-overlay">
@@ -1006,6 +1001,7 @@
               <div class="ctrl-btn"><div class="dot ${cam.audio ? 'on' : 'off'}"></div>Audio</div>
               <div class="ctrl-btn"><div class="dot ${cam.nightVision !== 'Off' ? 'on' : 'off'}"></div>Night Vision: ${cam.nightVision}</div>
               <div class="ctrl-btn"><div class="dot on"></div>Recording</div>
+            </div>
             </div>
           </div>
         `
@@ -1083,7 +1079,9 @@
         if (dev.lastTriggered) extraStats.push({ l: 'Last Triggered', v: dev.lastTriggered, c: '' })
 
         views[`dev_${dev.id}`] = `
-          <div class="z-view detail-view">
+          <div class="z-view ha-detail-root">
+            <div class="ha-detail-dim" aria-hidden="true"></div>
+            <div class="ha-detail-sheet detail-view">
             <div class="detail-header">
               <div style="width:18px;height:18px;">${deviceIcon(dev.type)}</div>
               <h1>${dev.name}</h1>
@@ -1113,6 +1111,7 @@
                 <div class="tl-item" style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">6h ago</span><span>State changed</span></div>
               </div>
             </div>
+            </div>
           </div>
         `
       })
@@ -1131,7 +1130,9 @@
       ]
 
       views.alarm = `
-        <div class="z-view detail-view">
+        <div class="z-view ha-detail-root">
+          <div class="ha-detail-dim" aria-hidden="true"></div>
+          <div class="ha-detail-sheet detail-view">
           <div class="detail-header">
             <svg height="18px" viewBox="0 -960 960 960" width="18px" fill="#ff5252"><path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"/></svg>
             <h1>Alarm System</h1>
@@ -1172,6 +1173,7 @@
               <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">9h ago</span><span style="padding:1px 5px;border-radius:3px;font-size:7px;background:rgba(255,82,82,0.1);color:#ff5252;">armed</span><span>System armed (Away mode)</span></div>
               <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:55px;">9h ago</span><span style="padding:1px 5px;border-radius:3px;font-size:7px;background:rgba(255,215,64,0.1);color:#ffd740;">disarm</span><span>System disarmed by Martin</span></div>
             </div>
+          </div>
           </div>
         </div>
       `
@@ -1215,7 +1217,9 @@
       rooms.forEach(r => {
         const roomDevices = devices.filter(d => d.room === r.name)
         views[`room_${r.id}`] = `
-          <div class="z-view detail-view">
+          <div class="z-view ha-detail-root">
+            <div class="ha-detail-dim" aria-hidden="true"></div>
+            <div class="ha-detail-sheet detail-view">
             <div class="detail-header">
               <svg height="18px" viewBox="0 -960 960 960" width="18px" fill="var(--ha-cyan)"><path d="M160-120v-480l320-240 320 240v480H560v-280H400v280H160Z"/></svg>
               <h1>${r.name}</h1>
@@ -1250,6 +1254,7 @@
                 <div class="stat"><span class="stat-label">Motion Events</span><span class="stat-val accent">${Math.floor(Math.random() * 20 + 5)}</span></div>
                 <div class="stat"><span class="stat-label">Occupancy</span><span class="stat-val">${Math.floor(Math.random() * 60 + 20)}%</span></div>
               </div>
+            </div>
             </div>
           </div>
         `
@@ -1294,7 +1299,9 @@
       scenes.forEach(s => {
         const affectedDevices = devices.slice(0, s.devices)
         views[`scene_${s.id}`] = `
-          <div class="z-view detail-view">
+          <div class="z-view ha-detail-root">
+            <div class="ha-detail-dim" aria-hidden="true"></div>
+            <div class="ha-detail-sheet detail-view">
             <div class="detail-header">
               <span style="font-size:18px;">${s.icon}</span>
               <h1>${s.name}</h1>
@@ -1321,6 +1328,7 @@
                 <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:70px;">2 days ago</span><span>Scene activated by automation</span></div>
                 <div style="display:flex;gap:8px;font-size:8px;color:var(--ha-text);"><span style="color:var(--ha-muted);min-width:70px;">4 days ago</span><span>Scene modified: added ${affectedDevices[0]?.name || 'device'}</span></div>
               </div>
+            </div>
             </div>
           </div>
         `

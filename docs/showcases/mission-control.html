@@ -17,30 +17,29 @@
     <script src="https://unpkg.com/@zumer/orbit@latest/dist/orbit.js"></script>
     <style>
       :root {
-        --mc-black: #060612;
-        --mc-dark: #0c0c24;
-        --mc-surface: rgba(255, 255, 255, 0.03);
-        --mc-border: rgba(255, 255, 255, 0.06);
-        --mc-blue: #4a9eff;
-        --mc-blue-dim: rgba(74, 158, 255, 0.10);
-        --mc-cyan: #00e5ff;
-        --mc-cyan-dim: rgba(0, 229, 255, 0.08);
-        --mc-green: #00e676;
-        --mc-green-dim: rgba(0, 230, 118, 0.10);
-        --mc-yellow: #ffd740;
-        --mc-yellow-dim: rgba(255, 215, 64, 0.10);
-        --mc-red: #ff5252;
-        --mc-red-dim: rgba(255, 82, 82, 0.10);
-        --mc-orange: #ff9100;
-        --mc-text: #d8dce8;
-        --mc-muted: rgba(216, 220, 232, 0.40);
-        --mc-glow: 0 0 20px rgba(74, 158, 255, 0.15);
+        --mc-black: #0c0e14;
+        --mc-dark: #12151c;
+        --mc-surface: rgba(255, 255, 255, 0.04);
+        --mc-border: rgba(255, 255, 255, 0.09);
+        --mc-blue: #6b8fc7;
+        --mc-blue-dim: rgba(107, 143, 199, 0.12);
+        --mc-cyan: #7a9ab8;
+        --mc-cyan-dim: rgba(122, 154, 184, 0.1);
+        --mc-green: #52a578;
+        --mc-green-dim: rgba(82, 165, 120, 0.12);
+        --mc-yellow: #c9a85c;
+        --mc-yellow-dim: rgba(201, 168, 92, 0.12);
+        --mc-red: #c85c5c;
+        --mc-red-dim: rgba(200, 92, 92, 0.12);
+        --mc-orange: #c9884a;
+        --mc-text: #d8dce6;
+        --mc-muted: rgba(216, 220, 230, 0.42);
       }
 
       * { box-sizing: border-box; margin: 0; padding: 0; }
 
       body {
-        font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        font-family: ui-monospace, 'SF Mono', 'Fira Code', 'Consolas', monospace;
         background: var(--mc-black);
         color: var(--mc-text);
         overflow: hidden;
@@ -53,32 +52,8 @@
       .v {
         width: 100%; height: 100%;
         padding: 24px 28px;
-        background: radial-gradient(ellipse at 50% 50%, #0d0d28 0%, var(--mc-black) 70%);
+        background: var(--mc-dark);
         overflow: hidden;
-      }
-
-      /* Stars background */
-      .v::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image:
-          radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.4), transparent),
-          radial-gradient(1px 1px at 25% 45%, rgba(255,255,255,0.3), transparent),
-          radial-gradient(1px 1px at 40% 20%, rgba(255,255,255,0.2), transparent),
-          radial-gradient(1px 1px at 55% 75%, rgba(255,255,255,0.35), transparent),
-          radial-gradient(1px 1px at 70% 30%, rgba(255,255,255,0.25), transparent),
-          radial-gradient(1px 1px at 85% 60%, rgba(255,255,255,0.3), transparent),
-          radial-gradient(1px 1px at 15% 80%, rgba(255,255,255,0.2), transparent),
-          radial-gradient(1px 1px at 90% 10%, rgba(255,255,255,0.4), transparent),
-          radial-gradient(1px 1px at 35% 90%, rgba(255,255,255,0.15), transparent),
-          radial-gradient(1px 1px at 60% 50%, rgba(255,255,255,0.2), transparent),
-          radial-gradient(1.5px 1.5px at 5% 55%, rgba(200,220,255,0.5), transparent),
-          radial-gradient(1.5px 1.5px at 75% 85%, rgba(200,220,255,0.4), transparent),
-          radial-gradient(1px 1px at 48% 8%, rgba(255,255,255,0.3), transparent),
-          radial-gradient(1px 1px at 82% 42%, rgba(255,255,255,0.2), transparent),
-          radial-gradient(1px 1px at 20% 65%, rgba(255,255,255,0.25), transparent);
-        pointer-events: none;
       }
 
       .hdr {
@@ -109,7 +84,7 @@
       .nasa-mark {
         width: 34px; height: 34px;
         border-radius: 50%;
-        border: 1.5px solid var(--mc-blue);
+        border: 1px solid var(--mc-border);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -118,7 +93,7 @@
         color: var(--mc-blue);
         letter-spacing: 2px;
         flex-shrink: 0;
-        box-shadow: var(--mc-glow);
+        background: var(--mc-surface);
       }
 
       .bc {
@@ -245,8 +220,7 @@
       }
 
       .sat-card.zoom-me:hover {
-        border-color: rgba(74, 158, 255, 0.4);
-        box-shadow: var(--mc-glow);
+        border-color: rgba(255, 255, 255, 0.14);
       }
 
       .sat-card.has-anomaly {
@@ -345,7 +319,7 @@
       }
 
       .subsys.zoom-me:hover {
-        border-color: rgba(74, 158, 255, 0.35);
+        border-color: rgba(255, 255, 255, 0.12);
       }
 
       .subsys-name {
@@ -447,7 +421,7 @@
       /* Orbit ring styling */
       .orbit-panel .orbit,
       .orbit-panel [class*="orbit-"] {
-        border-color: rgba(74, 158, 255, 0.08) !important;
+        border-color: rgba(130, 145, 175, 0.1) !important;
         border-style: dashed !important;
       }
 
@@ -473,41 +447,40 @@
         font-weight: 600;
         letter-spacing: 0.5px;
         cursor: zoom-in;
-        transition: box-shadow 0.25s, border-color 0.25s;
-        border: 1.5px solid;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(4px);
+        transition: border-color 0.2s, background 0.2s;
+        border: 1px solid;
+        background: #141820;
         position: relative;
         min-width: 40px;
       }
 
       .sat-node:hover {
-        box-shadow: 0 0 18px var(--sat-color);
         border-color: var(--sat-color) !important;
+        background: rgba(255, 255, 255, 0.04);
       }
 
       .sat-node.nominal {
-        --sat-color: #00e676;
-        border-color: rgba(0, 230, 118, 0.5);
-        color: #00e676;
+        --sat-color: var(--mc-green);
+        border-color: rgba(82, 165, 120, 0.45);
+        color: var(--mc-green);
       }
 
       .sat-node.warning {
-        --sat-color: #ffd740;
-        border-color: rgba(255, 215, 64, 0.6);
-        color: #ffd740;
+        --sat-color: var(--mc-yellow);
+        border-color: rgba(201, 168, 92, 0.45);
+        color: var(--mc-yellow);
       }
 
       .sat-node.anomaly {
-        --sat-color: #ff5252;
-        border-color: rgba(255, 82, 82, 0.6);
-        color: #ff5252;
+        --sat-color: var(--mc-red);
+        border-color: rgba(200, 92, 92, 0.5);
+        color: var(--mc-red);
         animation: pulse-border 1.5s ease-in-out infinite;
       }
 
       @keyframes pulse-border {
-        0%, 100% { box-shadow: 0 0 8px rgba(255, 82, 82, 0.3); }
-        50% { box-shadow: 0 0 20px rgba(255, 82, 82, 0.6); }
+        0%, 100% { border-color: rgba(200, 92, 92, 0.45); }
+        50% { border-color: rgba(200, 92, 92, 0.85); }
       }
 
       .sat-node .sat-label {
@@ -526,13 +499,13 @@
         width: 55px;
         height: 55px;
         border-radius: 50%;
-        background: radial-gradient(circle at 35% 35%, #1a4a8a, #0d2d5e 60%, #061430);
-        box-shadow: 0 0 30px rgba(74, 158, 255, 0.15), 0 0 60px rgba(74, 158, 255, 0.06);
+        background: radial-gradient(circle at 32% 28%, #2a4a72, #1a3050 55%, #0f1a2e);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 7px;
-        color: rgba(74, 158, 255, 0.6);
+        color: rgba(140, 165, 200, 0.75);
         font-family: monospace;
         min-width: 55px;
       }
@@ -767,7 +740,7 @@
       }
 
       function satelliteSVG (sat) {
-        const c = (s) => s === 'fail' ? '#ff5252' : s === 'warn' ? '#ffd740' : '#00e676'
+        const c = (s) => s === 'fail' ? '#c85c5c' : s === 'warn' ? '#c9a85c' : '#52a578'
         const pulse = (s) => s === 'fail' ? '<animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/>' : ''
         const ss = sat.subsystems
         return `<svg viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg">
@@ -1027,6 +1000,7 @@
           hideTrigger: 'fade',
         },
         depthNav: { position: 'bottom-left' },
+        inputs: { wheel: false },
         debug: false,
       })
 

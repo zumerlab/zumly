@@ -250,13 +250,17 @@
       gap: 18px; width: 100%; max-width: 900px;
     }
     .sc-card {
-      border-radius: var(--radius); overflow: hidden;
+      border-radius: 10px; overflow: hidden;
       border: 1px solid var(--border); background: var(--bg-card);
-      cursor: zoom-in; transition: all 0.25s;
+      cursor: zoom-in; transition: border-color 0.2s, box-shadow 0.2s;
     }
     .sc-card:hover {
-      border-color: var(--border-accent); transform: translateY(-3px);
-      box-shadow: 0 16px 50px rgba(0,0,0,0.4);
+      border-color: rgba(255,255,255,0.12);
+      box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+    }
+    html.light .sc-card:hover {
+      border-color: rgba(15,25,60,0.14);
+      box-shadow: 0 8px 24px rgba(15,25,60,0.08);
     }
     .sc-preview { position: relative; height: 160px; overflow: hidden; pointer-events: none; }
     .sc-preview iframe {
@@ -277,12 +281,12 @@
       letter-spacing: 1px; padding: 2px 7px; border-radius: 4px;
       display: inline-block; margin-bottom: 4px;
     }
-    .sc-tag--silver { background: rgba(176,176,176,0.12); color: #b0b0b0; }
-    .sc-tag--cyan { background: rgba(0,229,255,0.12); color: #00e5ff; }
-    .sc-tag--blue { background: rgba(74,158,255,0.15); color: #4a9eff; }
-    html.light .sc-tag--silver { background: rgba(15,25,60,0.07); color: #4a5068; }
-    html.light .sc-tag--blue { background: rgba(50,80,200,0.10); color: #2850a0; }
-    html.light .sc-tag--cyan { background: rgba(0,140,180,0.08); color: #007888; }
+    .sc-tag--silver { background: rgba(255,255,255,0.06); color: #9ca3b0; }
+    .sc-tag--cyan { background: rgba(125,155,190,0.12); color: #a8bdd4; }
+    .sc-tag--blue { background: rgba(95,125,175,0.14); color: #9eb4d6; }
+    html.light .sc-tag--silver { background: rgba(15,25,60,0.06); color: #5c6478; }
+    html.light .sc-tag--blue { background: rgba(55,75,120,0.10); color: #3d5588; }
+    html.light .sc-tag--cyan { background: rgba(70,95,130,0.10); color: #4a6080; }
     .sc-label h4 { font-size: 0.88rem; font-weight: 700; margin: 0; }
     .sc-label p { font-size: 0.7rem; color: var(--text-dim); margin: 3px 0 0; }
 
