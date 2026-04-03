@@ -352,6 +352,11 @@
         border-radius: 11px;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
       }
+      /* Alarm: more rows + zones — slightly taller sheet */
+      .ha-detail-sheet.detail-view.ha-alarm-sheet {
+        max-width: min(600px, 94vw);
+        max-height: min(520px, 76vh);
+      }
 
       /* ── Camera detail view (Level 3) ───────────────────── */
       .ha-detail-sheet.cam-detail {
@@ -530,9 +535,20 @@
       .section-view .gravity-spot { --o-force: 340px; }
       .section-view .satellite { border: none; overflow: visible; }
       .section-view .capsule { overflow: visible; }
-      .section-view [class*="orbit-"] {
-        border-color: rgba(120,135,165,0.08) !important;
+      /* Hub sections (devices, rooms, scenes): same orbit chrome as Cameras; alarm uses ha-detail-root */
+      .section-view.cam-view [class*="orbit-"] {
+        border-color: rgba(120, 135, 165, 0.1) !important;
         border-style: dashed !important;
+      }
+      .section-view.cam-view .orbit-2.ring,
+      .section-view.cam-view .orbit-4.orbit-ring {
+        border-color: rgba(140, 155, 185, 0.14) !important;
+        border-style: solid !important;
+        border-width: 1px !important;
+      }
+      .section-view.cam-view o-arc.cam-arc {
+        --o-fill: rgba(120, 135, 165, 0.05);
+        --o-stroke: rgba(140, 155, 185, 0.1);
       }
 
       /* Section card (device, room, scene items) */
@@ -1106,7 +1122,7 @@
       }
 
       views.devices = `
-        <div class="z-view section-view">
+        <div class="z-view section-view cam-view">
           <div class="bigbang">
             <div class="gravity-spot" style="--o-force: 380px">
               <div class="orbit-0">
@@ -1117,7 +1133,9 @@
                   </div>
                 </div>
               </div>
-              <div class="orbit-5">
+              <div class="orbit-2 ring" style="border-color: rgba(130,145,175,0.14) !important; border-style: solid !important; border-width: 1px !important;">
+              </div>
+              <div class="orbit-4 orbit-ring">
                 ${devices.map(dev => `
                   <div class="satellite outer-orbit grow-3x">
                     <div class="capsule">
@@ -1130,6 +1148,9 @@
                     </div>
                   </div>
                 `).join('')}
+              </div>
+              <div class="orbit-7 from-0 range-360" style="border: none !important;">
+                ${Array(12).fill('<o-arc class="cam-arc shrink-50"></o-arc>').join('\n')}
               </div>
             </div>
           </div>
@@ -1207,7 +1228,7 @@
       views.alarm = `
         <div class="z-view ha-detail-root">
           <div class="ha-detail-dim" aria-hidden="true"></div>
-          <div class="ha-detail-sheet detail-view">
+          <div class="ha-detail-sheet detail-view ha-alarm-sheet">
           <div class="detail-header">
             <svg height="18px" viewBox="0 -960 960 960" width="18px" fill="#ff5252"><path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Z"/></svg>
             <h1>Alarm System</h1>
@@ -1258,7 +1279,7 @@
       // ══════════════════════════════════════════════════════
 
       views.rooms = `
-        <div class="z-view section-view">
+        <div class="z-view section-view cam-view">
           <div class="bigbang">
             <div class="gravity-spot" style="--o-force: 340px">
               <div class="orbit-0">
@@ -1269,7 +1290,9 @@
                   </div>
                 </div>
               </div>
-              <div class="orbit-4">
+              <div class="orbit-2 ring" style="border-color: rgba(130,145,175,0.14) !important; border-style: solid !important; border-width: 1px !important;">
+              </div>
+              <div class="orbit-4 orbit-ring">
                 ${rooms.map(r => `
                   <div class="satellite outer-orbit grow-3x">
                     <div class="capsule">
@@ -1282,6 +1305,9 @@
                     </div>
                   </div>
                 `).join('')}
+              </div>
+              <div class="orbit-7 from-0 range-360" style="border: none !important;">
+                ${Array(12).fill('<o-arc class="cam-arc shrink-50"></o-arc>').join('\n')}
               </div>
             </div>
           </div>
@@ -1340,7 +1366,7 @@
       // ══════════════════════════════════════════════════════
 
       views.scenes = `
-        <div class="z-view section-view">
+        <div class="z-view section-view cam-view">
           <div class="bigbang">
             <div class="gravity-spot" style="--o-force: 360px">
               <div class="orbit-0">
@@ -1351,7 +1377,9 @@
                   </div>
                 </div>
               </div>
-              <div class="orbit-5">
+              <div class="orbit-2 ring" style="border-color: rgba(130,145,175,0.14) !important; border-style: solid !important; border-width: 1px !important;">
+              </div>
+              <div class="orbit-4 orbit-ring">
                 ${scenes.map(s => `
                   <div class="satellite outer-orbit grow-3x">
                     <div class="capsule">
@@ -1364,6 +1392,9 @@
                     </div>
                   </div>
                 `).join('')}
+              </div>
+              <div class="orbit-7 from-0 range-360" style="border: none !important;">
+                ${Array(12).fill('<o-arc class="cam-arc shrink-50"></o-arc>').join('\n')}
               </div>
             </div>
           </div>
@@ -1438,11 +1469,14 @@
       app.on('afterZoomIn', notifyDepth)
       app.on('afterZoomOut', notifyDepth)
 
-      // Activate selector arc on camera satellite hover (delegated)
+      // Selector arcs on dashboard: highlight the arc that matches the hovered menu item
+      const menuRouteOrder = ['devices', 'cameras', 'alarm', 'rooms', 'scenes']
       document.querySelector('.canvas').addEventListener('mouseover', (e) => {
-        const camSat = e.target.closest('.zoom-me[data-to="cameras"]')
-        const camArc = document.querySelectorAll('.orbit-11 .selector')[1]
-        if (camArc) camArc.classList.toggle('active', !!camSat)
+        const menu = e.target.closest('.menu-item.zoom-me[data-to]')
+        const idx = menu ? menuRouteOrder.indexOf(menu.getAttribute('data-to')) : -1
+        document.querySelectorAll('.orbit-11 .selector').forEach((arc, i) => {
+          arc.classList.toggle('active', i === idx && idx >= 0)
+        })
       })
     </script>
 </body>
