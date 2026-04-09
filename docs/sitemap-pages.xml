@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <url>
+    <loc>https://zumerlab.github.io/zumly/</loc>
+  </url>
+
+  <url>
+    <loc>https://zumerlab.github.io/zumly/views/api.html</loc>
+  </url>
+
+  <url>
+    <loc>https://zumerlab.github.io/zumly/integrations/react.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/integrations/vue.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/integrations/svelte.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/integrations/angular.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/integrations/orbit-css.html</loc>
+  </url>
+
+  <url>
+    <loc>https://zumerlab.github.io/zumly/drivers/gsap.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/drivers/anime.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/drivers/motion.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/drivers/custom.html</loc>
+  </url>
+
+  <url>
+    <loc>https://zumerlab.github.io/zumly/learn/zui.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/learn/depth-navigation.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/learn/lateral-navigation.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/learn/focus-driven-ui.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/learn/zoom-ui-vs-canvas-pan.html</loc>
+  </url>
+
+  <url>
+    <loc>https://zumerlab.github.io/zumly/showcases/mercedes-line.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/showcases/home-assistant.html</loc>
+  </url>
+  <url>
+    <loc>https://zumerlab.github.io/zumly/showcases/mission-control.html</loc>
+  </url>
+
+</urlset>
