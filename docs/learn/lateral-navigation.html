@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Lateral navigation in Zumly — Same-depth view swaps</title>
+  <meta name="description" content="Lateral navigation moves between sibling views without changing depth. How Zumly handles same-level swaps, when to use them, and how the slide animation differs from depth zooms." />
+  <meta name="keywords" content="lateral navigation, sibling views, same depth navigation, zumly lateral, zui sibling navigation, swap views" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/lateral-navigation.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Lateral navigation in Zumly — Same-depth view swaps" />
+  <meta property="og:description" content="Lateral navigation moves between sibling views without changing depth. How Zumly handles same-level swaps, when to use them, and how the slide animation differs from depth zooms." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/lateral-navigation.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Lateral navigation in Zumly — Same-depth view swaps",
+    "description": "Lateral navigation moves between sibling views without changing depth. How Zumly handles same-level swaps, when to use them, and how the slide animation differs from depth zooms.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/learn/lateral-navigation.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "Thing", "name": "Lateral Navigation" },
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" }
+    ],
+    "proficiencyLevel": "Beginner"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Learn</a><span>›</span>Lateral navigation
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Learn · Concept</span>
+      <h1 class="hero-title">Lateral navigation</h1>
+      <p class="hero-sub">
+        Lateral navigation moves you between <em>sibling</em> views — same parent, same depth,
+        different content. It's the "swipe to the next photo," "next slide," "next room"
+        primitive that complements Zumly's depth-based zooms.
+      </p>
+      <div class="cta-row">
+        <a href="depth-navigation.html" class="cta-primary">Depth navigation &rarr;</a>
+        <a href="zui.html" class="cta-secondary">What is a ZUI?</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>Why lateral exists</h2>
+      <p>
+        A pure depth-only ZUI forces every move to go up or down the hierarchy. That works for
+        true tree structures but it's miserable for the (very common) case of "I'm looking at
+        sensor 7 in this room, and now I want to look at sensor 8 in the same room." With only
+        zoom-in and zoom-out, the user has to back out to the parent and then drill into the
+        sibling — three animations for what should be one step.
+      </p>
+      <p>
+        Lateral navigation collapses that into a single primitive: <strong>swap the current view
+        for a sibling at the same depth, without touching the parent stack.</strong> The user
+        sees one slide animation; the depth tracker doesn't move; back() still takes them out
+        of the parent the way they expect.
+      </p>
+    </section>
+
+    <section>
+      <h2>How it differs from a zoom</h2>
+      <p>
+        A zoom is a <em>spatial</em> move: the trigger element grows or shrinks to fill the
+        viewport. A lateral is a <em>positional</em> move: the current view slides off in one
+        direction while a sibling slides in from the other. There's no scale change, no origin
+        recalculation, no parent reflow — just two views translating across the canvas.
+      </p>
+      <p>
+        That's why Zumly's bundled drivers handle lateral transitions specially:
+      </p>
+      <ul>
+        <li>The default <code>waapi</code> driver runs a real slide animation with WAAPI keyframes.</li>
+        <li>The <code>gsap</code>, <code>anime</code>, and <code>motion</code> adapters delegate
+        to <code>runLateralInstant()</code> — they don't add value to a slide that's already
+        geometrically simple.</li>
+        <li>Custom drivers can call <code>runLateralInstant(spec, onComplete)</code> for the
+        same instant behaviour, or write their own slide.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Where lateral shines</h2>
+      <ul>
+        <li><strong>Photo galleries</strong> — next/previous photo at the same zoom level.</li>
+        <li><strong>Carousels and slideshows</strong> — sibling slides under a single parent
+        "deck" view.</li>
+        <li><strong>Stepped flows</strong> — a multi-step wizard where each step is a sibling,
+        not a child, and back() should exit the wizard rather than rewind one step.</li>
+        <li><strong>Multi-tab focus</strong> — comparing sibling dashboards without losing the
+        parent context.</li>
+        <li><strong>Spatial neighbours</strong> — adjacent rooms in a building, adjacent stations
+        on a production line, adjacent vehicles in a fleet.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Where lateral is the wrong call</h2>
+      <p>
+        Lateral isn't a substitute for depth. Reach for a zoom instead when:
+      </p>
+      <ul>
+        <li>The destination is <em>inside</em> the current view (a card you can see). That's a
+        depth move — the trigger should grow into the new viewport.</li>
+        <li>The destination has a different parent. Zumly enforces same-depth-same-parent for
+        lateral; cross-parent moves should round-trip through a shared ancestor.</li>
+        <li>Users would expect back() to undo the move. Lateral leaves the depth stack alone, so
+        back() walks the parent stack — not the lateral history. If users say "wait, where did I
+        come from?" you probably want a zoom-out + zoom-in instead.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Lateral and the depth stack</h2>
+      <p>
+        Because lateral doesn't change depth, the parent stack is untouched. If you laterally
+        navigate from sibling A to sibling B at depth 3, the depth tracker still says "depth 3,
+        parent at depth 2, grandparent at depth 1" — just with B in the current slot instead of
+        A. Zoom-out from there takes you to depth 2, exactly where you'd land from A.
+      </p>
+      <p>
+        This is why lateral feels like the right tool for "sibling browsing" — it preserves the
+        user's mental model of where they are in the hierarchy while still letting them move
+        around at the current level.
+      </p>
+      <div class="callout">
+        <strong>Read next:</strong> <a href="focus-driven-ui.html">Focus-driven UI</a> — why
+        a ZUI's defining property is "the trigger becomes the destination" and how that changes
+        the way you design screens.
+      </div>
+    </section>
+
+    <div class="final-cta">
+      <h3>Try it in the live demo</h3>
+      <p>Some of the demo's deeper views support lateral navigation between siblings — watch how the parent stays put while the current view slides.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Learn</h4>
+        <ul>
+          <li><a href="zui.html">What is a ZUI?</a></li>
+          <li><a href="depth-navigation.html">Depth navigation</a></li>
+          <li>Lateral navigation (you are here)</li>
+          <li><a href="focus-driven-ui.html">Focus-driven UI</a></li>
+          <li><a href="zoom-ui-vs-canvas-pan.html">Zoom UI vs canvas pan</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

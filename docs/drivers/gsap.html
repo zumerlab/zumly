@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Zumly GSAP driver — Power-curve zoom transitions with GSAP</title>
+  <meta name="description" content="Drive Zumly's zoom transitions with GSAP timelines. Built-in driver, no glue code — get GSAP's eases and timeline control inside a Zooming User Interface." />
+  <meta name="keywords" content="zumly gsap, gsap zoom transition, gsap zui, zooming user interface gsap, gsap timeline driver, zumly transition driver" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/drivers/gsap.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Zumly GSAP driver — Power-curve zoom transitions with GSAP" />
+  <meta property="og:description" content="Drive Zumly's zoom transitions with GSAP timelines. Built-in driver, no glue code — get GSAP's eases and timeline control inside a Zooming User Interface." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/drivers/gsap.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Zumly GSAP driver — Power-curve zoom transitions with GSAP",
+    "description": "Drive Zumly's zoom transitions with GSAP timelines. Built-in driver, no glue code — get GSAP's eases and timeline control inside a Zooming User Interface.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/drivers/gsap.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" },
+      { "@type": "SoftwareApplication", "name": "GSAP" }
+    ],
+    "proficiencyLevel": "Beginner"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Drivers</a><span>›</span>GSAP
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Driver · GSAP</span>
+      <h1 class="hero-title">Zumly + GSAP</h1>
+      <p class="hero-sub">
+        Drive Zumly's zoom-in, zoom-out, and lateral transitions with the GSAP timeline engine.
+        The GSAP driver is bundled with Zumly — no adapter, no glue code, just a one-line
+        constructor option and the eases you already know.
+      </p>
+      <div class="cta-row">
+        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
+        <a href="https://github.com/zumerlab/zumly" class="cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>Why use the GSAP driver?</h2>
+      <p>
+        Zumly ships with several transition drivers — <code>css</code> (default), <code>waapi</code>,
+        <code>none</code>, and adapters for <code>gsap</code>, <code>anime</code>, and
+        <code>motion</code>. The driver is the layer that decides <strong>how</strong> a view
+        moves; the engine decides <strong>what</strong> moves where.
+      </p>
+      <p>
+        Pick GSAP when you want:
+      </p>
+      <ul>
+        <li><strong>GSAP's ease catalog</strong> — <code>power2.inOut</code>, <code>back.out</code>,
+        <code>elastic</code>, <code>expo</code> and the rest, mapped automatically from your
+        Zumly <code>ease</code> string.</li>
+        <li><strong>Timeline-based stagger</strong> — current view, previous view, and grandparent
+        animate on a single GSAP timeline so they stay in sync even when you tune
+        <code>stagger</code>.</li>
+        <li><strong>Existing GSAP investment</strong> — if your app already loads GSAP for other
+        animations, reusing it for Zumly transitions costs you zero extra bytes.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Install</h2>
+      <p>The driver is part of <code>zumly</code>. You only need to make GSAP available as a global.</p>
+      <pre>npm install zumly</pre>
+      <p>Then load GSAP from a CDN <strong>before</strong> Zumly initialises:</p>
+      <pre>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"&gt;&lt;/script&gt;</pre>
+      <div class="callout">
+        <strong>Why a global?</strong> The bundled adapter reads <code>globalThis.gsap</code> so
+        Zumly stays zero-dependency at the package level. If GSAP isn't on the page, the driver
+        warns once and falls through to <code>onComplete()</code> — your views still navigate, just
+        without GSAP's curve.
+      </div>
+    </section>
+
+    <section id="quick-start">
+      <h2>Quick start</h2>
+      <p>
+        Pass <code>'gsap'</code> as the driver name. That's the entire integration.
+      </p>
+      <pre>import Zumly from 'zumly'
+import 'zumly/css'
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, dashboard, detail },
+  transitions: {
+    driver: 'gsap',
+    duration: '600ms',
+    ease: 'ease-in-out',
+  },
+})
+
+await app.init()</pre>
+      <p>
+        Zumly resolves <code>'gsap'</code> to the bundled adapter, normalises your ease string to
+        a GSAP curve (<code>'ease-in-out'</code> &rarr; <code>'power2.inOut'</code>), and runs the
+        transition on a GSAP timeline.
+      </p>
+    </section>
+
+    <section>
+      <h2>Working example: tuned curve and stagger</h2>
+      <p>
+        GSAP shines when you push beyond linear interpolation. This example uses an elastic
+        ease for zoom-out and a custom stagger so the parent view starts moving slightly after
+        the current view.
+      </p>
+      <pre>const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'overview',
+  views: { overview, region, sensor },
+  transitions: {
+    driver: 'gsap',
+    duration: '700ms',
+    ease: 'back.out(1.4)',     // GSAP-native ease string
+    stagger: 80,                // ms — applied between views[0], views[1], views[2]
+    effects: ['blur(4px) brightness(0.6)', 'blur(10px) brightness(0.3)']
+  },
+})
+
+await app.init()</pre>
+      <p>
+        Any GSAP ease that <code>gsap.to()</code> accepts works directly. Numeric strings like
+        <code>'power3.inOut'</code>, <code>'expo.out'</code>, or
+        <code>'elastic.out(1, 0.3)'</code> are passed through without translation.
+      </p>
+    </section>
+
+    <section>
+      <h2>What the adapter actually does</h2>
+      <p>
+        Internally the GSAP driver builds one timeline per transition. For a zoom-in:
+      </p>
+      <ul>
+        <li>It calls <code>showViews()</code> on current, previous, and (if depth &gt; 2) grandparent.</li>
+        <li>It snapshots the engine-computed start transforms via <code>setTransform()</code>.</li>
+        <li>It animates each view's <code>transform</code> from its <code>backwardState</code> to its
+        <code>forwardState</code> with the resolved duration and ease.</li>
+        <li>On <code>onComplete</code> it calls <code>applyZoomInEndState()</code> for each view so the
+        DOM ends in the canonical "current view" state Zumly expects.</li>
+      </ul>
+      <p>
+        Lateral transitions are handed off to <code>runLateralInstant()</code> — the same instant
+        helper used by minimal custom drivers — because GSAP doesn't add value to Zumly's
+        slide-and-snap lateral motion.
+      </p>
+    </section>
+
+    <section>
+      <h2>Direct import (advanced)</h2>
+      <p>
+        If you want to wrap or extend the driver — for example, to log every timeline or to
+        compose it with another animation — you can import the function and pass it directly:
+      </p>
+      <pre>import Zumly, { gsapTransition } from 'zumly'
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, detail },
+  transitions: {
+    driver: (spec, onComplete) =&gt; {
+      console.log('zumly transition', spec.type, spec.currentStage)
+      gsapTransition(spec, onComplete)
+    },
+    duration: '500ms',
+  },
+})</pre>
+      <p>
+        Passing a function is the official way to extend any built-in driver — see the
+        <a href="custom.html">custom driver guide</a> for the full <code>spec</code> shape.
+      </p>
+    </section>
+
+    <section>
+      <h2>Common gotchas</h2>
+      <ul>
+        <li>
+          <strong>Load GSAP before Zumly initialises.</strong> The driver checks
+          <code>globalThis.gsap</code> at construction time. ESM-only setups should still drop
+          a script tag, or assign <code>globalThis.gsap = gsap</code> after importing.
+        </li>
+        <li>
+          <strong>Don't tween the same views from your own GSAP code mid-transition.</strong>
+          Zumly owns the <code>transform</code> property during a zoom; concurrent tweens will
+          fight the timeline.
+        </li>
+        <li>
+          <strong>Stagger is in milliseconds.</strong> Zumly's <code>stagger</code> option is
+          ms-based; the driver converts it internally to seconds for GSAP's timeline API.
+        </li>
+        <li>
+          <strong>Lateral transitions are intentionally instant.</strong> If you want lateral
+          motion, use the <code>waapi</code> driver (which has a built-in lateral slide) or
+          author a <a href="custom.html">custom driver</a> that handles
+          <code>spec.type === 'lateral'</code> yourself.
+        </li>
+      </ul>
+    </section>
+
+    <div class="final-cta">
+      <h3>See the engine in action</h3>
+      <p>The live demo runs on the default CSS driver, but every driver follows the same view contract — you can swap to GSAP with a single option.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Drivers</h4>
+        <ul>
+          <li>GSAP (you are here)</li>
+          <li><a href="anime.html">Anime.js</a></li>
+          <li><a href="motion.html">Motion</a></li>
+          <li><a href="custom.html">Custom driver</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

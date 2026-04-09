@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Zumly Anime.js driver — Matrix-interpolated zoom transitions</title>
+  <meta name="description" content="Run Zumly's zoom transitions through Anime.js. The bundled adapter interpolates computed CSS matrices so transform-origin changes stay perfectly aligned." />
+  <meta name="keywords" content="zumly anime.js, anime.js zoom transition, anime.js zui, zooming user interface anime, anime.js driver, zumly transition driver" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/drivers/anime.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Zumly Anime.js driver — Matrix-interpolated zoom transitions" />
+  <meta property="og:description" content="Run Zumly's zoom transitions through Anime.js. The bundled adapter interpolates computed CSS matrices so transform-origin changes stay perfectly aligned." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/drivers/anime.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Zumly Anime.js driver — Matrix-interpolated zoom transitions",
+    "description": "Run Zumly's zoom transitions through Anime.js. The bundled adapter interpolates computed CSS matrices so transform-origin changes stay perfectly aligned.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/drivers/anime.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" },
+      { "@type": "SoftwareApplication", "name": "Anime.js" }
+    ],
+    "proficiencyLevel": "Beginner"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Drivers</a><span>›</span>Anime.js
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Driver · Anime.js</span>
+      <h1 class="hero-title">Zumly + Anime.js</h1>
+      <p class="hero-sub">
+        Run Zumly's zoom transitions through Anime.js. The bundled adapter interpolates the
+        browser-computed CSS matrix between view states, so origins, scales, and translations
+        stay aligned even when transform-origin shifts during the animation.
+      </p>
+      <div class="cta-row">
+        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
+        <a href="https://github.com/zumerlab/zumly" class="cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>Why use the Anime.js driver?</h2>
+      <p>
+        The Anime.js adapter is a good choice when you need <strong>geometrically faithful</strong>
+        intermediate frames. Instead of tweening <code>transform</code> as a string, the driver
+        reads the computed matrix at the start and end of the transition and interpolates between
+        them frame-by-frame.
+      </p>
+      <p>That matters when:</p>
+      <ul>
+        <li>The current and previous views have different <code>transform-origin</code> values
+        (very common in zoom-into-element flows where each child has its own bounding box).</li>
+        <li>You want a smooth visual line between two states that browsers would otherwise stitch
+        with a slight pop because they tween origin and transform separately.</li>
+        <li>You're already using Anime.js elsewhere and want the same easing engine across your
+        UI for visual consistency.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Install</h2>
+      <p>The driver ships inside the <code>zumly</code> package. Add Anime.js as a global:</p>
+      <pre>npm install zumly</pre>
+      <pre>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"&gt;&lt;/script&gt;</pre>
+      <div class="callout">
+        <strong>Anime.js v3.</strong> The bundled adapter targets Anime.js v3 (the global
+        <code>anime</code> function). v4's named exports work too, as long as you assign the
+        default export to <code>globalThis.anime</code> before Zumly initialises.
+      </div>
+    </section>
+
+    <section id="quick-start">
+      <h2>Quick start</h2>
+      <pre>import Zumly from 'zumly'
+import 'zumly/css'
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, gallery, photo },
+  transitions: {
+    driver: 'anime',
+    duration: '500ms',
+    ease: 'easeInOutQuad',
+  },
+})
+
+await app.init()</pre>
+      <p>
+        Any Anime.js easing string is valid for the <code>ease</code> field — the adapter passes
+        it straight through to <code>anime()</code>. CSS-style strings like
+        <code>'ease-in-out'</code> are also accepted and mapped to a sensible default curve.
+      </p>
+    </section>
+
+    <section>
+      <h2>Working example: photo gallery drill-down</h2>
+      <pre>const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'gallery',
+  views: { gallery, photo },
+  transitions: {
+    driver: 'anime',
+    duration: '700ms',
+    ease: 'easeOutExpo',
+    effects: ['blur(3px) brightness(0.8)', 'blur(8px) brightness(0.4)'],
+  },
+})
+
+await app.init()</pre>
+      <p>
+        Because the driver interpolates computed matrices, each photo zooms into its exact
+        bounding rectangle without the typical "pop" you get when transform-origin changes
+        late in the animation.
+      </p>
+    </section>
+
+    <section>
+      <h2>What the adapter actually does</h2>
+      <ul>
+        <li>Calls <code>showViews()</code> on current, previous, and grandparent views.</li>
+        <li>Uses <code>readComputedMatrix()</code> to capture the start and end matrix for each view
+        (this forces a single layout read — see the
+        <a href="../views/api.html">API reference</a> for the timing).</li>
+        <li>Drives Anime.js with a <code>{ progress }</code> object and applies
+        <code>matrixToString(interpolateMatrix(from, to, t))</code> to each view's
+        <code>transform</code> on every tick.</li>
+        <li>On <code>complete</code>, applies the canonical end state via
+        <code>applyZoomInEndState()</code> / <code>applyZoomOutPreviousState()</code> and calls
+        <code>onComplete()</code>.</li>
+      </ul>
+      <p>
+        Lateral transitions are passed to <code>runLateralInstant()</code> — Zumly's lateral
+        slide is geometric, not curved, so adding Anime.js to it adds no value.
+      </p>
+    </section>
+
+    <section>
+      <h2>Direct import (advanced)</h2>
+      <pre>import Zumly, { animeTransition } from 'zumly'
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, detail },
+  transitions: {
+    driver: animeTransition,
+    duration: '500ms',
+  },
+})</pre>
+      <p>
+        Wrapping or extending the function works the same way as for any built-in driver. See
+        <a href="custom.html">writing a custom driver</a> for the full <code>spec</code> shape.
+      </p>
+    </section>
+
+    <section>
+      <h2>Common gotchas</h2>
+      <ul>
+        <li>
+          <strong>Anime.js must be on <code>globalThis</code> before Zumly initialises.</strong>
+          The adapter checks at construction time. If Anime.js is missing, the driver warns once
+          and falls through to <code>onComplete()</code> — views still navigate, just instantly.
+        </li>
+        <li>
+          <strong>Matrix interpolation forces one extra layout read</strong> per transition. On
+          modern devices this is invisible; on very low-end mobile, the <code>gsap</code> or
+          <code>css</code> drivers (which animate the transform string directly) are slightly
+          cheaper.
+        </li>
+        <li>
+          <strong>Keep custom transforms off the views during a zoom.</strong> The driver writes
+          a full <code>matrix(...)</code> on every tick; concurrent inline transforms will be
+          overwritten.
+        </li>
+      </ul>
+    </section>
+
+    <div class="final-cta">
+      <h3>See the engine in action</h3>
+      <p>Try the live demo to see Zumly's zoom flow — then swap to the Anime.js driver in your own project for matrix-interpolated transitions.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Drivers</h4>
+        <ul>
+          <li><a href="gsap.html">GSAP</a></li>
+          <li>Anime.js (you are here)</li>
+          <li><a href="motion.html">Motion</a></li>
+          <li><a href="custom.html">Custom driver</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

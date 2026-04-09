@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>What is a Zooming User Interface (ZUI)? — Zumly</title>
+  <meta name="description" content="A Zooming User Interface (ZUI) replaces page-swapping with spatial zoom into the element you care about. The history, the principles, and how Zumly implements one for the web." />
+  <meta name="keywords" content="zooming user interface, ZUI, what is a zui, spatial navigation, zoom interface, focus-driven ui, zumly zui" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/zui.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="What is a Zooming User Interface (ZUI)? — Zumly" />
+  <meta property="og:description" content="A Zooming User Interface (ZUI) replaces page-swapping with spatial zoom into the element you care about. The history, the principles, and how Zumly implements one for the web." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/zui.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "What is a Zooming User Interface (ZUI)?",
+    "description": "A Zooming User Interface (ZUI) replaces page-swapping with spatial zoom into the element you care about. The history, the principles, and how Zumly implements one for the web.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/learn/zui.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "Thing", "name": "Zooming User Interface" },
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" }
+    ],
+    "proficiencyLevel": "Beginner"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Learn</a><span>›</span>What is a ZUI?
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Learn · Concept</span>
+      <h1 class="hero-title">What is a ZUI?</h1>
+      <p class="hero-sub">
+        A Zooming User Interface (ZUI) is an interface where navigation happens in <em>space</em>
+        rather than across pages. Instead of swapping one screen for another, you zoom into the
+        element you care about — and the rest of the world keeps existing around it.
+      </p>
+      <div class="cta-row">
+        <a href="../" class="cta-primary">See it in action &rarr;</a>
+        <a href="depth-navigation.html" class="cta-secondary">Depth navigation &rarr;</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>The shortest possible definition</h2>
+      <p>
+        In a flat UI, the navigation primitive is "go to a different page." In a ZUI, the
+        navigation primitive is "zoom into <strong>that thing right there</strong>." Whatever
+        you click becomes the new viewport — visually, semantically, and as the new "you are
+        here" of your app.
+      </p>
+      <p>
+        That single change does a lot of work. It tells the user where they came from (you can
+        still see the parent receding behind the new view), it tells them what they zoomed into
+        (the trigger element <em>becomes</em> the next view), and it gives them an obvious way
+        back: zoom out.
+      </p>
+    </section>
+
+    <section>
+      <h2>A short history</h2>
+      <p>
+        The idea predates the web. In 1993 Ken Perlin and David Fox built <strong>Pad</strong>, a
+        prototype of an "infinite zoomable surface" at NYU. Pad++ followed in 1994, then Jazz and
+        Piccolo at the University of Maryland. Microsoft Research's <strong>Pivot</strong> (2010)
+        and <strong>Deep Zoom</strong> brought the idea to mainstream tools. Prezi shipped a
+        commercial ZUI for presentations in 2009.
+      </p>
+      <p>
+        The web caught up slowly. CSS transforms made smooth zoom cheap on every device, but
+        nobody packaged the navigation model into a reusable engine — most "zoomable" demos were
+        single-purpose. <a href="../">Zumly</a> exists to change that: a small, framework-agnostic
+        ZUI engine you can drop into any app, with a clean view contract and pluggable
+        transition drivers.
+      </p>
+    </section>
+
+    <section>
+      <h2>Three principles that define a ZUI</h2>
+
+      <h3>1. Continuous spatial context</h3>
+      <p>
+        At any moment in a flat-page app, you see one screen. In a ZUI, you see the focused
+        view <em>and</em> a hint of where it sits inside its parent. Even mid-transition, the
+        previous view is still on the canvas (often dimmed and blurred) so the user understands
+        the spatial relationship between where they were and where they're going.
+      </p>
+
+      <h3>2. The trigger is the destination</h3>
+      <p>
+        When you click a card to "open" it, the card itself zooms up to fill the viewport — it
+        doesn't disappear and get replaced by a totally different page. This collapses two
+        cognitive steps (which page am I leaving? which page am I arriving at?) into one
+        spatial step.
+      </p>
+
+      <h3>3. Zoom out is the universal back</h3>
+      <p>
+        There is no "Back" button in the conventional sense. Zooming out reverses the trigger
+        animation and returns you to the previous view, with all the surrounding context intact.
+        Users learn this in seconds because it matches how zoom works everywhere else (maps,
+        photos, microscopes).
+      </p>
+    </section>
+
+    <section>
+      <h2>Where ZUIs shine</h2>
+      <ul>
+        <li><strong>Hierarchical data</strong> — dashboards, file systems, org charts. Anywhere
+        the natural mental model is "drill into a subtree."</li>
+        <li><strong>Spatially organised content</strong> — IoT and home control (rooms &rarr;
+        devices &rarr; settings), maps and floor plans, factory and process diagrams.</li>
+        <li><strong>Focus-heavy UIs</strong> — kiosks, signage, vehicle dashboards. Anywhere
+        attention should be on one thing at a time but context matters.</li>
+        <li><strong>Configurators and editors</strong> — product builders, design tools, CAD
+        viewers — where users want to zoom into a part, edit it, and pop back without losing
+        their place.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Where ZUIs are the wrong tool</h2>
+      <p>
+        ZUIs aren't a universal upgrade. They're a poor fit for:
+      </p>
+      <ul>
+        <li><strong>Linear reading flows</strong> — long-form articles, blog posts, documentation
+        sites. There's nothing to zoom <em>into</em>.</li>
+        <li><strong>Forms and transactional flows</strong> — checkout, sign-up, settings pages.
+        Users want a flat list of fields, not a spatial drill-down.</li>
+        <li><strong>SEO-critical surfaces</strong> — every URL needs its own crawlable HTML page,
+        and a ZUI built on a hash router collapses many states into one URL. Use static pages
+        for the public surface and a ZUI for the authenticated app underneath.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>How Zumly builds a ZUI</h2>
+      <p>
+        Zumly's job is the small, hard core of any ZUI: tracking which view is current, which
+        is the parent, and which element triggered the zoom; computing the geometry that maps
+        the trigger's bounding box to the canvas; and running a transition that animates from
+        one to the other. You bring the views — Zumly makes them spatial.
+      </p>
+      <p>
+        Each view is a self-contained DOM subtree (or a mounted React/Vue/Svelte/Angular
+        component). Triggers are any element you mark with <code>class="zoom-me"</code> and
+        <code>data-to="targetView"</code>. The engine handles depth tracking, lateral
+        same-level navigation, and the transition driver (CSS, WAAPI, GSAP, Anime.js, Motion,
+        or your own).
+      </p>
+      <div class="callout">
+        <strong>Read next:</strong> <a href="depth-navigation.html">Depth navigation</a> —
+        how Zumly tracks the zoom hierarchy and what "current view, previous view, last view"
+        means in practice.
+      </div>
+    </section>
+
+    <div class="final-cta">
+      <h3>See a real ZUI</h3>
+      <p>The Zumly home page is itself a ZUI demo — zoom into the API card, the showcases, or the playground to feel how it works.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Learn</h4>
+        <ul>
+          <li>What is a ZUI? (you are here)</li>
+          <li><a href="depth-navigation.html">Depth navigation</a></li>
+          <li><a href="lateral-navigation.html">Lateral navigation</a></li>
+          <li><a href="focus-driven-ui.html">Focus-driven UI</a></li>
+          <li><a href="zoom-ui-vs-canvas-pan.html">Zoom UI vs canvas pan</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

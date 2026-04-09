@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Write a Zumly transition driver — Custom zoom animations</title>
+  <meta name="description" content="Build your own Zumly transition driver. The full spec object, the runTransition contract, the helpers, and a minimal complete example you can copy." />
+  <meta name="keywords" content="zumly custom driver, zumly transition driver, runTransition zumly, custom zoom transition, zumly driver api, write zumly driver" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/drivers/custom.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Write a Zumly transition driver — Custom zoom animations" />
+  <meta property="og:description" content="Build your own Zumly transition driver. The full spec object, the runTransition contract, the helpers, and a minimal complete example you can copy." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/drivers/custom.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Write a Zumly transition driver — Custom zoom animations",
+    "description": "Build your own Zumly transition driver. The full spec object, the runTransition contract, the helpers, and a minimal complete example you can copy.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/drivers/custom.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" }
+    ],
+    "proficiencyLevel": "Intermediate"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Drivers</a><span>›</span>Custom driver
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Driver · Custom</span>
+      <h1 class="hero-title">Write a Zumly driver</h1>
+      <p class="hero-sub">
+        A Zumly transition driver is a single function: <code>runTransition(spec, onComplete)</code>.
+        The engine computes <em>what</em> moves where; your driver decides <em>how</em>. This page
+        is the contract — the spec shape, the rules, the helpers, and a minimal driver you can
+        copy and modify.
+      </p>
+      <div class="cta-row">
+        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
+        <a href="https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md" class="cta-secondary" target="_blank" rel="noopener">Full reference</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>When to write your own driver</h2>
+      <p>
+        Zumly already ships six built-in drivers — <code>css</code> (default), <code>waapi</code>,
+        <code>none</code>, <code>gsap</code>, <code>anime</code>, and <code>motion</code>. Reach for
+        a custom driver only when:
+      </p>
+      <ul>
+        <li>You want a transition shape the bundled drivers don't express — for example, a
+        Lottie playback synced to the zoom progress, a WebGL ripple, or a parallax fade.</li>
+        <li>You're integrating with an animation engine that isn't on the built-in list (Theatre.js,
+        Rive, Lottie, etc.) and you'd rather write 50 lines of glue than fork the package.</li>
+        <li>You want to <strong>wrap</strong> a built-in driver — for example, log every transition
+        or compose two drivers — by importing the function and calling it from your wrapper.</li>
+      </ul>
+    </section>
+
+    <section id="quick-start">
+      <h2>Quick start</h2>
+      <p>
+        A driver is a function. Pass it to the constructor as <code>transitions.driver</code>:
+      </p>
+      <pre>function myDriver(spec, onComplete) {
+  // Animate based on spec.type, then call onComplete()
+  onComplete()
+}
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, detail },
+  transitions: {
+    driver: myDriver,
+    duration: '500ms',
+    ease: 'ease-in-out',
+  },
+})
+
+await app.init()</pre>
+      <p>
+        That's it. Zumly wraps your function in a tiny adapter and calls it on every zoom-in,
+        zoom-out, and lateral transition.
+      </p>
+    </section>
+
+    <section>
+      <h2>The <code>spec</code> object</h2>
+      <p>Your function receives a single object with everything you need:</p>
+      <pre>{
+  type: 'zoomIn' | 'zoomOut' | 'lateral',
+  currentView:  HTMLElement,         // incoming (zoom-in) or outgoing (zoom-out)
+  previousView: HTMLElement,         // the parent
+  lastView:     HTMLElement | null,  // grandparent (null at depth ≤ 2)
+  currentStage: { views: [...] },    // pre-computed transforms (see below)
+  duration:     '600ms',
+  ease:         'ease-in-out',
+  canvas:       HTMLElement,         // canvas container (zoom-out and lateral)
+}</pre>
+      <p>
+        <code>currentStage.views</code> is an array indexed by role:
+        <code>views[0]</code> is the current view, <code>views[1]</code> is the previous view,
+        <code>views[2]</code> is the grandparent (when depth &gt; 2). Each entry has:
+      </p>
+      <pre>{
+  viewName: 'detail',
+  backwardState: {
+    origin:    '125px 100px',
+    transform: 'translate(50px, 60px) scale(0.25)',
+    duration:  '500ms',
+    ease:      'ease-in-out',
+  },
+  forwardState: {
+    origin:    '125px 100px',
+    transform: 'translate(100px, 50px)',
+    duration:  '500ms',
+    ease:      'ease-in-out',
+  }
+}</pre>
+      <p>
+        For <strong>zoom-in</strong>, animate from <code>backwardState.transform</code> to
+        <code>forwardState.transform</code>. For <strong>zoom-out</strong>, animate the other
+        direction.
+      </p>
+    </section>
+
+    <section>
+      <h2>The two rules</h2>
+
+      <h3>1. Always call <code>onComplete()</code> exactly once</h3>
+      <p>
+        The engine sets <code>blockEvents = true</code> before calling your driver and only
+        resets it inside <code>onComplete</code>. If you forget, the UI freezes permanently.
+        Use the <code>createFinishGuard</code> helper to make this impossible to get wrong:
+      </p>
+      <pre>import {
+  createFinishGuard,
+  parseDurationMs,
+  SAFETY_BUFFER_MS,
+} from 'zumly/driver-helpers'
+
+function runTransition(spec, onComplete) {
+  const ms = parseDurationMs(spec.duration)
+
+  const { finish } = createFinishGuard(() =&gt; {
+    // cleanup work…
+    onComplete()
+  }, ms + SAFETY_BUFFER_MS)
+
+  myAnimation.onfinish = finish
+  // If the animation cancels, the safety timer calls finish() anyway.
+}</pre>
+
+      <h3>2. Apply the final DOM state</h3>
+      <p>
+        When animation ends, the DOM must reflect the final state — the engine does NOT do this
+        for you. Use the shared helpers:
+      </p>
+      <pre>import {
+  showViews,
+  applyZoomInEndState,
+  applyZoomOutPreviousState,
+  applyZoomOutLastState,
+  removeViewFromCanvas,
+} from 'zumly/driver-helpers'
+
+// Before animating — make views visible:
+showViews(spec.currentView, spec.previousView, spec.lastView)
+
+// After zoom-in completes:
+applyZoomInEndState(currentView, currentStage)
+applyZoomInEndState(previousView, currentStage)
+if (lastView) applyZoomInEndState(lastView, currentStage)
+
+// After zoom-out completes:
+removeViewFromCanvas(currentView, canvas)
+applyZoomOutPreviousState(previousView, currentStage.views[1].backwardState)
+if (lastView) applyZoomOutLastState(lastView, currentStage.views[2].backwardState)</pre>
+    </section>
+
+    <section>
+      <h2>Available helpers</h2>
+      <p>Imported from <code>zumly/driver-helpers</code>:</p>
+      <ul>
+        <li><code>parseDurationMs(duration)</code> — parse <code>'1s'</code>/<code>'500ms'</code>/number → ms</li>
+        <li><code>parseDurationSec(duration)</code> — same but returns seconds</li>
+        <li><code>showViews(...elements)</code> — remove the <code>hide</code> class and prime <code>contentVisibility</code></li>
+        <li><code>applyZoomInEndState(el, stage)</code> — final classes + transforms after zoom-in</li>
+        <li><code>applyZoomOutPreviousState(el, state)</code> — final state for previous view after zoom-out</li>
+        <li><code>applyZoomOutLastState(el, state)</code> — final state for grandparent after zoom-out</li>
+        <li><code>removeViewFromCanvas(el, canvas)</code> — safe removal that handles wrapped elements</li>
+        <li><code>runLateralInstant(spec, onComplete)</code> — instant lateral transition (no animation)</li>
+        <li><code>createFinishGuard(cleanup, timeoutMs)</code> — once-only finish + safety timeout</li>
+        <li><code>SAFETY_BUFFER_MS</code> — default safety buffer (150ms)</li>
+      </ul>
+      <p>For drivers that interpolate computed matrices (when transform-origin varies between states):</p>
+      <ul>
+        <li><code>readComputedMatrix(el, origin, transform)</code> — read the browser-computed matrix (forces one reflow)</li>
+        <li><code>interpolateMatrix(from, to, t)</code> — lerp between two matrix objects</li>
+        <li><code>matrixToString(m)</code> &amp; <code>parseMatrixString(str)</code> — round-trip conversion</li>
+        <li><code>identityMatrix()</code> &amp; <code>lerp(a, b, t)</code> — primitives</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Minimal complete driver: opacity crossfade</h2>
+      <p>
+        Here's a complete custom driver — about 50 lines — that does an opacity crossfade
+        instead of a zoom. Copy it as a starting point and replace the animation body with
+        whatever effect you want.
+      </p>
+      <pre>import {
+  parseDurationMs,
+  showViews,
+  applyZoomInEndState,
+  applyZoomOutPreviousState,
+  applyZoomOutLastState,
+  removeViewFromCanvas,
+  runLateralInstant,
+  createFinishGuard,
+  SAFETY_BUFFER_MS,
+} from 'zumly/driver-helpers'
+
+export function runTransition(spec, onComplete) {
+  const { type, currentView, previousView, lastView, currentStage, duration, canvas } = spec
+
+  if (type === 'lateral') {
+    runLateralInstant(spec, onComplete)
+    return
+  }
+
+  const ms = parseDurationMs(duration)
+  showViews(currentView, previousView, lastView)
+
+  if (type === 'zoomIn') {
+    currentView.style.opacity = '0'
+    currentView.style.transition = `opacity ${ms}ms ease`
+    previousView.style.transition = `opacity ${ms}ms ease`
+
+    requestAnimationFrame(() =&gt; {
+      currentView.style.opacity = '1'
+      previousView.style.opacity = '0.3'
+    })
+
+    const { finish } = createFinishGuard(() =&gt; {
+      currentView.style.transition = ''
+      previousView.style.transition = ''
+      previousView.style.opacity = ''
+      applyZoomInEndState(currentView, currentStage)
+      applyZoomInEndState(previousView, currentStage)
+      if (lastView) applyZoomInEndState(lastView, currentStage)
+      onComplete()
+    }, ms + SAFETY_BUFFER_MS)
+
+    currentView.addEventListener('transitionend', finish, { once: true })
+    return
+  }
+
+  if (type === 'zoomOut') {
+    currentView.style.transition = `opacity ${ms}ms ease`
+    requestAnimationFrame(() =&gt; {
+      currentView.style.opacity = '0'
+      previousView.style.opacity = '1'
+    })
+
+    const { finish } = createFinishGuard(() =&gt; {
+      currentView.style.transition = ''
+      removeViewFromCanvas(currentView, canvas)
+      applyZoomOutPreviousState(previousView, currentStage.views[1].backwardState)
+      if (lastView) applyZoomOutLastState(lastView, currentStage.views[2].backwardState)
+      onComplete()
+    }, ms + SAFETY_BUFFER_MS)
+
+    currentView.addEventListener('transitionend', finish, { once: true })
+    return
+  }
+
+  onComplete()
+}</pre>
+    </section>
+
+    <section>
+      <h2>Wrapping a built-in driver</h2>
+      <p>
+        You don't have to start from zero. Every built-in driver is exported by name; wrap one
+        to add logging, analytics, or compose with another effect:
+      </p>
+      <pre>import Zumly, { gsapTransition } from 'zumly'
+
+function loggedDriver(spec, onComplete) {
+  console.log('zumly transition', spec.type, spec.currentStage.views[0].viewName)
+  gsapTransition(spec, onComplete)
+}
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, detail },
+  transitions: { driver: loggedDriver, duration: '500ms' },
+})</pre>
+    </section>
+
+    <section>
+      <h2>Testing your driver</h2>
+      <p>
+        The <code>'none'</code> driver is the canonical reference: it applies the final state
+        instantly and calls <code>onComplete()</code> synchronously. Your driver should produce
+        the same final DOM state, just animated. Key invariants to verify:
+      </p>
+      <ul>
+        <li>After zoom-in, <code>.is-current-view</code> exists with the correct <code>dataset.viewName</code>.</li>
+        <li>After zoom-out, the previous view is now <code>.is-current-view</code> and the old current is removed from the DOM.</li>
+        <li><code>onComplete()</code> is always called, even if elements are removed mid-animation.</li>
+        <li>The engine resets <code>blockEvents</code> in its own <code>onComplete</code> wrapper, but only if you call it.</li>
+      </ul>
+      <pre>const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, detail },
+  transitions: { driver: myDriver, duration: '100ms' },
+})
+await app.init()
+await app.zoomTo('detail')
+expect(app.getCurrentViewName()).toBe('detail')
+app.back()
+expect(app.getCurrentViewName()).toBe('home')</pre>
+    </section>
+
+    <div class="final-cta">
+      <h3>Read the full reference</h3>
+      <p>The complete driver API — every spec field, every helper, every edge case — lives in DRIVER_API.md in the repo.</p>
+      <a href="https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md" class="cta-primary" target="_blank" rel="noopener">Open DRIVER_API.md &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Drivers</h4>
+        <ul>
+          <li><a href="gsap.html">GSAP</a></li>
+          <li><a href="anime.html">Anime.js</a></li>
+          <li><a href="motion.html">Motion</a></li>
+          <li>Custom driver (you are here)</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

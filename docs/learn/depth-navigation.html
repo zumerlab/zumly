@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Depth navigation in Zumly — Drilling into hierarchical UIs</title>
+  <meta name="description" content="Depth navigation is the zoom-in / zoom-out axis of a ZUI. How Zumly tracks current, previous, and grandparent views — and how the zoom hierarchy maps to your code." />
+  <meta name="keywords" content="depth navigation, zoom hierarchy, drill down ui, hierarchical ui, parent view zumly, zoom in zoom out, zui depth" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/depth-navigation.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Depth navigation in Zumly — Drilling into hierarchical UIs" />
+  <meta property="og:description" content="Depth navigation is the zoom-in / zoom-out axis of a ZUI. How Zumly tracks current, previous, and grandparent views — and how the zoom hierarchy maps to your code." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/depth-navigation.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Depth navigation in Zumly — Drilling into hierarchical UIs",
+    "description": "Depth navigation is the zoom-in / zoom-out axis of a ZUI. How Zumly tracks current, previous, and grandparent views — and how the zoom hierarchy maps to your code.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/learn/depth-navigation.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "Thing", "name": "Hierarchical Navigation" },
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" }
+    ],
+    "proficiencyLevel": "Beginner"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Learn</a><span>›</span>Depth navigation
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Learn · Concept</span>
+      <h1 class="hero-title">Depth navigation</h1>
+      <p class="hero-sub">
+        Depth navigation is the zoom-in / zoom-out axis of a ZUI — the way you drill from a
+        high-level view into one of its children. In Zumly, every depth move is a single
+        primitive: <code>zoomTo(viewName)</code> takes you in, <code>back()</code> takes you out.
+      </p>
+      <div class="cta-row">
+        <a href="lateral-navigation.html" class="cta-primary">Lateral navigation &rarr;</a>
+        <a href="zui.html" class="cta-secondary">What is a ZUI?</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>The zoom hierarchy</h2>
+      <p>
+        Every Zumly app has, at any given moment, a stack of views ordered by depth. At depth 1
+        you're looking at the initial view. Click a trigger and you're at depth 2 — the
+        triggered view fills the canvas, the initial view is still there as the parent. Click
+        again and you're at depth 3, and so on.
+      </p>
+      <p>
+        The engine keeps three views alive on the canvas at the deepest practical depth:
+      </p>
+      <ul>
+        <li><strong>Current view</strong> — the one you're focused on, filling the viewport.</li>
+        <li><strong>Previous view</strong> — the parent, scaled down and tucked behind / around
+        the current view. Visible enough to give context, faded enough to stay out of the way.</li>
+        <li><strong>Last view</strong> — the grandparent, kept on the canvas so a zoom-out animation
+        has somewhere to land. Only present at depth &gt; 2.</li>
+      </ul>
+      <p>
+        Anything older than the grandparent is removed from the DOM. This isn't a limitation —
+        it's a deliberate choice that keeps memory bounded no matter how deep your zoom stack
+        gets, while still preserving the spatial illusion that "everything is still there."
+      </p>
+    </section>
+
+    <section>
+      <h2>How a zoom-in actually works</h2>
+      <p>
+        When the user clicks an element with <code>class="zoom-me"</code> and
+        <code>data-to="targetView"</code>, Zumly:
+      </p>
+      <ul>
+        <li>Reads the trigger element's bounding rectangle relative to the current view.</li>
+        <li>Computes the transform that would scale the current view so the trigger fills the
+        viewport.</li>
+        <li>Renders the target view as a fresh DOM subtree, sized to match where the trigger
+        used to be.</li>
+        <li>Hands off to the active <a href="../drivers/custom.html">transition driver</a>, which
+        animates the current view <em>up</em> to fill the viewport while the parent slides out
+        and back to make room.</li>
+        <li>On completion, marks the new view as <code>.is-current-view</code> and updates the
+        depth tracker.</li>
+      </ul>
+      <p>
+        Crucially, the trigger element's screen position is the <strong>start</strong> of the
+        animation — that's why the destination feels physically connected to where the user
+        clicked. There's no jarring page transition; the spatial relationship is preserved.
+      </p>
+    </section>
+
+    <section>
+      <h2>How a zoom-out works</h2>
+      <p>
+        Zoom-out is the reverse, with one important detail: the engine has to recompute the
+        layout for the previous view because the canvas may have been resized, the parent's
+        layout may have changed, or the user may have rotated their device since the zoom-in
+        happened. Zumly batches all those reads in a single layout pass before handing off to
+        the driver — see <a href="../views/api.html">the API reference</a> for the full story.
+      </p>
+      <p>
+        After the animation, the current view is removed from the DOM, the previous view
+        becomes the new current, and the grandparent (if any) is promoted to "previous."
+      </p>
+    </section>
+
+    <section>
+      <h2>Why depth, not URLs?</h2>
+      <p>
+        A traditional flat-page app uses URLs as the navigation primitive. URLs are great for
+        sharing, indexing, and remembering — but they're terrible at expressing
+        <em>spatial relationships</em>. The URL <code>/dashboard/region/sensor-42</code> tells
+        you the path through the hierarchy, but it doesn't tell you that "sensor 42" is the
+        thing in the bottom-right corner of "region 7" which is the green tile in the dashboard.
+      </p>
+      <p>
+        Depth navigation expresses that spatial relationship as the navigation primitive itself.
+        The trade-off is that <strong>states are not addressable</strong> — there's no URL for
+        "sensor 42 is currently focused" because the focused state depends on which trigger
+        element you came from. That's a feature, not a bug: it means the back button always
+        does the right thing (zoom out, no matter how you got here), and you can't accidentally
+        deep-link into a state where the parent context is missing.
+      </p>
+      <div class="callout">
+        <strong>For SEO:</strong> if you want crawlable, shareable URLs for parts of a Zumly
+        app, build them as <em>static HTML pages</em> alongside the SPA — exactly the pattern
+        this docs site uses. The static pages link <em>to</em> the SPA home, not into a
+        specific zoom state.
+      </div>
+    </section>
+
+    <section>
+      <h2>Three depth limit isn't a limit</h2>
+      <p>
+        Zumly only keeps three views on the canvas at once, but your zoom stack can be
+        arbitrarily deep. The engine treats older ancestors as "off-canvas but logically still
+        in the stack" — back() walks the full stack, the engine just doesn't render ancestors
+        the user can't see.
+      </p>
+      <p>
+        In practice, real ZUI apps rarely go past depth 4 or 5 anyway. If you find yourself
+        building a 10-level drill-down, that's usually a hint that one of those levels should
+        be a <a href="lateral-navigation.html">lateral move</a> instead — same depth, different
+        sibling.
+      </p>
+    </section>
+
+    <div class="final-cta">
+      <h3>See depth navigation in action</h3>
+      <p>The Zumly demo lets you drill from the home view into the API reference, then deeper into individual sections. Watch the parent recede as you go.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Learn</h4>
+        <ul>
+          <li><a href="zui.html">What is a ZUI?</a></li>
+          <li>Depth navigation (you are here)</li>
+          <li><a href="lateral-navigation.html">Lateral navigation</a></li>
+          <li><a href="focus-driven-ui.html">Focus-driven UI</a></li>
+          <li><a href="zoom-ui-vs-canvas-pan.html">Zoom UI vs canvas pan</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

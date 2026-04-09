@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Zumly with Vue — Zoom navigation for Vue 3 apps</title>
+  <meta name="description" content="Add zoom-based navigation to any Vue 3 application with Zumly. Framework-agnostic ZUI engine that mounts Vue components into zoomable views." />
+  <meta name="keywords" content="zumly vue, zoom navigation vue, ZUI vue, vue zoom interface, vue 3 spatial navigation, zooming user interface vue" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/integrations/vue.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Zumly with Vue — Zoom navigation for Vue 3 apps" />
+  <meta property="og:description" content="Add zoom-based navigation to any Vue 3 application with Zumly. Framework-agnostic ZUI engine that mounts Vue components into zoomable views." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/integrations/vue.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Zumly with Vue — Zoom navigation for Vue 3 apps",
+    "description": "Add zoom-based navigation to any Vue 3 application with Zumly. Framework-agnostic ZUI engine that mounts Vue components into zoomable views.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/integrations/vue.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" },
+      { "@type": "SoftwareApplication", "name": "Vue.js" }
+    ],
+    "proficiencyLevel": "Beginner"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Integrations</a><span>›</span>Vue
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Integration · Vue</span>
+      <h1 class="hero-title">Zumly with Vue</h1>
+      <p class="hero-sub">
+        Add zoom-based navigation to any Vue 3 application. Zumly is a framework-agnostic
+        Zooming User Interface (ZUI) engine — your Vue components mount into zoomable views
+        with no plugin, no Vue-specific bridge, and no Zumly-aware code in your Single File
+        Components.
+      </p>
+      <div class="cta-row">
+        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
+        <a href="https://github.com/zumerlab/zumly" class="cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>Why use Zumly with Vue?</h2>
+      <p>
+        Vue handles your component tree; Zumly handles the spatial relationship <em>between</em>
+        trees. Each Zumly view is a self-contained DOM subtree where you can call
+        <code>createApp(...).mount(target)</code> exactly the same way you'd bootstrap Vue into
+        any other container. Zumly takes care of the zoom transition, the focus origin, and the
+        navigation stack.
+      </p>
+      <p>
+        That means Zumly doesn't replace Vue Router or compete with Pinia. It's an orthogonal
+        layer for <strong>spatial, focus-driven navigation</strong>: instead of swapping URLs in
+        a flat space, users zoom into a card, a row, an item, and the Vue component for that
+        view renders inside the zoomed-in target.
+      </p>
+      <p>Common use cases for Zumly + Vue:</p>
+      <ul>
+        <li>Dashboards with hierarchical drill-down (KPIs &rarr; charts &rarr; raw data)</li>
+        <li>IoT and home control panels (rooms &rarr; devices &rarr; settings)</li>
+        <li>Settings UIs that zoom into nested sections instead of pushing routes</li>
+        <li>Kiosk and signage interfaces where focus is the primary navigation metaphor</li>
+        <li>Product configurators with zoomable detail levels</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Install</h2>
+      <pre>npm install zumly</pre>
+      <p>Zumly has zero dependencies. The package ships ESM, CJS, and a UMD build for plain HTML.</p>
+    </section>
+
+    <section id="quick-start">
+      <h2>Quick start</h2>
+      <p>
+        The simplest pattern: declare your views as <strong>function views</strong>. Zumly hands
+        you a fresh <code>target</code> element, and you mount a Vue app into it with
+        <code>createApp</code>.
+      </p>
+      <pre>import Zumly from 'zumly'
+import 'zumly/css'
+import { createApp } from 'vue'
+import Dashboard from './Dashboard.vue'
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: {
+    home: '&lt;div class="z-view"&gt;&lt;div class="zoom-me" data-to="dashboard" data-id="42"&gt;Open dashboard&lt;/div&gt;&lt;/div&gt;',
+    dashboard: ({ target, props }) =&gt; {
+      createApp(Dashboard, { id: props.id }).mount(target)
+    }
+  }
+})
+
+await app.init()</pre>
+      <p>
+        Any element inside a view with class <code>zoom-me</code> and a <code>data-to</code>
+        attribute becomes a zoom trigger. Data attributes on the trigger
+        (like <code>data-id="42"</code>) get passed into your Vue component as
+        <code>props.id</code>.
+      </p>
+    </section>
+
+    <section>
+      <h2>Working example: Dashboard with drill-down</h2>
+      <p>
+        A two-level pattern where a list of items zooms into a detail view, with the Vue
+        component receiving the selected item's id from the trigger.
+      </p>
+
+      <h3>App.vue</h3>
+      <pre>&lt;script setup&gt;
+import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { createApp } from 'vue'
+import Zumly from 'zumly'
+import 'zumly/css'
+
+import ItemList from './ItemList.vue'
+import ItemDetail from './ItemDetail.vue'
+
+const canvas = ref(null)
+let zumly
+
+onMounted(async () =&gt; {
+  zumly = new Zumly({
+    mount: canvas.value,
+    initialView: 'list',
+    views: {
+      list: ({ target }) =&gt; {
+        createApp(ItemList).mount(target)
+      },
+      detail: ({ target, props }) =&gt; {
+        createApp(ItemDetail, { id: props.id }).mount(target)
+      }
+    },
+    transitions: {
+      duration: '600ms',
+      ease: 'cubic-bezier(.4,0,.2,1)',
+      effects: ['blur(4px) brightness(0.6)', 'blur(10px) brightness(0.3)']
+    }
+  })
+  await zumly.init()
+})
+
+onBeforeUnmount(() =&gt; zumly?.destroy())
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;div ref="canvas" class="zumly-canvas" style="height: 100vh"&gt;&lt;/div&gt;
+&lt;/template&gt;</pre>
+
+      <h3>ItemList.vue</h3>
+      <pre>&lt;script setup&gt;
+const items = [
+  { id: '1', name: 'Engine telemetry' },
+  { id: '2', name: 'Battery health' },
+  { id: '3', name: 'Brake system' }
+]
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;div class="z-view"&gt;
+    &lt;h1&gt;Subsystems&lt;/h1&gt;
+    &lt;div
+      v-for="item in items"
+      :key="item.id"
+      class="zoom-me"
+      data-to="detail"
+      :data-id="item.id"&gt;
+      {{ item.name }}
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</pre>
+
+      <h3>ItemDetail.vue</h3>
+      <pre>&lt;script setup&gt;
+defineProps(['id'])
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;div class="z-view"&gt;
+    &lt;h1&gt;Detail for {{ id }}&lt;/h1&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</pre>
+    </section>
+
+    <section>
+      <h2>Lifecycle and cleanup</h2>
+      <p>
+        Function views in Zumly are <strong>never cached</strong> — they resolve fresh each time
+        the user zooms in. That's the right behavior for Vue: every zoom-in creates a new Vue
+        application instance, every zoom-out unmounts it, and Vue's normal lifecycle hooks
+        (<code>onMounted</code>, <code>onBeforeUnmount</code>, etc.) run as expected.
+      </p>
+      <div class="callout">
+        <strong>Tip:</strong> If you need to keep a component instance alive across navigation
+        (for example, a chart that shouldn't re-fetch its data), use an <strong>object view</strong>
+        with <code>render()</code> and <code>mounted()</code> methods, and store your Vue app
+        instance in a closure variable instead of recreating it.
+      </div>
+    </section>
+
+    <section>
+      <h2>Sharing context (Pinia, Vue Router, plugins)</h2>
+      <p>
+        Pass your Pinia instance, router, or any Vue plugin to every view via
+        <code>componentContext</code> on the Zumly constructor. Zumly forwards it as
+        <code>context</code> to all function and object views, so each Vue app can install
+        the same plugins on bootstrap.
+      </p>
+      <pre>import { createPinia } from 'pinia'
+
+const pinia = createPinia()
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  componentContext: { pinia },
+  views: {
+    dashboard: ({ target, context }) =&gt; {
+      createApp(Dashboard)
+        .use(context.pinia)
+        .mount(target)
+    }
+  }
+})</pre>
+    </section>
+
+    <section>
+      <h2>TypeScript</h2>
+      <p>
+        Zumly ships TypeScript types out of the box. View functions are typed with the
+        <code>target</code>, <code>props</code>, and <code>context</code> parameters, so your
+        Vue mount code gets full IntelliSense.
+      </p>
+      <pre>import Zumly, { ViewFunction } from 'zumly'
+import { createApp } from 'vue'
+import Dashboard from './Dashboard.vue'
+
+const dashboard: ViewFunction = ({ target, props }) =&gt; {
+  createApp(Dashboard, { id: props.id as string }).mount(target)
+}</pre>
+    </section>
+
+    <section>
+      <h2>Common gotchas</h2>
+      <ul>
+        <li>
+          <strong>The <code>target</code> is a fresh <code>&lt;div&gt;</code></strong> created by
+          Zumly — don't try to mount into <code>document.body</code> or query for an existing
+          element. Just call <code>createApp(...).mount(target)</code>.
+        </li>
+        <li>
+          <strong>Don't forget the <code>z-view</code> class</strong> on your Single File
+          Component's root element. Zumly auto-adds it if missing, but being explicit avoids
+          surprises with CSS selectors.
+        </li>
+        <li>
+          <strong>Trigger data attributes become strings.</strong>
+          <code>data-id="42"</code> arrives as <code>props.id === "42"</code>, not as a number.
+          Cast or parse on the Vue side.
+        </li>
+        <li>
+          <strong>Each view gets its own <code>createApp</code> instance.</strong> If you depend
+          on a single global Pinia store or Vue Router, install them on every view via
+          <code>componentContext</code> rather than relying on a top-level app.
+        </li>
+      </ul>
+    </section>
+
+    <div class="final-cta">
+      <h3>See Zumly in action</h3>
+      <p>The full interactive demo runs the same engine described above — zoom into the API card, the showcases, or the playground.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Integrations</h4>
+        <ul>
+          <li><a href="react.html">React</a></li>
+          <li>Vue (you are here)</li>
+          <li><a href="svelte.html">Svelte</a></li>
+          <li><a href="angular.html">Angular</a></li>
+          <li><a href="orbit-css.html">Orbit CSS</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

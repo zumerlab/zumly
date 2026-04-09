@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Zumly Motion driver — Spring-curve zoom transitions with Motion.dev</title>
+  <meta name="description" content="Drive Zumly's zoom transitions through Motion (motion.dev). Spring eases, hardware-accelerated keyframes, and matrix-faithful intermediate frames." />
+  <meta name="keywords" content="zumly motion, motion.dev zoom transition, motion zui, framer motion zoom, motion driver, zumly transition driver" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/drivers/motion.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Zumly Motion driver — Spring-curve zoom transitions with Motion.dev" />
+  <meta property="og:description" content="Drive Zumly's zoom transitions through Motion (motion.dev). Spring eases, hardware-accelerated keyframes, and matrix-faithful intermediate frames." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/drivers/motion.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Zumly Motion driver — Spring-curve zoom transitions with Motion.dev",
+    "description": "Drive Zumly's zoom transitions through Motion (motion.dev). Spring eases, hardware-accelerated keyframes, and matrix-faithful intermediate frames.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/drivers/motion.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" },
+      { "@type": "SoftwareApplication", "name": "Motion" }
+    ],
+    "proficiencyLevel": "Beginner"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Drivers</a><span>›</span>Motion
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Driver · Motion</span>
+      <h1 class="hero-title">Zumly + Motion</h1>
+      <p class="hero-sub">
+        Drive Zumly's zoom-in, zoom-out, and lateral transitions through Motion (motion.dev)
+        — the modern successor to Popmotion and the engine behind Framer Motion. Spring curves,
+        hardware-accelerated keyframes, and matrix-faithful intermediate frames in one option.
+      </p>
+      <div class="cta-row">
+        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
+        <a href="https://github.com/zumerlab/zumly" class="cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>Why use the Motion driver?</h2>
+      <p>
+        Motion (motion.dev) is a tiny, modern animation library that compiles down to native
+        WAAPI calls where it can. Pick it for Zumly when you want:
+      </p>
+      <ul>
+        <li><strong>Spring physics</strong> as a first-class ease — natural, settled motion that
+        feels especially right for "snap into focus" zoom interactions.</li>
+        <li><strong>Hardware-accelerated keyframes</strong> via the underlying WAAPI bridge,
+        without having to write keyframe arrays yourself.</li>
+        <li><strong>Matrix-interpolated intermediate frames</strong> — like the Anime.js driver,
+        the Motion adapter interpolates the computed CSS matrix so transform-origin shifts don't
+        cause visual pops.</li>
+        <li><strong>Tiny payload</strong> — Motion's mini build is one of the smallest animation
+        libraries you can drop on a page.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Install</h2>
+      <p>The Motion adapter is bundled inside <code>zumly</code>. Add Motion as a global:</p>
+      <pre>npm install zumly</pre>
+      <pre>&lt;script src="https://cdn.jsdelivr.net/npm/motion@11/dist/motion.min.js"&gt;&lt;/script&gt;</pre>
+      <div class="callout">
+        <strong>Bundler users:</strong> if you import Motion from npm, assign it to
+        <code>globalThis.Motion = Motion</code> (or <code>globalThis.motion</code>) before
+        constructing Zumly. The adapter looks for either name.
+      </div>
+    </section>
+
+    <section id="quick-start">
+      <h2>Quick start</h2>
+      <pre>import Zumly from 'zumly'
+import 'zumly/css'
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, room, device },
+  transitions: {
+    driver: 'motion',
+    duration: '600ms',
+    ease: 'ease-in-out',
+  },
+})
+
+await app.init()</pre>
+      <p>
+        That's it. Zumly resolves <code>'motion'</code> to the bundled Motion adapter and runs
+        each transition through Motion's <code>animate()</code> primitive.
+      </p>
+    </section>
+
+    <section>
+      <h2>Working example: spring-curve zoom</h2>
+      <p>
+        Spring curves are where Motion really earns its place in a Zumly app. Here a home-control
+        UI zooms into a room, then a device, with a slightly underdamped spring that lets the
+        view "settle" rather than slam to a stop.
+      </p>
+      <pre>const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, room, device },
+  transitions: {
+    driver: 'motion',
+    duration: '650ms',
+    ease: 'spring(1, 100, 12, 0)',  // mass, stiffness, damping, velocity
+    effects: ['blur(3px) brightness(0.7)', 'blur(7px) brightness(0.4)'],
+  },
+})
+
+await app.init()</pre>
+      <p>
+        Any string Motion accepts as an easing — including its named curves
+        (<code>'easeOut'</code>, <code>'circOut'</code>, etc.) and spring shorthand — is passed
+        through. Standard CSS easing strings are also accepted and mapped to a sensible default.
+      </p>
+    </section>
+
+    <section>
+      <h2>What the adapter actually does</h2>
+      <ul>
+        <li>Calls <code>showViews()</code> on current, previous, and grandparent views.</li>
+        <li>Reads start and end matrices via <code>readComputedMatrix()</code> for each view.</li>
+        <li>Drives a Motion <code>animate({ progress: 0 }, { progress: 1 }, ...)</code> tween and,
+        on each <code>onUpdate</code>, applies the interpolated matrix as the view's
+        <code>transform</code>.</li>
+        <li>On finish, calls the canonical
+        <code>applyZoomInEndState()</code> / <code>applyZoomOutPreviousState()</code> /
+        <code>applyZoomOutLastState()</code> helpers and then <code>onComplete()</code>.</li>
+      </ul>
+      <p>
+        Lateral transitions are handed off to <code>runLateralInstant()</code> — Zumly's lateral
+        slide is geometric and doesn't benefit from a curve.
+      </p>
+    </section>
+
+    <section>
+      <h2>Direct import (advanced)</h2>
+      <pre>import Zumly, { motionTransition } from 'zumly'
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, detail },
+  transitions: {
+    driver: motionTransition,
+    duration: '500ms',
+  },
+})</pre>
+      <p>
+        Wrapping the function lets you log every transition, compose with another animation, or
+        swap drivers per transition type. The full <code>spec</code> shape is documented in the
+        <a href="custom.html">custom driver guide</a>.
+      </p>
+    </section>
+
+    <section>
+      <h2>Common gotchas</h2>
+      <ul>
+        <li>
+          <strong>Motion v11 only.</strong> The bundled adapter targets the current Motion
+          (motion.dev) API. Older Popmotion or pre-11 Motion releases expose a different
+          surface and won't work without a wrapper.
+        </li>
+        <li>
+          <strong>Spring strings vs duration.</strong> When you pass a spring ease, Motion ignores
+          the explicit <code>duration</code> in favour of the spring's settling time. The
+          adapter still uses your declared duration to size its safety timeout, so very long
+          springs may need a higher duration value.
+        </li>
+        <li>
+          <strong>Matrix interpolation forces one extra layout read</strong> per transition. On
+          modern devices this is invisible; on very low-end mobile, the <code>css</code> driver
+          (which animates the transform string directly) is slightly cheaper.
+        </li>
+      </ul>
+    </section>
+
+    <div class="final-cta">
+      <h3>See the engine in action</h3>
+      <p>The live demo runs on the default CSS driver. Swap to Motion in your own app with one option to get spring curves and matrix-faithful frames.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Drivers</h4>
+        <ul>
+          <li><a href="gsap.html">GSAP</a></li>
+          <li><a href="anime.html">Anime.js</a></li>
+          <li>Motion (you are here)</li>
+          <li><a href="custom.html">Custom driver</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

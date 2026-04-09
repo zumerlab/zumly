@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Zoom UI vs canvas pan — Two different navigation models</title>
+  <meta name="description" content="Pannable canvases (Figma, Miro, Excalidraw) and zooming user interfaces (Zumly, Pad++, Prezi) look similar but solve different problems. The deep difference, with examples." />
+  <meta name="keywords" content="zoom ui vs canvas pan, infinite canvas, ZUI vs canvas, figma vs prezi, pannable canvas, zumly canvas, navigation models" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/zoom-ui-vs-canvas-pan.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Zoom UI vs canvas pan — Two different navigation models" />
+  <meta property="og:description" content="Pannable canvases (Figma, Miro, Excalidraw) and zooming user interfaces (Zumly, Pad++, Prezi) look similar but solve different problems. The deep difference, with examples." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/zoom-ui-vs-canvas-pan.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Zoom UI vs canvas pan — Two different navigation models",
+    "description": "Pannable canvases (Figma, Miro, Excalidraw) and zooming user interfaces (Zumly, Pad++, Prezi) look similar but solve different problems. The deep difference, with examples.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/learn/zoom-ui-vs-canvas-pan.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "Thing", "name": "Zooming User Interface" },
+      { "@type": "Thing", "name": "Infinite Canvas" },
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" }
+    ],
+    "proficiencyLevel": "Intermediate"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Learn</a><span>›</span>Zoom UI vs canvas pan
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Learn · Concept</span>
+      <h1 class="hero-title">Zoom UI vs canvas pan</h1>
+      <p class="hero-sub">
+        Pannable canvases (Figma, Miro, Excalidraw, tldraw) and zooming user interfaces
+        (Zumly, Pad++, Prezi) look superficially similar — both let you scale and move things —
+        but they solve completely different problems. Knowing which you need is the most
+        important architectural choice you'll make.
+      </p>
+      <div class="cta-row">
+        <a href="zui.html" class="cta-primary">What is a ZUI? &rarr;</a>
+        <a href="focus-driven-ui.html" class="cta-secondary">Focus-driven UI</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>The one-line difference</h2>
+      <p>
+        A <strong>pannable canvas</strong> is a single, flat coordinate space that the user can
+        navigate freely with pan + zoom. A <strong>ZUI</strong> is a discrete hierarchy of views
+        that the user navigates by zooming into elements that <em>become</em> the next view.
+      </p>
+      <p>
+        In a canvas, position and zoom are <em>continuous</em>. In a ZUI, position and zoom are
+        <em>states</em> — and the engine animates between them.
+      </p>
+    </section>
+
+    <section>
+      <h2>Side by side</h2>
+
+      <h3>Pannable canvas (Figma, Miro, tldraw)</h3>
+      <ul>
+        <li><strong>Coordinate space:</strong> one continuous 2D plane.</li>
+        <li><strong>Navigation:</strong> drag to pan, scroll/pinch to zoom, anywhere, any amount.</li>
+        <li><strong>Hierarchy:</strong> implicit. Things are "near" or "inside" each other only by
+        their xy coordinates and z-order — there's no formal parent/child navigation.</li>
+        <li><strong>Back button:</strong> usually means "undo," not "previous view."</li>
+        <li><strong>State addressability:</strong> often a viewport URL (e.g. Figma's
+        <code>?node-id=42</code>) that encodes pan + zoom + selection.</li>
+        <li><strong>Best for:</strong> creative work, brainstorming, diagrams, design, anything
+        where the user is producing or rearranging spatial content.</li>
+      </ul>
+
+      <h3>Zooming UI (Zumly, Pad++, Prezi, Deep Zoom)</h3>
+      <ul>
+        <li><strong>Coordinate space:</strong> a tree of views. Each view is its own coordinate
+        space; transitions between views are computed transforms.</li>
+        <li><strong>Navigation:</strong> click a trigger to zoom into a child view; click "back"
+        to zoom out.</li>
+        <li><strong>Hierarchy:</strong> explicit. Every view has a parent (except the root). The
+        engine knows the depth stack and walks it on back().</li>
+        <li><strong>Back button:</strong> always means "zoom out one level."</li>
+        <li><strong>State addressability:</strong> typically <em>not</em> addressable per state —
+        a hash router collapses many depth states into one URL by design.</li>
+        <li><strong>Best for:</strong> consuming hierarchical data, drilling into focus,
+        kiosk/dashboard/control interfaces, anything where the user is reading and selecting
+        rather than authoring.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>The trigger is the giveaway</h2>
+      <p>
+        The clearest test: <strong>where does the next view come from?</strong>
+      </p>
+      <p>
+        In a canvas, when you "zoom in," you're scaling the entire current view up. The thing
+        that ends up filling your screen is whatever happened to be in the centre of the viewport
+        when you zoomed. The user is in control of the camera.
+      </p>
+      <p>
+        In a ZUI, you don't zoom the camera — you zoom into a <em>specific element</em>. That
+        element <em>becomes</em> the next view. The trigger you clicked is the destination. The
+        engine is in control of the geometry; you're in control of the choice.
+      </p>
+    </section>
+
+    <section>
+      <h2>Why it matters for the design</h2>
+      <p>
+        Canvases are great when the spatial layout is <em>the content</em> — moving sticky notes
+        on a whiteboard, arranging shapes on a poster, sketching a diagram. The user's mental
+        model is "I'm looking down at a table covered in stuff."
+      </p>
+      <p>
+        ZUIs are great when the spatial layout is <em>the navigation</em> — drilling from a
+        dashboard into a chart into a row, or from a building into a room into a device. The
+        user's mental model is "I'm walking through a structure."
+      </p>
+      <p>
+        Mixing the two in one interface usually fails. Canvas users expect to drag the world
+        around; ZUI users expect to click things and have the world come to them. If you try
+        to support both gestures on the same surface, both groups of users will be confused
+        about which one they're in.
+      </p>
+    </section>
+
+    <section>
+      <h2>"But Prezi has both"</h2>
+      <p>
+        Prezi looks like a canvas because it lets you arrange slides on a 2D plane. But the
+        <em>navigation</em> is ZUI: you don't pan to the next slide, you click a trigger
+        (the "next" arrow or a step waypoint) and the engine zooms you into a specific
+        coordinate. The canvas-like layout is for the author; the experience for the audience
+        is pure ZUI.
+      </p>
+      <p>
+        That split is a useful pattern. You can build a <em>canvas authoring tool</em> for
+        people who design ZUI flows, and the resulting flow can still be a strict ZUI for the
+        end user. They're not the same product.
+      </p>
+    </section>
+
+    <section>
+      <h2>Where Zumly sits</h2>
+      <p>
+        Zumly is unambiguously a ZUI engine. There's no pan gesture, no continuous zoom, no
+        viewport URL. Every navigation move is a click on a trigger element with an explicit
+        destination, and the engine handles the geometry. That choice is what makes it small
+        — the entire engine is roughly the size of a typical router — and what makes it
+        composable with React, Vue, Svelte, Angular, or plain HTML views.
+      </p>
+      <p>
+        If you need a pannable canvas, Zumly isn't the right tool. If you need a focus-driven,
+        hierarchical UI where the user reads and drills rather than authors and arranges,
+        Zumly is exactly what it's for.
+      </p>
+      <div class="callout">
+        <strong>Read next:</strong> <a href="zui.html">What is a ZUI?</a> for the history and
+        first principles, or jump straight to the
+        <a href="../views/api.html">API reference</a> if you're ready to build one.
+      </div>
+    </section>
+
+    <div class="final-cta">
+      <h3>See the difference yourself</h3>
+      <p>The Zumly demo is a strict ZUI — every navigation is a click on a trigger. Try it and feel how different it is from dragging a Figma canvas.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Learn</h4>
+        <ul>
+          <li><a href="zui.html">What is a ZUI?</a></li>
+          <li><a href="depth-navigation.html">Depth navigation</a></li>
+          <li><a href="lateral-navigation.html">Lateral navigation</a></li>
+          <li><a href="focus-driven-ui.html">Focus-driven UI</a></li>
+          <li>Zoom UI vs canvas pan (you are here)</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

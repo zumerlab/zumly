@@ -214,8 +214,19 @@
     }
     .home-links a { color: var(--text-dim); text-decoration: none; transition: color 0.2s; }
     .home-links a:hover { color: var(--accent); }
+    .home-resources {
+      margin-top: 1.2rem; display: flex; gap: 14px; align-items: center;
+      font-size: 0.72rem; color: var(--text-dim);
+      flex-wrap: wrap; justify-content: center;
+    }
+    .home-resources strong {
+      font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+      opacity: 0.55; font-size: 0.62rem;
+    }
+    .home-resources a { color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
+    .home-resources a:hover { color: var(--accent); }
     .home-built {
-      margin-top: 1.2rem; font-size: 0.7rem; color: var(--text-dim);
+      margin-top: 1rem; font-size: 0.7rem; color: var(--text-dim);
     }
     .home-built a { color: var(--text-mid); text-decoration: none; transition: color 0.2s; }
     .home-built a:hover { color: var(--accent); }
@@ -471,6 +482,8 @@
       .home-sub { font-size: 1rem; }
       .home-hint { font-size: 0.95rem; }
       .home-links { font-size: 0.82rem; }
+      .home-resources { font-size: 0.78rem; gap: 10px; }
+      .home-resources strong { font-size: 0.65rem; }
       .home-built { font-size: 0.78rem; }
       .targets { gap: 10px; }
       .zt { width: 100px; padding: 14px 8px; }
@@ -547,6 +560,29 @@
       '<div class="home-links">' +
         '<a href="https://github.com/zumerlab/zumly">GitHub</a>' +
         '<a href="https://www.npmjs.com/package/zumly">npm</a>' +
+      '</div>' +
+      '<div class="home-resources">' +
+        '<strong>Integrations</strong>' +
+        '<a href="integrations/react.html">React</a>' +
+        '<a href="integrations/vue.html">Vue</a>' +
+        '<a href="integrations/svelte.html">Svelte</a>' +
+        '<a href="integrations/angular.html">Angular</a>' +
+        '<a href="integrations/orbit-css.html">Orbit&nbsp;CSS</a>' +
+      '</div>' +
+      '<div class="home-resources">' +
+        '<strong>Drivers</strong>' +
+        '<a href="drivers/gsap.html">GSAP</a>' +
+        '<a href="drivers/anime.html">Anime.js</a>' +
+        '<a href="drivers/motion.html">Motion</a>' +
+        '<a href="drivers/custom.html">Custom&nbsp;driver</a>' +
+      '</div>' +
+      '<div class="home-resources">' +
+        '<strong>Learn</strong>' +
+        '<a href="learn/zui.html">What&nbsp;is&nbsp;a&nbsp;ZUI?</a>' +
+        '<a href="learn/depth-navigation.html">Depth</a>' +
+        '<a href="learn/lateral-navigation.html">Lateral</a>' +
+        '<a href="learn/focus-driven-ui.html">Focus-driven</a>' +
+        '<a href="learn/zoom-ui-vs-canvas-pan.html">vs&nbsp;canvas&nbsp;pan</a>' +
       '</div>' +
       '<div class="home-built">Built by <a href="https://github.com/zumerlab">Zumerlab</a></div>' +
     '</div>'

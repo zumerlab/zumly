@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Zumly with Orbit CSS — Radial layouts that zoom into focus</title>
+  <meta name="description" content="Combine Zumly's zoom navigation with Orbit CSS's polar layout system to build radial dashboards, dial-style controls, and ZUIs where every orbit is a depth level." />
+  <meta name="keywords" content="zumly orbit css, orbit css zoom, radial layout zoom, polar ui, zui radial layout, zumly orbit integration, orbit css zooming user interface" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/integrations/orbit-css.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Zumly with Orbit CSS — Radial layouts that zoom into focus" />
+  <meta property="og:description" content="Combine Zumly's zoom navigation with Orbit CSS's polar layout system to build radial dashboards, dial-style controls, and ZUIs where every orbit is a depth level." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/integrations/orbit-css.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Zumly with Orbit CSS — Radial layouts that zoom into focus",
+    "description": "Combine Zumly's zoom navigation with Orbit CSS's polar layout system to build radial dashboards, dial-style controls, and ZUIs where every orbit is a depth level.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/integrations/orbit-css.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" },
+      { "@type": "SoftwareApplication", "name": "Orbit CSS" }
+    ],
+    "proficiencyLevel": "Intermediate"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Integrations</a><span>›</span>Orbit CSS
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Integration · Orbit CSS</span>
+      <h1 class="hero-title">Zumly + Orbit CSS</h1>
+      <p class="hero-sub">
+        Orbit CSS is a polar (radial) layout system from Zumerlab — siblings of Zumly. Together
+        they're a natural fit: Orbit gives you radial dashboards where every orbit is a logical
+        ring of children, and Zumly lets the user zoom into any of those children to make it the
+        new focus.
+      </p>
+      <div class="cta-row">
+        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
+        <a href="https://github.com/zumerlab/orbit" class="cta-secondary" target="_blank" rel="noopener">Orbit CSS on GitHub</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>Why combine them?</h2>
+      <p>
+        Most CSS layout systems are rectangular: grids, flex rows, columns. Orbit CSS introduces
+        a different primitive — the <strong>orbit</strong>, a circular ring around a centre point,
+        with children placed at angles around it. That maps naturally onto radial dashboards,
+        round control panels, dial-style instruments, watch-face UIs, and any interface where
+        the natural metaphor is "around a centre" rather than "in a row."
+      </p>
+      <p>
+        A focus-driven ZUI on top of a radial layout is doubly powerful:
+      </p>
+      <ul>
+        <li>The <strong>centre</strong> of the orbit is the obvious focus — it's where the eye
+        lands. Use it for the current view.</li>
+        <li>The <strong>orbit ring</strong> contains siblings — perfect for
+        <a href="../learn/lateral-navigation.html">lateral navigation</a>.</li>
+        <li>The <strong>outer orbits</strong> are children of the centre — perfect for depth
+        triggers. Click one and Zumly zooms into it as the new centre.</li>
+      </ul>
+      <p>
+        The result is a UI that feels physical: the user is navigating a structure that looks
+        and behaves like a dial, with focus always at the middle and context always at the rim.
+      </p>
+    </section>
+
+    <section>
+      <h2>Install</h2>
+      <p>Install both packages — they're zero-dependency and work alongside each other.</p>
+      <pre>npm install zumly @zumerlab/orbit</pre>
+      <p>Or load them from a CDN as plain CSS / UMD scripts:</p>
+      <pre>&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@zumerlab/orbit/dist/orbit.min.css"&gt;
+&lt;script src="https://cdn.jsdelivr.net/npm/zumly/dist/zumly.umd.js"&gt;&lt;/script&gt;</pre>
+    </section>
+
+    <section id="quick-start">
+      <h2>Quick start</h2>
+      <p>
+        Build a radial home view with Orbit's <code>.o-orbit</code> primitive, then make each
+        ring item a Zumly trigger by adding <code>class="zoom-me"</code> and <code>data-to</code>.
+      </p>
+      <pre>import Zumly from 'zumly'
+import 'zumly/css'
+import '@zumerlab/orbit/dist/orbit.min.css'
+
+const home = `
+  &lt;div class="z-view o-orbit"&gt;
+    &lt;div class="o-center"&gt;Home&lt;/div&gt;
+    &lt;div class="o-ring" data-radius="180"&gt;
+      &lt;div class="o-item zoom-me" data-to="livingRoom"&gt;Living room&lt;/div&gt;
+      &lt;div class="o-item zoom-me" data-to="kitchen"&gt;Kitchen&lt;/div&gt;
+      &lt;div class="o-item zoom-me" data-to="bedroom"&gt;Bedroom&lt;/div&gt;
+      &lt;div class="o-item zoom-me" data-to="garage"&gt;Garage&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+`
+
+const livingRoom = `
+  &lt;div class="z-view o-orbit"&gt;
+    &lt;div class="o-center"&gt;Living room&lt;/div&gt;
+    &lt;div class="o-ring" data-radius="160"&gt;
+      &lt;div class="o-item zoom-me" data-to="lights"&gt;Lights&lt;/div&gt;
+      &lt;div class="o-item zoom-me" data-to="thermostat"&gt;Thermostat&lt;/div&gt;
+      &lt;div class="o-item zoom-me" data-to="speakers"&gt;Speakers&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+`
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: { home, livingRoom, lights, thermostat, speakers, kitchen, bedroom, garage },
+  transitions: { driver: 'css', duration: '600ms', ease: 'ease-in-out' }
+})
+
+await app.init()</pre>
+      <p>
+        Each <code>.o-item</code> is a regular DOM element — Orbit positions it on the ring,
+        Zumly turns it into a zoom trigger. There's no glue layer between the two libraries.
+      </p>
+    </section>
+
+    <section>
+      <h2>Working example: see the showcases</h2>
+      <p>
+        Two of the Zumly showcases are real Zumly + Orbit CSS apps:
+      </p>
+      <ul>
+        <li><a href="../showcases/home-assistant.html"><strong>Home Assistant</strong></a> —
+        a radial home-control dashboard. Each room is a ring item; zooming into a room reveals
+        its devices on a smaller ring; zooming into a device reveals its controls at the centre.</li>
+        <li><a href="../showcases/mission-control.html"><strong>Mission Control</strong></a> —
+        a radial ops centre with concentric orbits for stations, telemetry feeds, and individual
+        sensors. Each ring is a depth level; zoom in to focus, zoom out to overview.</li>
+      </ul>
+      <p>
+        Both showcases run on the live demo and are open-source — read the source to see exactly
+        how the markup and the constructor options fit together.
+      </p>
+    </section>
+
+    <section>
+      <h2>Design tips for Zumly + Orbit</h2>
+      <ul>
+        <li><strong>Match orbit depth to zoom depth.</strong> If the user can see two orbit rings
+        in the parent view, they should expect that zooming into a ring item reveals its own
+        ring at the next depth. Consistency builds the spatial intuition.</li>
+        <li><strong>Keep the centre as the focus.</strong> The centre of an orbit is the visual
+        anchor — always put the current view's identity (label, icon, primary control) there.</li>
+        <li><strong>Use lateral for orbit siblings.</strong> If the user is focused on "Lights"
+        and wants to switch to "Thermostat" without going up to the room view, use
+        <a href="../learn/lateral-navigation.html">lateral navigation</a> rather than two depth
+        animations.</li>
+        <li><strong>Respect prefers-reduced-motion.</strong> Both libraries respect the OS-level
+        setting; for radial UIs, the rotation cues can be disorienting at full intensity, so
+        consider a more conservative <code>duration</code> and <code>ease</code> for those users.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Why these two libraries fit</h2>
+      <p>
+        Zumly and Orbit CSS share a design philosophy: they're both about
+        <strong>spatial primitives</strong> rather than visual chrome. Orbit doesn't paint
+        anything — it just positions elements on a circle. Zumly doesn't render anything — it
+        just animates between views. You bring the content; the libraries provide the geometry.
+      </p>
+      <p>
+        That means you can use Zumly + Orbit with React, Vue, Svelte, Angular, or plain HTML.
+        Each view is just a DOM subtree; whether you write it as a string template, a React
+        component, or a Vue SFC is your call. The two libraries don't care.
+      </p>
+      <div class="callout">
+        <strong>Both libraries are MIT-licensed and made by Zumerlab.</strong> If you build
+        something cool with them, ping the maintainers — both projects are actively looking for
+        showcase contributions.
+      </div>
+    </section>
+
+    <div class="final-cta">
+      <h3>See it in action</h3>
+      <p>The Home Assistant and Mission Control showcases are full Zumly + Orbit CSS apps — open them and feel the radial-zoom combination.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Integrations</h4>
+        <ul>
+          <li><a href="react.html">React</a></li>
+          <li><a href="vue.html">Vue</a></li>
+          <li><a href="svelte.html">Svelte</a></li>
+          <li><a href="angular.html">Angular</a></li>
+          <li>Orbit CSS (you are here)</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>

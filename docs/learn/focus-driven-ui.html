@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-TCJ276G8QK');
+  </script>
+
+  <title>Focus-driven UI — Designing interfaces around attention</title>
+  <meta name="description" content="A focus-driven UI puts the user's attention in the centre and makes everything else recede. The principles, the design rules, and how Zumly's ZUI engine implements one." />
+  <meta name="keywords" content="focus driven ui, attention based ui, focus ui design, zooming user interface, ZUI design, kiosk ui design, dashboard focus" />
+
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/focus-driven-ui.html" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Focus-driven UI — Designing interfaces around attention" />
+  <meta property="og:description" content="A focus-driven UI puts the user's attention in the centre and makes everything else recede. The principles, the design rules, and how Zumly's ZUI engine implements one." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/focus-driven-ui.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="help" type="text/plain" href="../llms-full.txt" title="LLM-friendly full reference" />
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "headline": "Focus-driven UI — Designing interfaces around attention",
+    "description": "A focus-driven UI puts the user's attention in the centre and makes everything else recede. The principles, the design rules, and how Zumly's ZUI engine implements one.",
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "url": "https://zumerlab.github.io/zumly/learn/focus-driven-ui.html",
+    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "about": [
+      { "@type": "Thing", "name": "Focus-driven User Interface" },
+      { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" }
+    ],
+    "proficiencyLevel": "Beginner"
+  }
+  </script>
+
+  <script>
+    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
+    function toggleTheme(){
+      var h=document.documentElement;h.classList.toggle('light');
+      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
+      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
+    }
+  </script>
+
+  <link rel="stylesheet" href="../css/docs-page.css" />
+</head>
+
+<body>
+
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <img src="../zumly-logo.png" alt="Zumly">
+        <span>ZUMLY</span>
+      </a>
+      <div class="crumbs">
+        <a href="../">Home</a><span>›</span><a href="./">Learn</a><span>›</span>Focus-driven UI
+      </div>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <span class="hero-eyebrow">Learn · Concept</span>
+      <h1 class="hero-title">Focus-driven UI</h1>
+      <p class="hero-sub">
+        A focus-driven UI is one where the central design question is "what is the user looking
+        at <em>right now</em>" — and everything else (controls, siblings, ancestors) recedes
+        until they're needed. ZUIs are the most direct way to build one.
+      </p>
+      <div class="cta-row">
+        <a href="zui.html" class="cta-primary">What is a ZUI? &rarr;</a>
+        <a href="zoom-ui-vs-canvas-pan.html" class="cta-secondary">vs. canvas pan</a>
+      </div>
+    </header>
+
+    <section>
+      <h2>The principle</h2>
+      <p>
+        Most interfaces compete for attention. A flat dashboard shows you fifteen widgets at
+        once — three of them blinking, two with red badges, and a sidebar full of menu items
+        you'll never click. The user's brain has to filter all of this every time they look at
+        the screen.
+      </p>
+      <p>
+        A focus-driven UI inverts the default. The thing the user is looking at is the entire
+        screen. Siblings exist but they're peripheral — visible enough to remind the user that
+        they're there, faded enough that they don't compete. Parents and ancestors are even
+        more recessed: they're context, not content.
+      </p>
+    </section>
+
+    <section>
+      <h2>Three rules of focus-driven design</h2>
+
+      <h3>1. One focus at a time</h3>
+      <p>
+        Whatever you've zoomed into <em>is</em> the screen. Don't try to keep a "main panel" and
+        a "side panel" co-equal. If two things deserve equal focus, they're either siblings (use
+        <a href="lateral-navigation.html">lateral navigation</a>) or they belong in a single
+        composite view.
+      </p>
+
+      <h3>2. Context belongs at the edges</h3>
+      <p>
+        The parent view should remain visible — usually scaled down and behind the focused view —
+        so the user always knows where they are in the hierarchy. Don't hide it. Don't replace
+        it with a breadcrumb trail. The whole point of a ZUI is that the parent is <em>still
+        there</em>, physically.
+      </p>
+
+      <h3>3. Transitions are part of the UI, not decoration</h3>
+      <p>
+        In a focus-driven UI, the zoom animation isn't eye candy — it's the way the user
+        understands "I'm now inside this thing." Skipping the transition (or making it too
+        fast to perceive) breaks the spatial illusion and the user gets lost. The
+        <a href="../drivers/custom.html">transition driver</a> is a load-bearing part of the
+        design, not a polish layer.
+      </p>
+    </section>
+
+    <section>
+      <h2>Where focus-driven UIs are the right answer</h2>
+      <ul>
+        <li><strong>Kiosks and signage.</strong> Public terminals where the user has zero
+        training, low patience, and one task at a time. Focus-driven UIs are forgiving because
+        there's only ever one "right next move."</li>
+        <li><strong>Vehicle and equipment dashboards.</strong> Driver/operator UIs where attention
+        is precious and competing widgets are dangerous. Zumly's
+        <a href="../showcases/mercedes-line.html">production line</a> showcase is exactly this.</li>
+        <li><strong>Home and IoT control.</strong> Rooms full of devices, each device with its
+        own settings. The natural mental model is "show me the room, then the device, then its
+        controls" — see the
+        <a href="../showcases/home-assistant.html">Home Assistant showcase</a>.</li>
+        <li><strong>Mission control and ops centres.</strong> Dense data with deep drill-down.
+        See the <a href="../showcases/mission-control.html">mission control showcase</a>.</li>
+        <li><strong>Authoring tools and configurators.</strong> Where the user wants to focus on
+        one piece, edit it, and pop back to the whole — without losing context.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>What focus-driven UI is not</h2>
+      <p>
+        Focus-driven design isn't minimalism. It doesn't mean "show less stuff." It means "make
+        attention explicit." A focused view can be as dense as it wants — what matters is that
+        the user is unambiguously inside <em>that</em> view, and the rest of the app has politely
+        stepped aside.
+      </p>
+      <p>
+        It's also not the same as full-screen mode. Going full-screen drops the context entirely;
+        focus-driven UIs <em>preserve</em> context at the edges of the viewport. That's the
+        difference between "I am now in this thing" and "the rest of the world has disappeared."
+      </p>
+    </section>
+
+    <section>
+      <h2>Designing the trigger</h2>
+      <p>
+        In a focus-driven ZUI, the trigger element <em>becomes</em> the next view. That changes
+        how you design clickable elements: they're not buttons that send the user somewhere
+        else, they're <em>previews</em> of where the user is about to go. A card you can zoom
+        into should look like a small version of the view it expands to — same colours, same
+        layout, same content density (just compressed).
+      </p>
+      <p>
+        Concretely:
+      </p>
+      <ul>
+        <li>Cards in the parent view should mirror the layout of the child view they expand to.</li>
+        <li>Avoid placing the trigger in a way that doesn't physically connect to the destination
+        — random "Open" buttons in a table row break the spatial illusion.</li>
+        <li>Make the trigger element the right size for the user to read it in the parent
+        context. If the card is too small to scan, the user doesn't know what they're zooming
+        into; if it's too big, the parent loses overview.</li>
+      </ul>
+      <div class="callout">
+        <strong>Read next:</strong> <a href="zoom-ui-vs-canvas-pan.html">Zoom UI vs canvas pan</a>
+        — why a focus-driven ZUI is different from "an infinite canvas you can pan around."
+      </div>
+    </section>
+
+    <div class="final-cta">
+      <h3>See focus-driven design in action</h3>
+      <p>The Zumly showcases — Mercedes line, Home Assistant, Mission Control — are all real focus-driven UIs built on the same engine.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <h4>Zumly</h4>
+        <ul>
+          <li><a href="../">Live demo</a></li>
+          <li><a href="../views/api.html">API reference</a></li>
+          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Learn</h4>
+        <ul>
+          <li><a href="zui.html">What is a ZUI?</a></li>
+          <li><a href="depth-navigation.html">Depth navigation</a></li>
+          <li><a href="lateral-navigation.html">Lateral navigation</a></li>
+          <li>Focus-driven UI (you are here)</li>
+          <li><a href="zoom-ui-vs-canvas-pan.html">Zoom UI vs canvas pan</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Zumerlab</h4>
+        <ul>
+          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
+          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
+          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
+    </div>
+  </footer>
+
+  <script>
+    var tb = document.getElementById('theme-btn');
+    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
+  </script>
+
+</body>
+</html>
