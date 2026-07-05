@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v0.92.4](https://github.com/zumerlab/zumly/compare/v0.92.3...v0.92.4)
+
+> 4 July 2026
+
+- Add LLM-friendly documentation links and new reference files [`3934893`](https://github.com/zumerlab/zumly/commit/393489358ab65384bc4a174aca3fd2309df165e4)
+- Add new skills: 'new-driver' for custom Zumly transition drivers and 'zumly-guide' for comprehensive application architecture guidance [`c3be7af`](https://github.com/zumerlab/zumly/commit/c3be7afa86350debb00f24c271013d3639991971)
+- update styles [`9447cc5`](https://github.com/zumerlab/zumly/commit/9447cc5e03bae9043d7cad57abde33c524ce510d)
+- Añadir soporte para la configuración de orden de hermanos en la navegación lateral y mejorar la gestión de desplazamiento del lienzo. [`b255076`](https://github.com/zumerlab/zumly/commit/b255076a7e831837c1b62b60b0de7c61ba693f3e)
+
 #### [v0.92.3](https://github.com/zumerlab/zumly/compare/v0.92.2...v0.92.3)
 
 > 2 April 2026
