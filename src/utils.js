@@ -228,14 +228,38 @@ export function checkParameters (parameters, instance) {
     if (modeIn && !modeOk) {
       notification(false, '\'lateralNav.mode\' must be "auto" or "always". Falling back to "auto".', 'warn')
     }
+    // siblings: declared lateral order — first-class replacement for inferring
+    // sibling order/direction from trigger positions in the parent view.
+    // Array form: ['a','b','c'] (one lateral group), or map keyed by parent
+    // view name: { home: ['a','b','c'], other: [...] }.
+    let siblingsIn = null
+    if (Array.isArray(lnIn.siblings)) {
+      siblingsIn = lnIn.siblings.filter(s => typeof s === 'string' && s)
+      if (siblingsIn.length < 2) {
+        notification(false, '\'lateralNav.siblings\' needs at least 2 view names. Ignoring.', 'warn')
+        siblingsIn = null
+      }
+    } else if (lnIn.siblings && typeof lnIn.siblings === 'object') {
+      siblingsIn = {}
+      for (const [parent, list] of Object.entries(lnIn.siblings)) {
+        if (Array.isArray(list)) {
+          const clean = list.filter(s => typeof s === 'string' && s)
+          if (clean.length >= 2) siblingsIn[parent] = clean
+        }
+      }
+      if (Object.keys(siblingsIn).length === 0) siblingsIn = null
+    } else if (lnIn.siblings !== undefined) {
+      notification(false, '\'lateralNav.siblings\' must be an array of view names or a { parentView: [...] } map. Ignoring.', 'warn')
+    }
     instance.lateralNav = {
       mode: modeOk ? modeIn : 'auto',
       arrows: typeof lnIn.arrows === 'boolean' ? lnIn.arrows : true,
       dots: typeof lnIn.dots === 'boolean' ? lnIn.dots : true,
-      keepAlive: (lnIn.keepAlive === true || lnIn.keepAlive === 'visible') ? lnIn.keepAlive : false
+      keepAlive: (lnIn.keepAlive === true || lnIn.keepAlive === 'visible') ? lnIn.keepAlive : false,
+      siblings: siblingsIn
     }
   } else {
-    instance.lateralNav = { mode: 'auto', arrows: true, dots: true, keepAlive: false }
+    instance.lateralNav = { mode: 'auto', arrows: true, dots: true, keepAlive: false, siblings: null }
   }
 
   // Depth navigation UI: zoom-out back button.

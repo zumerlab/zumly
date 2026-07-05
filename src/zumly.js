@@ -167,6 +167,37 @@ export class Zumly {
     }
   }
 
+  /**
+   * Defensive: if anything scrolled the canvas (overflow:hidden containers
+   * scroll programmatically — scrollIntoView, focus(), test runners), every
+   * geometry read afterwards is displaced by that offset, permanently.
+   * The canvas is never meant to scroll: zero it before reading rects.
+   * @param {HTMLElement} canvas
+   * @private
+   */
+  _resetCanvasScroll (canvas) {
+    if (!canvas) return
+    if (canvas.scrollLeft !== 0 || canvas.scrollTop !== 0) {
+      this.notify(`canvas had a residual scroll (${canvas.scrollLeft}, ${canvas.scrollTop}) — resetting. Something scrolled the canvas mid-transition.`, 'warn')
+      canvas.scrollLeft = 0
+      canvas.scrollTop = 0
+    }
+    // DX: a scrolled ANCESTOR displaces every geometry read the same way, and
+    // it's app CSS, so we must not mutate it — but we can name the culprit.
+    // overflow:hidden containers scroll programmatically (scrollIntoView,
+    // focus(), test runners); the host fix is `overflow: clip`.
+    if (!this._warnedScrolledAncestor) {
+      for (let el = canvas.parentElement; el && el !== document.body; el = el.parentElement) {
+        if (el.scrollLeft !== 0 || el.scrollTop !== 0) {
+          const who = el.className ? `.${String(el.className).trim().split(/\s+/).join('.')}` : el.tagName.toLowerCase()
+          this.notify(`an ancestor of the canvas (${who}) is scrolled (${el.scrollLeft}, ${el.scrollTop}): all zooms will land displaced. Use 'overflow: clip' (not 'hidden') on containers around the canvas.`, 'warn')
+          this._warnedScrolledAncestor = true
+          break
+        }
+      }
+    }
+  }
+
   // ─── blockEvents safety ──────────────────────────────────────────
 
   /**
@@ -539,6 +570,12 @@ export class Zumly {
    */
   back () {
     if (this._destroyed) return
+    // Guard here too: popping lateralHistory and then having _doLateral
+    // ignore the call would lose the history entry.
+    if (this.blockEvents) {
+      this.notify('back ignored: a transition is already running.', 'warn')
+      return
+    }
     if (this.lateralHistory && this.lateralHistory.length > 0) {
       const popped = this.lateralHistory.pop()
       const targetViewName = popped && typeof popped === 'object' ? popped.name : popped
@@ -708,12 +745,20 @@ export class Zumly {
    */
   async _doZoomIn (targetViewName, triggerOrDescriptor) {
     if (this._destroyed) return
+    if (this.blockEvents) {
+      // A transition is in flight. Navigating now would read views mid-animation
+      // and corrupt the stage (the "re-maximize" family of bugs). Internal event
+      // handlers already respect blockEvents; the public API must too.
+      this.notify('zoomIn ignored: a transition is already running.', 'warn')
+      return
+    }
     this._cleanupLateralKeepAlive()
     this.lateralHistory = []
     this._emit('beforeZoomIn', { viewName: targetViewName })
     this.tracing('zoomIn()')
     const canvas = this.canvas
     const el = triggerOrDescriptor.el
+    this._resetCanvasScroll(canvas)
     const canvasRect = canvas.getBoundingClientRect()
     const offsetX = canvasRect.left
     const offsetY = canvasRect.top
@@ -998,6 +1043,11 @@ export class Zumly {
    */
   async _doLateral (targetViewName, isBack = false, options = {}) {
     if (this._destroyed) return
+    if (this.blockEvents) {
+      // See _doZoomIn: never navigate mid-transition (re-maximize bug family).
+      this.notify('lateral navigation ignored: a transition is already running.', 'warn')
+      return
+    }
     if (!this.isValid || !this.canvas) return
     if (!Object.prototype.hasOwnProperty.call(this.views, targetViewName)) {
       this.notify(`goTo("${targetViewName}", { mode: 'lateral' }): view not found in views. Available: ${Object.keys(this.views).join(', ')}`, 'warn')
@@ -1030,7 +1080,15 @@ export class Zumly {
 
     let slideDeltaX = 0
     let slideDeltaY = 0
-    if (backView) {
+    const declared = this._declaredSiblings()
+    const declFrom = declared ? declared.indexOf(currentName) : -1
+    const declTo = declared ? declared.indexOf(targetViewName) : -1
+    if (declFrom !== -1 && declTo !== -1) {
+      // Declared order wins: direction and distance from the indices
+      // (non-adjacent jumps slide proportionally further).
+      const canvasRect = this.canvas.getBoundingClientRect()
+      slideDeltaX = (declFrom - declTo) * canvasRect.width * 0.15
+    } else if (backView) {
       const fromTrigger = backView.querySelector(`.zoom-me[data-to="${currentName}"]`)
       const toTrigger = backView.querySelector(`.zoom-me[data-to="${targetViewName}"]`)
       if (fromTrigger && toTrigger) {
@@ -1190,11 +1248,17 @@ export class Zumly {
 
   zoomOut () {
     if (this._destroyed) return
+    if (this.blockEvents) {
+      // See _doZoomIn: never navigate mid-transition (re-maximize bug family).
+      this.notify('zoomOut ignored: a transition is already running.', 'warn')
+      return
+    }
     this._cleanupLateralKeepAlive()
     this.lateralHistory = []
     this._emit('beforeZoomOut', { zoomLevel: this.zoomLevel() })
     this.tracing('zoomOut()')
     const canvas = this.canvas
+    this._resetCanvasScroll(canvas)
     const currentView = canvas.querySelector('.is-current-view')
     const previousView = canvas.querySelector('.is-previous-view')
     if (!currentView || !previousView) {
@@ -1341,10 +1405,16 @@ export class Zumly {
    * @private
    */
   _getSiblings () {
-    const previousView = this.canvas.querySelector('.is-previous-view')
-    if (!previousView) return { siblings: [], currentIndex: -1 }
     const currentView = this.canvas.querySelector('.is-current-view')
     const currentName = currentView?.dataset?.viewName
+    // Declared siblings (lateralNav.siblings) take precedence over inferring
+    // the order from trigger positions in the parent view.
+    const declared = this._declaredSiblings()
+    if (declared && declared.indexOf(currentName) !== -1) {
+      return { siblings: declared, currentIndex: declared.indexOf(currentName) }
+    }
+    const previousView = this.canvas.querySelector('.is-previous-view')
+    if (!previousView) return { siblings: [], currentIndex: -1 }
     const triggers = previousView.querySelectorAll('.zoom-me[data-to]')
     const siblings = []
     for (const t of triggers) {
@@ -1352,6 +1422,22 @@ export class Zumly {
     }
     const currentIndex = siblings.indexOf(currentName)
     return { siblings, currentIndex }
+  }
+
+  /**
+   * Resolve the declared sibling order for the current depth, if configured.
+   * `lateralNav.siblings` can be an array (one lateral group) or a map keyed
+   * by parent view name: { home: ['a','b','c'] }.
+   * @returns {string[]|null}
+   * @private
+   */
+  _declaredSiblings () {
+    const conf = this.lateralNav && typeof this.lateralNav === 'object' ? this.lateralNav.siblings : null
+    if (!conf) return null
+    if (Array.isArray(conf)) return conf
+    const parentName = this.canvas.querySelector('.is-previous-view')?.dataset?.viewName
+    if (parentName && Array.isArray(conf[parentName])) return conf[parentName]
+    return null
   }
 
   // ─── Navigation UI (separate depth + lateral components) ─────────

@@ -3,7 +3,13 @@
   position: absolute;
   width: 100%;
   height: 100%;
+  /* clip, not hidden: overflow:hidden still allows PROGRAMMATIC scrolling
+     (scrollIntoView, focus(), test runners). During a zoom the scaled views
+     overflow the canvas; if anything scrolls it mid-transition the offset
+     persists and every later zoom lands displaced (the "re-maximize" bug).
+     overflow:clip forbids all scrolling. hidden stays as fallback. */
   overflow: hidden;
+  overflow: clip;
   margin: 0;
   padding: 0;
   perspective: 1000px;

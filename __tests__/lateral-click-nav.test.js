@@ -17,7 +17,7 @@ describe('lateralNav option parsing', () => {
       initialView: 'home',
       views: { home: '<div class="z-view"></div>' },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false, position: 'bottom-center' })
+    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false, position: 'bottom-center', siblings: null })
   })
 
   it('can be disabled with false', () => {
@@ -39,7 +39,7 @@ describe('lateralNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       lateralNav: { arrows: false },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: false, dots: true, keepAlive: false, position: 'bottom-center' })
+    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: false, dots: true, keepAlive: false, position: 'bottom-center', siblings: null })
   })
 
   it('accepts partial object { dots: false }', () => {
@@ -50,7 +50,7 @@ describe('lateralNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       lateralNav: { dots: false },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: false, keepAlive: false, position: 'bottom-center' })
+    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: false, keepAlive: false, position: 'bottom-center', siblings: null })
   })
 
   it('accepts full object { arrows: true, dots: true }', () => {
@@ -61,7 +61,7 @@ describe('lateralNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       lateralNav: { arrows: true, dots: true },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false, position: 'bottom-center' })
+    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false, position: 'bottom-center', siblings: null })
   })
 
   it('accepts mode: always', () => {

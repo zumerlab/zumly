@@ -23,15 +23,23 @@ import { showViewContent } from '../view-visibility.js'
  *
  * @example
  *   parseDurationMs('1s')    // → 1000
+ *   parseDurationMs('.7s')   // → 700
  *   parseDurationMs('200ms') // → 200
  *   parseDurationMs(300)     // → 300
  *   parseDurationMs('nope')  // → 500
  */
 export function parseDurationMs (duration) {
   if (typeof duration === 'number' && !Number.isNaN(duration)) return Math.max(0, duration)
-  const str = String(duration)
-  const m = str.match(/^(\d+(?:\.\d+)?)\s*(ms|s)?$/i)
-  if (!m) return 500
+  const str = String(duration).trim()
+  // \d*\.?\d+ also accepts a leading dot ('.7s'), which CSS allows —
+  // previously that fell silently into the 500ms fallback.
+  const m = str.match(/^(\d*\.?\d+)\s*(ms|s)?$/i)
+  if (!m) {
+    if (typeof console !== 'undefined') {
+      console.warn(`[zumly] Could not parse duration "${str}" — falling back to 500ms.`) // eslint-disable-line no-console
+    }
+    return 500
+  }
   const val = parseFloat(m[1])
   const unit = (m[2] || 's').toLowerCase()
   return unit === 'ms' ? Math.max(0, val) : Math.max(0, val * 1000)

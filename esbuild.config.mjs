@@ -24,16 +24,19 @@ const banner = {
  * 1) LEGACY build for <script> tag:
  *    dist/zumly.js
  *
- * Note: We intentionally do NOT force `format: 'iife'`.
- * We mirror SnapDOM's config style (platform neutral + globalName).
+ * format:'iife' is REQUIRED here: without it the minified top-level vars
+ * (Xt, kt, S, P, …) leak into global scope and collide with any classic
+ * <script> on the page that declares a one-letter identifier
+ * (SyntaxError: Identifier already declared). entry.js assigns
+ * window.Zumly itself, so no globalName is needed.
  */
 async function buildLegacy () {
   await build({
     ...common,
     entryPoints: ['src/entry.js'],
     outfile: 'dist/zumly.js',
-    globalName: 'Zumly',
-    platform: 'neutral',
+    format: 'iife',
+    platform: 'browser',
     minify: true,
     target: ['es2020'],
     banner,

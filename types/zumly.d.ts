@@ -114,6 +114,14 @@ export interface LateralNavOptions {
   keepAlive?: boolean | 'visible'
   /** Position of the lateral nav bar. Default: 'bottom-center'. */
   position?: 'bottom-center' | 'top-center'
+  /**
+   * Declared sibling order for lateral navigation. Takes precedence over
+   * inferring order/slide direction from trigger positions in the parent view.
+   * Array = one lateral group; map = keyed by parent view name.
+   * @example ['today', 'tomorrow', 'week']
+   * @example { home: ['today', 'tomorrow', 'week'] }
+   */
+  siblings?: string[] | Record<string, string[]>
 }
 
 /** Depth navigation UI configuration. */
