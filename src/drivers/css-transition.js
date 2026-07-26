@@ -88,8 +88,10 @@ function runLateral (spec, onComplete) {
   if (lastView && lastViewState) elements.push(lastView)
 
   let pending = elements.length
-  const { finish } = createFinishGuard(() => {
-    cleanupListeners(elements, handleEnd)
+  const budgetMs = durationMs + SAFETY_BUFFER_MS
+  const zoomAnims = new Set(['zoom-lateral-in', 'zoom-lateral-out', 'zoom-lateral-back'])
+  const { finish, extend } = createFinishGuard(() => {
+    cleanupAnimListeners(elements, handleEnd, handleStart)
     if (spec.keepAlive) {
       outgoingView.classList.remove('zoom-lateral-out')
       outgoingView.style.opacity = ''
@@ -107,16 +109,27 @@ function runLateral (spec, onComplete) {
     incomingView.classList.remove('zoom-lateral-in')
     incomingView.style.transform = incomingTransformEnd
     onComplete()
-  }, durationMs + SAFETY_BUFFER_MS)
+  }, budgetMs)
+
+  // See runZoomIn: re-arm the deadline from the real animation start.
+  function handleStart (event) {
+    if (event.target !== event.currentTarget || !zoomAnims.has(event.animationName)) return
+    extend(budgetMs)
+  }
 
   function handleEnd (event) {
-    const el = event?.target
-    if (el) el.removeEventListener('animationend', handleEnd)
+    if (event.target !== event.currentTarget || !zoomAnims.has(event.animationName)) return
+    const el = event.currentTarget
+    el.removeEventListener('animationend', handleEnd)
+    el.removeEventListener('animationstart', handleStart)
     pending--
     if (pending <= 0) finish()
   }
 
-  elements.forEach(el => el.addEventListener('animationend', handleEnd))
+  elements.forEach(el => {
+    el.addEventListener('animationstart', handleStart)
+    el.addEventListener('animationend', handleEnd)
+  })
 }
 
 // ─── Zoom In ─────────────────────────────────────────────────────────
@@ -154,25 +167,49 @@ function runZoomIn (currentView, previousView, lastView, currentStage, duration,
   let pending = elements.length
   const durationMs = parseDurationMs(duration)
   const maxDelay = lastView ? stagger * 2 : stagger
+  const budgetMs = durationMs + maxDelay + SAFETY_BUFFER_MS
+  const zoomAnims = new Set(['zoom-current-view', 'zoom-previous-view', 'zoom-last-view'])
 
-  const { finish } = createFinishGuard(() => {
-    cleanupListeners(elements, handleEnd)
-    // Clean up animation-delay
+  const { finish, extend } = createFinishGuard(() => {
+    cleanupAnimListeners(elements, handleEnd, handleStart)
     elements.forEach(el => el.style.removeProperty('animation-delay'))
+    // Safety path (missed animationend: render lag, hidden tab, removed
+    // element): apply the end state ourselves — never leave views stuck
+    // with zoom classes and has-no-events.
+    elements.forEach(el => {
+      if (el?.isConnected) {
+        try { applyZoomInEndState(el, currentStage) } catch (e) { /* ignore */ }
+      }
+    })
     onComplete()
-  }, durationMs + maxDelay + SAFETY_BUFFER_MS)
+  }, budgetMs)
+
+  // Animations begin on the next render frame, which can lag far behind this
+  // JS call when the incoming view is heavy (iframes, large subtrees). Re-arm
+  // the safety deadline from the real start so it can't fire mid-animation.
+  function handleStart (event) {
+    if (event.target !== event.currentTarget || !zoomAnims.has(event.animationName)) return
+    extend(budgetMs)
+  }
 
   function handleEnd (event) {
-    const el = event?.target
-    if (el) el.removeEventListener('animationend', handleEnd)
-    if (el?.isConnected) {
+    // Animation events bubble: ignore animations from view content, and only
+    // accept this element's own zoom keyframes.
+    if (event.target !== event.currentTarget || !zoomAnims.has(event.animationName)) return
+    const el = event.currentTarget
+    el.removeEventListener('animationend', handleEnd)
+    el.removeEventListener('animationstart', handleStart)
+    if (el.isConnected) {
       try { applyZoomInEndState(el, currentStage) } catch (e) { /* ignore */ }
     }
     pending--
     if (pending <= 0) finish()
   }
 
-  elements.forEach(el => el.addEventListener('animationend', handleEnd))
+  elements.forEach(el => {
+    el.addEventListener('animationstart', handleStart)
+    el.addEventListener('animationend', handleEnd)
+  })
 }
 
 // ─── Zoom Out ────────────────────────────────────────────────────────
@@ -210,24 +247,44 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
   let pending = elements.length
   const durationMs = parseDurationMs(duration)
   const maxDelay = lastView ? stagger * 2 : stagger
+  const budgetMs = durationMs + maxDelay + SAFETY_BUFFER_MS
+  const zoomAnims = new Set(['zoom-current-view-reverse', 'zoom-previous-view-reverse', 'zoom-last-view-reverse'])
 
-  const { finish } = createFinishGuard(() => {
-    cleanupListeners(elements, handleEnd)
+  const { finish, extend } = createFinishGuard(() => {
+    cleanupAnimListeners(elements, handleEnd, handleStart)
     elements.forEach(el => el.style.removeProperty('animation-delay'))
+    // Safety path: apply end states so the outgoing view is removed and the
+    // remaining views are restored even when animationend never arrived.
+    elements.forEach(el => {
+      if (el?.isConnected) {
+        try { applyZoomOutEndState(el, currentStage, canvas) } catch (e) { /* ignore */ }
+      }
+    })
     onComplete()
-  }, durationMs + maxDelay + SAFETY_BUFFER_MS)
+  }, budgetMs)
+
+  // See runZoomIn: re-arm the deadline from the real animation start.
+  function handleStart (event) {
+    if (event.target !== event.currentTarget || !zoomAnims.has(event.animationName)) return
+    extend(budgetMs)
+  }
 
   function handleEnd (event) {
-    const el = event?.target
-    if (el) el.removeEventListener('animationend', handleEnd)
-    if (el?.isConnected) {
+    if (event.target !== event.currentTarget || !zoomAnims.has(event.animationName)) return
+    const el = event.currentTarget
+    el.removeEventListener('animationend', handleEnd)
+    el.removeEventListener('animationstart', handleStart)
+    if (el.isConnected) {
       try { applyZoomOutEndState(el, currentStage, canvas) } catch (e) { /* ignore */ }
     }
     pending--
     if (pending <= 0) finish()
   }
 
-  elements.forEach(el => el.addEventListener('animationend', handleEnd))
+  elements.forEach(el => {
+    el.addEventListener('animationstart', handleStart)
+    el.addEventListener('animationend', handleEnd)
+  })
 }
 
 function applyZoomOutEndState (element, currentStage, canvas) {
@@ -254,8 +311,10 @@ function setCSSVars (el, duration, ease, vars) {
   }
 }
 
-function cleanupListeners (elements, handler) {
+function cleanupAnimListeners (elements, endHandler, startHandler) {
   for (const el of elements) {
-    if (el?.removeEventListener) el.removeEventListener('animationend', handler)
+    if (!el?.removeEventListener) continue
+    el.removeEventListener('animationend', endHandler)
+    el.removeEventListener('animationstart', startHandler)
   }
 }

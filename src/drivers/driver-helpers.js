@@ -211,10 +211,10 @@ export const SAFETY_BUFFER_MS = 150
  *
  * @param {function} cleanup - The actual cleanup + onComplete work
  * @param {number} timeoutMs - Safety timeout duration
- * @returns {{ finish: function, safetyTimer: number }}
+ * @returns {{ finish: function, extend: function, safetyTimer: number }}
  *
  * @example
- *   const { finish, safetyTimer } = createFinishGuard(() => {
+ *   const { finish, extend } = createFinishGuard(() => {
  *     cancelAnimations()
  *     applyFinalState()
  *     onComplete()
@@ -224,10 +224,13 @@ export const SAFETY_BUFFER_MS = 150
  *   animation.onfinish = finish
  *
  *   // The safetyTimer ensures finish() runs even if onfinish never fires.
+ *   // Call extend(ms) when the animation actually starts to re-arm the
+ *   // deadline from that moment (styles flush on the next render frame,
+ *   // which can lag far behind the JS call on heavy views).
  */
 export function createFinishGuard (cleanup, timeoutMs) {
   let completed = false
-  const safetyTimer = setTimeout(() => {
+  let safetyTimer = setTimeout(() => {
     if (!completed) { completed = true; cleanup() }
   }, timeoutMs)
 
@@ -237,6 +240,13 @@ export function createFinishGuard (cleanup, timeoutMs) {
       completed = true
       clearTimeout(safetyTimer)
       cleanup()
+    },
+    extend (ms) {
+      if (completed) return
+      clearTimeout(safetyTimer)
+      safetyTimer = setTimeout(() => {
+        if (!completed) { completed = true; cleanup() }
+      }, ms)
     },
     safetyTimer
   }
