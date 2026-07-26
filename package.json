@@ -1,6 +1,6 @@
 {
   "name": "zumly",
-  "version": "0.92.5",
+  "version": "0.92.6",
   "description": "Javascript library for building zooming user interfaces",
   "type": "module",
   "author": "Juan Martin Muda - Zumerlab",
