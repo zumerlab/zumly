@@ -2,7 +2,7 @@
 
 > JavaScript library for hierarchical zoom navigation (ZUI). Navigate in Z (depth) through discrete views in the XY plane with spatial transitions.
 
-Version: 0.92.3
+Version: 0.92.4
 License: MIT
 Author: Juan Martin Muda — Zumerlab
 Repository: https://github.com/zumerlab/zumly
@@ -163,6 +163,7 @@ new Zumly({
     dots: true,               // Show dot indicators
     keepAlive: false,         // true = keep lateral views in DOM (hidden), 'visible' = keep visible
     position: 'bottom-center', // 'bottom-center' | 'top-center'
+    siblings: null,           // Declared sibling order: ['a','b','c'] or { parentView: ['a','b','c'] }
   },
 
   // ─── Input controls ──────────────────────
@@ -219,6 +220,13 @@ Progressive delay in milliseconds between view layers. Current view starts immed
 - `false` (default): lateral views are removed from DOM when navigating away
 - `true`: views are kept in DOM with `display: none` (class `is-lateral-hidden`)
 - `'visible'`: views are kept in DOM and remain visible (for CSS-based transitions between siblings)
+
+#### `lateralNav.siblings`
+
+Declared sibling order for lateral navigation. Takes precedence over inferring order and slide direction from trigger positions in the parent view; non-adjacent jumps slide proportionally further.
+
+- Array form (one lateral group): `siblings: ['today', 'tomorrow', 'week']`
+- Map form (keyed by parent view name): `siblings: { home: ['today', 'tomorrow', 'week'] }`
 
 #### `depthNav`
 
@@ -1135,8 +1143,8 @@ interface ZumlyOptions {
   depthNav?: boolean | DepthNavOptions
   inputs?: InputsOptions
   deferred?: boolean
-  hideTrigger?: string | false
 }
+// Note: hideTrigger lives inside TransitionOptions (transitions.hideTrigger)
 ```
 
 ---

@@ -53,4 +53,4 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 ## Ecosystem
 
 - [Orbit CSS](https://github.com/zumerlab/orbit) — Radial/orbital CSS layout system, pairs well with Zumly
-- [SnapDOM](https://github.com/zumerlab/snapdom) — Lightweight DOM diffing library
+- [SnapDOM](https://github.com/zumerlab/snapdom) — Fast DOM-to-image capture library

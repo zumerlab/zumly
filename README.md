@@ -131,7 +131,7 @@ await app.init();
 | `transitions` | object | No | Duration, ease, cover, driver, effects, stagger, hideTrigger for zoom transitions. |
 | `deferred` | boolean | No | Defer content rendering until after animation completes (default: `false`). |
 | `debug` | boolean | No | Enable debug messages (default: `false`). |
-| `lateralNav` | boolean \| object | No | Lateral navigation UI: `{ mode, arrows, dots, keepAlive, position }`. |
+| `lateralNav` | boolean \| object | No | Lateral navigation UI: `{ mode, arrows, dots, keepAlive, position, siblings }`. |
 | `depthNav` | boolean \| object | No | Depth back button: `{ position }`. Default: `'bottom-left'`. |
 | `inputs` | boolean \| object | No | Input methods: `{ click, keyboard, wheel, touch }`. |
 | `componentContext` | object | No | Context passed to component-style views. |
@@ -165,6 +165,8 @@ transitions: {
 | `'motion'` | [Motion](https://motion.dev/) — requires global `Motion` (load from CDN before use). |
 | `function(spec, onComplete)` | Custom driver. Receives `{ type, currentView, previousView, lastView, currentStage, duration, ease }` and must call `onComplete()` when done. |
 
+> Note: only the `css` and `waapi` drivers animate **lateral** navigation with a slide; `anime`, `gsap`, `motion` and `none` perform lateral moves instantly.
+
 Example with instant transitions (e.g. for tests):
 
 ```js
@@ -184,6 +186,8 @@ lateralNav: false                           // disabled
 lateralNav: { mode: 'always' }              // always show when siblings exist
 lateralNav: { mode: 'auto', dots: false }   // auto mode, no dots
 lateralNav: { position: 'top-center' }      // top instead of bottom
+lateralNav: { siblings: ['today', 'tomorrow', 'week'] }        // declared sibling order
+lateralNav: { siblings: { home: ['today', 'tomorrow', 'week'] } } // per-parent groups
 ```
 
 | Mode | Description |
@@ -192,6 +196,8 @@ lateralNav: { position: 'top-center' }      // top instead of bottom
 | `'always'` | Always shows lateral nav when siblings exist, regardless of coverage. |
 
 Position: `'bottom-center'` (default) or `'top-center'`.
+
+`siblings` declares the sibling order for lateral navigation. It takes precedence over inferring the order (and slide direction) from trigger positions in the parent view — non-adjacent jumps slide proportionally further. Use an array for a single lateral group, or a map keyed by parent view name for per-parent groups.
 
 **Depth navigation (back button):**
 

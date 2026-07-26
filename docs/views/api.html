@@ -327,9 +327,12 @@
         <table>
           <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
           <tbody>
+            <tr><td><code>mode</code></td><td>'auto' | 'always'</td><td><code>'auto'</code></td><td><code>'auto'</code> hides the bar when the current view covers the full canvas</td></tr>
             <tr><td><code>arrows</code></td><td>boolean</td><td><code>true</code></td><td>Show prev/next arrow buttons</td></tr>
             <tr><td><code>dots</code></td><td>boolean</td><td><code>true</code></td><td>Show dot indicators for siblings</td></tr>
             <tr><td><code>keepAlive</code></td><td>boolean | 'visible'</td><td><code>false</code></td><td>Keep views in DOM: false = remove, true = hidden, 'visible' = visible</td></tr>
+            <tr><td><code>position</code></td><td>'bottom-center' | 'top-center'</td><td><code>'bottom-center'</code></td><td>Placement of the lateral nav bar</td></tr>
+            <tr><td><code>siblings</code></td><td>string[] | object</td><td><code>—</code></td><td>Declared sibling order; wins over inferring it from trigger positions. Array = one group, or a map keyed by parent view: <code>{ home: ['a','b','c'] }</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -357,8 +360,7 @@
         <table>
           <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
           <tbody>
-            <tr><td><code>button</code></td><td>boolean</td><td><code>true</code></td><td>Show zoom-out back button</td></tr>
-            <tr><td><code>indicator</code></td><td>boolean</td><td><code>true</code></td><td>Show depth level dots</td></tr>
+            <tr><td><code>position</code></td><td>'bottom-left' | 'top-left'</td><td><code>'bottom-left'</code></td><td>Placement of the back button</td></tr>
           </tbody>
         </table>
       </div>
@@ -369,7 +371,7 @@
           <span class="api-type">boolean | object</span>
           <span class="api-default">default: true</span>
         </div>
-        <div class="api-desc">Controls the depth navigation UI: a back button and depth indicator dots. Pass <code>false</code> to disable all depth UI, or an object to selectively toggle.</div>
+        <div class="api-desc">Controls the depth navigation UI: a back button shown from depth 1 onwards. Pass <code>false</code> to disable it, or an object to choose its position.</div>
       </div>
 
       <h3>inputs</h3>
@@ -410,10 +412,12 @@
             <tr><td><code>back()</code></td><td>Promise | void</td><td>Pop lateral history first, then zoom out</td></tr>
             <tr><td><code>zoomIn(el)</code></td><td>Promise</td><td>Zoom into the view indicated by a trigger element</td></tr>
             <tr><td><code>zoomOut()</code></td><td>void</td><td>Zoom out one level. No-op at root</td></tr>
-            <tr><td><code>zoomLevel()</code></td><td>number</td><td>Current zoom depth (0 = root)</td></tr>
+            <tr><td><code>zoomLevel()</code></td><td>number</td><td>Current zoom depth (1 = root view)</td></tr>
+            <tr><td><code>getZoomLevel()</code></td><td>number</td><td>Alias for <code>zoomLevel()</code></td></tr>
             <tr><td><code>getCurrentViewName()</code></td><td>string | null</td><td>Name of the currently active view</td></tr>
             <tr><td><code>on(event, fn)</code></td><td>this</td><td>Subscribe to lifecycle event (chainable)</td></tr>
             <tr><td><code>off(event, fn?)</code></td><td>this</td><td>Unsubscribe. Omit fn to remove all for that event</td></tr>
+            <tr><td><code>use(plugin, opts?)</code></td><td>this</td><td>Register a plugin (e.g. <code>Zumly.Router</code>); installed during <code>init()</code></td></tr>
             <tr><td><code>destroy()</code></td><td>void</td><td>Clean up all listeners and state</td></tr>
           </tbody>
         </table>
@@ -549,6 +553,9 @@ const myView = '/views/detail.html';
             <tr><td><code>data-with-duration</code></td><td>Override transition duration (e.g. <code>"2s"</code>)</td></tr>
             <tr><td><code>data-with-ease</code></td><td>Override easing function</td></tr>
             <tr><td><code>data-with-effects</code></td><td>Override effects (pipe-separated: <code>"blur(5px)|blur(10px)"</code>)</td></tr>
+            <tr><td><code>data-with-cover</code></td><td>Override cover dimension: <code>"width"</code> or <code>"height"</code></td></tr>
+            <tr><td><code>data-with-stagger</code></td><td>Override stagger delay in ms (e.g. <code>"120"</code>)</td></tr>
+            <tr><td><code>data-hide-trigger</code></td><td>Hide this trigger during zoom; value <code>"fade"</code> crossfades</td></tr>
             <tr><td><code>data-deferred</code></td><td>Override global deferred setting for this trigger</td></tr>
             <tr><td><code>data-*</code></td><td>Any data attribute becomes a prop in <code>ViewContext.props</code></td></tr>
           </tbody>

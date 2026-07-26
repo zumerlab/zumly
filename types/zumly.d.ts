@@ -77,7 +77,7 @@ export interface ViewEntry {
 
 /** Zoom snapshot stored in the storedViews stack. */
 export interface ZoomSnapshot {
-  level: number
+  zoomLevel: number
   views: [ViewEntry, ViewEntry, ViewEntry | null, ViewEntry | null]
   scale?: number
   stagger?: number
@@ -98,8 +98,10 @@ export interface TransitionOptions {
   effects?: [string] | [string, string]
   /** Progressive delay (ms) between view layers during zoom. Default: 0. */
   stagger?: number
-  /** Parallax intensity (0-1). Default: 0. */
+  /** Accepted for compatibility but not applied yet (always treated as 0). */
   parallax?: number
+  /** Hide the trigger element during zoom: 'fade' (crossfade), true (hide), or false. Default: false. */
+  hideTrigger?: 'fade' | boolean
 }
 
 /** Lateral navigation UI configuration. */
@@ -194,8 +196,6 @@ export interface ZumlyOptions {
   inputs?: InputsOptions
   /** Enable deferred rendering (view content inserted after zoom animation). */
   deferred?: boolean
-  /** Hide trigger mode during zoom: 'fade', 'remove', or falsy. */
-  hideTrigger?: string | false
 }
 
 // ─── Events ─────────────────────────────────────────────────────────

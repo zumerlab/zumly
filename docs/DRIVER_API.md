@@ -169,7 +169,7 @@ Your driver receives `spec.type` which is one of:
 - `'zoomOut'` — go back
 - `'lateral'` — same-level swap
 
-For lateral, the built-in **`waapi`** driver runs a **slide animation**. If you author a minimal custom driver and want **no** lateral motion, call the instant helper:
+For lateral, the built-in **`css`** and **`waapi`** drivers run a **slide animation** (the other built-ins are instant). If you author a minimal custom driver and want **no** lateral motion, call the instant helper:
 
 ```js
 import { runLateralInstant } from 'zumly/driver-helpers'
