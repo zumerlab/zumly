@@ -2,7 +2,7 @@
 
 > JavaScript library for hierarchical zoom navigation (ZUI). Navigate in Z (depth) through discrete views in the XY plane with spatial transitions.
 
-Version: 0.92.4
+Version: 0.92.5
 License: MIT
 Author: Juan Martin Muda — Zumerlab
 Repository: https://github.com/zumerlab/zumly

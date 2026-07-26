@@ -128,13 +128,35 @@
         That's why Zumly's bundled drivers handle lateral transitions specially:
       </p>
       <ul>
-        <li>The default <code>waapi</code> driver runs a real slide animation with WAAPI keyframes.</li>
+        <li>The default <code>css</code> driver and the <code>waapi</code> driver run a real
+        slide animation.</li>
         <li>The <code>gsap</code>, <code>anime</code>, and <code>motion</code> adapters delegate
         to <code>runLateralInstant()</code> — they don't add value to a slide that's already
         geometrically simple.</li>
         <li>Custom drivers can call <code>runLateralInstant(spec, onComplete)</code> for the
         same instant behaviour, or write their own slide.</li>
       </ul>
+    </section>
+
+    <section>
+      <h2>Declared sibling order</h2>
+      <p>
+        By default, Zumly infers the slide direction and distance from where the sibling
+        triggers sit in the parent view. When you want explicit control — or the parent has no
+        visible triggers — declare the order with <code>lateralNav.siblings</code>:
+      </p>
+      <pre><code>lateralNav: {
+  siblings: ['today', 'tomorrow', 'week']          // one lateral group
+}
+
+lateralNav: {
+  siblings: { home: ['today', 'tomorrow', 'week'] } // groups keyed by parent view
+}</code></pre>
+      <p>
+        The declared order wins over trigger positions: navigating between non-adjacent
+        siblings slides proportionally further, so jumping from the first to the last item
+        <em>feels</em> like crossing the items in between.
+      </p>
     </section>
 
     <section>

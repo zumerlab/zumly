@@ -26,6 +26,13 @@
       </div>
     </div>
     <div class="install-block">
+      <h3>CommonJS</h3>
+      <div class="code-wrap">
+<pre><span class="kw">const</span> { Zumly } = <span class="kw">require</span>(<span class="str">'zumly'</span>)</pre>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('pre').textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+      </div>
+    </div>
+    <div class="install-block">
       <h3>Hello World</h3>
       <div class="code-wrap">
 <pre><span class="kw">const</span> app = <span class="kw">new</span> Zumly({
