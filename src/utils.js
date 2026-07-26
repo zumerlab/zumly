@@ -203,17 +203,6 @@ export function checkParameters (parameters, instance) {
   // Parallax: disabled (reserved for future use).
   instance.parallax = 0
 
-  // Threshold (elastic zoom): press-and-hold preview before committing zoom.
-  // { enabled: true, duration: 300, commitAt: 0.5 }
-  instance.threshold = null
-  const thIn = t && t.threshold
-  if (thIn && typeof thIn === 'object' && thIn.enabled) {
-    instance.threshold = {
-      duration: typeof thIn.duration === 'number' && thIn.duration > 0 ? thIn.duration : 300,
-      commitAt: typeof thIn.commitAt === 'number' && thIn.commitAt > 0 && thIn.commitAt <= 1 ? thIn.commitAt : 0.5
-    }
-  }
-
   // Lateral navigation UI: auto-generated arrows and dots when siblings exist.
   // true = default (mode: 'auto'), false = disabled,
   // or object: { mode: 'auto'|'always', arrows: true, dots: true }

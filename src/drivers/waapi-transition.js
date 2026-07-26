@@ -12,7 +12,6 @@ import {
   applyZoomOutPreviousState,
   applyZoomOutLastState,
   removeViewFromCanvas,
-  runLateralInstant,
   createFinishGuard,
   SAFETY_BUFFER_MS,
 } from './driver-helpers.js'

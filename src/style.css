@@ -24,6 +24,7 @@
 .z-view {
   position: absolute;
   contain: strict;
+  content-visibility: auto;
 }
 
 .z-view.is-current-view {
@@ -33,10 +34,6 @@
 .z-view.is-previous-view, .z-view.is-last-view, .z-view.has-no-events  {
   pointer-events: none;
   user-select: none;
-}
-
-.z-view {
-  content-visibility: auto;
 }
 
 .zoom-current-view,
