@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v0.92.5](https://github.com/zumerlab/zumly/compare/v0.92.4...v0.92.5)
+
+> 26 July 2026
+
+- Fix runtime robustness bugs and unify transform parsing [`fd5a507`](https://github.com/zumerlab/zumly/commit/fd5a507ec95c490051505fcfa52dd8373fd7751a)
+- Add tests for router plugin and driver helpers [`5385714`](https://github.com/zumerlab/zumly/commit/538571496e71ce51289430398f7f439a994308a6)
+- Sync docs and types with actual API [`d4f0e2b`](https://github.com/zumerlab/zumly/commit/d4f0e2b08f75b1ebc57eb82a03e74111df8716ea)
+- Fix npm packaging: add CJS build, ship all drivers, prepack [`ceb576a`](https://github.com/zumerlab/zumly/commit/ceb576aaf51cad081dfaffc1d3ee10c7ead29530)
+- Remove dead code (threshold, duplicate CSS rule, unused import) [`069272c`](https://github.com/zumerlab/zumly/commit/069272c97894d200417c195badb95e084b125a1d)
+
 #### [v0.92.4](https://github.com/zumerlab/zumly/compare/v0.92.3...v0.92.4)
 
 > 4 July 2026
