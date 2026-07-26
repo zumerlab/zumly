@@ -5,6 +5,8 @@
  * Unsupported formats are left unchanged.
  */
 
+import { splitTranslate } from './geometry.js'
+
 /**
  * Parse Zumly-style transform to extract translate (x,y) and the rest (scale, etc).
  * Supports: "translate(Xpx, Ypx) scale(S)", "translate(Xpx, Ypx)", "".
@@ -15,12 +17,9 @@ export function parseZumlyTransform (transform) {
   if (typeof transform !== 'string' || transform.trim() === '') {
     return { tx: 0, ty: 0, rest: '' }
   }
-  const translateMatch = transform.match(/translate\s*\(\s*([-\d.eE]+)px\s*,\s*([-\d.eE]+)px\s*\)/)
-  if (!translateMatch) return null
-  const tx = parseFloat(translateMatch[1])
-  const ty = parseFloat(translateMatch[2])
-  const rest = transform.replace(/translate\s*\([^)]+\)\s*/, '').trim()
-  return { tx, ty, rest }
+  const t = splitTranslate(transform)
+  if (!t.matched) return null
+  return { tx: t.tx, ty: t.ty, rest: t.rest }
 }
 
 /**

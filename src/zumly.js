@@ -9,7 +9,8 @@ import {
   computeLastViewIntermediateTransform,
   computeChildRectAfterParentTransformChange,
   parseOrigin,
-  parseTranslateScale
+  parseTranslateScale,
+  splitTranslate
 } from './geometry.js'
 import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetachedNode, INDEX_CURRENT, INDEX_PREVIOUS, INDEX_LAST } from './snapshots.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
@@ -67,6 +68,10 @@ export class Zumly {
     this._pendingResizeCorrection = false
     /** Whether this instance has been destroyed. */
     this._destroyed = false
+    /** Timers created via _setTrackedTimeout, cleared in destroy(). */
+    this._trackedTimers = new Set()
+    /** Completion callback of the in-flight transition (see _setBlockEvents). */
+    this._pendingTransitionComplete = null
     /** Lifecycle hooks: { eventName: [fn, ...] } */
     this._hooks = {}
     /** Registered plugins */
@@ -90,6 +95,7 @@ export class Zumly {
     this._onZoom = this.onZoom.bind(this)
     this._onTouchStart = this.onTouchStart.bind(this)
     this._onTouchEnd = this.onTouchEnd.bind(this)
+    this._onTouchCancel = () => { this.touching = false }
     this._onKeyUp = this.onKeyUp.bind(this)
     this._onWheel = this.onWheel.bind(this)
     this._wheelCooldown = false
@@ -128,6 +134,7 @@ export class Zumly {
     canvas.addEventListener('touchend', this._onZoom, false)
     canvas.addEventListener('touchstart', this._onTouchStart, { passive: true })
     canvas.addEventListener('touchend', this._onTouchEnd, false)
+    canvas.addEventListener('touchcancel', this._onTouchCancel, { passive: true })
     canvas.addEventListener('keyup', this._onKeyUp, false)
     canvas.addEventListener('wheel', this._onWheel, { passive: false })
     canvas.addEventListener('mouseover', this._onPrefetchTrigger, { passive: true })
@@ -153,6 +160,7 @@ export class Zumly {
       canvas.removeEventListener('touchend', this._onZoom, false)
       canvas.removeEventListener('touchstart', this._onTouchStart)
       canvas.removeEventListener('touchend', this._onTouchEnd, false)
+      canvas.removeEventListener('touchcancel', this._onTouchCancel)
       canvas.removeEventListener('keyup', this._onKeyUp, false)
       canvas.removeEventListener('wheel', this._onWheel)
       canvas.removeEventListener('mouseover', this._onPrefetchTrigger)
@@ -213,7 +221,11 @@ export class Zumly {
       if (this.blockEvents && !this._destroyed) {
         this.notify('blockEvents safety timeout: driver did not call onComplete. Force-resetting.', 'warn')
         this.blockEvents = false
-        this._onTransitionComplete()
+        // Run the full pending completion (nav update, hooks, storedViews pop on
+        // zoom-out) so internal state stays in sync with the already-mutated DOM.
+        const pending = this._pendingTransitionComplete
+        if (pending) pending()
+        else this._onTransitionComplete()
       }
     }, BLOCK_EVENTS_SAFETY_MS)
   }
@@ -227,6 +239,27 @@ export class Zumly {
       clearTimeout(this._blockEventsSafetyTimer)
       this._blockEventsSafetyTimer = null
     }
+  }
+
+  /**
+   * setTimeout wrapper whose id is tracked so destroy() can clear it.
+   * The callback is skipped if the instance was destroyed meanwhile.
+   * @private
+   */
+  _setTrackedTimeout (fn, ms) {
+    const id = setTimeout(() => {
+      this._trackedTimers.delete(id)
+      if (this._destroyed) return
+      fn()
+    }, ms)
+    this._trackedTimers.add(id)
+    return id
+  }
+
+  /** @private */
+  _clearTrackedTimeouts () {
+    for (const id of this._trackedTimers) clearTimeout(id)
+    this._trackedTimers.clear()
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────
@@ -243,7 +276,7 @@ export class Zumly {
   tracing (data) {
     if (this.debug) {
       if (data === 'ended') {
-        const parse = this.trace.map((task, index) => `${index === 0 ? `Instance ${this.instance}: ${task}` : `${task}`}`).join(' > ')
+        const parse = this.trace.map((task, index) => `${index === 0 ? `Instance ${this.mount}: ${task}` : `${task}`}`).join(' > ')
         this.notify(parse)
         this.trace = []
       } else {
@@ -385,7 +418,7 @@ export class Zumly {
     element.addEventListener('transitionend', onEnd, { once: true })
     // Safety: remove after duration in case transitionend doesn't fire
     const dur = element.style.getPropertyValue('--zoom-duration')
-    setTimeout(onEnd, dur ? parseFloat(dur) * (dur.includes('ms') ? 1 : 1000) + 100 : 1100)
+    this._setTrackedTimeout(onEnd, dur ? parseFloat(dur) * (dur.includes('ms') ? 1 : 1000) + 100 : 1100)
   }
 
   // ─── Trigger hide/crossfade ───────────────────────────────────────
@@ -456,7 +489,7 @@ export class Zumly {
         triggerEl.removeEventListener('transitionend', onEnd)
       }
       triggerEl.addEventListener('transitionend', onEnd, { once: true })
-      setTimeout(onEnd, parseFloat(duration) * (duration.includes('ms') ? 1 : 1000) + 100)
+      this._setTrackedTimeout(onEnd, parseFloat(duration) * (duration.includes('ms') ? 1 : 1000) + 100)
     } else {
       triggerEl.classList.remove('z-trigger-hidden')
     }
@@ -649,10 +682,19 @@ export class Zumly {
     }
     this.tracing('init()')
     if (this.preload && this.preload.length) {
-      await this.prefetcher.preloadEager(this.preload, null)
+      // Preload is an optimization: a failed prefetch must not abort init.
+      await this.prefetcher.preloadEager(this.preload, null).catch(error => {
+        this.notify(`preload failed: ${error.message}`, 'warn')
+      })
     }
-    const node = await this.prefetcher.get(this.initialView, null)
-    const currentView = await prepareAndInsertView(node, this.initialView, this.canvas, true, this.views, this.componentContext)
+    let currentView
+    try {
+      const node = await this.prefetcher.get(this.initialView, null)
+      currentView = await prepareAndInsertView(node, this.initialView, this.canvas, true, this.views, this.componentContext)
+    } catch (error) {
+      this.notify(`init() failed to resolve initial view "${this.initialView}": ${error.message}`, 'error')
+      return
+    }
     this._emit('viewMounted', { viewName: this.initialView, node: currentView })
     this.prefetcher.scanAndPrefetch(currentView, null)
     this.storeViews({
@@ -690,6 +732,10 @@ export class Zumly {
 
     // Clear blockEvents safety timer
     this._clearBlockEventsSafety()
+
+    // Clear tracked safety/cooldown timers
+    this._clearTrackedTimeouts()
+    this._pendingTransitionComplete = null
 
     // Clear resize debounce timer
     if (this._resizeDebounceTimer) {
@@ -775,19 +821,24 @@ export class Zumly {
 
     let currentView
     let deferredContent = null
-    if (isDeferred) {
-      // Deferred: resolve the view to get correct dimensions/classes for geometry,
-      // but detach its children so the browser only paints an empty shell during animation.
-      const node = await this.prefetcher.get(targetViewName, context)
-      if (this._destroyed) return
-      deferredContent = document.createDocumentFragment()
-      while (node.firstChild) deferredContent.appendChild(node.firstChild)
-      currentView = await prepareAndInsertView(node, targetViewName, canvas, false, {}, this.componentContext)
-    } else {
-      const node = await this.prefetcher.get(targetViewName, context)
-      if (this._destroyed) return
-      this.prefetcher.scanAndPrefetch(node, context)
-      currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext)
+    try {
+      if (isDeferred) {
+        // Deferred: resolve the view to get correct dimensions/classes for geometry,
+        // but detach its children so the browser only paints an empty shell during animation.
+        const node = await this.prefetcher.get(targetViewName, context)
+        if (this._destroyed) return
+        deferredContent = document.createDocumentFragment()
+        while (node.firstChild) deferredContent.appendChild(node.firstChild)
+        currentView = await prepareAndInsertView(node, targetViewName, canvas, false, {}, this.componentContext)
+      } else {
+        const node = await this.prefetcher.get(targetViewName, context)
+        if (this._destroyed) return
+        this.prefetcher.scanAndPrefetch(node, context)
+        currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext)
+      }
+    } catch (error) {
+      this.notify(`zoomIn aborted: failed to resolve view "${targetViewName}": ${error.message}`, 'error')
+      return
     }
 
     if (!currentView) return
@@ -807,6 +858,14 @@ export class Zumly {
     const previousView = canvas.querySelector('.is-current-view')
     const lastView = canvas.querySelector('.is-previous-view')
     const removeView = canvas.querySelector('.is-last-view')
+    if (!previousView) {
+      // No current view: init() was never run, or host code stripped the view
+      // class markers. Zooming would dereference null — abort and undo the insert.
+      this.notify('zoomIn aborted: no current view found in canvas. Call init() before navigating and keep Zumly view classes intact.', 'error')
+      if (el) el.classList.remove('zoomed')
+      try { canvas.removeChild(currentView) } catch (e) { /* already removed */ }
+      return
+    }
     hideViewContent(currentView)
     hideViewContent(previousView)
     hideViewContent(lastView)
@@ -954,6 +1013,9 @@ export class Zumly {
       // Remove the currentView we just inserted (it was never shown)
       try { canvas.removeChild(currentView) } catch (e) { /* already removed */ }
 
+      // Undo the trigger marker; a stale .zoomed would mislead the next zoomOut
+      if (el) el.classList.remove('zoomed')
+
       showViewContent(previousView)
       showViewContent(lastView)
 
@@ -1008,9 +1070,14 @@ export class Zumly {
       duration,
       ease
     }
-    this.transitionDriver.runTransition(spec, async () => {
+    // Once-guarded completion: runs from the driver's onComplete, or from the
+    // blockEvents safety timer if the driver hangs — never both.
+    const complete = async () => {
+      if (this._pendingTransitionComplete !== complete) return
+      this._pendingTransitionComplete = null
+      if (this._destroyed) return
       // Deferred rendering: re-attach content that was detached before animation
-      if (isDeferred && deferredContent && currentView && !this._destroyed) {
+      if (isDeferred && deferredContent && currentView) {
         currentView.appendChild(deferredContent)
         this.prefetcher.scanAndPrefetch(currentView, context)
         if (typeof this.views[targetViewName] === 'object' && typeof this.views[targetViewName].mounted === 'function') {
@@ -1023,7 +1090,9 @@ export class Zumly {
       this._updateNav()
       this._emit('afterZoomIn', { viewName: targetViewName, zoomLevel: this.zoomLevel() })
       this.tracing('ended')
-    })
+    }
+    this._pendingTransitionComplete = complete
+    this.transitionDriver.runTransition(spec, complete)
   }
 
   /**
@@ -1061,14 +1130,17 @@ export class Zumly {
 
     const keepAlive = this.lateralNav && this.lateralNav.keepAlive
 
+    // Prepared here, pushed only after the incoming view resolves successfully —
+    // a failed fetch must not leave a corrupt entry in lateral history.
+    let pendingHistoryEntry = null
     if (!isBack) {
       this.lateralHistory = this.lateralHistory || []
       const topSnapshot = this.storedViews[this.storedViews.length - 1]
-      this.lateralHistory.push({
+      pendingHistoryEntry = {
         name: currentName,
         entry: topSnapshot.views[INDEX_CURRENT],
         node: keepAlive ? outgoingView : null
-      })
+      }
     }
 
     this.tracing('lateral()')
@@ -1127,14 +1199,32 @@ export class Zumly {
         if (idx !== -1) this.lateralHistory.splice(idx, 1)
       }
     } else {
+      // back() already popped its history entry; if resolution fails, restore it
+      // so the entry isn't silently lost.
+      const restoreBackEntry = () => {
+        if (isBack) {
+          this.lateralHistory.push({ name: targetViewName, entry: options.savedEntry, node: options.keepAliveNode ?? null })
+        }
+      }
       const context = { target: document.createElement('div'), context: this.componentContext, props: options.props ?? {} }
-      const node = await this.prefetcher.get(targetViewName, context)
-      if (this._destroyed) return
-      this.prefetcher.scanAndPrefetch(node, context)
-      incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
-      if (!incomingView) return
+      try {
+        const node = await this.prefetcher.get(targetViewName, context)
+        if (this._destroyed) return
+        this.prefetcher.scanAndPrefetch(node, context)
+        incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
+      } catch (error) {
+        this.notify(`lateral navigation aborted: failed to resolve view "${targetViewName}": ${error.message}`, 'error')
+        restoreBackEntry()
+        return
+      }
+      if (!incomingView) {
+        restoreBackEntry()
+        return
+      }
       this._emit('viewMounted', { viewName: targetViewName, node: incomingView })
     }
+
+    if (pendingHistoryEntry) this.lateralHistory.push(pendingHistoryEntry)
 
     hideViewContent(incomingView)
 
@@ -1201,7 +1291,10 @@ export class Zumly {
       slideDeltaY,
       keepAlive: keepAlive && !isBack ? keepAlive : false
     }
-    this.transitionDriver.runTransition(spec, () => {
+    const complete = () => {
+      if (this._pendingTransitionComplete !== complete) return
+      this._pendingTransitionComplete = null
+      if (this._destroyed) return
       // keepAlive forward: keep outgoing view in DOM instead of removing (driver skips removeViewFromCanvas)
       if (keepAlive && !isBack) {
         outgoingView.classList.remove('is-current-view', 'is-new-current-view', 'has-no-events')
@@ -1219,27 +1312,18 @@ export class Zumly {
       this._updateNav()
       this._emit('afterLateral', { viewName: targetViewName, from: currentName, isBack })
       this.tracing('ended')
-    })
+    }
+    this._pendingTransitionComplete = complete
+    this.transitionDriver.runTransition(spec, complete)
   }
-
-  /**
-   * After a lateral animation completes, recompute the currentView snapshot entry
-   * so that zoom-out animates the view back into the correct trigger position.
-   * Also updates previousView origin to point at the new trigger, compensating
-   * its transform so the view stays visually in the same position.
-   * @private
-   */
 
   /**
    * Add translate(dx, dy) to an existing transform string for lateral slide.
    */
   _computeLateralBackTransform (transform, dx, dy) {
-    const m = transform.match(/translate\s*\(\s*([-\d.eE]+)px\s*,\s*([-\d.eE]+)px\s*\)/)
-    if (m) {
-      const tx = parseFloat(m[1]) + dx
-      const ty = parseFloat(m[2]) + dy
-      const rest = transform.replace(/translate\s*\([^)]+\)\s*/, '')
-      return `translate(${tx}px, ${ty}px) ${rest}`.trim()
+    const t = splitTranslate(transform)
+    if (t.matched) {
+      return `translate(${t.tx + dx}px, ${t.ty + dy}px) ${t.rest}`.trim()
     }
     return `translate(${dx}px, ${dy}px) ${transform}`.trim()
   }
@@ -1323,7 +1407,10 @@ export class Zumly {
       ease,
       canvas
     }
-    this.transitionDriver.runTransition(spec, () => {
+    const complete = () => {
+      if (this._pendingTransitionComplete !== complete) return
+      this._pendingTransitionComplete = null
+      if (this._destroyed) return
       this.blockEvents = false
       this._onTransitionComplete()
       // Pop storedViews inside callback so nav update sees correct depth
@@ -1332,7 +1419,9 @@ export class Zumly {
       this._updateNav()
       this._emit('afterZoomOut', { zoomLevel: this.zoomLevel() })
       this.tracing('ended')
-    })
+    }
+    this._pendingTransitionComplete = complete
+    this.transitionDriver.runTransition(spec, complete)
   }
 
   // ─── Event handling ──────────────────────────────────────────────
@@ -1608,7 +1697,7 @@ export class Zumly {
       // Leading-edge: fire immediately on first wheel event, then ignore the rest
       this.tracing('onWheel() → zoomOut')
       this._wheelCooldown = true
-      setTimeout(() => { this._wheelCooldown = false }, 500)
+      this._setTrackedTimeout(() => { this._wheelCooldown = false }, 500)
       this.zoomOut()
     }
   }
@@ -1658,6 +1747,9 @@ export class Zumly {
       this.touchendY = event.changedTouches[0].screenY
       this.handleGesture(event)
     }
+    // Always release the flag: after a swipe (or a blocked gesture) no tap branch
+    // runs, and a stuck `touching` would block every subsequent mouseup.
+    this.touching = false
   }
 
   handleGesture (event) {

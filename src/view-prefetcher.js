@@ -70,12 +70,17 @@ export class ViewPrefetcher {
       }
 
       const promise = (async () => {
-        const node = await this.#resolver.resolve(source, context)
-        const template = this.#views[source]
-        const ttl = this.#getTtlForTemplate(template)
-        this.#cache.set(source, node, ttl)
-        this.#inFlight.delete(source)
-        return node
+        try {
+          const node = await this.#resolver.resolve(source, context)
+          const template = this.#views[source]
+          const ttl = this.#getTtlForTemplate(template)
+          this.#cache.set(source, node, ttl)
+          return node
+        } finally {
+          // Clear in-flight on success AND failure — otherwise a rejected
+          // resolution is cached forever and every retry returns the same error.
+          this.#inFlight.delete(source)
+        }
       })()
 
       this.#inFlight.set(source, promise)

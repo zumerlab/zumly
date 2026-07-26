@@ -152,16 +152,31 @@ export function parseOrigin (originStr) {
 }
 
 /**
+ * Split a transform string into its leading translate(Xpx, Ypx) part and the rest.
+ * Single shared parser for Zumly-style transforms; tolerates exponent notation
+ * ("1e-7px") as produced by resize correction re-serialization.
+ * @param {string} transform
+ * @returns {{ tx: number, ty: number, rest: string, matched: boolean }}
+ */
+export function splitTranslate (transform) {
+  const str = typeof transform === 'string' ? transform : ''
+  const m = str.match(/translate\s*\(\s*([-+\d.eE]+)px\s*,\s*([-+\d.eE]+)px\s*\)/)
+  if (!m) return { tx: 0, ty: 0, rest: str.trim(), matched: false }
+  const rest = str.replace(/translate\s*\([^)]+\)\s*/, '').trim()
+  return { tx: parseFloat(m[1]), ty: parseFloat(m[2]), rest, matched: true }
+}
+
+/**
  * Parse a transform string like "translate(10px, 20px) scale(3)" into components.
  * @param {string} transformStr
  * @returns {{ tx: number, ty: number, scale: number }}
  */
 export function parseTranslateScale (transformStr) {
-  const tm = transformStr.match(/translate\(\s*([-\d.]+)px[,\s]+([-\d.]+)px\s*\)/)
-  const sm = transformStr.match(/scale\(\s*([-\d.]+)\s*\)/)
+  const t = splitTranslate(transformStr)
+  const sm = transformStr.match(/scale\s*\(\s*([-+\d.eE]+)\s*\)/)
   return {
-    tx: tm ? parseFloat(tm[1]) : 0,
-    ty: tm ? parseFloat(tm[2]) : 0,
+    tx: t.matched ? t.tx : 0,
+    ty: t.matched ? t.ty : 0,
     scale: sm ? parseFloat(sm[1]) : 1
   }
 }
@@ -232,26 +247,4 @@ export function computeChildRectAfterParentTransformChange (
     right: newX + newW,
     bottom: newY + newH
   }
-}
-
-/**
- * Compute a preview transform for elastic zoom (threshold).
- * Produces a slight zoom toward the trigger center, suitable for the hold preview phase.
- *
- * @param {{ x: number, y: number, width: number, height: number }} triggerRect - Trigger bounding rect
- * @param {{ x: number, y: number, width: number, height: number }} canvasRect - Canvas bounding rect
- * @param {string} currentTransform - Current inline transform of the view (may be empty)
- * @param {number} previewScale - Target preview scale (e.g. 1.08)
- * @returns {{ origin: string, transform: string }} CSS transform-origin and transform for the preview end state
- */
-export function computePreviewTransform (triggerRect, canvasRect, currentTransform, previewScale) {
-  const cx = triggerRect.x + triggerRect.width / 2 - canvasRect.x
-  const cy = triggerRect.y + triggerRect.height / 2 - canvasRect.y
-  const origin = `${cx}px ${cy}px`
-  // Compose scale onto existing transform
-  const base = currentTransform && currentTransform.trim() !== '' ? currentTransform : ''
-  const transform = base
-    ? `${base} scale(${previewScale})`
-    : `scale(${previewScale})`
-  return { origin, transform }
 }
