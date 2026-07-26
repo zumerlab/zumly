@@ -6,7 +6,7 @@ If you haven't already, come find us in [our Telegram group](https://t.me/ZumlyC
 
 ## Testing
 
-Tests live in [`__tests__/`](https://github.com/zumly/zumly/tree/master/__tests__) and run with [Vitest](https://vitest.dev/) + Playwright (`npm run test`). Please add or update tests when you change behavior.
+Tests live in [`__tests__/`](https://github.com/zumerlab/zumly/tree/main/__tests__) and run with [Vitest](https://vitest.dev/) + Playwright (`npm run test`). Please add or update tests when you change behavior.
 
 ## Transition drivers
 
@@ -14,12 +14,12 @@ Custom `transitions.driver` implementations are documented in **[docs/DRIVER_API
 
 ## Submitting changes
 
-Please send a [GitHub Pull Request to Zumly](https://github.com/zumly/zumly/pulls) with a clear list of what you've done (read more about [pull requests](http://help.github.com/pull-requests/)). 
+Please send a [GitHub Pull Request to Zumly](https://github.com/zumerlab/zumly/pulls) with a clear list of what you've done (read more about [pull requests](http://help.github.com/pull-requests/)). 
 When you send a pull request, we will love you forever if you include spec test. Please follow our coding conventions (below) and make sure all of your commits are atomic (one feature per commit).
 
 ## Coding conventions
 
-Start reading our code and you'll get the hang of it. Besides, an [.editorconfig](https://github.com/zumly/zumly/blob/master/.editorconfig) is provided.
+Start reading our code and you'll get the hang of it. Besides, an [.editorconfig](https://github.com/zumerlab/zumly/blob/main/.editorconfig) is provided.
 
 Thanks,
 

@@ -60,6 +60,22 @@ async function buildESM () {
 }
 
 /**
+ * 2b) CJS build for require('zumly') in Node:
+ *     dist/zumly.cjs
+ */
+async function buildCJS () {
+  await build({
+    ...common,
+    entryPoints: ['src/entry-esm.js'],
+    outfile: 'dist/zumly.cjs',
+    format: 'cjs',
+    platform: 'browser',
+    minify: true,
+    banner,
+  })
+}
+
+/**
  * 3) CSS build:
  *    dist/zumly.css (+ dist/zumly.min.css)
  */
@@ -97,7 +113,7 @@ async function copyToPublicDist () {
 
 async function main () {
   try { rmSync('dist', { recursive: true, force: true }) } catch { /* ok */ }
-  await Promise.all([buildLegacy(), buildESM(), buildCSS()])
+  await Promise.all([buildLegacy(), buildESM(), buildCJS(), buildCSS()])
   await copyToPublicDist()
 }
 

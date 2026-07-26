@@ -21,14 +21,14 @@
     "library",
     "ZUI"
   ],
-  "main": "dist/zumly.js",
+  "main": "dist/zumly.cjs",
   "module": "dist/zumly.mjs",
   "types": "types/zumly.d.ts",
   "exports": {
     ".": {
       "types": "./types/zumly.d.ts",
       "import": "./dist/zumly.mjs",
-      "require": "./dist/zumly.js",
+      "require": "./dist/zumly.cjs",
       "default": "./dist/zumly.mjs"
     },
     "./style.css": "./dist/zumly.css",
@@ -37,6 +37,7 @@
       "import": "./src/drivers/index.js"
     },
     "./driver-helpers": {
+      "types": "./src/drivers/driver-helpers.d.ts",
       "import": "./src/drivers/driver-helpers.js"
     }
   },
@@ -53,16 +54,19 @@
     "test:coverage": "npx vitest run --browser.headless --coverage",
     "test:install-browsers": "npx playwright install chromium",
     "bump": "npx @zumerbox/bump && npx @zumerbox/changelog",
-    "prebuild": "git add CHANGELOG.md && git commit -m \"Bumped version\" && git push --follow-tags"
+    "prebuild": "git add CHANGELOG.md && git commit -m \"Bumped version\" && git push --follow-tags",
+    "prepack": "npm run compile"
   },
   "files": [
     "dist",
     "types",
-    "src/drivers/driver-helpers.js",
-    "src/drivers/index.js",
+    "src/drivers",
     "docs/DRIVER_API.md",
     "README.md"
   ],
+  "engines": {
+    "node": ">=18"
+  },
   "devDependencies": {
     "esbuild": "^0.24.0",
     "@vitest/browser": "^3.1.2",
