@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v0.92.6](https://github.com/zumerlab/zumly/compare/v0.92.5...v0.92.6)
+
+> 26 July 2026
+
+- Fix CSS driver leaving views stuck when animationend loses to the safety timer [`9891bf5`](https://github.com/zumerlab/zumly/commit/9891bf54d3a8299d37bc0aad867d34c7d691eabc)
+- Update docs site: siblings section, CommonJS install, version [`c390c06`](https://github.com/zumerlab/zumly/commit/c390c06998dd026bceefbdb994cce338f1acfa3a)
+
 #### [v0.92.5](https://github.com/zumerlab/zumly/compare/v0.92.4...v0.92.5)
 
 > 26 July 2026
