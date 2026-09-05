@@ -593,6 +593,16 @@
       var res = await fetch('views/api.html')
       var html = await res.text()
       var doc = new DOMParser().parseFromString(html, 'text/html')
+      // Sanitize parsed content before inserting: strip scripts and inline
+      // event handlers / javascript: URLs to avoid XSS from the fetched HTML.
+      doc.querySelectorAll('script').forEach(function (s) { s.remove() })
+      doc.querySelectorAll('*').forEach(function (el) {
+        Array.prototype.slice.call(el.attributes).forEach(function (attr) {
+          if (/^on/i.test(attr.name) || /^javascript:/i.test(attr.value)) {
+            el.removeAttribute(attr.name)
+          }
+        })
+      })
       var styles = ''
       doc.querySelectorAll('style').forEach(function (s) { styles += s.outerHTML })
       var body = doc.body.innerHTML
