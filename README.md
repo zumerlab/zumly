@@ -448,7 +448,7 @@ Details and more topics: [docs/roadMap.md](docs/roadMap.md). Driver contract and
 
 ## Origin
 
-Zumly is a reimagined, framework-agnostic zoom engine inspired by [Zircle UI](https://github.com/zircleUI/zircleUI). Part of the [Zumerlab](https://github.com/zumerlab) ecosystem — use it with [Orbit](https://github.com/zumerlab/orbit) for radial layouts and [SnapDOM](https://github.com/zumerlab/snapdom) for lightweight DOM diffing.
+Zumly is a reimagined, framework-agnostic zoom engine inspired by [Zircle UI](https://github.com/zircleUI/zircleUI). Part of the [Zumerlab](https://github.com/zumerlab) ecosystem — use it with [Orbit](https://github.com/zumerlab/orbit) for radial layouts and [SnapDOM](https://github.com/zumerlab/snapdom) for DOM-to-image capture. Use [SnapDIFF](https://github.com/zumerlab/snapdiff) to compare captures for visual regression testing.
 
 ## License
 
