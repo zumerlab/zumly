@@ -10,6 +10,7 @@
  */
 
 import { ViewResolver } from './view-resolver.js'
+import { disposeView } from './view-lifecycle.js'
 
 /**
  * Prepare a resolved view node and insert it into the canvas.
@@ -45,8 +46,14 @@ export async function prepareAndInsertView (node, viewName, canvas, isInit, view
     node.classList.add('is-new-current-view', 'has-no-events', 'hide')
   }
   canvas.append(node)
-  if (typeof views[viewName] === 'object' && typeof views[viewName].mounted === 'function') {
-    await views[viewName].mounted()
+  try {
+    if (views[viewName] && typeof views[viewName] === 'object' && typeof views[viewName].mounted === 'function') {
+      await views[viewName].mounted()
+    }
+  } catch (error) {
+    disposeView(node)
+    node.remove()
+    throw error
   }
   return node
 }
@@ -64,11 +71,11 @@ export async function prepareAndInsertView (node, viewName, canvas, isInit, view
  */
 export async function renderView (el, canvas, views, init, componentContext) {
   const viewName = init ? el : el.dataset.to
-  const context = init ? null : {
-    trigger: el,
+  const context = {
+    trigger: init ? undefined : el,
     target: document.createElement('div'),
     context: componentContext,
-    props: Object.assign({}, el.dataset)
+    props: init ? {} : Object.assign({}, el.dataset)
   }
   const resolver = new ViewResolver(views)
   const node = await resolver.resolve(viewName, context)
@@ -284,7 +291,9 @@ export function checkParameters (parameters, instance) {
   // Navigation inputs: control which user interactions trigger zoom/navigation.
   // All enabled by default. Set individual keys to false to disable.
   const niIn = parameters.inputs
-  if (niIn && typeof niIn === 'object') {
+  if (niIn === false) {
+    instance.inputs = { wheel: false, keyboard: false, click: false, touch: false }
+  } else if (niIn && typeof niIn === 'object') {
     instance.inputs = {
       wheel: typeof niIn.wheel === 'boolean' ? niIn.wheel : true,
       keyboard: typeof niIn.keyboard === 'boolean' ? niIn.keyboard : true,

@@ -64,7 +64,7 @@ export function scalePixelOrigin (origin, ratioX, ratioY) {
 }
 
 /**
- * Apply resize correction to stored snapshots and visible DOM.
+ * Apply resize correction to stored snapshots, lateral history, and visible DOM.
  * Updates transforms (translate only) and pixel origins. Preserves scale.
  * @param {Object} instance - Zumly instance with storedViews, currentStage, canvas
  * @param {number} prevWidth - previous canvas width
@@ -79,25 +79,28 @@ export function applyResizeCorrection (instance, prevWidth, prevHeight, newWidth
   const ratioX = newWidth / prevWidth
   const ratioY = newHeight / prevHeight
 
-  for (const snapshot of instance.storedViews) {
-    const views = snapshot.views
-    if (!Array.isArray(views)) continue
-    for (let i = 0; i < views.length; i++) {
-      const entry = views[i]
-      if (!entry || entry.detachedNode) continue
-      if (entry.backwardState) {
-        entry.backwardState.transform = scaleZumlyTransform(entry.backwardState.transform, ratioX, ratioY)
-        if (entry.backwardState.origin != null) {
-          entry.backwardState.origin = scalePixelOrigin(entry.backwardState.origin, ratioX, ratioY)
-        }
-      }
-      if (entry.forwardState) {
-        entry.forwardState.transform = scaleZumlyTransform(entry.forwardState.transform, ratioX, ratioY)
-        if (entry.forwardState.origin != null) {
-          entry.forwardState.origin = scalePixelOrigin(entry.forwardState.origin, ratioX, ratioY)
-        }
+  // A lateral history entry can reference states also present in its full stage
+  // or storedViews. Scale each state once, including saved ancestor poses.
+  const resizedStates = new Set()
+  const resizeEntry = entry => {
+    if (!entry || entry.detachedNode) return
+    for (const state of [entry.backwardState, entry.forwardState]) {
+      if (!state || resizedStates.has(state)) continue
+      resizedStates.add(state)
+      state.transform = scaleZumlyTransform(state.transform, ratioX, ratioY)
+      if (state.origin != null) {
+        state.origin = scalePixelOrigin(state.origin, ratioX, ratioY)
       }
     }
+  }
+  const snapshots = [...instance.storedViews]
+  for (const history of instance.lateralHistory || []) {
+    if (history.stage) snapshots.push(history.stage)
+    resizeEntry(history.entry)
+  }
+  for (const snapshot of snapshots) {
+    if (!Array.isArray(snapshot.views)) continue
+    snapshot.views.forEach(resizeEntry)
   }
 
   const canvas = instance.canvas

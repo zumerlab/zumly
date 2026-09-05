@@ -40,6 +40,7 @@ Working document to guide next improvements.
 - Supported view sources: HTML string, URL, function, object with `render()`, DOM element, web component tag.
 - Hyphenated names are resolved as keys first, then as web components.
 - `mounted()` runs only after insertion into canvas.
+- `ViewContext.onCleanup()` releases component resources on permanent disposal; framework mount containers are preserved.
 
 ### Open work
 - Tighten and document the view source contract.
@@ -69,7 +70,7 @@ Working document to guide next improvements.
 - Eager preload from `preload`.
 - Hover/focus prefetch for `.zoom-me[data-to]`.
 - Scan prefetch for triggers inside the active view.
-- Cache policy: string sources cached, function/object sources resolved fresh.
+- Cache policy: HTML/URL sources cached with isolated nodes per consumer; function/object sources resolved fresh only on navigation. Custom elements are not prefetched.
 
 ### Open work
 - Add queue/priority limits for large preload sets.
@@ -88,6 +89,8 @@ Working document to guide next improvements.
 - Zoom-out edge cases (with and without detached views).
 - Resolver detection order and view source combinations.
 - Driver completion guarantees (`onComplete` exactly once).
+- Promise completion, concurrent loads, and cancellation are covered by regression tests.
+- Local commands run Chromium, Firefox, WebKit, and verify installed npm package exports.
 
 ---
 

@@ -7,7 +7,7 @@
  * origin depends on the trigger element which doesn't exist without context.
  *
  * Usage:
- *   import { ZumlyRouter } from 'zumly/plugins/router'
+ *   import { ZumlyRouter } from 'zumly'
  *   const app = new Zumly({ ... })
  *   app.use(ZumlyRouter, { separator: '/' })
  *   app.init()
@@ -61,6 +61,9 @@ export const ZumlyRouter = {
     const prefix = opts.prefix
 
     let syncing = false // guard against circular updates
+    let processing = false
+    let pendingTarget = null
+    let destroyed = false
 
     // ─── Zumly → Hash sync ──────────────────────────────────
 
@@ -84,37 +87,68 @@ export const ZumlyRouter = {
 
     // ─── Popstate → Zumly (back only) ───────────────────────
 
-    function onPopState () {
-      if (syncing) return
+    async function reconcile () {
+      if (processing || destroyed) return
+      processing = true
       syncing = true
+      try {
+        while (pendingTarget && !destroyed) {
+          const target = pendingTarget
+          pendingTarget = null
+          // Browser history can move while a view is loading or animating.
+          // Finish that navigation before applying the latest requested path.
+          await instance._navigationTask?.promise
+          if (destroyed) return
+          if (pendingTarget) continue
 
-      const target = parsePath(prefix, sep)
-      const current = buildPath(instance, sep).split(sep).filter(Boolean)
+          let current = buildPath(instance, sep).split(sep).filter(Boolean)
+          if (target.join(sep) === current.join(sep)) continue
 
-      if (target.join(sep) === current.join(sep)) {
+          if (target.length > current.length) {
+            // Forward and cold deep links remain intentionally unsupported.
+            window.history.back()
+            continue
+          }
+
+          while (current.length > target.length && current.length > 1) {
+            const depth = current.length
+            await instance.zoomOut()
+            if (destroyed) return
+            current = buildPath(instance, sep).split(sep).filter(Boolean)
+            if (pendingTarget || current.length >= depth) break
+          }
+          if (pendingTarget) continue
+
+          if (target.length === current.length && target.length > 0) {
+            const lastTarget = target[target.length - 1]
+            if (lastTarget !== current[current.length - 1]) {
+              const history = instance.lateralHistory || []
+              const nameOf = entry => typeof entry === 'object' ? entry?.name : entry
+              const historyIndex = history.map(nameOf).lastIndexOf(lastTarget)
+              // Use the engine's back path when possible, preserving keepAlive
+              // nodes and consuming every entry in a multi-step history jump.
+              if (historyIndex !== -1) {
+                while (instance.lateralHistory.length > historyIndex) {
+                  const length = instance.lateralHistory.length
+                  await instance.back()
+                  if (destroyed || pendingTarget || instance.lateralHistory.length >= length) break
+                }
+              } else {
+                await instance.goTo(lastTarget, { mode: 'lateral' })
+              }
+            }
+          }
+        }
+      } finally {
         syncing = false
-        return
+        processing = false
       }
+    }
 
-      if (target.length < current.length) {
-        // Browser back → zoom out
-        const diff = current.length - target.length
-        for (let i = 0; i < diff; i++) {
-          instance.zoomOut()
-        }
-      } else if (target.length === current.length && target.length > 0) {
-        // Same depth, different view → lateral back
-        const lastTarget = target[target.length - 1]
-        if (lastTarget !== current[current.length - 1]) {
-          instance.goTo(lastTarget, { mode: 'lateral' })
-        }
-      }
-      else if (target.length > current.length) {
-        // Forward attempt — block it by going back to current state
-        window.history.back()
-      }
-
-      syncing = false
+    function onPopState () {
+      if (destroyed) return
+      pendingTarget = parsePath(prefix, sep)
+      void reconcile()
     }
 
     window.addEventListener('popstate', onPopState)
@@ -126,6 +160,8 @@ export const ZumlyRouter = {
     // ─── Cleanup on destroy ──────────────────────────────────
 
     instance.on('destroy', function () {
+      destroyed = true
+      pendingTarget = null
       instance.off('afterZoomIn', pushHash)
       instance.off('afterLateral', pushHash)
       instance.off('afterZoomOut', replaceHash)

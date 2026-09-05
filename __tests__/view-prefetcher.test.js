@@ -4,6 +4,22 @@ import { ViewCache } from '../src/view-cache.js'
 
 describe('ViewPrefetcher caching', () => {
   describe('static HTML view', () => {
+    it('isolates concurrent consumers and the cache from later DOM mutations', async () => {
+      const prefetcher = new ViewPrefetcher({ home: '<div><p>Original</p></div>' })
+      const [first, simultaneous] = await Promise.all([prefetcher.get('home'), prefetcher.get('home')])
+      first.classList.add('is-current-view')
+      first.style.transform = 'scale(4)'
+      first.querySelector('p').textContent = 'Changed'
+
+      const later = await prefetcher.get('home')
+      expect(first).not.toBe(simultaneous)
+      for (const node of [simultaneous, later]) {
+        expect(node.textContent).toBe('Original')
+        expect(node.classList.contains('is-current-view')).toBe(false)
+        expect(node.style.transform).toBe('')
+      }
+    })
+
     it('is cached and returned as a clone', async () => {
       const html = '<div class="z-view"><p>Static</p></div>'
       const views = { home: html }
@@ -43,6 +59,34 @@ describe('ViewPrefetcher caching', () => {
   })
 
   describe('function-based view', () => {
+    it('does not render dynamic sources or aliases during preload, scan, and hover prefetch', async () => {
+      const render = vi.fn(() => '<div>Dynamic</div>')
+      const objectRender = vi.fn(() => '<div>Object</div>')
+      const prefetcher = new ViewPrefetcher({ dynamic: render, object: { render: objectRender }, alias: 'dynamic' })
+      const parent = document.createElement('div')
+      parent.innerHTML = '<button class="zoom-me" data-to="dynamic">Open</button>'
+      await prefetcher.preloadEager(['dynamic', 'object', 'alias'])
+      prefetcher.scanAndPrefetch(parent)
+      prefetcher.prefetch('alias')
+      prefetcher.prefetch('object')
+      expect(render).not.toHaveBeenCalled()
+      expect(objectRender).not.toHaveBeenCalled()
+
+      await prefetcher.get('alias', { props: { id: '42' } })
+      expect(render).toHaveBeenCalledOnce()
+      expect(render.mock.calls[0][0].props).toEqual({ id: '42' })
+    })
+
+    it('does not cache dynamic sources reached through a string alias', async () => {
+      const render = vi.fn(({ props }) => `<div>${props.id}</div>`)
+      const prefetcher = new ViewPrefetcher({ alias: 'dynamic', dynamic: render })
+      const first = await prefetcher.get('alias', { props: { id: 'A' } })
+      const second = await prefetcher.get('alias', { props: { id: 'B' } })
+      expect(first.textContent).toBe('A')
+      expect(second.textContent).toBe('B')
+      expect(render).toHaveBeenCalledTimes(2)
+    })
+
     it('is not incorrectly reused across different contexts', async () => {
       const createView = (id) => {
         const div = document.createElement('div')
@@ -113,9 +157,32 @@ describe('ViewPrefetcher caching', () => {
       expect(b.textContent.trim()).toBe('obj-y')
     })
   })
+
+  it('creates custom element views only when requested and never caches their instances', async () => {
+    let created = 0
+    const tag = `zumly-prefetch-test-${Date.now()}`
+    customElements.define(tag, class extends HTMLElement { constructor () { super(); created++ } })
+    const prefetcher = new ViewPrefetcher({ component: tag })
+    prefetcher.prefetch('component')
+    await prefetcher.preloadEager(['component'])
+    expect(created).toBe(0)
+    const first = await prefetcher.get('component')
+    const second = await prefetcher.get('component')
+    expect(created).toBe(2)
+    expect(first).not.toBe(second)
+  })
 })
 
 describe('ViewCache', () => {
+  it('snapshots the node at set time', () => {
+    const cache = new ViewCache()
+    const node = document.createElement('div')
+    node.textContent = 'Before'
+    cache.set('view', node)
+    node.textContent = 'After'
+    expect(cache.get('view').textContent).toBe('Before')
+  })
+
   it('returns clone on get, not the exact original node', () => {
     const cache = new ViewCache()
     const node = document.createElement('div')

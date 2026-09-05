@@ -146,8 +146,9 @@ const app = new Zumly({
   initialView: 'home',
   views: {
     home: '&lt;div class="z-view"&gt;&lt;div class="zoom-me" data-to="dashboard" data-id="42"&gt;Open dashboard&lt;/div&gt;&lt;/div&gt;',
-    dashboard: ({ target, props }) =&gt; {
+    dashboard: ({ target, props, onCleanup }) =&gt; {
       const root = createRoot(target)
+      onCleanup(() =&gt; root.unmount())
       root.render(&lt;Dashboard id={props.id} /&gt;)
     }
   }
@@ -169,7 +170,7 @@ await app.init()</pre>
         component receiving the selected item's id from the trigger.
       </p>
       <pre>// App.jsx
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import Zumly from 'zumly'
 import { createRoot } from 'react-dom/client'
 import 'zumly/css'
@@ -178,18 +179,20 @@ import ItemList from './ItemList'
 import ItemDetail from './ItemDetail'
 
 export default function App() {
-  const canvasRef = useRef(null)
-
   useEffect(() =&gt; {
     const app = new Zumly({
-      mount: canvasRef.current,
+      mount: '#dashboard-canvas',
       initialView: 'list',
       views: {
-        list: ({ target }) =&gt; {
-          createRoot(target).render(&lt;ItemList /&gt;)
+        list: ({ target, onCleanup }) =&gt; {
+          const root = createRoot(target)
+          onCleanup(() =&gt; root.unmount())
+          root.render(&lt;ItemList /&gt;)
         },
-        detail: ({ target, props }) =&gt; {
-          createRoot(target).render(&lt;ItemDetail id={props.id} /&gt;)
+        detail: ({ target, props, onCleanup }) =&gt; {
+          const root = createRoot(target)
+          onCleanup(() =&gt; root.unmount())
+          root.render(&lt;ItemDetail id={props.id} /&gt;)
         }
       },
       transitions: {
@@ -202,7 +205,7 @@ export default function App() {
     return () =&gt; app.destroy()
   }, [])
 
-  return &lt;div ref={canvasRef} className="zumly-canvas" style={{ height: '100vh' }} /&gt;
+  return &lt;div id="dashboard-canvas" className="zumly-canvas" style={{ height: '100vh' }} /&gt;
 }</pre>
 
       <pre>// ItemList.jsx
@@ -213,7 +216,7 @@ export default function ItemList() {
     { id: '3', name: 'Brake system' }
   ]
   return (
-    &lt;div className="z-view"&gt;
+    &lt;div className="dashboard-view"&gt;
       &lt;h1&gt;Subsystems&lt;/h1&gt;
       {items.map(item =&gt; (
         &lt;div key={item.id} className="zoom-me" data-to="detail" data-id={item.id}&gt;
@@ -228,16 +231,16 @@ export default function ItemList() {
     <section>
       <h2>Lifecycle and cleanup</h2>
       <p>
-        Function views in Zumly are <strong>never cached</strong> — they resolve fresh each time
-        the user zooms in. That's the right behavior for React: every zoom-in mounts a new React
-        root, every zoom-out unmounts it, and React's normal lifecycle hooks (<code>useEffect</code>
-        cleanup, <code>useLayoutEffect</code>, etc.) work as expected.
+        Function views are <strong>never cached</strong>. Each newly resolved view creates a
+        React root. Register <code>onCleanup(() =&gt; root.unmount())</code> so React runs its
+        effect cleanup when Zumly permanently removes that view or the Zumly instance is
+        destroyed. Removing DOM alone does not unmount a React root.
       </p>
       <div class="callout">
-        <strong>Tip:</strong> If you need to keep a component instance alive across navigation
-        (for example, a video player that shouldn't re-mount), use an <strong>object view</strong>
-        with <code>render()</code> and <code>mounted()</code> methods, and store your React root
-        in a closure variable instead of recreating it.
+        <strong>Retained views:</strong> A view kept in depth history or by
+        <code>lateralNav.keepAlive</code> keeps its React root until permanent removal.
+        Temporary detachment does not run <code>onCleanup</code>. Object views also resolve
+        fresh; choosing <code>render()</code> does not preserve an instance by itself.
       </div>
     </section>
 
@@ -255,8 +258,10 @@ const app = new Zumly({
   initialView: 'home',
   componentContext: { store },
   views: {
-    dashboard: ({ target, context }) =&gt; {
-      createRoot(target).render(
+    dashboard: ({ target, context, onCleanup }) =&gt; {
+      const root = createRoot(target)
+      onCleanup(() =&gt; root.unmount())
+      root.render(
         &lt;Provider store={context.store}&gt;
           &lt;Dashboard /&gt;
         &lt;/Provider&gt;
@@ -270,13 +275,16 @@ const app = new Zumly({
       <h2>TypeScript</h2>
       <p>
         Zumly ships TypeScript types out of the box. View functions are typed with the
-        <code>target</code>, <code>props</code>, and <code>context</code> parameters, so your
+        <code>target</code>, <code>props</code>, <code>context</code>, and <code>onCleanup</code>
+        parameters, so your
         React mount code gets full IntelliSense.
       </p>
       <pre>import Zumly, { ViewFunction } from 'zumly'
 
-const dashboard: ViewFunction = ({ target, props }) =&gt; {
-  createRoot(target).render(&lt;Dashboard id={props.id as string} /&gt;)
+const dashboard: ViewFunction = ({ target, props, onCleanup }) =&gt; {
+  const root = createRoot(target)
+  onCleanup(() =&gt; root.unmount())
+  root.render(&lt;Dashboard id={props.id as string} /&gt;)
 }</pre>
     </section>
 
@@ -289,9 +297,9 @@ const dashboard: ViewFunction = ({ target, props }) =&gt; {
           element. Just call <code>createRoot(target).render(...)</code>.
         </li>
         <li>
-          <strong>Don't forget the <code>z-view</code> class</strong> on your component's root
-          element if you're returning JSX with a wrapper. Zumly auto-adds it if missing, but
-          being explicit avoids surprises with CSS selectors.
+          <strong>Zumly keeps <code>target</code> as the view wrapper</strong> and adds
+          <code>z-view</code> there. Set dimensions on <code>target</code> if the default
+          canvas-sized wrapper is unsuitable; your component keeps its own DOM roots.
         </li>
         <li>
           <strong>Trigger data attributes become strings.</strong>

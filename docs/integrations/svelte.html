@@ -139,7 +139,7 @@
       </p>
       <pre>import Zumly from 'zumly'
 import 'zumly/css'
-import { mount } from 'svelte'
+import { mount, unmount } from 'svelte'
 import Dashboard from './Dashboard.svelte'
 
 const app = new Zumly({
@@ -147,8 +147,9 @@ const app = new Zumly({
   initialView: 'home',
   views: {
     home: '&lt;div class="z-view"&gt;&lt;div class="zoom-me" data-to="dashboard" data-id="42"&gt;Open dashboard&lt;/div&gt;&lt;/div&gt;',
-    dashboard: ({ target, props }) =&gt; {
-      mount(Dashboard, { target, props: { id: props.id } })
+    dashboard: ({ target, props, onCleanup }) =&gt; {
+      const component = mount(Dashboard, { target, props: { id: props.id } })
+      onCleanup(() =&gt; unmount(component))
     }
   }
 })
@@ -162,7 +163,9 @@ await app.init()</pre>
       </p>
       <div class="callout">
         <strong>Svelte 4?</strong> Replace <code>mount(Dashboard, { target, props })</code> with
-        <code>new Dashboard({ target, props })</code>. The rest of the integration is identical.
+        <code>new Dashboard({ target, props })</code>, keep the returned instance, and
+        register <code>onCleanup(() =&gt; component.$destroy())</code> instead of
+        <code>unmount(component)</code>.
       </div>
     </section>
 
@@ -176,26 +179,27 @@ await app.init()</pre>
       <h3>App.svelte</h3>
       <pre>&lt;script&gt;
   import { onMount, onDestroy } from 'svelte'
-  import { mount } from 'svelte'
+  import { mount, unmount } from 'svelte'
   import Zumly from 'zumly'
   import 'zumly/css'
 
   import ItemList from './ItemList.svelte'
   import ItemDetail from './ItemDetail.svelte'
 
-  let canvas
   let zumly
 
   onMount(async () =&gt; {
     zumly = new Zumly({
-      mount: canvas,
+      mount: '#dashboard-canvas',
       initialView: 'list',
       views: {
-        list: ({ target }) =&gt; {
-          mount(ItemList, { target })
+        list: ({ target, onCleanup }) =&gt; {
+          const component = mount(ItemList, { target })
+          onCleanup(() =&gt; unmount(component))
         },
-        detail: ({ target, props }) =&gt; {
-          mount(ItemDetail, { target, props: { id: props.id } })
+        detail: ({ target, props, onCleanup }) =&gt; {
+          const component = mount(ItemDetail, { target, props: { id: props.id } })
+          onCleanup(() =&gt; unmount(component))
         }
       },
       transitions: {
@@ -210,7 +214,7 @@ await app.init()</pre>
   onDestroy(() =&gt; zumly?.destroy())
 &lt;/script&gt;
 
-&lt;div bind:this={canvas} class="zumly-canvas" style="height: 100vh"&gt;&lt;/div&gt;</pre>
+&lt;div id="dashboard-canvas" class="zumly-canvas" style="height: 100vh"&gt;&lt;/div&gt;</pre>
 
       <h3>ItemList.svelte</h3>
       <pre>&lt;script&gt;
@@ -221,7 +225,7 @@ await app.init()</pre>
   ]
 &lt;/script&gt;
 
-&lt;div class="z-view"&gt;
+&lt;div class="dashboard-view"&gt;
   &lt;h1&gt;Subsystems&lt;/h1&gt;
   {#each items as item (item.id)}
     &lt;div class="zoom-me" data-to="detail" data-id={item.id}&gt;
@@ -235,7 +239,7 @@ await app.init()</pre>
   let { id } = $props()
 &lt;/script&gt;
 
-&lt;div class="z-view"&gt;
+&lt;div class="dashboard-view"&gt;
   &lt;h1&gt;Detail for {id}&lt;/h1&gt;
 &lt;/div&gt;</pre>
     </section>
@@ -243,16 +247,16 @@ await app.init()</pre>
     <section>
       <h2>Lifecycle and cleanup</h2>
       <p>
-        Function views in Zumly are <strong>never cached</strong> — they resolve fresh each time
-        the user zooms in. That's the right behavior for Svelte: every zoom-in mounts a new
-        component instance, every zoom-out unmounts it, and Svelte's lifecycle hooks
-        (<code>onMount</code>, <code>onDestroy</code>, etc.) run as expected.
+        Function views are <strong>never cached</strong>. Each newly resolved view mounts a
+        Svelte component. Register <code>onCleanup(() =&gt; unmount(component))</code> so Svelte
+        runs its destruction hooks when Zumly permanently removes that view or is destroyed.
+        DOM removal alone does not run Svelte's component teardown.
       </p>
       <div class="callout">
-        <strong>Tip:</strong> If you need explicit teardown of a Svelte 5 component (for example,
-        to release a long-lived resource), capture the instance returned by <code>mount()</code>
-        and call <code>unmount(instance)</code> from a Zumly <code>'beforeZoomOut'</code> event.
-        For most components, Zumly's standard cleanup is enough.
+        <strong>Retained views:</strong> A view kept in depth history or by
+        <code>lateralNav.keepAlive</code> keeps its component until permanent removal.
+        Temporary detachment does not run <code>onCleanup</code>. Register teardown per view
+        instead of using a global <code>'beforeZoomOut'</code> hook, which runs before removal.
       </div>
     </section>
 
@@ -273,11 +277,12 @@ const app = new Zumly({
   initialView: 'home',
   componentContext: { userStore },
   views: {
-    dashboard: ({ target, context }) =&gt; {
-      mount(Dashboard, {
+    dashboard: ({ target, context, onCleanup }) =&gt; {
+      const component = mount(Dashboard, {
         target,
         props: { user: context.userStore }
       })
+      onCleanup(() =&gt; unmount(component))
     }
   }
 })</pre>
@@ -287,15 +292,17 @@ const app = new Zumly({
       <h2>TypeScript</h2>
       <p>
         Zumly ships TypeScript types out of the box. View functions are typed with the
-        <code>target</code>, <code>props</code>, and <code>context</code> parameters, so your
+        <code>target</code>, <code>props</code>, <code>context</code>, and <code>onCleanup</code>
+        parameters, so your
         Svelte mount code gets full IntelliSense.
       </p>
       <pre>import Zumly, { ViewFunction } from 'zumly'
-import { mount } from 'svelte'
+import { mount, unmount } from 'svelte'
 import Dashboard from './Dashboard.svelte'
 
-const dashboard: ViewFunction = ({ target, props }) =&gt; {
-  mount(Dashboard, { target, props: { id: props.id as string } })
+const dashboard: ViewFunction = ({ target, props, onCleanup }) =&gt; {
+  const component = mount(Dashboard, { target, props: { id: props.id as string } })
+  onCleanup(() =&gt; unmount(component))
 }</pre>
     </section>
 
@@ -313,10 +320,9 @@ const dashboard: ViewFunction = ({ target, props }) =&gt; {
           element. Just call <code>mount(Component, { target })</code>.
         </li>
         <li>
-          <strong>Don't forget the <code>z-view</code> class</strong> on your Svelte component's
-          root element. Zumly auto-adds it if missing, but being explicit avoids surprises with
-          CSS selectors. Note that Svelte may wrap your component in an extra parent element —
-          Zumly handles that in its cleanup logic.
+          <strong>Zumly keeps <code>target</code> as the view wrapper</strong> and adds
+          <code>z-view</code> there, preserving Svelte's DOM roots. Set dimensions on
+          <code>target</code> if the default canvas-sized wrapper is unsuitable.
         </li>
         <li>
           <strong>Trigger data attributes become strings.</strong>

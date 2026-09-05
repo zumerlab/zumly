@@ -21,6 +21,22 @@
   outline: none;
 }
 
+.zumly-canvas:focus-visible,
+.zumly-canvas .zoom-me:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zumly-canvas .z-view,
+  .zumly-canvas .zoom-me,
+  .zumly-canvas .z-nav-dot {
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}
+
 .z-view {
   position: absolute;
   contain: strict;

@@ -15,7 +15,7 @@ export class ViewCache {
    */
   set (key, node, ttl = null) {
     this.#store.set(key, {
-      node,
+      node: node.cloneNode(true),
       expires: ttl ? Date.now() + ttl : null
     })
   }

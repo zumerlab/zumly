@@ -400,7 +400,7 @@
     <!-- ═══════════════ METHODS ═══════════════ -->
     <section id="methods">
       <h2>Methods</h2>
-      <p class="desc">Instance methods for programmatic control.</p>
+      <p class="desc">Navigation promises settle after transitions finish. Await each call to navigate sequentially; calls made during an active load or animation are ignored.</p>
 
       <div class="table-wrap">
         <table>
@@ -409,9 +409,9 @@
             <tr><td><code>init()</code></td><td>Promise</td><td>Initialize and render the initial view</td></tr>
             <tr><td><code>zoomTo(name, opts?)</code></td><td>Promise</td><td>Programmatic zoom into a named view</td></tr>
             <tr><td><code>goTo(name, opts?)</code></td><td>Promise</td><td>Navigate: <code>{ mode: 'depth' | 'lateral' }</code></td></tr>
-            <tr><td><code>back()</code></td><td>Promise | void</td><td>Pop lateral history first, then zoom out</td></tr>
+            <tr><td><code>back()</code></td><td>Promise</td><td>Pop lateral history first, then zoom out</td></tr>
             <tr><td><code>zoomIn(el)</code></td><td>Promise</td><td>Zoom into the view indicated by a trigger element</td></tr>
-            <tr><td><code>zoomOut()</code></td><td>void</td><td>Zoom out one level. No-op at root</td></tr>
+            <tr><td><code>zoomOut()</code></td><td>Promise</td><td>Zoom out one level. No-op at root</td></tr>
             <tr><td><code>zoomLevel()</code></td><td>number</td><td>Current zoom depth (1 = root view)</td></tr>
             <tr><td><code>getZoomLevel()</code></td><td>number</td><td>Alias for <code>zoomLevel()</code></td></tr>
             <tr><td><code>getCurrentViewName()</code></td><td>string | null</td><td>Name of the currently active view</td></tr>
@@ -437,10 +437,10 @@ await app.init();
 
 await app.zoomTo('detail');         // zoom in
 await app.zoomTo('deep');           // zoom deeper
-app.back();                         // zoom out
+await app.back();                   // zoom out
 
 await app.goTo('page2', { mode: 'lateral' });  // slide to sibling
-app.back();                         // back to previous sibling
+await app.back();                   // back to previous sibling
 
 console.log(app.zoomLevel());           // 2
 console.log(app.getCurrentViewName());  // 'detail'

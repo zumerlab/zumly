@@ -98,7 +98,9 @@ describe('DOM helpers', () => {
     expect(el.classList.contains('is-new-current-view')).toBe(false)
     expect(el.classList.contains('has-no-events')).toBe(false)
     expect(el.style.transform).toBe('translate(1px, 2px)')
-    expect(el.style.transformOrigin).toBe('10px 20px')
+    // Firefox serializes the optional z component explicitly.
+    const [x, y, z = '0px'] = el.style.transformOrigin.split(' ')
+    expect([x, y, z]).toEqual(['10px', '20px', '0px'])
   })
 
   it('runLateralInstant swaps views and calls onComplete', () => {

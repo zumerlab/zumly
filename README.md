@@ -23,7 +23,7 @@
 
 ## Status
 
-Zumly is under active development. The core stack is stable: depth and lateral navigation, pluggable transition drivers (CSS, WAAPI, none, Anime.js, GSAP, Motion, custom), unified nav UI (depth + lateral, eight positions), view resolver and prefetch cache, optional **plugin** API (<code>.use()</code>), and the **hash router** plugin. View sources include HTML strings, URLs, async functions, objects with <code>render()</code>, DOM nodes, and web component tags.
+Zumly is under active development. It supports depth and lateral navigation, pluggable transition drivers (CSS, WAAPI, none, Anime.js, GSAP, Motion, custom), separate depth and lateral navigation controls, a view resolver and prefetch cache, an optional **plugin** API (<code>.use()</code>), and the **hash router** plugin. View sources include HTML strings, URLs, async functions, objects with <code>render()</code>, DOM nodes, and web component tags.
 
 Zoom-out geometry uses batched DOM reads plus pure math where possible to cut layout thrash before animations (see [Geometry optimization](docs/geometry-optimization.md)).
 
@@ -251,12 +251,13 @@ Each entry in `views` is a **view source**. The resolver detects the type and re
 | **Async function** | `(ctx) => fetch(...).then(r => r.text())` or return `HTMLElement` | No |
 | **Object with `render()`** | `{ render(ctx) { return '<div>…</div>' }, mounted?() }` | No |
 | **Web component** | `'my-view'` (string with hyphen, not a key in `views`) | No |
+| **DOM element** | `document.createElement('div')` | No; cloned on resolution |
 
-**View pipeline:** Resolve → normalize `.z-view` → insert into canvas → call `mounted()` (if present). Static/URL views are cloned from cache on each `get()` so consumers cannot mutate the stored node.
+**View pipeline:** Resolve → normalize `.z-view` → insert into canvas → call `mounted()` (if present). Static/URL views are cloned on every retrieval, including simultaneous requests. DOM element sources are also cloned; listeners attached directly to the original element are not copied.
 
 ### Framework integration
 
-Zumly is framework-agnostic. Since views resolve to DOM elements, any framework that can mount into a container works out of the box. Use **function views** or **object views** to bridge your framework:
+Use **function views** or **object views** to mount framework components. Register their teardown with `onCleanup()` so the framework releases its resources when the view is discarded:
 
 **React**
 
@@ -269,8 +270,9 @@ const app = new Zumly({
   initialView: 'home',
   views: {
     home: '<div class="z-view"><div class="zoom-me" data-to="dashboard" data-id="42">Open</div></div>',
-    dashboard: ({ target, props }) => {
+    dashboard: ({ target, props, onCleanup }) => {
       const root = createRoot(target)
+      onCleanup(() => root.unmount())
       root.render(<Dashboard id={props.id} />)
     }
   }
@@ -284,8 +286,10 @@ import { createApp } from 'vue'
 import Dashboard from './Dashboard.vue'
 
 views: {
-  dashboard: ({ target, props }) => {
-    createApp(Dashboard, { id: props.id }).mount(target)
+  dashboard: ({ target, props, onCleanup }) => {
+    const component = createApp(Dashboard, { id: props.id })
+    onCleanup(() => component.unmount())
+    component.mount(target)
   }
 }
 ```
@@ -296,8 +300,9 @@ views: {
 import Dashboard from './Dashboard.svelte'
 
 views: {
-  dashboard: ({ target, props }) => {
-    new Dashboard({ target, props: { id: props.id } })
+  dashboard: ({ target, props, onCleanup }) => {
+    const component = new Dashboard({ target, props: { id: props.id } })
+    onCleanup(() => component.$destroy())
   }
 }
 ```
@@ -306,8 +311,9 @@ views: {
 
 ```ts
 views: {
-  dashboard: ({ target, props }) => {
+  dashboard: ({ target, props, onCleanup }) => {
     const compRef = viewContainerRef.createComponent(DashboardComponent)
+    onCleanup(() => compRef.destroy())
     compRef.instance.id = props.id
     target.appendChild(compRef.location.nativeElement)
   }
@@ -316,19 +322,36 @@ views: {
 
 **Key points:**
 
-- The `target` parameter is a fresh `<div>` created by Zumly — mount your component there.
+- The `target` parameter is a fresh `<div>` created by Zumly. When a function mounts into it and returns nothing, Zumly preserves that container and all its children. It defaults to the canvas width and height; set `target.style.width` and `target.style.height` for a smaller view.
 - `props` contains data attributes from the trigger element (`data-id="42"` → `props.id`).
 - `componentContext` (constructor option) is passed as `context` to all function/object views — use it for shared state (router, store, API client).
-- Function views are **never cached** — they resolve fresh each time, so framework components get proper lifecycle management.
+- Function/object views are **never cached or prefetched** — they render only when requested by navigation. Initial views receive the same context contract, with empty `props`.
+- Call `onCleanup(fn)` to register unmount, unsubscribe, or timer cleanup. Callbacks run once when the view is permanently removed, rendering fails, an abandoned async result arrives, or the instance is destroyed. Temporarily detached depth views and kept-alive lateral views retain their resources until discarded. Async callbacks are started without waiting for them.
 - Use `mounted()` (object views) for post-insertion setup — it runs after the node is in the DOM.
-- Zumly handles wrapped elements (e.g. Svelte's extra parent div) in its cleanup logic.
+- Returning an `HTMLElement` from a function or `render()` transfers that resolved view instance to Zumly; prefer `onCleanup()` over relying on DOM removal to unmount framework components.
 
 ### Preload and prefetch
 
-- **Eager preload:** `preload: ['viewA', 'viewB']` — those views are resolved and cached during `init()`.
+- **Eager preload:** `preload: ['viewA', 'viewB']` — static HTML and URL views are resolved and cached during `init()`; dynamic views and custom elements are skipped.
 - **Hover prefetch:** `mouseover` on a `.zoom-me[data-to]` trigger prefetches its target in the background.
 - **Focus prefetch:** `focusin` on a `.zoom-me[data-to]` also prefetches (for keyboard/accessibility).
 - **Scan prefetch:** When a view becomes current, all `.zoom-me[data-to]` targets inside it are prefetched in the background. This works on touch devices where hover is unavailable.
+
+All prefetch strategies skip functions, objects, and custom elements to avoid rendering components speculatively.
+
+### Navigation completion and accessibility
+
+`zoomTo()`, `zoomIn()`, `goTo()`, `zoomOut()`, and `back()` return promises that settle after the transition and its completion hooks. Await each call when navigating through several views:
+
+```js
+await app.zoomTo('detail')
+await app.zoomTo('deep')
+await app.back()
+```
+
+Calls made while another view is loading or animating are ignored. Failed navigation resolves after recovery and reports the error through Zumly's diagnostics. `init()` is idempotent, and `destroy()` releases pending navigation promises and discards late view results.
+
+Generic `.zoom-me` triggers receive keyboard focus and support Enter/Space. Native buttons and links retain their semantics; navigation controls also support keyboard activation. Arrow navigation ignores text inputs and editable controls. Background views become `inert` and hidden from assistive technology until active again. Focus moves to the first usable control in the current view, or to the view itself. Zumly uses instant transitions when `prefers-reduced-motion: reduce` is active.
 
 ### Plugins
 
@@ -388,7 +411,7 @@ The UMD/IIFE bundle attaches the same plugin as `Zumly.Router`. There is no sepa
 
 ### Requirements
 
-- Node.js >= 18 (or 16+ with ES module support)
+- Use Node.js 22+ for development. The distributed package entry points support Node.js >= 18; constructing a Zumly instance requires a browser DOM.
 
 ### Commands
 
@@ -403,6 +426,12 @@ npm run dev
 npm run test:install-browsers
 npm run test
 
+# Run the suite in Chromium, Firefox, and WebKit
+npm run test:browsers
+
+# Compile and verify the installed npm tarball's public exports
+npm run test:pack
+
 # Run tests with coverage
 npm run test:coverage
 
@@ -410,7 +439,7 @@ npm run test:coverage
 npm run build
 ```
 
-Tests use [Vitest](https://vitest.dev/) with the browser provider ([Playwright](https://playwright.dev/)), same setup as [SnapDOM](https://github.com/zumerlab/snapdom). Run `npm run test:install-browsers` once (or after upgrading Playwright) to install Chromium.
+Tests use [Vitest](https://vitest.dev/) with the browser provider ([Playwright](https://playwright.dev/)). Run `npm run test:install-browsers` once (or after upgrading Playwright) to install Chromium, Firefox, and WebKit. `npm test` defaults to Chromium; `BROWSER=firefox` or `BROWSER=webkit` selects an individual engine. Run `npm run test:browsers` and `npm run test:pack` locally to check all three engines and the package exports.
 
 ### Building
 
@@ -419,6 +448,8 @@ npm run compile
 ```
 
 Output is in the `dist/` folder.
+
+`npm run build` compiles via `prepack` and creates a local tarball. It does not commit, push, or publish.
 
 ## Changelog
 
@@ -435,10 +466,12 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 - Resize correction (translate/origin scaling; deferred while transitioning)
 - Pluggable drivers (CSS, WAAPI, none, Anime.js, GSAP, Motion, custom)
 - Batched zoom-out reads + math helpers to reduce reflow (see [geometry-optimization.md](docs/geometry-optimization.md))
+- Keyboard trigger activation, focus management, inactive-view isolation, and reduced-motion support
+- Per-view resource cleanup with `ViewContext.onCleanup()`
 
 **Planned:**
 - Router deep-linking (open a multi-level hash cold)
-- Accessibility (focus moves, broader ARIA)
+- Further accessibility testing with assistive technologies
 
 Details and more topics: [docs/roadMap.md](docs/roadMap.md). Driver contract and helpers: [docs/DRIVER_API.md](docs/DRIVER_API.md).
 

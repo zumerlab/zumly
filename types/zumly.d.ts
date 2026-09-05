@@ -12,7 +12,9 @@ export interface ViewContext {
   /** The componentContext from Zumly constructor options. */
   context: Map<string, unknown> | Record<string, unknown>
   /** Data attributes from the trigger element (e.g. data-id="42" → props.id). */
-  props: Record<string, string>
+  props: Record<string, unknown>
+  /** Register component unmount or resource cleanup, run once when this view is discarded. */
+  onCleanup(callback: () => void | Promise<void>): void
 }
 
 /** A function that receives context and returns a view. */
@@ -53,7 +55,7 @@ export interface TransitionSpec {
   slideDeltaX?: number
   slideDeltaY?: number
   /** When true, driver should not remove the outgoing view from DOM (lateral keepAlive). */
-  keepAlive?: boolean
+  keepAlive?: boolean | 'visible'
 }
 
 /** Custom driver function signature. */
@@ -136,7 +138,7 @@ export interface DepthNavOptions {
 export interface InputsOptions {
   /** Enable wheel zoom-out. Default: true. */
   wheel?: boolean
-  /** Enable keyboard navigation (arrow keys). Default: true. */
+  /** Enable keyboard navigation (Enter/Space on triggers, arrow keys for back). Default: true. */
   keyboard?: boolean
   /** Enable click/mouseup navigation. Default: true. */
   click?: boolean
@@ -193,7 +195,7 @@ export interface ZumlyOptions {
   /** Depth navigation UI. true = default (back button, bottom-left), false = disabled. */
   depthNav?: boolean | DepthNavOptions
   /** Input types to enable/disable. All enabled by default. */
-  inputs?: InputsOptions
+  inputs?: boolean | InputsOptions
   /** Enable deferred rendering (view content inserted after zoom animation). */
   deferred?: boolean
 }
@@ -278,27 +280,28 @@ export class Zumly {
   getCurrentViewName(): string | null
 
   /**
-   * Navigate to a view by name. Unified API for depth and lateral navigation.
+   * Navigate to a view by name. Resolves after the transition completes.
+   * Calls made while another navigation is loading/animating are ignored.
    */
   goTo(viewName: string, options?: GoToOptions): Promise<void>
 
   /**
    * Programmatic zoom to a named view (depth navigation).
-   * Uses a centered synthetic trigger for the transition.
+   * Uses a centered synthetic trigger for the transition. Resolves after animation.
    */
   zoomTo(viewName: string, options?: ZoomToOptions): Promise<void>
 
   /** Zoom into the view indicated by a trigger element with data-to="viewName". */
   zoomIn(el: HTMLElement): Promise<void>
 
-  /** Zoom out one level. No-op at root. */
-  zoomOut(): void
+  /** Zoom out one level. Resolves after animation; no-op at root. */
+  zoomOut(): Promise<void>
 
   /**
    * Navigate back. Pops lateral history first, then zooms out.
-   * Returns a Promise when navigating laterally.
+   * Resolves after the navigation completes.
    */
-  back(): Promise<void> | void
+  back(): Promise<void>
 }
 
 export default Zumly

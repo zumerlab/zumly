@@ -47,20 +47,23 @@
   ],
   "scripts": {
     "compile": "node esbuild.config.mjs",
-    "build": "npm run compile && npm pack",
+    "build": "npm pack",
     "dev": "npm run compile && npx serve . -p 9090 -c ./serve.json",
     "test": "npx vitest run --browser.headless --reporter=verbose",
+    "test:browsers": "node scripts/test-browsers.mjs",
+    "test:pack": "npm run compile && node scripts/verify-package.mjs",
     "test:unit": "npx vitest run __tests__/utils.test.js --reporter=verbose",
     "test:coverage": "npx vitest run --browser.headless --coverage",
-    "test:install-browsers": "npx playwright install chromium",
+    "test:install-browsers": "npx playwright install chromium firefox webkit",
     "bump": "npx @zumerbox/bump && npx @zumerbox/changelog",
-    "prebuild": "git add CHANGELOG.md && git commit -m \"Bumped version\" && git push --follow-tags",
     "prepack": "npm run compile"
   },
   "files": [
     "dist",
     "types",
     "src/drivers",
+    "src/view-visibility.js",
+    "src/view-lifecycle.js",
     "docs/DRIVER_API.md",
     "README.md"
   ],

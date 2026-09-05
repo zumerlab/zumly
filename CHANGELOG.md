@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### Unreleased
+
+- Fix packaged driver/helper imports and remove Git mutations from the build command.
+- Wait for complete navigation, prevent overlapping async view loads, and cancel pending work on destroy.
+- Keep lateral views centered, align their parent layers and zoom-out targets, and restore lateral history after resize.
+- Hide both participating triggers during lateral crossfades to prevent enlarged background labels showing through the views.
+- Handle multi-level browser-back navigation without rewriting history during reconciliation.
+- Isolate cached view nodes and skip speculative rendering of dynamic views.
+- Add `ViewContext.onCleanup()` for component teardown, preserve framework mount containers, and accept DOM nodes from object views.
+- Add keyboard activation, background view isolation, focus recovery, and reduced-motion handling.
+- Add local commands to verify package exports and run browser tests in Chromium, Firefox, and WebKit.
+
 #### [v0.92.6](https://github.com/zumerlab/zumly/compare/v0.92.5...v0.92.6)
 
 > 26 July 2026

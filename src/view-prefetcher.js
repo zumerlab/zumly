@@ -15,12 +15,13 @@
 
 import { ViewResolver } from './view-resolver.js'
 import { ViewCache } from './view-cache.js'
+import { prepareViewTriggers } from './view-accessibility.js'
 
 /** TTL in ms for URL-backed views (fetch). */
 export const REMOTE_TTL = 5 * 60 * 1000
 
 /** Regex: string looks like a remote or path-based URL. */
-const URL_LIKE = /^https?:\/\/|^\/|\.html$|\.php$/i
+const URL_LIKE = /^https?:\/\/|^\/|\.(?:html|php)(?:[?#].*)?$/i
 
 export class ViewPrefetcher {
   #resolver
@@ -35,14 +36,19 @@ export class ViewPrefetcher {
   }
 
   /**
-   * Returns true if the view template is safe to cache. Only string templates (HTML or URL)
-   * are cacheable; function/object views depend on context and must not be reused.
+   * Resolve aliases and return only a cacheable HTML/URL template. Function/object
+   * views and custom element tags must not be executed by background prefetch.
    * @param {string} source - View name (key in views).
-   * @returns {boolean}
+   * @returns {string|null}
    */
-  #isCacheable (source) {
-    const template = this.#views[source]
-    return typeof template === 'string'
+  #cacheableTemplate (source) {
+    const seen = new Set()
+    while (typeof source === 'string' && Object.prototype.hasOwnProperty.call(this.#views, source)) {
+      if (seen.has(source)) return null
+      seen.add(source)
+      source = this.#views[source]
+    }
+    return typeof source === 'string' && (source.includes('<') || URL_LIKE.test(source)) ? source : null
   }
 
   /**
@@ -61,18 +67,18 @@ export class ViewPrefetcher {
    * @returns {Promise<HTMLElement>}
    */
   async get (source, context = null) {
-    if (this.#isCacheable(source)) {
+    const template = this.#cacheableTemplate(source)
+    if (template !== null) {
       const cached = this.#cache.get(source)
       if (cached) return cached
 
       if (this.#inFlight.has(source)) {
-        return this.#inFlight.get(source)
+        return (await this.#inFlight.get(source)).cloneNode(true)
       }
 
       const promise = (async () => {
         try {
           const node = await this.#resolver.resolve(source, context)
-          const template = this.#views[source]
           const ttl = this.#getTtlForTemplate(template)
           this.#cache.set(source, node, ttl)
           return node
@@ -84,7 +90,7 @@ export class ViewPrefetcher {
       })()
 
       this.#inFlight.set(source, promise)
-      return promise
+      return (await promise).cloneNode(true)
     }
 
     // Non-cacheable (function, object, etc.): always resolve fresh. No cache, no in-flight dedup.
@@ -99,7 +105,7 @@ export class ViewPrefetcher {
    */
   async preloadEager (keys, context = null) {
     if (!Array.isArray(keys) || keys.length === 0) return
-    await Promise.all(keys.map(key => this.get(key, context)))
+    await Promise.all(keys.filter(key => this.#cacheableTemplate(key) !== null).map(key => this.get(key, context)))
   }
 
   /**
@@ -109,6 +115,7 @@ export class ViewPrefetcher {
    * @param {object} [context=null]
    */
   prefetch (source, context = null) {
+    if (this.#cacheableTemplate(source) === null) return
     this.get(source, context).catch(() => {})
   }
 
@@ -124,12 +131,11 @@ export class ViewPrefetcher {
    */
   scanAndPrefetch (node, context = null) {
     if (!node || !node.querySelectorAll) return
+    prepareViewTriggers(node)
     const triggers = node.querySelectorAll('.zoom-me[data-to]')
     triggers.forEach(el => {
       const to = el.dataset.to
       if (to) {
-        if (!el.hasAttribute('role')) el.setAttribute('role', 'button')
-        if (!el.hasAttribute('aria-label')) el.setAttribute('aria-label', `Zoom to ${to}`)
         this.prefetch(to, context)
       }
     })

@@ -148,8 +148,10 @@ const app = new Zumly({
   initialView: 'home',
   views: {
     home: '&lt;div class="z-view"&gt;&lt;div class="zoom-me" data-to="dashboard" data-id="42"&gt;Open dashboard&lt;/div&gt;&lt;/div&gt;',
-    dashboard: ({ target, props }) =&gt; {
-      createApp(Dashboard, { id: props.id }).mount(target)
+    dashboard: ({ target, props, onCleanup }) =&gt; {
+      const component = createApp(Dashboard, { id: props.id })
+      onCleanup(() =&gt; component.unmount())
+      component.mount(target)
     }
   }
 })
@@ -172,7 +174,7 @@ await app.init()</pre>
 
       <h3>App.vue</h3>
       <pre>&lt;script setup&gt;
-import { onMounted, onBeforeUnmount, ref } from 'vue'
+import { onMounted, onBeforeUnmount } from 'vue'
 import { createApp } from 'vue'
 import Zumly from 'zumly'
 import 'zumly/css'
@@ -180,19 +182,22 @@ import 'zumly/css'
 import ItemList from './ItemList.vue'
 import ItemDetail from './ItemDetail.vue'
 
-const canvas = ref(null)
 let zumly
 
 onMounted(async () =&gt; {
   zumly = new Zumly({
-    mount: canvas.value,
+    mount: '#dashboard-canvas',
     initialView: 'list',
     views: {
-      list: ({ target }) =&gt; {
-        createApp(ItemList).mount(target)
+      list: ({ target, onCleanup }) =&gt; {
+        const component = createApp(ItemList)
+        onCleanup(() =&gt; component.unmount())
+        component.mount(target)
       },
-      detail: ({ target, props }) =&gt; {
-        createApp(ItemDetail, { id: props.id }).mount(target)
+      detail: ({ target, props, onCleanup }) =&gt; {
+        const component = createApp(ItemDetail, { id: props.id })
+        onCleanup(() =&gt; component.unmount())
+        component.mount(target)
       }
     },
     transitions: {
@@ -208,7 +213,7 @@ onBeforeUnmount(() =&gt; zumly?.destroy())
 &lt;/script&gt;
 
 &lt;template&gt;
-  &lt;div ref="canvas" class="zumly-canvas" style="height: 100vh"&gt;&lt;/div&gt;
+  &lt;div id="dashboard-canvas" class="zumly-canvas" style="height: 100vh"&gt;&lt;/div&gt;
 &lt;/template&gt;</pre>
 
       <h3>ItemList.vue</h3>
@@ -221,7 +226,7 @@ const items = [
 &lt;/script&gt;
 
 &lt;template&gt;
-  &lt;div class="z-view"&gt;
+  &lt;div class="dashboard-view"&gt;
     &lt;h1&gt;Subsystems&lt;/h1&gt;
     &lt;div
       v-for="item in items"
@@ -240,7 +245,7 @@ defineProps(['id'])
 &lt;/script&gt;
 
 &lt;template&gt;
-  &lt;div class="z-view"&gt;
+  &lt;div class="dashboard-view"&gt;
     &lt;h1&gt;Detail for {{ id }}&lt;/h1&gt;
   &lt;/div&gt;
 &lt;/template&gt;</pre>
@@ -249,16 +254,16 @@ defineProps(['id'])
     <section>
       <h2>Lifecycle and cleanup</h2>
       <p>
-        Function views in Zumly are <strong>never cached</strong> — they resolve fresh each time
-        the user zooms in. That's the right behavior for Vue: every zoom-in creates a new Vue
-        application instance, every zoom-out unmounts it, and Vue's normal lifecycle hooks
-        (<code>onMounted</code>, <code>onBeforeUnmount</code>, etc.) run as expected.
+        Function views are <strong>never cached</strong>. Each newly resolved view creates a
+        Vue application. Register <code>onCleanup(() =&gt; component.unmount())</code> on the
+        instance returned by <code>createApp()</code> so Vue runs its unmount hooks when Zumly
+        permanently removes that view or is destroyed. DOM removal alone does not unmount Vue.
       </p>
       <div class="callout">
-        <strong>Tip:</strong> If you need to keep a component instance alive across navigation
-        (for example, a chart that shouldn't re-fetch its data), use an <strong>object view</strong>
-        with <code>render()</code> and <code>mounted()</code> methods, and store your Vue app
-        instance in a closure variable instead of recreating it.
+        <strong>Retained views:</strong> A view kept in depth history or by
+        <code>lateralNav.keepAlive</code> keeps its Vue application until permanent removal.
+        Temporary detachment does not run <code>onCleanup</code>. Object views also resolve
+        fresh; choosing <code>render()</code> does not preserve an instance by itself.
       </div>
     </section>
 
@@ -279,10 +284,10 @@ const app = new Zumly({
   initialView: 'home',
   componentContext: { pinia },
   views: {
-    dashboard: ({ target, context }) =&gt; {
-      createApp(Dashboard)
-        .use(context.pinia)
-        .mount(target)
+    dashboard: ({ target, context, onCleanup }) =&gt; {
+      const component = createApp(Dashboard)
+      onCleanup(() =&gt; component.unmount())
+      component.use(context.pinia).mount(target)
     }
   }
 })</pre>
@@ -292,15 +297,18 @@ const app = new Zumly({
       <h2>TypeScript</h2>
       <p>
         Zumly ships TypeScript types out of the box. View functions are typed with the
-        <code>target</code>, <code>props</code>, and <code>context</code> parameters, so your
+        <code>target</code>, <code>props</code>, <code>context</code>, and <code>onCleanup</code>
+        parameters, so your
         Vue mount code gets full IntelliSense.
       </p>
       <pre>import Zumly, { ViewFunction } from 'zumly'
 import { createApp } from 'vue'
 import Dashboard from './Dashboard.vue'
 
-const dashboard: ViewFunction = ({ target, props }) =&gt; {
-  createApp(Dashboard, { id: props.id as string }).mount(target)
+const dashboard: ViewFunction = ({ target, props, onCleanup }) =&gt; {
+  const component = createApp(Dashboard, { id: props.id as string })
+  onCleanup(() =&gt; component.unmount())
+  component.mount(target)
 }</pre>
     </section>
 
@@ -313,9 +321,9 @@ const dashboard: ViewFunction = ({ target, props }) =&gt; {
           element. Just call <code>createApp(...).mount(target)</code>.
         </li>
         <li>
-          <strong>Don't forget the <code>z-view</code> class</strong> on your Single File
-          Component's root element. Zumly auto-adds it if missing, but being explicit avoids
-          surprises with CSS selectors.
+          <strong>Zumly keeps <code>target</code> as the view wrapper</strong> and adds
+          <code>z-view</code> there. Set dimensions on <code>target</code> if the default
+          canvas-sized wrapper is unsuitable; Vue keeps its own DOM roots.
         </li>
         <li>
           <strong>Trigger data attributes become strings.</strong>

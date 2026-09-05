@@ -210,10 +210,12 @@ describe('blockEvents safety timeout', () => {
     })
     await app.init()
 
-    await app.zoomTo('detail')
+    const navigation = app.zoomTo('detail')
+    await vi.advanceTimersByTimeAsync(1)
     expect(app.blockEvents).toBe(true)
 
-    vi.advanceTimersByTime(8001)
+    await vi.advanceTimersByTimeAsync(8001)
+    await navigation
     expect(app.blockEvents).toBe(false)
 
     warnSpy.mockRestore()

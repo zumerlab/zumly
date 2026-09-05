@@ -315,10 +315,12 @@ describe('tracked timers on destroy', () => {
     }
     const app = createApp({ transitions: { driver: captureDriver, duration: '0s' } })
     await app.init()
-    await app.zoomTo('detail')
+    const navigation = app.zoomTo('detail')
+    await vi.waitFor(() => expect(lateComplete).toBeTypeOf('function'))
     expect(app.blockEvents).toBe(true)
 
     app.destroy()
+    await navigation
     expect(app.storedViews).toHaveLength(0)
 
     // Late completion is inert: no throw, no state writes

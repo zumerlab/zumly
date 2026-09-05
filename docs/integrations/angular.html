@@ -150,9 +150,11 @@ const app = new Zumly({
   initialView: 'home',
   views: {
     home: '&lt;div class="z-view"&gt;&lt;div class="zoom-me" data-to="dashboard" data-id="42"&gt;Open dashboard&lt;/div&gt;&lt;/div&gt;',
-    dashboard: async ({ target, props }) =&gt; {
+    dashboard: async ({ target, props, onCleanup }) =&gt; {
       const ngApp = await createApplication({})
+      onCleanup(() =&gt; ngApp.destroy())
       const ref = ngApp.bootstrap(DashboardComponent, target)
+      onCleanup(() =&gt; ref.destroy())
       ref.setInput('id', props.id)
     }
   }
@@ -181,7 +183,7 @@ await app.init()</pre>
       </p>
 
       <h3>app.component.ts</h3>
-      <pre>import { Component, ElementRef, AfterViewInit, OnDestroy, ViewChild } from '@angular/core'
+      <pre>import { Component, AfterViewInit, OnDestroy } from '@angular/core'
 import { createApplication } from '@angular/platform-browser'
 import Zumly from 'zumly'
 import 'zumly/css'
@@ -192,24 +194,27 @@ import { ItemDetailComponent } from './item-detail.component'
 @Component({
   selector: 'app-root',
   standalone: true,
-  template: `&lt;div #canvas class="zumly-canvas" style="height: 100vh"&gt;&lt;/div&gt;`
+  template: `&lt;div id="dashboard-canvas" class="zumly-canvas" style="height: 100vh"&gt;&lt;/div&gt;`
 })
 export class AppComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('canvas', { static: true }) canvas!: ElementRef&lt;HTMLDivElement&gt;
   private zumly: any
 
   async ngAfterViewInit() {
     this.zumly = new Zumly({
-      mount: this.canvas.nativeElement,
+      mount: '#dashboard-canvas',
       initialView: 'list',
       views: {
-        list: async ({ target }) =&gt; {
+        list: async ({ target, onCleanup }) =&gt; {
           const app = await createApplication({})
-          app.bootstrap(ItemListComponent, target)
+          onCleanup(() =&gt; app.destroy())
+          const ref = app.bootstrap(ItemListComponent, target)
+          onCleanup(() =&gt; ref.destroy())
         },
-        detail: async ({ target, props }) =&gt; {
+        detail: async ({ target, props, onCleanup }) =&gt; {
           const app = await createApplication({})
+          onCleanup(() =&gt; app.destroy())
           const ref = app.bootstrap(ItemDetailComponent, target)
+          onCleanup(() =&gt; ref.destroy())
           ref.setInput('id', props.id)
         }
       },
@@ -234,7 +239,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   selector: 'item-list',
   standalone: true,
   template: `
-    &lt;div class="z-view"&gt;
+    &lt;div class="dashboard-view"&gt;
       &lt;h1&gt;Subsystems&lt;/h1&gt;
       &lt;div
         *ngFor="let item of items"
@@ -261,7 +266,7 @@ export class ItemListComponent {
   selector: 'item-detail',
   standalone: true,
   template: `
-    &lt;div class="z-view"&gt;
+    &lt;div class="dashboard-view"&gt;
       &lt;h1&gt;Detail for {{ id }}&lt;/h1&gt;
     &lt;/div&gt;
   `
@@ -274,17 +279,19 @@ export class ItemDetailComponent {
     <section>
       <h2>Lifecycle and cleanup</h2>
       <p>
-        Function views in Zumly are <strong>never cached</strong> — they resolve fresh each time
-        the user zooms in. Each zoom-in creates a new Angular <code>ApplicationRef</code> via
-        <code>createApplication</code>, and Zumly's standard cleanup tears down the DOM on
-        zoom-out. Angular's lifecycle hooks (<code>ngOnInit</code>, <code>ngOnDestroy</code>,
-        etc.) run as expected within each view.
+        Function views are <strong>never cached</strong>. These examples create an Angular
+        application and component for each newly resolved view. Register both
+        <code>onCleanup(() =&gt; app.destroy())</code> and
+        <code>onCleanup(() =&gt; ref.destroy())</code>, in that order. Zumly runs cleanup in
+        reverse registration order on permanent removal or destruction, so the component is
+        destroyed before its application. DOM removal alone does not run Angular teardown.
       </p>
       <div class="callout">
-        <strong>Tip:</strong> Each <code>createApplication</code> call has a non-trivial cost
-        (it spins up a fresh Angular zone and DI tree). For high-frequency navigation, prefer an
-        <strong>object view</strong> with <code>render()</code> and <code>mounted()</code>, and
-        keep the <code>ApplicationRef</code> in a closure so it can be reused across mounts.
+        <strong>Resource ownership:</strong> Destroy an application from a view's cleanup
+        only when that view created and owns it. If your host shares an Angular application,
+        register the component's destruction per view and let the host destroy the application.
+        Views retained in depth history or by <code>lateralNav.keepAlive</code> are cleaned up
+        only when permanently removed.
       </div>
     </section>
 
@@ -303,14 +310,16 @@ const app = new Zumly({
   mount: '.canvas',
   initialView: 'home',
   views: {
-    dashboard: async ({ target, props }) =&gt; {
+    dashboard: async ({ target, props, onCleanup }) =&gt; {
       const ngApp = await createApplication({
         providers: [
           provideHttpClient(),
           UserService
         ]
       })
+      onCleanup(() =&gt; ngApp.destroy())
       const ref = ngApp.bootstrap(DashboardComponent, target)
+      onCleanup(() =&gt; ref.destroy())
       ref.setInput('userId', props.id)
     }
   }
@@ -322,7 +331,8 @@ const app = new Zumly({
       <p>
         Zumly ships TypeScript types out of the box — and Angular is TypeScript-first by design,
         so the integration is fully typed end to end. View functions are typed with the
-        <code>target</code>, <code>props</code>, and <code>context</code> parameters, and
+        <code>target</code>, <code>props</code>, <code>context</code>, and <code>onCleanup</code>
+        parameters, and
         component <code>@Input</code>s give you compile-time safety on the values you forward
         from triggers.
       </p>
@@ -330,9 +340,11 @@ const app = new Zumly({
 import { createApplication } from '@angular/platform-browser'
 import { DashboardComponent } from './dashboard.component'
 
-const dashboard: ViewFunction = async ({ target, props }) =&gt; {
+const dashboard: ViewFunction = async ({ target, props, onCleanup }) =&gt; {
   const app = await createApplication({})
+  onCleanup(() =&gt; app.destroy())
   const ref = app.bootstrap(DashboardComponent, target)
+  onCleanup(() =&gt; ref.destroy())
   ref.setInput('id', props.id as string)
 }</pre>
     </section>
@@ -361,8 +373,9 @@ const dashboard: ViewFunction = async ({ target, props }) =&gt; {
           Cast or parse on the Angular side, and type your <code>@Input</code> accordingly.
         </li>
         <li>
-          <strong>Don't forget the <code>z-view</code> class</strong> on your component's
-          template root. Zumly auto-adds it if missing, but being explicit avoids surprises with
+          <strong>Zumly keeps <code>target</code> as the view wrapper</strong> and adds
+          <code>z-view</code> there. Set dimensions on <code>target</code> for a custom view size,
+          and keep your component's own DOM structure and
           CSS selectors.
         </li>
       </ul>

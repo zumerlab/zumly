@@ -1,4 +1,5 @@
 import { showViewContent } from '../view-visibility.js'
+import { disposeView } from '../view-lifecycle.js'
 
 /**
  * Shared helpers for Zumly transition drivers.
@@ -129,11 +130,15 @@ export function applyZoomOutLastState (element, backwardState) {
  * @param {HTMLElement} canvas - The canvas container
  */
 export function removeViewFromCanvas (element, canvas) {
+  disposeView(element)
   try {
     if (canvas) canvas.removeChild(element)
   } catch (e) {
     try {
-      if (element.parentElement) canvas.removeChild(element.parentElement)
+      if (element?.parentElement && canvas) {
+        disposeView(element.parentElement)
+        canvas.removeChild(element.parentElement)
+      }
     } catch (e2) {
       // Element already removed or re-parented — safe to ignore.
     }

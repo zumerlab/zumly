@@ -325,7 +325,8 @@ interface ViewContext {
   target: HTMLDivElement     // Fresh <div> for mounting framework components
   trigger?: HTMLElement      // The trigger element (if from a click)
   context: Map | Object      // The componentContext from constructor
-  props: Record<string, string>  // Data attributes from trigger
+  props: Record<string, unknown>  // Trigger data attributes or programmatic props
+  onCleanup(callback: () => void | Promise<void>): void  // Teardown when this view is discarded
 }
 ```
 
@@ -340,13 +341,15 @@ The internal pipeline for rendering a view:
 3. **Insert**: Sets `dataset.viewName`, adds CSS classes (`is-current-view` or `is-new-current-view has-no-events hide`), appends to canvas.
 4. **Mounted**: Calls `views[viewName].mounted()` only AFTER insertion into the DOM.
 
+Function/object contexts always include target, props (empty for initial views), componentContext as context, and onCleanup. Register framework unmount, subscription, or timer cleanup through onCleanup. Cleanup runs once on permanent removal, failed rendering, discarded late results, or destroy; temporary depth detach and lateral keepAlive preserve resources. Async cleanup is started without awaiting it. Function views that mount into target and return nothing preserve that mount container and all roots; set its dimensions explicitly for views smaller than the canvas.
+
 ### Deferred Rendering
 
 When `deferred: true` (or per-trigger `data-deferred`), view content is detached before the zoom animation runs, then re-attached after the animation completes. This ensures smooth animations for heavy views.
 
 ### Prefetching
 
-Zumly prefetches views on mouseover/focusin of `.zoom-me` triggers. You can also eagerly preload views with the `preload` option:
+Zumly prefetches static HTML and URL views on mouseover/focusin of `.zoom-me` triggers and when scanning active views. Functions, objects, and custom element tags are skipped. You can also eagerly preload static HTML and URL views with the `preload` option:
 
 ```js
 new Zumly({
@@ -400,11 +403,11 @@ Creates a new instance. Does NOT initialize — call `init()` separately.
 
 ### `init(): Promise<void>`
 
-Initialize: render initial view, bind events, install plugins, start prefetcher. Must be called after constructor.
+Initialize: render the initial view, install plugins, and start prefetching. Must be called after construction, which binds input events. Repeated or concurrent init calls do not duplicate initialization.
 
 ### `destroy(): void`
 
-Clean up: remove all event listeners, timers, navigation UI, clear state. Idempotent. Does NOT remove DOM content from canvas. After destroy, the instance is inert.
+Clean up listeners, timers, navigation UI, view resources registered with onCleanup, and internal state. Idempotent. Releases pending navigation promises and discards late view results. The canvas remains for the consumer; registered framework teardown may remove component DOM.
 
 ### `on(event, fn): this`
 
@@ -434,7 +437,7 @@ Returns the name of the currently active view, or null if not initialized.
 
 Zoom into the view indicated by trigger element (must have `data-to="viewName"`).
 
-### `zoomOut(): void`
+### `zoomOut(): Promise<void>`
 
 Zoom out one level. No-op at root.
 
@@ -463,9 +466,9 @@ await app.goTo('settings', { mode: 'lateral' })
 
 Options: `{ mode?: 'depth' | 'lateral', duration?: string, ease?: string, props?: Record<string, unknown> }`
 
-### `back(): Promise<void> | void`
+### `back(): Promise<void>`
 
-Navigate back. If there is lateral history at current depth, pops lateral history first (goes back laterally). Otherwise zooms out. Returns a Promise when navigating laterally.
+Navigate back. If there is lateral history at current depth, pops lateral history first (goes back laterally). Otherwise zooms out. All navigation promises settle after the transition and completion work. Await each call for sequential navigation. Calls made during a view load or transition are ignored; failures resolve after recovery and are reported by Zumly diagnostics.
 
 ---
 
@@ -936,8 +939,10 @@ Zumly includes built-in accessibility support:
 - Each view gets `aria-label="View: {viewName}"` (unless already set)
 - Navigation buttons have `aria-label` attributes
 - Focus is managed after transitions: moves to first focusable element in current view, or the view itself
-- Keyboard navigation: ArrowLeft/ArrowDown to zoom out
-- All interactive elements are keyboard-accessible
+- Keyboard navigation: Enter/Space activate triggers; ArrowLeft/ArrowDown zoom out outside text fields and editable controls
+- Generic triggers receive tabindex; native controls retain their semantics and navigation buttons use click activation
+- Background views are inert and aria-hidden until active again
+- Reduced-motion preference selects instant transitions automatically
 
 ---
 
@@ -966,6 +971,7 @@ function App() {
         home: '<div class="z-view"><button class="zoom-me" data-to="detail" data-id="42">Open</button></div>',
         detail: (ctx) => {
           const root = createRoot(ctx.target)
+          ctx.onCleanup(() => root.unmount())
           root.render(<DetailView id={ctx.props.id} />)
           // Return void — Zumly uses ctx.target
         }
@@ -994,7 +1000,9 @@ const app = new Zumly({
   views: {
     home: '<div class="z-view"><div class="zoom-me" data-to="detail">Open</div></div>',
     detail: (ctx) => {
-      createApp(DetailComponent, { id: ctx.props.id }).mount(ctx.target)
+      const component = createApp(DetailComponent, { id: ctx.props.id })
+      ctx.onCleanup(() => component.unmount())
+      component.mount(ctx.target)
     }
   }
 })
@@ -1014,7 +1022,8 @@ const app = new Zumly({
   views: {
     home: '<div class="z-view"><div class="zoom-me" data-to="detail">Open</div></div>',
     detail: (ctx) => {
-      new Detail({ target: ctx.target, props: { id: ctx.props.id } })
+      const component = new Detail({ target: ctx.target, props: { id: ctx.props.id } })
+      ctx.onCleanup(() => component.$destroy())
     }
   }
 })
