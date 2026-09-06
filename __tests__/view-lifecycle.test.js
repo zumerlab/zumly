@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { ViewResolver } from '../src/view-resolver.js'
-import { disposeView } from '../src/view-lifecycle.js'
+import { createViewLifecycle, disposeView } from '../src/view-lifecycle.js'
 import { disposeView as disposeFromSeparateModule } from '../src/view-lifecycle.js?separate-copy'
 import { prepareAndInsertView, renderView } from '../src/utils.js'
 import { removeViewFromCanvas } from '../src/drivers/driver-helpers.js'
@@ -8,6 +8,53 @@ import { removeViewFromCanvas } from '../src/drivers/driver-helpers.js'
 afterEach(() => { document.body.innerHTML = '' })
 
 describe('view context and lifecycle', () => {
+  it('snapshots registered descendants before cleanup removes siblings and ancestors', () => {
+    const fragment = document.createDocumentFragment()
+    const parent = document.createElement('section')
+    const first = document.createElement('article')
+    const last = document.createElement('article')
+    parent.append(first, last)
+    fragment.append(parent)
+    // Large unregistered content must not change cleanup ordering or survive
+    // just because a framework removed the parent in an earlier callback.
+    first.innerHTML = '<span><i></i></span>'.repeat(1000)
+    const calls = []
+    const register = (node, name, cleanup = () => {}) => {
+      const scope = createViewLifecycle()
+      scope.onCleanup(() => { calls.push(name); cleanup() })
+      scope.attach(node)
+    }
+    register(fragment, 'fragment')
+    register(parent, 'parent', () => disposeFromSeparateModule(first))
+    register(first, 'first')
+    register(last, 'last', () => parent.remove())
+    const query = vi.spyOn(parent, 'querySelectorAll')
+    disposeFromSeparateModule(fragment)
+    disposeView(parent)
+    expect(calls).toEqual(['last', 'first', 'parent', 'fragment'])
+    expect(query).not.toHaveBeenCalled()
+  })
+
+  it('keeps scope order, reversed callback order and reentrant cleanup idempotent', () => {
+    const parent = document.createElement('div')
+    const child = document.createElement('div')
+    parent.append(child)
+    const calls = []
+    const firstScope = createViewLifecycle()
+    firstScope.onCleanup(() => calls.push('first registration'))
+    firstScope.onCleanup(() => { calls.push('last registration'); disposeFromSeparateModule(child) })
+    firstScope.attach(child)
+    const secondScope = createViewLifecycle()
+    secondScope.onCleanup(() => calls.push('second scope'))
+    secondScope.attach(child)
+    const parentScope = createViewLifecycle()
+    parentScope.onCleanup(() => calls.push('parent'))
+    parentScope.attach(parent)
+    disposeView(parent)
+    disposeFromSeparateModule(parent)
+    expect(calls).toEqual(['last registration', 'second scope', 'first registration', 'parent'])
+  })
+
   it('shares cleanup with separately loaded modules without transferring it to DOM clones', async () => {
     const cleanup = vi.fn()
     const node = await new ViewResolver({ component: ({ onCleanup }) => {

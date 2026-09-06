@@ -15,10 +15,10 @@ import {
   applyZoomOutLastState,
   removeViewFromCanvas,
   runLateralInstant,
-  readComputedMatrix,
   interpolateMatrix,
   matrixToString,
 } from './driver-helpers.js'
+import { readTransitionMatrix } from './transform-matrix.js'
 
 export function runTransition (spec, onComplete) {
   const animate = getMotionAnimate()
@@ -131,14 +131,14 @@ function computeMatrixPairs (currentView, previousView, lastView, currentStage, 
     if (direction === 'forward') {
       return {
         el,
-        from: readComputedMatrix(el, backward.origin, backward.transform),
-        to: readComputedMatrix(el, backward.origin, forward.transform),
+        from: readTransitionMatrix(el, backward.origin, backward.transform),
+        to: readTransitionMatrix(el, backward.origin, forward.transform),
       }
     } else {
       return {
         el,
-        from: readComputedMatrix(el, forward.origin, forward.transform),
-        to: readComputedMatrix(el, forward.origin, backward.transform),
+        from: readTransitionMatrix(el, forward.origin, forward.transform),
+        to: readTransitionMatrix(el, forward.origin, backward.transform),
       }
     }
   })

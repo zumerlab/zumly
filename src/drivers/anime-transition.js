@@ -17,10 +17,10 @@ import {
   applyZoomOutLastState,
   removeViewFromCanvas,
   runLateralInstant,
-  readComputedMatrix,
   interpolateMatrix,
   matrixToString,
 } from './driver-helpers.js'
+import { readTransitionMatrix } from './transform-matrix.js'
 
 export function runTransition (spec, onComplete) {
   const anime = typeof globalThis !== 'undefined' && globalThis.anime
@@ -145,12 +145,12 @@ function runZoomOut (anime, currentView, previousView, lastView, currentStage, d
 function computeMatrixPairs (views, direction) {
   return views.map(({ el, backward, forward }) => {
     if (direction === 'forward') {
-      const from = readComputedMatrix(el, backward.origin, backward.transform)
-      const to = readComputedMatrix(el, backward.origin, forward.transform)
+      const from = readTransitionMatrix(el, backward.origin, backward.transform)
+      const to = readTransitionMatrix(el, backward.origin, forward.transform)
       return { el, from, to }
     } else {
-      const from = readComputedMatrix(el, forward.origin, forward.transform)
-      const to = readComputedMatrix(el, forward.origin, backward.transform)
+      const from = readTransitionMatrix(el, forward.origin, forward.transform)
+      const to = readTransitionMatrix(el, forward.origin, backward.transform)
       return { el, from, to }
     }
   })

@@ -49,9 +49,19 @@ export function createViewLifecycle () {
  */
 export function disposeView (node) {
   if (!node) return
-  // Snapshot descendants first: a framework cleanup may remove its own DOM.
-  const nodes = [node, ...(node.querySelectorAll?.('*') || [])]
-  for (const child of nodes.reverse()) {
+  // Snapshot only registered nodes before callbacks can mutate the subtree.
+  // A TreeWalker keeps the old reverse document order without allocating an
+  // array/NodeList containing every element of a large component.
+  const nodes = []
+  if (node[lifecycleKey]) nodes.push(node)
+  const document = node.ownerDocument || node
+  const walker = document.createTreeWalker(node, 1) // NodeFilter.SHOW_ELEMENT
+  let descendant
+  while ((descendant = walker.nextNode())) {
+    if (descendant[lifecycleKey]) nodes.push(descendant)
+  }
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const child = nodes[i]
     const entries = child[lifecycleKey]
     if (!entries) continue
     for (const lifecycle of entries) lifecycle.dispose()

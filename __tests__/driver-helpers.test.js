@@ -2,7 +2,7 @@
  * Tests for the public driver-helpers surface (src/drivers/driver-helpers.js),
  * exported as 'zumly/driver-helpers'.
  */
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   parseDurationMs,
   parseDurationSec,
@@ -17,6 +17,9 @@ import {
   lerp,
   interpolateMatrix,
 } from '../src/drivers/driver-helpers.js'
+import { readTransitionMatrix } from '../src/drivers/transform-matrix.js'
+
+afterEach(() => vi.restoreAllMocks())
 
 describe('parseDurationMs / parseDurationSec', () => {
   it('parses seconds, milliseconds, leading-dot and numbers', () => {
@@ -141,6 +144,80 @@ describe('matrix toolkit', () => {
   it('returns identity for "none" and garbage', () => {
     expect(parseMatrixString('none')).toEqual(identityMatrix())
     expect(parseMatrixString('rotate(45deg)')).toEqual(identityMatrix())
+  })
+
+  it('preserves zero matrix scale components', () => {
+    expect(parseMatrixString('matrix(0, 0, 0, 0, 10, 20)'))
+      .toEqual({ a: 0, b: 0, c: 0, d: 0, e: 10, f: 20 })
+  })
+
+  it.each([
+    'translate(-12.3456789px, 31.2345678px) scale(0.123456789)',
+    'translate(1e-7px, -2.5e+2px) scale(3.25e-2)',
+    'translate(0, 0) scale(0)',
+    'scale(-1.5)',
+    'none',
+  ])('resolves %s without geometry or computed-style reads', transform => {
+    const element = document.createElement('div')
+    const bounds = vi.spyOn(element, 'getBoundingClientRect')
+    const computed = vi.spyOn(window, 'getComputedStyle')
+    const matrix = readTransitionMatrix(element, '13.5px 29.25px', transform)
+    const native = new DOMMatrix(transform)
+    for (const key of ['a', 'b', 'c', 'd', 'e', 'f']) {
+      // Browsers parse some CSS matrix components at float32 precision.
+      expect(matrix[key]).toBeCloseTo(native[key], 5)
+    }
+    expect(element.style.transformOrigin.split(' ').slice(0, 2)).toEqual(['13.5px', '29.25px'])
+    expect(bounds).not.toHaveBeenCalled()
+    expect(computed).not.toHaveBeenCalled()
+  })
+
+  it('retains source precision before the browser paints the matrix', () => {
+    const element = document.createElement('div')
+    expect(readTransitionMatrix(element, '0 0', 'translate(-12.345678901234px, 31.234567890123px) scale(0.12345678901234)'))
+      .toEqual({ a: 0.12345678901234, b: 0, c: 0, d: 0.12345678901234, e: -12.345678901234, f: 31.234567890123 })
+  })
+
+  it.each([
+    'translate(25%, -10%) scale(1.25)',
+    'translate(calc(25% + 3px), 2em) scale(0.75)',
+    'scale(2) translate(13px, 7px)',
+    'rotate(90deg)',
+  ])('preserves browser fallback for %s', transform => {
+    const element = document.createElement('div')
+    element.style.cssText = 'width: 240px; height: 160px; font-size: 10px'
+    document.body.append(element)
+    try {
+      const bounds = vi.spyOn(element, 'getBoundingClientRect')
+      const actual = readTransitionMatrix(element, '31px 17px', transform)
+      const native = new DOMMatrix(getComputedStyle(element).transform)
+      for (const key of ['a', 'b', 'c', 'd', 'e', 'f']) {
+        expect(actual[key]).toBeCloseTo(native[key], 6)
+      }
+      expect(bounds).toHaveBeenCalledOnce()
+    } finally { element.remove() }
+  })
+
+  it('uses author styles when the inline transform is empty', () => {
+    const stylesheet = document.createElement('style')
+    stylesheet.textContent = '.matrix-fallback-test { transform: translate(21px, 34px) scale(2) }'
+    const element = document.createElement('div')
+    element.className = 'matrix-fallback-test'
+    document.body.append(stylesheet, element)
+    try {
+      expect(readTransitionMatrix(element, '0 0', ''))
+        .toEqual({ a: 2, b: 0, c: 0, d: 2, e: 21, f: 34 })
+    } finally { stylesheet.remove(); element.remove() }
+  })
+
+  it.each(['translate(8, 12) scale(2)', 'scale(1.)', 'translate(1px, 2px) garbage'])('leaves invalid CSS %s to the browser', transform => {
+    const element = document.createElement('div')
+    element.style.transform = 'translate(21px, 34px) scale(2)'
+    document.body.append(element)
+    try {
+      expect(readTransitionMatrix(element, '0 0', transform))
+        .toEqual({ a: 2, b: 0, c: 0, d: 2, e: 21, f: 34 })
+    } finally { element.remove() }
   })
 
   it('interpolates between matrices with clamped t', () => {

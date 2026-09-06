@@ -278,10 +278,10 @@ export function parseMatrixString (mStr) {
   )
   if (!m) return identityMatrix()
   return {
-    a: parseFloat(m[1]) || 1,
+    a: parseFloat(m[1]),
     b: parseFloat(m[2]) || 0,
     c: parseFloat(m[3]) || 0,
-    d: parseFloat(m[4]) || 1,
+    d: parseFloat(m[4]),
     e: parseFloat(m[5]) || 0,
     f: parseFloat(m[6]) || 0,
   }
