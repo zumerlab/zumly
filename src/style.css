@@ -45,6 +45,9 @@
 
 .z-view.is-current-view {
   cursor: default;
+  /* Keep the active surface live. Background views retain auto so their
+     offscreen contents can be skipped. */
+  content-visibility: visible;
 }
 
 .z-view.is-previous-view, .z-view.is-last-view, .z-view.has-no-events  {

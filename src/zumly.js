@@ -16,7 +16,7 @@ import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetache
 import { ViewPrefetcher } from './view-prefetcher.js'
 import { getDriver } from './drivers/index.js'
 import { applyResizeCorrection } from './resize-correction.js'
-import { hideViewContent, showViewContent } from './view-visibility.js'
+import { hideViewContent, showViewContent, restoreViewContent } from './view-visibility.js'
 import { disposeView } from './view-lifecycle.js'
 import { ViewAccessibility, isNativeControl, isEditable } from './view-accessibility.js'
 
@@ -311,9 +311,9 @@ export class Zumly {
 
   _recordCanvasSize () {
     if (!this.canvas) return
-    const r = this.canvas.getBoundingClientRect()
-    this._lastCanvasWidth = r.width
-    this._lastCanvasHeight = r.height
+    // Layout dimensions exclude a surrounding Zumly instance's animated scale.
+    this._lastCanvasWidth = this.canvas.offsetWidth
+    this._lastCanvasHeight = this.canvas.offsetHeight
   }
 
   _handleResize () {
@@ -322,9 +322,8 @@ export class Zumly {
     this._resizeDebounceTimer = setTimeout(() => {
       this._resizeDebounceTimer = null
       if (!this.isValid || !this.canvas || this._lastCanvasWidth === 0) return
-      const r = this.canvas.getBoundingClientRect()
-      const newW = r.width
-      const newH = r.height
+      const newW = this.canvas.offsetWidth
+      const newH = this.canvas.offsetHeight
       if (newW === this._lastCanvasWidth && newH === this._lastCanvasHeight) return
       if (this.blockEvents) {
         this._pendingResizeCorrection = true
@@ -340,10 +339,9 @@ export class Zumly {
     this._clearBlockEventsSafety()
     if (this._pendingResizeCorrection && !this.blockEvents) {
       this._pendingResizeCorrection = false
-      const r = this.canvas?.getBoundingClientRect()
-      if (r && this._lastCanvasWidth > 0) {
-        const newW = r.width
-        const newH = r.height
+      if (this.canvas && this._lastCanvasWidth > 0) {
+        const newW = this.canvas.offsetWidth
+        const newH = this.canvas.offsetHeight
         if (newW !== this._lastCanvasWidth || newH !== this._lastCanvasHeight) {
           applyResizeCorrection(this, this._lastCanvasWidth, this._lastCanvasHeight, newW, newH)
         }
@@ -352,6 +350,11 @@ export class Zumly {
       }
     } else {
       this._recordCanvasSize()
+    }
+    // Drivers need visible contents while moving; afterwards let CSS skip work
+    // for offscreen views again instead of permanently overriding `auto`.
+    for (const view of this.canvas?.children || []) {
+      if (view.classList.contains('z-view')) restoreViewContent(view)
     }
     // Restore the incoming view before focusing it (it may have been inert).
     const current = this.canvas?.querySelector('.is-current-view')
@@ -369,13 +372,18 @@ export class Zumly {
     if (!this.canvas) return
     const currentView = this.canvas.querySelector('.is-current-view')
     if (!currentView) return
-    const focusable = currentView.querySelectorAll(
-      'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    )
-    for (const element of focusable) {
-      if (element.closest('[inert]')) continue
+    const selector = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    const focus = element => {
+      if (!element || element.closest('[inert], [hidden]')) return false
       element.focus({ preventScroll: true })
-      if (document.activeElement === element || element.contains(document.activeElement)) return
+      return document.activeElement === element || element.contains(document.activeElement)
+    }
+    // Most views accept the first candidate. Avoid collecting a whole large
+    // form unless hidden/inert controls require the fallback search.
+    const first = currentView.querySelector(selector)
+    if (focus(first)) return
+    for (const element of currentView.querySelectorAll(selector)) {
+      if (element !== first && focus(element)) return
     }
     currentView.setAttribute('tabindex', '-1')
     currentView.focus({ preventScroll: true })
@@ -477,12 +485,15 @@ export class Zumly {
    * @param {string} ease - CSS easing
    * @private
    */
-  _applyHideTrigger (triggerEl, currentView, mode, duration, ease) {
+  _applyHideTrigger (triggerEl, currentView, mode, duration, ease, fadeView = true) {
     if (!mode || !triggerEl) return
     if (mode === 'fade') {
       triggerEl.style.setProperty('--zoom-duration', duration)
       triggerEl.style.setProperty('--zoom-ease', ease)
       triggerEl.classList.add('z-trigger-fade')
+      // Lateral drivers already animate opacity; a second fade only forces an
+      // extra layout flush and competes with their keyframes.
+      if (!fadeView) return
       // New view fades in from opacity 0 → 1 via CSS transition.
       // The view already has .hide (opacity:0) from prepareAndInsertView.
       // We set up the transition, then swap .hide for .z-view-fade-in after reflow.
@@ -616,11 +627,13 @@ export class Zumly {
     task.promise = new Promise(resolve => { task.resolve = resolve })
     this._navigationTask = task
     this.blockEvents = true
+    this.prefetcher?.pause()
     const finish = () => {
       if (this._navigationTask === task) {
         this._navigationTask = null
         this.blockEvents = false
         this._clearBlockEventsSafety()
+        this.prefetcher?.resume()
       }
       task.resolve()
     }
@@ -914,6 +927,7 @@ export class Zumly {
 
     // Nullify references
     this._hooks = {}
+    this.prefetcher?.destroy()
     this.prefetcher = null
     this.transitionDriver = null
     // Keep this.canvas reference for the consumer to clean up DOM if needed,
@@ -954,9 +968,6 @@ export class Zumly {
     const canvas = this.canvas
     const el = triggerOrDescriptor.el
     this._resetCanvasScroll(canvas)
-    const canvasRect = canvas.getBoundingClientRect()
-    const offsetX = canvasRect.left
-    const offsetY = canvasRect.top
     const prevSnapshot = this.storedViews.length > 0 ? this.storedViews[this.storedViews.length - 1] : null
     const preScale = prevSnapshot?.scale ?? 1
     this.tracing('getView()')
@@ -1006,6 +1017,11 @@ export class Zumly {
 
     if (el) el.classList.add('zoomed')
 
+    // Resolve/mount can yield or change layout. Measure the canvas together
+    // with the trigger instead of retaining coordinates from before the await.
+    const canvasRect = canvas.getBoundingClientRect()
+    const offsetX = canvasRect.left
+    const offsetY = canvasRect.top
     const triggerRect = el
       ? (() => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height } })()
       : triggerOrDescriptor.rect
@@ -1029,8 +1045,6 @@ export class Zumly {
     this._cleanupLateralKeepAlive()
     this.lateralHistory = []
     hideViewContent(currentView)
-    hideViewContent(previousView)
-    hideViewContent(lastView)
     if (removeView) {
       hideViewContent(removeView)
       canvas.removeChild(removeView)
@@ -1182,8 +1196,9 @@ export class Zumly {
       // Undo the trigger marker; a stale .zoomed would mislead the next zoomOut
       if (el) el.classList.remove('zoomed')
 
-      showViewContent(previousView)
-      showViewContent(lastView)
+      restoreViewContent(previousView)
+      restoreViewContent(lastView)
+      restoreViewContent(removeView)
 
       return // Abort the zoom
     }
@@ -1315,30 +1330,6 @@ export class Zumly {
     const backView = this.canvas.querySelector('.is-previous-view')
     const lastView = this.canvas.querySelector('.is-last-view')
 
-    let slideDeltaX = 0
-    let slideDeltaY = 0
-    const declared = this._declaredSiblings()
-    const declFrom = declared ? declared.indexOf(currentName) : -1
-    const declTo = declared ? declared.indexOf(targetViewName) : -1
-    if (declFrom !== -1 && declTo !== -1) {
-      // Declared order wins: direction and distance from the indices
-      // (non-adjacent jumps slide proportionally further).
-      const canvasRect = this.canvas.getBoundingClientRect()
-      slideDeltaX = (declFrom - declTo) * canvasRect.width * 0.15
-    } else if (backView) {
-      const fromTrigger = backView.querySelector(`.zoom-me[data-to="${currentName}"]`)
-      const toTrigger = backView.querySelector(`.zoom-me[data-to="${targetViewName}"]`)
-      if (fromTrigger && toTrigger) {
-        const fr = fromTrigger.getBoundingClientRect()
-        const tr = toTrigger.getBoundingClientRect()
-        slideDeltaX = (fr.left + fr.width / 2) - (tr.left + tr.width / 2)
-        slideDeltaY = (fr.top + fr.height / 2) - (tr.top + tr.height / 2)
-      } else {
-        const canvasRect = this.canvas.getBoundingClientRect()
-        slideDeltaX = canvasRect.width * 0.15
-      }
-    }
-
     // keepAlive: try to find an existing hidden DOM node for the target view
     let incomingView = null
     let keepAliveNode = null
@@ -1397,6 +1388,46 @@ export class Zumly {
 
     const outTransform = outgoingView.style.transform || ''
     const topSnapshot = this.storedViews[this.storedViews.length - 1]
+    // Measure each incoming view in its own layout box. Reusing the outgoing
+    // translation preserves its corner, not its center, when sizes differ.
+    incomingView.style.transform = ''
+    incomingView.style.transformOrigin = '0 0'
+    // Cache only within this read phase; no stale geometry survives navigation.
+    const rectangles = new Map()
+    const measure = element => {
+      if (!rectangles.has(element)) rectangles.set(element, element.getBoundingClientRect())
+      return rectangles.get(element)
+    }
+    const incomingRect = measure(incomingView)
+    const outgoingRect = measure(outgoingView)
+    const canvasRect = measure(this.canvas)
+    const canvasScaleX = canvasRect.width / this.canvas.offsetWidth || 1
+    const canvasScaleY = canvasRect.height / this.canvas.offsetHeight || 1
+    const triggers = backView ? backView.querySelectorAll('.zoom-me[data-to]') : []
+    let fromTrigger, targetTrigger
+    for (const trigger of triggers) {
+      if (!fromTrigger && trigger.dataset.to === currentName) fromTrigger = trigger
+      if (!targetTrigger && trigger.dataset.to === targetViewName) targetTrigger = trigger
+      if (fromTrigger && targetTrigger) break
+    }
+    let slideDeltaX = 0
+    let slideDeltaY = 0
+    const declared = this._declaredSiblings()
+    const declFrom = declared ? declared.indexOf(currentName) : -1
+    const declTo = declared ? declared.indexOf(targetViewName) : -1
+    if (declFrom !== -1 && declTo !== -1) {
+      // Declared order wins, including proportional non-adjacent jumps.
+      slideDeltaX = (declFrom - declTo) * canvasRect.width * 0.15
+    } else if (backView) {
+      if (fromTrigger && targetTrigger) {
+        const fr = measure(fromTrigger)
+        const tr = measure(targetTrigger)
+        slideDeltaX = (fr.left + fr.width / 2) - (tr.left + tr.width / 2)
+        slideDeltaY = (fr.top + fr.height / 2) - (tr.top + tr.height / 2)
+      } else {
+        slideDeltaX = canvasRect.width * 0.15
+      }
+    }
     const backViewState = backView ? {
       transformStart: backView.style.transform || '',
       transformEnd: this._computeLateralBackTransform(backView.style.transform || '', slideDeltaX, slideDeltaY)
@@ -1405,16 +1436,6 @@ export class Zumly {
       transformStart: lastView.style.transform || '',
       transformEnd: this._computeLateralBackTransform(lastView.style.transform || '', slideDeltaX * 0.7, slideDeltaY * 0.7)
     } : null
-
-    // Measure each incoming view in its own layout box. Reusing the outgoing
-    // translation preserves its corner, not its center, when sizes differ.
-    incomingView.style.transform = ''
-    incomingView.style.transformOrigin = '0 0'
-    const incomingRect = incomingView.getBoundingClientRect()
-    const outgoingRect = outgoingView.getBoundingClientRect()
-    const canvasRect = this.canvas.getBoundingClientRect()
-    const canvasScaleX = canvasRect.width / this.canvas.offsetWidth || 1
-    const canvasScaleY = canvasRect.height / this.canvas.offsetHeight || 1
     const outgoingEntry = topSnapshot.views[INDEX_CURRENT]
     let incomingTransformEnd = this._computeLateralBackTransform('',
       (outgoingRect.x - incomingRect.x + (outgoingRect.width - incomingRect.width) / 2) / canvasScaleX,
@@ -1424,13 +1445,12 @@ export class Zumly {
       (outgoingRect.width - incomingRect.width) * backwardScale / (2 * canvasScaleX),
       (outgoingRect.height - incomingRect.height) * backwardScale / (2 * canvasScaleY))
     const oldTrigger = backView?.querySelector('.zoomed')
-    const targetTrigger = backView && Array.from(backView.querySelectorAll('.zoom-me[data-to]'))
-      .find(trigger => trigger.dataset.to === targetViewName)
 
     // Rebuild the target's zoom poses from the unchanged parent base state.
     // This also updates cover scale and the reverse path to the correct trigger.
-    if (targetTrigger && backViewState) {
-      const geometry = this._lateralTargetGeometry(incomingView, targetTrigger, backView, lastView, topSnapshot)
+    if (targetTrigger && backViewState && !(isBack && options.savedStage)) {
+      const geometry = this._lateralTargetGeometry(incomingView, targetTrigger, backView, lastView, topSnapshot,
+        { measure, outgoingView, canvasRect, sx: canvasScaleX, sy: canvasScaleY })
       if (geometry) {
         incomingTransformEnd = geometry.currentEnd
         incomingTransformBack = geometry.currentBack
@@ -1467,7 +1487,7 @@ export class Zumly {
     topSnapshot.hideTriggerMode = hideTriggerMode
     if (targetTrigger) {
       targetTrigger.classList.add('zoomed')
-      this._applyHideTrigger(targetTrigger, incomingView, hideTriggerMode, duration, ease)
+      this._applyHideTrigger(targetTrigger, incomingView, hideTriggerMode, duration, ease, false)
       if (hideTriggerMode) targetTrigger.classList.add('z-trigger-hidden')
     }
     hideViewContent(incomingView)
@@ -1556,16 +1576,14 @@ export class Zumly {
    * Align a lateral target with the current focus while preserving layer origins.
    * All reads are converted to canvas coordinates, including nested scaled canvases.
    */
-  _lateralTargetGeometry (incomingView, trigger, previousView, lastView, stage) {
-    const canvasRect = this.canvas.getBoundingClientRect()
-    const sx = canvasRect.width / this.canvas.offsetWidth || 1
-    const sy = canvasRect.height / this.canvas.offsetHeight || 1
+  _lateralTargetGeometry (incomingView, trigger, previousView, lastView, stage, measurements) {
+    const { measure, outgoingView, canvasRect, sx, sy } = measurements
     const rect = element => {
-      const r = element.getBoundingClientRect()
+      const r = measure(element)
       return { x: (r.x - canvasRect.x) / sx, y: (r.y - canvasRect.y) / sy, width: r.width / sx, height: r.height / sy }
     }
     const incoming = rect(incomingView)
-    const current = rect(this.canvas.querySelector(':scope > .is-current-view'))
+    const current = rect(outgoingView)
     const previous = rect(previousView)
     const target = rect(trigger)
     if (!incoming.width || !incoming.height || !target.width || !target.height) return null
@@ -1831,9 +1849,18 @@ export class Zumly {
    */
   _updateNav () {
     if (this._destroyed) return
-    this._removeNav()
-    this._updateDepthNav()
-    this._updateLateralNav()
+    const depth = this.storedViews.length - 1
+    const currentView = this.canvas.querySelector(':scope > .z-view.is-current-view')
+    const showDepth = !!this.depthNav && depth >= 1 && !currentView?.querySelector('.z-depth-nav')
+    let lateralData = this.lateralNav ? this._getSiblings() : null
+    if (lateralData?.siblings.length < 2) lateralData = null
+    // Complete geometry reads before either component mutates the canvas.
+    if (lateralData && this.lateralNav.mode === 'auto' && depth >= 1 && currentView &&
+      currentView.offsetWidth >= this.canvas.offsetWidth && currentView.offsetHeight >= this.canvas.offsetHeight) {
+      lateralData = null
+    }
+    this._updateDepthNav(showDepth)
+    this._updateLateralNav(lateralData)
   }
 
   /**
@@ -1841,34 +1868,34 @@ export class Zumly {
    * Position: bottom-left (default) or top-left.
    * @private
    */
-  _updateDepthNav () {
-    if (!this.depthNav) return
-    const depth = this.storedViews.length - 1
-    if (depth < 1) return
-
-    // Check if a child Zumly instance inside the current view has its own depth nav.
-    // If so, hide ours to avoid duplicate back buttons.
-    const cv = this.canvas.querySelector('.z-view.is-current-view')
-    if (cv && cv.querySelector('.z-depth-nav')) return
-
+  _updateDepthNav (visible) {
+    if (visible === undefined) {
+      const cv = this.canvas.querySelector(':scope > .z-view.is-current-view')
+      visible = !!this.depthNav && this.storedViews.length > 1 && !cv?.querySelector('.z-depth-nav')
+    }
+    if (!visible) {
+      this._depthNavElement?.remove()
+      return
+    }
     const pos = this.depthNav.position || 'bottom-left'
-    const nav = document.createElement('div')
-    nav.className = 'z-depth-nav z-depth-nav--' + pos
-
-    const backBtn = document.createElement('button')
-    backBtn.className = 'z-nav-back'
-    backBtn.setAttribute('aria-label', 'Zoom out (go back)')
-    backBtn.innerHTML = '&#8249;'
-    backBtn.type = 'button'
-    backBtn.addEventListener('click', (e) => {
-      e.stopPropagation()
-      if (!this.blockEvents && this.storedViews.length > 1) {
-        this.zoomOut()
-      }
-    })
-    nav.appendChild(backBtn)
-
-    this.canvas.appendChild(nav)
+    let nav = this._depthNavElement
+    if (!nav) {
+      nav = document.createElement('div')
+      const backBtn = document.createElement('button')
+      backBtn.className = 'z-nav-back'
+      backBtn.setAttribute('aria-label', 'Zoom out (go back)')
+      backBtn.innerHTML = '&#8249;'
+      backBtn.type = 'button'
+      backBtn.addEventListener('click', (e) => {
+        e.stopPropagation()
+        if (!this._destroyed && nav.parentNode === this.canvas && !this.blockEvents && this.storedViews.length > 1) this.zoomOut()
+      })
+      nav.appendChild(backBtn)
+      this._depthNavElement = nav
+    }
+    const className = 'z-depth-nav z-depth-nav--' + pos
+    if (nav.className !== className) nav.className = className
+    if (nav.parentNode !== this.canvas) this.canvas.appendChild(nav)
   }
 
   /**
@@ -1876,73 +1903,86 @@ export class Zumly {
    * Position: bottom-center (default) or top-center.
    * @private
    */
-  _updateLateralNav () {
-    if (!this.lateralNav) return
-    const depth = this.storedViews.length - 1
-
-    let lateralData = this._getSiblings()
-    if (lateralData.siblings.length < 2) return
-    // Auto mode: suppress lateral nav when the current view covers the full canvas
-    if (this.lateralNav.mode === 'auto' && depth >= 1) {
-      const cv = this.canvas.querySelector('.z-view.is-current-view')
-      if (cv && cv.offsetWidth >= this.canvas.offsetWidth && cv.offsetHeight >= this.canvas.offsetHeight) {
-        return
+  _updateLateralNav (lateralData) {
+    if (lateralData === undefined) {
+      lateralData = this.lateralNav ? this._getSiblings() : null
+      if (lateralData?.siblings.length < 2) lateralData = null
+      if (lateralData && this.lateralNav.mode === 'auto' && this.storedViews.length > 1) {
+        const cv = this.canvas.querySelector(':scope > .z-view.is-current-view')
+        if (cv && cv.offsetWidth >= this.canvas.offsetWidth && cv.offsetHeight >= this.canvas.offsetHeight) lateralData = null
       }
     }
-
+    if (!lateralData) {
+      this._lateralNavState?.element.remove()
+      return
+    }
     const { siblings, currentIndex } = lateralData
     const pos = this.lateralNav.position || 'bottom-center'
-    const nav = document.createElement('div')
-    nav.className = 'z-lateral-nav z-lateral-nav--' + pos
-
-    if (this.lateralNav.arrows) {
-      const prevBtn = document.createElement('button')
-      prevBtn.className = 'z-nav-arrow z-nav-prev'
-      prevBtn.setAttribute('aria-label', 'Previous sibling view')
-      prevBtn.innerHTML = '&#8249;'
-      prevBtn.disabled = currentIndex <= 0
-      prevBtn.type = 'button'
-      prevBtn.addEventListener('click', (e) => {
-        e.stopPropagation()
-        if (currentIndex > 0) this._doLateral(siblings[currentIndex - 1])
-      })
-      nav.appendChild(prevBtn)
-    }
-
-    if (this.lateralNav.dots) {
-      const dotsContainer = document.createElement('div')
-      dotsContainer.className = 'z-nav-lateral-dots'
-      for (let i = 0; i < siblings.length; i++) {
-        const dot = document.createElement('button')
-        dot.className = 'z-nav-dot z-nav-lat-dot' + (i === currentIndex ? ' is-active' : '')
-        dot.setAttribute('aria-label', `Go to ${siblings[i]}`)
-        dot.dataset.to = siblings[i]
-        dot.type = 'button'
-        if (i === currentIndex) dot.setAttribute('aria-current', 'true')
-        dot.addEventListener('click', ((idx) => (e) => {
-          e.stopPropagation()
-          if (idx !== currentIndex) this._doLateral(siblings[idx])
-        })(i))
-        dotsContainer.appendChild(dot)
+    const arrows = !!this.lateralNav.arrows
+    const dots = !!this.lateralNav.dots
+    let state = this._lateralNavState
+    if (!state || state.arrows !== arrows || state.dots !== dots ||
+      state.siblings.length !== siblings.length || state.siblings.some((name, index) => name !== siblings[index])) {
+      state?.element.remove()
+      const nav = document.createElement('div')
+      state = { element: nav, siblings: [...siblings], currentIndex: -1, arrows, dots, dotButtons: [] }
+      const arrow = (direction, label, glyph) => {
+        const button = document.createElement('button')
+        button.className = 'z-nav-arrow z-nav-' + direction
+        button.setAttribute('aria-label', label)
+        button.innerHTML = glyph
+        button.type = 'button'
+        return button
       }
-      nav.appendChild(dotsContainer)
-    }
-
-    if (this.lateralNav.arrows) {
-      const nextBtn = document.createElement('button')
-      nextBtn.className = 'z-nav-arrow z-nav-next'
-      nextBtn.setAttribute('aria-label', 'Next sibling view')
-      nextBtn.innerHTML = '&#8250;'
-      nextBtn.disabled = currentIndex >= siblings.length - 1
-      nextBtn.type = 'button'
-      nextBtn.addEventListener('click', (e) => {
+      if (arrows) {
+        state.prevButton = arrow('prev', 'Previous sibling view', '&#8249;')
+        nav.appendChild(state.prevButton)
+      }
+      if (dots) {
+        const dotsContainer = document.createElement('div')
+        dotsContainer.className = 'z-nav-lateral-dots'
+        for (const name of siblings) {
+          const dot = document.createElement('button')
+          dot.className = 'z-nav-dot z-nav-lat-dot'
+          dot.setAttribute('aria-label', `Go to ${name}`)
+          dot.dataset.to = name
+          dot.type = 'button'
+          state.dotButtons.push(dot)
+          dotsContainer.appendChild(dot)
+        }
+        nav.appendChild(dotsContainer)
+      }
+      if (arrows) {
+        state.nextButton = arrow('next', 'Next sibling view', '&#8250;')
+        nav.appendChild(state.nextButton)
+      }
+      // Resolve targets from the current state, not the index at creation time.
+      nav.addEventListener('click', (e) => {
+        const button = e.target.closest?.('button')
+        if (!button || !nav.contains(button)) return
         e.stopPropagation()
-        if (currentIndex < siblings.length - 1) this._doLateral(siblings[currentIndex + 1])
+        const active = this._lateralNavState
+        if (this._destroyed || this.blockEvents || active?.element !== nav || nav.parentNode !== this.canvas) return
+        const index = button === active.prevButton ? active.currentIndex - 1
+          : button === active.nextButton ? active.currentIndex + 1 : active.dotButtons.indexOf(button)
+        if (index >= 0 && index < active.siblings.length && index !== active.currentIndex) this._doLateral(active.siblings[index])
       })
-      nav.appendChild(nextBtn)
+      this._lateralNavState = state
     }
-
-    this.canvas.appendChild(nav)
+    if (state.currentIndex !== currentIndex) {
+      const previous = state.dotButtons[state.currentIndex]
+      previous?.classList.remove('is-active')
+      previous?.removeAttribute('aria-current')
+      const current = state.dotButtons[currentIndex]
+      current?.classList.add('is-active')
+      current?.setAttribute('aria-current', 'true')
+      state.currentIndex = currentIndex
+    }
+    if (state.prevButton && state.prevButton.disabled !== (currentIndex <= 0)) state.prevButton.disabled = currentIndex <= 0
+    if (state.nextButton && state.nextButton.disabled !== (currentIndex >= siblings.length - 1)) state.nextButton.disabled = currentIndex >= siblings.length - 1
+    const className = 'z-lateral-nav z-lateral-nav--' + pos
+    if (state.element.className !== className) state.element.className = className
+    if (state.element.parentNode !== this.canvas) this.canvas.appendChild(state.element)
   }
 
   /**
@@ -1950,8 +1990,10 @@ export class Zumly {
    * @private
    */
   _removeNav () {
-    if (!this.canvas) return
-    this.canvas.querySelectorAll('.z-depth-nav, .z-lateral-nav').forEach(el => el.remove())
+    this._depthNavElement?.remove()
+    this._lateralNavState?.element.remove()
+    this._depthNavElement = null
+    this._lateralNavState = null
   }
 
   /**

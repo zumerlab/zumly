@@ -335,9 +335,13 @@ views: {
 - **Eager preload:** `preload: ['viewA', 'viewB']` — static HTML and URL views are resolved and cached during `init()`; dynamic views and custom elements are skipped.
 - **Hover prefetch:** `mouseover` on a `.zoom-me[data-to]` trigger prefetches its target in the background.
 - **Focus prefetch:** `focusin` on a `.zoom-me[data-to]` also prefetches (for keyboard/accessibility).
-- **Scan prefetch:** When a view becomes current, all `.zoom-me[data-to]` targets inside it are prefetched in the background. This works on touch devices where hover is unavailable.
+- **Scan prefetch:** When a view becomes current, its unique `.zoom-me[data-to]` targets enter a background queue. This works on touch devices where hover is unavailable. The queue keeps up to 32 pending targets and starts at most two resolutions concurrently, yielding between starts.
 
 All prefetch strategies skip functions, objects, and custom elements to avoid rendering components speculatively.
+
+Prefetch warms a template without cloning it. Navigation gets an independent clone when it needs the view. New speculative work pauses during navigation and resumes after completion; a requested view can load immediately without waiting for a queue slot. Already-running requests may still finish. Explicit `preload` remains eager.
+
+The template cache holds up to 64 entries, evicts the least recently used, and expires URL responses after five minutes. Eviction only affects reusable templates: mounted views, form values, history, and `keepAlive` nodes stay intact. An evicted or unprefetched target resolves normally when visited.
 
 ### Navigation completion and accessibility
 

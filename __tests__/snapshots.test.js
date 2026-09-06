@@ -149,10 +149,11 @@ describe('snapshots', () => {
       const reattached = app.canvas.querySelector('[data-view-name="v1"]')
       expect(reattached).toBeTruthy()
       expect(app.canvas.querySelector('.z-view:first-child')).toBe(reattached)
-      expect(reattached.style.contentVisibility).toBe('visible')
+      expect(reattached.style.contentVisibility).toBe('')
+      expect(getComputedStyle(reattached).contentVisibility).toBe('visible')
     })
 
-    it('content-visibility is visible on zoom-in and zoom-out paths (none driver)', async () => {
+    it('releases temporary content-visibility overrides after zoom-in and zoom-out (none driver)', async () => {
       document.body.innerHTML = '<div class="cv-test zumly-canvas"></div>'
       const a = `<div class="z-view"><div class="zoom-me" data-to="b"></div></div>`
       const b = `<div class="z-view"><p>b</p></div>`
@@ -164,10 +165,11 @@ describe('snapshots', () => {
       })
       await app.init()
       await app.zoomIn(app.canvas.querySelector('.zoom-me'))
-      expect(app.canvas.querySelector('.is-current-view').style.contentVisibility).toBe('visible')
-      expect(app.canvas.querySelector('.is-previous-view').style.contentVisibility).toBe('visible')
+      expect(app.canvas.querySelector('.is-current-view').style.contentVisibility).toBe('')
+      expect(app.canvas.querySelector('.is-previous-view').style.contentVisibility).toBe('')
       app.zoomOut()
-      expect(app.canvas.querySelector('.is-current-view').style.contentVisibility).toBe('visible')
+      expect(app.canvas.querySelector('.is-current-view').style.contentVisibility).toBe('')
+      expect(getComputedStyle(app.canvas.querySelector('.is-current-view')).contentVisibility).toBe('visible')
     })
   })
 })
