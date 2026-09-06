@@ -2,9 +2,16 @@
 
 All notable changes to this project will be documented in this file. 
 
-#### Unreleased
+#### [v0.97.0](https://github.com/zumerlab/zumly/compare/v0.92.6...v0.97.0)
 
-- Avoid discarded prefetch clones, bound the template cache and scan queue, and pause speculative work during navigation.
+> 5 September 2026
+
+- feat: add comprehensive accessibility tests and improve view accessibility handling [`89ed910`](https://github.com/zumerlab/zumly/commit/89ed910a2bdcebcb493f207c71fdb9f8c2822800)
+- Reduce navigation DOM work [`8967ec7`](https://github.com/zumerlab/zumly/commit/8967ec7cb2c6dd45a6a944824c29225fa6697afd)
+- Optimize view prefetching [`bbe3850`](https://github.com/zumerlab/zumly/commit/bbe3850ac13de44be24bee720b3ed70664f7f2bd)
+- Reduce background work in demos [`624f746`](https://github.com/zumerlab/zumly/commit/624f7463f3ce5e136c567a9290464c18bc313af1)
+- Reduce driver and cleanup work [`9589589`](https://github.com/zumerlab/zumly/commit/9589589e9e546bac1bf65c5eb9a39a6015774a93)
+- Clarify SnapDOM capture and SnapDIFF comparison roles [`7e6c266`](https://github.com/zumerlab/zumly/commit/7e6c266e9b08f56016828f4624053260d707da79)- Avoid discarded prefetch clones, bound the template cache and scan queue, and pause speculative work during navigation.
 - Reuse lateral geometry measurements, calculate engine transforms without layout reads in Anime/Motion, and avoid duplicate lateral fades.
 - Restore authored content-visibility after transitions and use layout dimensions for resize correction inside scaled containers.
 - Reuse navigation controls, stop scanning large forms after the first usable focus target, and reduce teardown allocations.

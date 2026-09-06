@@ -47,7 +47,6 @@
   ],
   "scripts": {
     "compile": "node esbuild.config.mjs",
-    "build": "npm pack",
     "dev": "npm run compile && npx serve . -p 9090 -c ./serve.json",
     "test": "npx vitest run --browser.headless --reporter=verbose",
     "test:browsers": "node scripts/test-browsers.mjs",
@@ -56,7 +55,9 @@
     "test:coverage": "npx vitest run --browser.headless --coverage",
     "test:install-browsers": "npx playwright install chromium firefox webkit",
     "bump": "npx @zumerbox/bump && npx @zumerbox/changelog",
-    "prepack": "npm run compile"
+    "prepack": "npm run compile",
+    "build": "npm run compile && npm pack",
+    "release:push": "git add . && git commit -m \"Bumped version\" && git push --follow-tags"
   },
   "files": [
     "dist",
