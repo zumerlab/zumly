@@ -4,9 +4,10 @@
  * Strategies: (A) eager on init, (B) on hover/focus over .zoom-me, (C) scan on view activation.
  *
  * CACHING POLICY:
- * - Static HTML string views: cached indefinitely (no TTL). Result is cloned on each get().
+ * - Static HTML string views: no TTL, subject to the cache's LRU entry limit.
+ *   Only actual get() consumers receive a clone; prefetch never clones.
  * - URL-backed views (http(s)://, /path, *.html, *.php): cached with TTL (5 min). Expired
- *   entries are removed on next get(); a fresh fetch occurs.
+ *   entries are removed on access or insertion; a fresh fetch occurs.
  * - Function/object views: NOT cached. They depend on context (trigger, props, etc.); reusing
  *   a cached result across different contexts would be incorrect. Each get() resolves fresh.
  * - In-flight deduplication: only for cacheable views. Non-cacheable views are never
@@ -28,11 +29,20 @@ export class ViewPrefetcher {
   #cache
   #views
   #inFlight = new Map()
+  #scanQueue = new Map()
+  #scanTimer = null
+  #activeScans = 0
+  #prefetchConcurrency
+  #maxPendingPrefetch
+  #destroyed = false
+  #paused = false
 
-  constructor (views = {}) {
+  constructor (views = {}, { maxCacheEntries = 64, prefetchConcurrency = 2, maxPendingPrefetch = 32 } = {}) {
     this.#views = views
     this.#resolver = new ViewResolver(views)
-    this.#cache = new ViewCache()
+    this.#cache = new ViewCache({ maxEntries: maxCacheEntries })
+    this.#prefetchConcurrency = Number.isInteger(prefetchConcurrency) && prefetchConcurrency > 0 ? prefetchConcurrency : 2
+    this.#maxPendingPrefetch = Number.isInteger(maxPendingPrefetch) && maxPendingPrefetch >= 0 ? maxPendingPrefetch : 32
   }
 
   /**
@@ -67,34 +77,47 @@ export class ViewPrefetcher {
    * @returns {Promise<HTMLElement>}
    */
   async get (source, context = null) {
+    if (this.#destroyed) throw new Error('Zumly: view prefetcher has been destroyed')
+    // Navigation takes priority over queued scan work, even when scan slots are full.
+    this.#scanQueue.delete(source)
     const template = this.#cacheableTemplate(source)
     if (template !== null) {
       const cached = this.#cache.get(source)
       if (cached) return cached
 
-      if (this.#inFlight.has(source)) {
-        return (await this.#inFlight.get(source)).cloneNode(true)
-      }
-
-      const promise = (async () => {
-        try {
-          const node = await this.#resolver.resolve(source, context)
-          const ttl = this.#getTtlForTemplate(template)
-          this.#cache.set(source, node, ttl)
-          return node
-        } finally {
-          // Clear in-flight on success AND failure — otherwise a rejected
-          // resolution is cached forever and every retry returns the same error.
-          this.#inFlight.delete(source)
-        }
-      })()
-
-      this.#inFlight.set(source, promise)
-      return (await promise).cloneNode(true)
+      // Clone directly from the resolution result: another concurrent resolution
+      // may evict this entry before this consumer's continuation runs.
+      return (await this.#resolveAndCache(source, template, context)).cloneNode(true)
     }
 
     // Non-cacheable (function, object, etc.): always resolve fresh. No cache, no in-flight dedup.
     return this.#resolver.resolve(source, context)
+  }
+
+  #resolveAndCache (source, template, context) {
+    if (this.#inFlight.has(source)) return this.#inFlight.get(source)
+    const promise = (async () => {
+      try {
+        const node = await this.#resolver.resolve(source, context)
+        if (!this.#destroyed) this.#cache.adopt(source, node, this.#getTtlForTemplate(template))
+        return node
+      } finally {
+        // A rejected resolution must not poison subsequent retries.
+        this.#inFlight.delete(source)
+      }
+    })()
+    this.#inFlight.set(source, promise)
+    return promise
+  }
+
+  async #ensureCached (source, context) {
+    if (this.#destroyed) return
+    this.#scanQueue.delete(source)
+    const template = this.#cacheableTemplate(source)
+    if (template === null || this.#cache.has(source)) return
+    // A prefetch only warms the cache. Do not allocate a consumer clone or retain
+    // the resolved node in Promise.all results from preloadEager().
+    await this.#resolveAndCache(source, template, context)
   }
 
   /**
@@ -105,18 +128,22 @@ export class ViewPrefetcher {
    */
   async preloadEager (keys, context = null) {
     if (!Array.isArray(keys) || keys.length === 0) return
-    await Promise.all(keys.filter(key => this.#cacheableTemplate(key) !== null).map(key => this.get(key, context)))
+    await Promise.all([...new Set(keys)].map(key => this.#ensureCached(key, context)))
   }
 
   /**
    * Prefetch a view in background (call from mouseover, focusin, or scan).
-   * get() deduplicates: cached or in-flight requests avoid duplicate work.
+   * Hover/focus requests start immediately unless paused for navigation;
+   * cached/in-flight work is reused without allocating a consumer clone.
    * @param {string} source - View name.
    * @param {object} [context=null]
    */
   prefetch (source, context = null) {
-    if (this.#cacheableTemplate(source) === null) return
-    this.get(source, context).catch(() => {})
+    if (this.#paused) {
+      this.#queuePrefetch(source, context)
+      return
+    }
+    this.#ensureCached(source, context).catch(() => {})
   }
 
   /** @deprecated Use prefetch() instead. Kept for backward compatibility. */
@@ -130,14 +157,63 @@ export class ViewPrefetcher {
    * @param {object} [context=null]
    */
   scanAndPrefetch (node, context = null) {
-    if (!node || !node.querySelectorAll) return
-    prepareViewTriggers(node)
-    const triggers = node.querySelectorAll('.zoom-me[data-to]')
-    triggers.forEach(el => {
+    if (this.#destroyed || !node || !node.querySelectorAll) return
+    const triggers = prepareViewTriggers(node)
+    // Prefer the newly activated view over stale, not-yet-started scan work.
+    this.#scanQueue.clear()
+    const seen = new Set()
+    for (const el of triggers) {
       const to = el.dataset.to
-      if (to) {
-        this.prefetch(to, context)
-      }
-    })
+      if (!to || seen.has(to)) continue
+      seen.add(to)
+      if (this.#scanQueue.size >= this.#maxPendingPrefetch) break
+      this.#queuePrefetch(to, context)
+    }
+    this.#scheduleScan()
+  }
+
+  #queuePrefetch (source, context) {
+    if (this.#destroyed || this.#scanQueue.size >= this.#maxPendingPrefetch || this.#scanQueue.has(source)) return
+    if (this.#cacheableTemplate(source) === null || this.#cache.has(source) || this.#inFlight.has(source)) return
+    this.#scanQueue.set(source, context)
+  }
+
+  #scheduleScan () {
+    if (this.#destroyed || this.#paused || this.#scanTimer !== null || this.#scanQueue.size === 0 || this.#activeScans >= this.#prefetchConcurrency) return
+    // One start per task yields between static HTML parses instead of doing all
+    // speculative work synchronously inside the navigation's insertion path.
+    this.#scanTimer = setTimeout(() => {
+      this.#scanTimer = null
+      if (this.#destroyed || this.#scanQueue.size === 0) return
+      const [source, context] = this.#scanQueue.entries().next().value
+      this.#scanQueue.delete(source)
+      this.#activeScans++
+      this.#ensureCached(source, context).catch(() => {}).finally(() => {
+        this.#activeScans--
+        this.#scheduleScan()
+      })
+      this.#scheduleScan()
+    }, 0)
+  }
+
+  /** Stop starting speculative work while navigation prepares or animates. */
+  pause () {
+    this.#paused = true
+    if (this.#scanTimer !== null) clearTimeout(this.#scanTimer)
+    this.#scanTimer = null
+  }
+
+  resume () {
+    this.#paused = false
+    this.#scheduleScan()
+  }
+
+  /** Cancel speculative work; running resolutions can finish for their consumers. */
+  destroy () {
+    this.#destroyed = true
+    if (this.#scanTimer !== null) clearTimeout(this.#scanTimer)
+    this.#scanTimer = null
+    this.#scanQueue.clear()
+    this.#cache.clear()
   }
 }

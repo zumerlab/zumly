@@ -9,7 +9,8 @@ export function isEditable (element) {
 }
 
 export function prepareViewTriggers (node) {
-  node.querySelectorAll('.zoom-me[data-to]').forEach(el => {
+  const triggers = node.querySelectorAll('.zoom-me[data-to]')
+  triggers.forEach(el => {
     if (!isNativeControl(el)) {
       if (!el.hasAttribute('role')) el.setAttribute('role', 'button')
       if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0')
@@ -18,6 +19,7 @@ export function prepareViewTriggers (node) {
       el.setAttribute('aria-label', `Zoom to ${el.dataset.to}`)
     }
   })
+  return triggers
 }
 
 /** Keep background views out of keyboard and screen-reader navigation. */
