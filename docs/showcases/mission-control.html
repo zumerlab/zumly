@@ -40,6 +40,7 @@
       ]
     }
     </script>
+    <script src="../js/showcase-activity.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
     <link rel="stylesheet" href="https://unpkg.com/@zumer/orbit@latest/dist/orbit.css" />
     <script src="https://unpkg.com/@zumer/orbit@latest/dist/orbit.js"></script>
@@ -638,6 +639,7 @@
 
     <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
     <script>
+    ;(function () {
       const ZumlyLib = window.Zumly || globalThis.Zumly
 
       // ── Satellite constellation data ───────────────────
@@ -874,6 +876,8 @@
         </div>
       `
 
+      if (ShowcaseActivity.renderPreview(views.control)) return
+
       // Level 2: Satellite detail views (all satellites)
       constellation.forEach(sat => {
         const bCls = sat.status === 'anomaly' ? 'b-r' : sat.status === 'warning' ? 'b-y' : 'b-g'
@@ -1000,7 +1004,18 @@
         const s = String(elapsed % 60).padStart(2, '0')
         el.textContent = `${h}:${m}:${s}`
       }
-      setInterval(updateMET, 1000)
+      let metTimer = null
+      function stopMET () {
+        clearInterval(metTimer)
+        metTimer = null
+      }
+      function syncMET () {
+        stopMET()
+        if (ShowcaseActivity.active && app.getCurrentViewName() === 'control') {
+          updateMET()
+          metTimer = setInterval(updateMET, 1000)
+        }
+      }
 
       // ── Orbit animation pause/resume ───────────────────
       function pauseOrbits () {
@@ -1032,7 +1047,15 @@
         debug: false,
       })
 
-      app.init()
+      app.init().then(syncMET)
+      ShowcaseActivity.subscribe(syncMET)
+      app.on('beforeZoomIn', stopMET)
+      app.on('beforeZoomOut', stopMET)
+      app.on('beforeLateral', stopMET)
+      app.on('afterZoomIn', syncMET)
+      app.on('afterZoomOut', syncMET)
+      app.on('afterLateral', syncMET)
+      app.on('destroy', stopMET)
 
       // Notify parent of depth changes for seamless nav
       function notifyDepth () {
@@ -1048,6 +1071,7 @@
       app.on('afterZoomOut', () => {
         if (app.zoomLevel() <= 1) resumeOrbits()
       })
+    })()
     </script>
   </body>
 </html>

@@ -40,6 +40,7 @@
       ]
     }
     </script>
+    <script src="../js/showcase-activity.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
     <link rel="stylesheet" href="https://unpkg.com/@zumer/orbit@latest/dist/orbit.css" />
     <style>
@@ -844,6 +845,7 @@
     <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
     <script src="https://unpkg.com/@zumer/orbit@latest/dist/orbit.js"></script>
     <script>
+    ;(function () {
       const ZumlyLib = window.Zumly || globalThis.Zumly
 
       // ── Camera data ─────────────────────────────────────
@@ -1006,6 +1008,8 @@
           </div>
         </div>
       `
+
+      if (ShowcaseActivity.renderPreview(views.dashboard)) return
 
       // Level 2: Cameras view — 4 cameras in Orbit CSS layout
       views.cameras = `
@@ -1506,6 +1510,7 @@
           arc.classList.toggle('active', i === idx && idx >= 0)
         })
       })
+    })()
     </script>
 </body>
 </html>

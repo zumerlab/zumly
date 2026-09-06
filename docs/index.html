@@ -644,6 +644,71 @@
 
     app.use(Z.Router)
 
+    // Keep preview documents quiet and run full demos only while their view is
+    // active. Pausing preserves DOM, form values, animation phase, and clocks.
+    var showcaseTransition = false
+    var showcaseRecoveryTimer = null
+    function syncShowcaseActivity () {
+      var current = app.canvas.querySelector(':scope > .is-current-view')
+      var activeFrame = null
+      app.canvas.querySelectorAll('iframe').forEach(function (frame) {
+        var active = !showcaseTransition && !document.hidden &&
+          !frame.closest('.sc-preview') && frame.closest('.z-view') === current
+        if (active) activeFrame = frame
+        frame.contentWindow?.postMessage({ type: 'zumly:showcase-activity', active: active }, window.location.origin)
+      })
+      var depthNav = app.canvas.querySelector('.z-depth-nav')
+      if (depthNav) depthNav.style.display = activeFrame && Number(activeFrame.dataset.showcaseDepth) > 0 ? 'none' : ''
+    }
+    function pauseShowcases () {
+      showcaseTransition = true
+      syncShowcaseActivity()
+    }
+    function recoverShowcases () {
+      showcaseRecoveryTimer = null
+      // A failed fetch/mount has no after* hook. Check only the engine's busy
+      // flag while a navigation is pending, without observing or measuring DOM.
+      if (!app.blockEvents) resumeShowcases()
+      else showcaseRecoveryTimer = setTimeout(recoverShowcases, 100)
+    }
+    function pauseForNavigation () {
+      pauseShowcases()
+      clearTimeout(showcaseRecoveryTimer)
+      showcaseRecoveryTimer = setTimeout(recoverShowcases, 100)
+    }
+    function resumeShowcases () {
+      clearTimeout(showcaseRecoveryTimer)
+      showcaseRecoveryTimer = null
+      showcaseTransition = false
+      syncShowcaseActivity()
+    }
+    ;['beforeZoomIn', 'beforeZoomOut', 'beforeLateral'].forEach(function (event) { app.on(event, pauseForNavigation) })
+    ;['afterZoomIn', 'afterZoomOut', 'afterLateral'].forEach(function (event) { app.on(event, resumeShowcases) })
+    app.on('viewMounted', syncShowcaseActivity)
+    document.addEventListener('visibilitychange', syncShowcaseActivity)
+
+    function onShowcaseMessage (event) {
+      if (event.origin !== window.location.origin || !event.data) return
+      var frame = Array.from(app.canvas.querySelectorAll('iframe')).find(function (candidate) {
+        return candidate.contentWindow === event.source
+      })
+      if (!frame) return
+      if (event.data.type === 'zumly:depth' && Number.isFinite(event.data.depth)) {
+        frame.dataset.showcaseDepth = String(event.data.depth)
+      } else if (event.data.type !== 'zumly:showcase-ready') {
+        return
+      }
+      syncShowcaseActivity()
+    }
+    window.addEventListener('message', onShowcaseMessage)
+    app.on('destroy', function () {
+      clearTimeout(showcaseRecoveryTimer)
+      showcaseRecoveryTimer = null
+      pauseShowcases()
+      document.removeEventListener('visibilitychange', syncShowcaseActivity)
+      window.removeEventListener('message', onShowcaseMessage)
+    })
+
     app.on('afterZoomIn', function () {
       if (app.getCurrentViewName() === 'install') {
         var ln = document.querySelector('.z-lateral-nav')
@@ -654,15 +719,7 @@
       if (app.getCurrentViewName() === 'playground') Playground.destroy()
     })
 
-    // Seamless depth nav: hide parent < when a showcase iframe has its own active
-    window.addEventListener('message', function (e) {
-      if (!e.data || e.data.type !== 'zumly:depth') return
-      var dn = document.querySelector('.z-depth-nav')
-      if (!dn) return
-      dn.style.display = e.data.depth > 0 ? 'none' : ''
-    })
-
-    app.init()
+    app.init().then(syncShowcaseActivity)
 
     // Theme icon sync
     var tb = document.getElementById('theme-btn')

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 #### Unreleased
 
+- Avoid discarded prefetch clones, bound the template cache and scan queue, and pause speculative work during navigation.
+- Reuse lateral geometry measurements, calculate engine transforms without layout reads in Anime/Motion, and avoid duplicate lateral fades.
+- Restore authored content-visibility after transitions and use layout dimensions for resize correction inside scaled containers.
+- Reuse navigation controls, stop scanning large forms after the first usable focus target, and reduce teardown allocations.
+- Render showcase previews without nested Zumly instances, pause inactive decorative loops and clocks, and rebuild the playground only when slider changes are committed.
 - Fix packaged driver/helper imports and remove Git mutations from the build command.
 - Wait for complete navigation, prevent overlapping async view loads, and cancel pending work on destroy.
 - Keep lateral views centered, align their parent layers and zoom-out targets, and restore lateral history after resize.

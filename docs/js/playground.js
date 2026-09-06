@@ -76,8 +76,8 @@
   function setupPlayground () {
     var mount = document.getElementById('pg-mount')
     if (!mount) return
-    mount.innerHTML = ''
     if (pgApp) { pgApp.destroy(); pgApp = null }
+    mount.innerHTML = ''
 
     var driver = (document.querySelector('input[name="pg-drv"]:checked') || {}).value || 'css'
     var cover = (document.querySelector('input[name="pg-cov"]:checked') || {}).value || 'width'
@@ -149,9 +149,13 @@
       ['pg-contrast','pg-contrast-val','%'],['pg-saturate','pg-saturate-val','%']
     ].forEach(function (s) {
       var el = document.getElementById(s[0]), lbl = document.getElementById(s[1])
-      if (el && lbl) el.addEventListener('input', function () {
-        lbl.textContent = el.value + s[2]; setupPlayground()
-      })
+      if (el && lbl) {
+        el.addEventListener('input', function () {
+          lbl.textContent = el.value + s[2]
+        })
+        // Commit once when a pointer drag or keyboard adjustment finishes.
+        el.addEventListener('change', setupPlayground)
+      }
     })
     var fxEl = document.getElementById('pg-fx')
     if (fxEl) fxEl.addEventListener('change', function () {

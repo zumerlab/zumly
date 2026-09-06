@@ -39,6 +39,7 @@
       ]
     }
     </script>
+    <script src="../js/showcase-activity.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
     <style>
       :root {
@@ -425,7 +426,7 @@
       .conveyor-bar::after {
         content: '';
         position: absolute;
-        top: 0; left: -25%;
+        top: 0; left: -30%;
         width: 25%; height: 100%;
         background: rgba(255, 255, 255, 0.12);
         animation: convey 3.2s linear infinite;
@@ -436,8 +437,8 @@
       }
 
       @keyframes convey {
-        0% { left: -30%; }
-        100% { left: 100%; }
+        0% { transform: translateX(0); }
+        100% { transform: translateX(520%); }
       }
 
       /* ── Responsive ──────────────────────────────────────── */
@@ -501,6 +502,7 @@
 
     <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
     <script>
+    ;(function () {
       const ZumlyLib = window.Zumly || globalThis.Zumly
 
       // ── Inline SVG helpers ──────────────────────────────
@@ -776,6 +778,8 @@
         </div>
       `
 
+      if (ShowcaseActivity.renderPreview(views.line)) return
+
       // Level 2: Unit detail views (only for trucks with issues)
       trucks.filter(t => t.issues).forEach(t => {
         const issueCards = t.issues.list.map(iss => {
@@ -908,6 +912,7 @@
         // Resume only when back at the top level (line view)
         if (app.zoomLevel() <= 1) resumeConveyor()
       })
+    })()
     </script>
   </body>
 </html>
