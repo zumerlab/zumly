@@ -1237,6 +1237,8 @@ export class Zumly {
     // Apply background view effects (blur, saturate, etc.)
     const effects = this._resolveEffects(el)
     this._applyEffects(previousView, lastView, effects, duration, ease)
+    // Zoom-out back to this level restores the same background effects.
+    snapShoot.effects = effects
     // Hide/crossfade trigger element during zoom
     const htMode = this._resolveHideTrigger(el)
     this._applyHideTrigger(el, currentView, htMode, duration, ease)
@@ -1690,9 +1692,15 @@ export class Zumly {
     previousView.classList.replace('is-previous-view', 'is-current-view')
 
     if (lastView !== null) {
-      // lastView becomes previous: update its effect to the previous-view level
-      if (lastView.classList.contains('has-effect') && this.effects[0] !== 'none') {
-        lastView.style.setProperty('--z-effect-filter', this.effects[0])
+      // lastView becomes previous: give it the previous-view effect of the level we return
+      // to, as resolved when that level was zoomed into (per-trigger overrides included).
+      const returning = this.storedViews[this.storedViews.length - 2]
+      const effect = (returning?.effects ?? this._resolveEffects(null))[0]
+      if (effect !== 'none' && !this._prefersReducedMotion()) {
+        lastView.classList.remove('has-effect-reverse')
+        this._applyEffects(lastView, null, [effect, 'none'], duration, ease)
+      } else {
+        this._removeEffect(lastView)
       }
       lastView.classList.replace('is-last-view', 'is-previous-view')
       lastView.classList.remove('hide')
