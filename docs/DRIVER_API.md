@@ -192,7 +192,7 @@ Import from `zumly/driver-helpers` (published) or `src/drivers/driver-helpers.js
 | `parseDurationSec(duration)` | Same but returns seconds |
 | `applyZoomInEndState(el, stage)` | Apply final classes + transforms after zoom-in |
 | `applyZoomOutPreviousState(el, state)` | Final state for previous view after zoom-out |
-| `applyZoomOutLastState(el, state)` | Final state for last view after zoom-out |
+| `applyZoomOutLastState(el, state)` | Final state for last view after zoom-out (keeps its background effect) |
 | `removeViewFromCanvas(el, canvas)` | Safe removal (handles wrapped elements) |
 | `showViews(...elements)` | Remove `hide` class + set `contentVisibility: auto` |
 | `runLateralInstant(spec, onComplete)` | Instant lateral transition (no animation) |
