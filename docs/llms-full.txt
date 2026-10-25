@@ -198,6 +198,10 @@ Controls how the zoom scale is calculated. `'width'` scales the child view so it
 
 Array of 1-2 CSS filter strings applied to background views during zoom. First applies to previousView, second to lastView. If only one is provided, it is used for both. Can be overridden per trigger with `data-with-effects="blur(3px) | blur(8px) saturate(0)"`.
 
+#### `transitions.animateEffects`
+
+Boolean, default `true`: the effects' filter transitions together with the zoom. `false` applies the filter at once when the zoom starts (and removes it at once on zoom-out). Animating a filter on large background layers is the costliest part of a transition with heavy views; turning it off took a ~3000-node view from about 27 to 19.5 ms per frame. The transition length can also be set in CSS with `--z-effect-duration` on `.z-view`.
+
 #### `transitions.hideTrigger`
 
 - `false` (default): trigger stays visible during zoom

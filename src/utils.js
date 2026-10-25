@@ -179,6 +179,15 @@ export function checkParameters (parameters, instance) {
     }
   }
 
+  // animateEffects: false applies background effects at once instead of transitioning the
+  // filter with the zoom. A filter animating on large background layers is the costliest
+  // part of a transition with heavy views.
+  const aeIn = t && t.animateEffects
+  instance.animateEffects = aeIn !== false
+  if (aeIn !== undefined && typeof aeIn !== 'boolean') {
+    notification(false, '\'transitions.animateEffects\' must be a boolean. Falling back to true.', 'warn')
+  }
+
   // Transition driver: 'css' | 'waapi' | 'none' | 'anime' | 'gsap' | 'motion' or custom function(spec, onComplete)
   const driverIn = t && t.driver
   const driverStr = typeof driverIn === 'string' ? driverIn.toLowerCase() : null

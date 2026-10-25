@@ -128,7 +128,7 @@ await app.init();
 | `initialView` | string | Yes | Name of the first view to show. |
 | `views` | object | Yes | Map of view names to view sources (see View sources below). |
 | `preload` | string[] | No | View names to resolve and cache when the app initializes. |
-| `transitions` | object | No | Duration, ease, cover, driver, effects, stagger, hideTrigger for zoom transitions. |
+| `transitions` | object | No | Duration, ease, cover, driver, effects, animateEffects, stagger, hideTrigger for zoom transitions. |
 | `deferred` | boolean | No | Defer content rendering until after animation completes (default: `false`). |
 | `debug` | boolean | No | Enable debug messages (default: `false`). |
 | `lateralNav` | boolean \| object | No | Lateral navigation UI: `{ mode, arrows, dots, keepAlive, position, siblings }`. |
@@ -145,6 +145,7 @@ transitions: {
   duration: '1s',
   ease: 'ease-in-out',
   effects: ['blur(3px) brightness(0.7)', 'blur(8px) saturate(0)'],  // CSS filters for [previous, last] background views
+  animateEffects: true, // false applies effects at once: much smoother zooms with heavy views
   stagger: 0,          // delay (ms) between layers during transition
   hideTrigger: false,  // false | true (visibility:hidden) | 'fade' (opacity crossfade)
   // threshold: { enabled: true, duration: 300, commitAt: 0.5 }  // parsed but not wired in the engine yet

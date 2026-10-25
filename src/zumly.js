@@ -425,12 +425,14 @@ export class Zumly {
   _applyEffects (previousView, lastView, effects, duration, ease) {
     if (!effects || (effects[0] === 'none' && effects[1] === 'none')) return
     if (previousView && effects[0] !== 'none') {
+      this._setEffectDuration(previousView)
       previousView.style.setProperty('--z-effect-filter', effects[0])
       previousView.style.setProperty('--zoom-duration', duration)
       previousView.style.setProperty('--zoom-ease', ease)
       previousView.classList.add('has-effect')
     }
     if (lastView && effects[1] !== 'none') {
+      this._setEffectDuration(lastView)
       lastView.style.setProperty('--z-effect-filter', effects[1])
       lastView.style.setProperty('--zoom-duration', duration)
       lastView.style.setProperty('--zoom-ease', ease)
@@ -444,8 +446,23 @@ export class Zumly {
    * @param {HTMLElement} element
    * @private
    */
+  /**
+   * Pin the filter transition to 0s when effects must not animate (transitions.animateEffects).
+   * @param {HTMLElement} element
+   * @private
+   */
+  _setEffectDuration (element) {
+    if (this.animateEffects === false) element.style.setProperty('--z-effect-duration', '0s')
+    else element.style.removeProperty('--z-effect-duration')
+  }
+
   _removeEffect (element) {
     if (!element || !element.classList.contains('has-effect')) return
+    if (this.animateEffects === false) {
+      element.classList.remove('has-effect', 'has-effect-reverse')
+      element.style.removeProperty('--z-effect-filter')
+      return
+    }
     element.classList.remove('has-effect')
     element.classList.add('has-effect-reverse')
     const onEnd = () => {

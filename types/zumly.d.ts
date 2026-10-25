@@ -98,6 +98,8 @@ export interface TransitionOptions {
   ease?: string
   /** Array of 1-2 CSS filter strings for background view effects. */
   effects?: [string] | [string, string]
+  /** Transition the effects' filter with the zoom (true) or apply it at once (false). Default: true. */
+  animateEffects?: boolean
   /** Progressive delay (ms) between view layers during zoom. Default: 0. */
   stagger?: number
   /** Accepted for compatibility but not applied yet (always treated as 0). */
