@@ -37,9 +37,9 @@ export class ViewPrefetcher {
   #destroyed = false
   #paused = false
 
-  constructor (views = {}, { maxCacheEntries = 64, prefetchConcurrency = 2, maxPendingPrefetch = 32 } = {}) {
+  constructor (views = {}, { maxCacheEntries = 64, prefetchConcurrency = 2, maxPendingPrefetch = 32, customElementTimeoutMs } = {}) {
     this.#views = views
-    this.#resolver = new ViewResolver(views)
+    this.#resolver = new ViewResolver(views, { customElementTimeoutMs })
     this.#cache = new ViewCache({ maxEntries: maxCacheEntries })
     this.#prefetchConcurrency = Number.isInteger(prefetchConcurrency) && prefetchConcurrency > 0 ? prefetchConcurrency : 2
     this.#maxPendingPrefetch = Number.isInteger(maxPendingPrefetch) && maxPendingPrefetch >= 0 ? maxPendingPrefetch : 32

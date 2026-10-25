@@ -6,7 +6,8 @@ import { identityMatrix, readComputedMatrix } from './driver-helpers.js'
 // computed-style path, including an empty inline value that can expose author CSS.
 const number = '[-+]?(?:\\d*\\.\\d+|\\d+)(?:[eE][-+]?\\d+)?'
 const length = `(${number})(px)?`
-const zumlyTransform = new RegExp(`^(?:translate\\(\\s*${length}\\s*,\\s*${length}\\s*\\)\\s*)?(?:scale\\(\\s*(${number})\\s*\\))?$`)
+// WebKit serializes translate(x, 0) as translate(x): the Y argument is optional.
+const zumlyTransform = new RegExp(`^(?:translate\\(\\s*${length}\\s*(?:,\\s*${length}\\s*)?\\)\\s*)?(?:scale\\(\\s*(${number})\\s*\\))?$`)
 
 function parseZumlyMatrix (transformStr) {
   if (typeof transformStr !== 'string') return null

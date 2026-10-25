@@ -1,4 +1,4 @@
-import { prepareAndInsertView, notification, checkParameters } from './utils.js'
+import { prepareAndInsertView, notification, checkParameters, normalizeDuration, normalizeEase } from './utils.js'
 import {
   computeCoverScale,
   computeCurrentViewStartTransform,
@@ -14,11 +14,12 @@ import {
 } from './geometry.js'
 import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetachedNode, INDEX_CURRENT, INDEX_PREVIOUS, INDEX_LAST } from './snapshots.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
-import { getDriver } from './drivers/index.js'
+import { getDriver, parseDurationMs } from './drivers/index.js'
 import { applyResizeCorrection } from './resize-correction.js'
 import { hideViewContent, showViewContent, restoreViewContent } from './view-visibility.js'
-import { disposeView } from './view-lifecycle.js'
+import { disposeView, activateView } from './view-lifecycle.js'
 import { ViewAccessibility, isNativeControl, isEditable } from './view-accessibility.js'
+import { unknownViewMessage } from './diagnostics.js'
 
 /**
  * Maximum time (ms) that blockEvents can stay true before being force-reset.
@@ -88,12 +89,18 @@ export class Zumly {
       this.notify('is unable to start: invalid or missing required options (mount, initialView, views).', 'error')
       return
     }
-    this.canvas = document.querySelector(this.mount)
+    this.canvas = typeof this.mount === 'string' ? document.querySelector(this.mount) : this.mount
     if (!this.canvas) {
-      this.notify(`mount selector "${this.mount}" did not match any element.`, 'error')
+      this.notify(`mount selector "${this.mount}" did not match any element. Create the canvas element before new Zumly(), or pass the element itself.`, 'error')
       this.isValid = false
       return
     }
+    if (!this.canvas.classList.contains('zumly-canvas')) {
+      this.notify('the mount element needs the class "zumly-canvas" (and zumly.css loaded). Adding the class.', 'warn')
+      this.canvas.classList.add('zumly-canvas')
+    }
+    /** Built-in driver name, or 'custom' for a driver function. */
+    this.transitionDriverName = typeof this.transitionDriver === 'string' ? this.transitionDriver : 'custom'
     this.transitionDriver = getDriver(this.transitionDriver)
 
     // Event bindings (stored for cleanup in destroy())
@@ -234,7 +241,7 @@ export class Zumly {
    * after BLOCK_EVENTS_SAFETY_MS to prevent permanent UI freeze.
    * @private
    */
-  _setBlockEvents () {
+  _setBlockEvents (expectedMs = 0) {
     this.blockEvents = true
     this._clearBlockEventsSafety()
     this._blockEventsSafetyTimer = setTimeout(() => {
@@ -247,7 +254,7 @@ export class Zumly {
         if (pending) pending()
         else this._onTransitionComplete()
       }
-    }, BLOCK_EVENTS_SAFETY_MS)
+    }, Math.max(BLOCK_EVENTS_SAFETY_MS, expectedMs + BLOCK_EVENTS_SAFETY_MS / 4))
   }
 
   /**
@@ -296,7 +303,7 @@ export class Zumly {
   tracing (data) {
     if (this.debug) {
       if (data === 'ended') {
-        const parse = this.trace.map((task, index) => `${index === 0 ? `Instance ${this.mount}: ${task}` : `${task}`}`).join(' > ')
+        const parse = this.trace.map((task, index) => `${index === 0 ? `Instance ${typeof this.mount === 'string' ? this.mount : 'element'}: ${task}` : `${task}`}`).join(' > ')
         this.notify(parse)
         this.trace = []
       } else {
@@ -664,6 +671,33 @@ export class Zumly {
     }
   }
 
+  /**
+   * Prefetch a newly active view's targets and report triggers that point
+   * nowhere (once per target), before the user clicks them.
+   * @private
+   */
+  _scanView (node, context) {
+    this.prefetcher?.scanAndPrefetch(node, context)
+    if (!node?.querySelectorAll) return
+    this._reportedTargets ||= new Set()
+    for (const trigger of node.querySelectorAll('.zoom-me')) {
+      const to = trigger.dataset.to
+      const key = to ?? ''
+      if (this._reportedTargets.has(key)) continue
+      if (!to) {
+        this._reportedTargets.add(key)
+        this.notify('a .zoom-me element has no data-to attribute, so it does nothing. Add data-to="viewName".', 'warn')
+      } else if (!Object.prototype.hasOwnProperty.call(this.views, to)) {
+        if (to.includes('-') && typeof customElements !== 'undefined' && customElements.get(to)) continue
+        if (/^https?:\/\/|^\/|\.(?:html|php)(?:[?#].*)?$/i.test(to)) continue
+        this._reportedTargets.add(key)
+        this.notify(to.includes('-')
+          ? `data-to="${to}": ${unknownViewMessage(to, this.views)} It will be treated as a custom element tag once <${to}> is defined.`
+          : `data-to="${to}": ${unknownViewMessage(to, this.views)}`, 'warn')
+      }
+    }
+  }
+
   /** Own preparation containers so destroy can clean up unfinished renderers. */
   _createViewContext (props = {}, trigger) {
     const context = { target: document.createElement('div'), context: this.componentContext, props }
@@ -694,13 +728,15 @@ export class Zumly {
           resolve()
         }
       }
-      this._setBlockEvents()
-      this._pendingTransitionComplete = complete
       const reducedMotion = this._prefersReducedMotion?.()
       const driver = reducedMotion ? getDriver('none') : this.transitionDriver
       const transitionSpec = reducedMotion
         ? { ...spec, duration: '0s', currentStage: { ...spec.currentStage, stagger: 0 } }
         : spec
+      // Long or staggered transitions must not trip the safety reset mid-animation.
+      const stagger = transitionSpec.currentStage?.stagger || 0
+      this._setBlockEvents(parseDurationMs(transitionSpec.duration) + stagger * 2)
+      this._pendingTransitionComplete = complete
       try {
         driver.runTransition(transitionSpec, complete)
       } catch (error) {
@@ -712,6 +748,26 @@ export class Zumly {
 
   zoomLevel () {
     return this.storedViews.length
+  }
+
+  /**
+   * Whether back() would navigate: there is lateral history at this depth
+   * or a level to zoom out to.
+   * @returns {boolean}
+   */
+  canGoBack () {
+    return !this._destroyed && (this.lateralHistory.length > 0 || this.storedViews.length > 1)
+  }
+
+  /** @private */
+  _emitViewChanged (type, from) {
+    this._emit('viewChanged', {
+      type,
+      viewName: this.getCurrentViewName(),
+      from,
+      zoomLevel: this.zoomLevel(),
+      node: this.canvas?.querySelector('.is-current-view') ?? null
+    })
   }
 
   /**
@@ -743,7 +799,7 @@ export class Zumly {
     // Guard here too: popping lateralHistory and then having _doLateral
     // ignore the call would lose the history entry.
     if (this.blockEvents) {
-      this.notify('back ignored: a transition is already running.', 'warn')
+      this.notify('back ignored: a transition is already running.')
       return
     }
     if (this.lateralHistory && this.lateralHistory.length > 0) {
@@ -804,8 +860,8 @@ export class Zumly {
     }
     const descriptor = {
       rect: syntheticRect,
-      duration: options.duration ?? this.duration,
-      ease: options.ease ?? this.ease,
+      duration: normalizeDuration(options.duration, 'zoomTo() duration', this.duration),
+      ease: normalizeEase(options.ease, this.transitionDriverName, 'zoomTo() ease', this.ease),
       props: options.props ?? {}
     }
     await this._doZoomIn(viewName, descriptor)
@@ -826,6 +882,16 @@ export class Zumly {
 
   async _initialize () {
     this.tracing('init()')
+    // A canvas can be sized a moment later (hidden tab, panel opening), so
+    // only a canvas that stays empty is reported.
+    const hasNoSize = () => this.canvas && (this.canvas.clientWidth === 0 || this.canvas.clientHeight === 0)
+    if (hasNoSize()) {
+      this._setTrackedTimeout(() => {
+        if (!this._destroyed && hasNoSize() && document.visibilityState !== 'hidden') {
+          this.notify(`the canvas is ${this.canvas.clientWidth}×${this.canvas.clientHeight}px, so views will not be visible. .zumly-canvas is position: absolute and fills its nearest positioned ancestor: give that container position: relative and a height.`, 'warn')
+        }
+      }, 1000)
+    }
     const prefetcher = this.prefetcher
     const context = this._createViewContext()
     if (this.preload && this.preload.length) {
@@ -854,7 +920,7 @@ export class Zumly {
     }
     this._emit('viewMounted', { viewName: this.initialView, node: currentView })
     if (this._destroyed) return
-    prefetcher.scanAndPrefetch(currentView, context)
+    this._scanView(currentView, context)
     this.storeViews({
       zoomLevel: this.storedViews.length,
       scale: 1,
@@ -873,6 +939,7 @@ export class Zumly {
     // Install plugins
     this._initialized = true
     for (const entry of this._plugins) this._installPlugin(entry)
+    this._emitViewChanged('init', null)
   }
 
   /**
@@ -962,6 +1029,7 @@ export class Zumly {
 
   /** @private */
   async _performZoomIn (targetViewName, triggerOrDescriptor) {
+    const fromName = this.getCurrentViewName()
     this._emit('beforeZoomIn', { viewName: targetViewName })
     if (this._destroyed) return
     this.tracing('zoomIn()')
@@ -998,7 +1066,7 @@ export class Zumly {
       } else {
         const node = await this.prefetcher.get(targetViewName, context)
         if (this._destroyed) { disposeView(node); return }
-        this.prefetcher.scanAndPrefetch(node, context)
+        this._scanView(node, context)
         currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext)
       }
     } catch (error) {
@@ -1026,8 +1094,8 @@ export class Zumly {
       ? (() => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height } })()
       : triggerOrDescriptor.rect
 
-    const duration = el ? (el.dataset.withDuration || this.duration) : (triggerOrDescriptor.duration ?? this.duration)
-    const ease = el ? (el.dataset.withEase || this.ease) : (triggerOrDescriptor.ease ?? this.ease)
+    const duration = el ? normalizeDuration(el.dataset.withDuration, 'data-with-duration', this.duration) : (triggerOrDescriptor.duration ?? this.duration)
+    const ease = el ? normalizeEase(el.dataset.withEase, this.transitionDriverName, 'data-with-ease', this.ease) : (triggerOrDescriptor.ease ?? this.ease)
     const cover = el ? (el.dataset.withCover || this.cover) : (triggerOrDescriptor.cover ?? this.cover)
     const stagger = el ? (parseInt(el.dataset.withStagger, 10) || this.stagger) : (triggerOrDescriptor.stagger ?? this.stagger)
 
@@ -1041,6 +1109,13 @@ export class Zumly {
       if (el) el.classList.remove('zoomed')
       discardPreparedView()
       return
+    }
+    // Each depth keeps its own lateral history: park it on the parent's
+    // snapshot so back() after zooming out again returns laterally, as the
+    // router's browser back does. Kept-alive nodes are discarded below, so
+    // parked entries render their view again.
+    if (prevSnapshot && this.lateralHistory.length) {
+      prevSnapshot.lateralHistory = this.lateralHistory.map(entry => ({ ...entry, node: null }))
     }
     this._cleanupLateralKeepAlive()
     this.lateralHistory = []
@@ -1167,6 +1242,10 @@ export class Zumly {
     } catch (error) {
       // ── Rollback: restore all DOM mutations on error ──────────────
       this.notify(`zoomIn geometry computation failed: ${error.message}. Aborting zoom.`, 'error')
+      if (prevSnapshot?.lateralHistory) {
+        this.lateralHistory = prevSnapshot.lateralHistory
+        delete prevSnapshot.lateralHistory
+      }
       if (this.debug) console.error('Zumly _doZoomIn error:', error) // eslint-disable-line no-console
 
       // Restore previousView
@@ -1237,6 +1316,8 @@ export class Zumly {
     // Apply background view effects (blur, saturate, etc.)
     const effects = this._resolveEffects(el)
     this._applyEffects(previousView, lastView, effects, duration, ease)
+    // Zoom-out back to this level restores the same background effects.
+    snapShoot.effects = effects
     // Hide/crossfade trigger element during zoom
     const htMode = this._resolveHideTrigger(el)
     this._applyHideTrigger(el, currentView, htMode, duration, ease)
@@ -1254,9 +1335,9 @@ export class Zumly {
       // Deferred rendering: re-attach content that was detached before animation
       if (isDeferred && deferredContent && currentView) {
         currentView.appendChild(deferredContent)
-        this.prefetcher.scanAndPrefetch(currentView, context)
+        this._scanView(currentView, context)
         if (typeof this.views[targetViewName] === 'object' && typeof this.views[targetViewName].mounted === 'function') {
-          try { await this.views[targetViewName].mounted() } catch (error) {
+          try { await this.views[targetViewName].mounted(currentView) } catch (error) {
             this.notify(`deferred view mounted() failed: ${error.message}`, 'error')
           }
         }
@@ -1268,6 +1349,7 @@ export class Zumly {
       this._onTransitionComplete()
       this._updateNav()
       this._emit('afterZoomIn', { viewName: targetViewName, zoomLevel: this.zoomLevel() })
+      this._emitViewChanged('zoomIn', fromName)
       this.tracing('ended')
     }
     await this._runNavigationTransition(spec, complete)
@@ -1324,8 +1406,8 @@ export class Zumly {
     }
 
     this.tracing('lateral()')
-    const duration = options.duration ?? this.duration
-    const ease = options.ease ?? this.ease
+    const duration = normalizeDuration(options.duration, 'goTo() duration', this.duration)
+    const ease = normalizeEase(options.ease, this.transitionDriverName, 'goTo() ease', this.ease)
 
     const backView = this.canvas.querySelector('.is-previous-view')
     const lastView = this.canvas.querySelector('.is-last-view')
@@ -1366,7 +1448,7 @@ export class Zumly {
       try {
         const node = await this.prefetcher.get(targetViewName, context)
         if (this._destroyed) { disposeView(node); return }
-        this.prefetcher.scanAndPrefetch(node, context)
+        this._scanView(node, context)
         incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
       } catch (error) {
         this.notify(`lateral navigation aborted: failed to resolve view "${targetViewName}": ${error.message}`, 'error')
@@ -1550,7 +1632,9 @@ export class Zumly {
       this.blockEvents = false
       this._onTransitionComplete()
       this._updateNav()
+      if (keepAliveNode) activateView(keepAliveNode)
       this._emit('afterLateral', { viewName: targetViewName, from: currentName, isBack })
+      this._emitViewChanged('lateral', currentName)
       this.tracing('ended')
     }
     return this._runNavigationTransition(spec, complete)
@@ -1648,7 +1732,9 @@ export class Zumly {
 
   /** @private */
   _performZoomOut () {
-    this._emit('beforeZoomOut', { zoomLevel: this.zoomLevel() })
+    const from = this.getCurrentViewName()
+    const to = this.canvas.querySelector('.is-previous-view')?.dataset.viewName ?? null
+    this._emit('beforeZoomOut', { zoomLevel: this.zoomLevel(), viewName: to, from })
     if (this._destroyed) return
     this.tracing('zoomOut()')
     const canvas = this.canvas
@@ -1690,9 +1776,15 @@ export class Zumly {
     previousView.classList.replace('is-previous-view', 'is-current-view')
 
     if (lastView !== null) {
-      // lastView becomes previous: update its effect to the previous-view level
-      if (lastView.classList.contains('has-effect') && this.effects[0] !== 'none') {
-        lastView.style.setProperty('--z-effect-filter', this.effects[0])
+      // lastView becomes previous: give it the previous-view effect of the level we return
+      // to, as resolved when that level was zoomed into (per-trigger overrides included).
+      const returning = this.storedViews[this.storedViews.length - 2]
+      const effect = (returning?.effects ?? this._resolveEffects(null))[0]
+      if (effect !== 'none' && !this._prefersReducedMotion()) {
+        lastView.classList.remove('has-effect-reverse')
+        this._applyEffects(lastView, null, [effect, 'none'], duration, ease)
+      } else {
+        this._removeEffect(lastView)
       }
       lastView.classList.replace('is-last-view', 'is-previous-view')
       lastView.classList.remove('hide')
@@ -1724,8 +1816,13 @@ export class Zumly {
       // Pop storedViews inside callback so nav update sees correct depth
       // (with sync drivers like 'none', the callback runs before code after runTransition)
       this.storedViews.pop()
+      const parent = this.storedViews[this.storedViews.length - 1]
+      this.lateralHistory = parent?.lateralHistory ?? []
+      if (parent) delete parent.lateralHistory
       this._updateNav()
-      this._emit('afterZoomOut', { zoomLevel: this.zoomLevel() })
+      activateView(previousView)
+      this._emit('afterZoomOut', { zoomLevel: this.zoomLevel(), viewName: to, from })
+      this._emitViewChanged('zoomOut', from)
       this.tracing('ended')
     }
     return this._runNavigationTransition(spec, complete)
@@ -2036,7 +2133,7 @@ export class Zumly {
       if (this.storedViews.length > 1 && !this.blockEvents) {
         this.zoomOut()
       } else {
-        this.notify(`is on level zero. Can't zoom out. Trigger: ${event.key}`, 'warn')
+        this.notify(`is on level zero. Can't zoom out. Trigger: ${event.key}`)
       }
     }
   }
@@ -2092,6 +2189,24 @@ export class Zumly {
     this.touching = true
     this.touchstartX = event.changedTouches[0].screenX
     this.touchstartY = event.changedTouches[0].screenY
+    this._swipeBlocked = this._ownsHorizontalDrag(event.target)
+  }
+
+  /**
+   * A horizontal drag that belongs to the content (slider, text field,
+   * horizontal scroller, or an element marked data-no-swipe) must not zoom out.
+   * @private
+   */
+  _ownsHorizontalDrag (target) {
+    if (!target?.closest) return false
+    if (isEditable(target) || target.closest('[data-no-swipe]')) return true
+    for (let el = target; el && el !== this.canvas; el = el.parentElement) {
+      if (el.scrollWidth > el.clientWidth + 1) {
+        const { overflowX } = window.getComputedStyle(el)
+        if (overflowX === 'auto' || overflowX === 'scroll') return true
+      }
+    }
+    return false
   }
 
   onTouchEnd (event) {
@@ -2116,12 +2231,12 @@ export class Zumly {
     const dx = this.touchendX - this.touchstartX
     const dy = this.touchendY - this.touchstartY
     const isTap = Math.abs(dx) < 10 && Math.abs(dy) < 10
-    if (dx < -30) {
+    if (dx < -30 && !this._swipeBlocked) {
       if (this.storedViews.length > 1 && !this.blockEvents) {
         this.tracing('swipe left')
         this.zoomOut()
       } else {
-        this.notify("is on level zero. Can't zoom out. Trigger: Swipe left", 'warn')
+        this.notify("is on level zero. Can't zoom out. Trigger: Swipe left")
       }
     }
     const trigger = event.target.classList.contains('zoom-me') ? event.target : event.target.closest('.zoom-me')

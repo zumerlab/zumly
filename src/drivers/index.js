@@ -45,5 +45,10 @@ export { runTransition as animeTransition } from './anime-transition.js'
 export { runTransition as gsapTransition } from './gsap-transition.js'
 export { runTransition as motionTransition } from './motion-transition.js'
 
+// Drivers bound to a library instance, for bundlers (no globals)
+export { animeDriver } from './anime-transition.js'
+export { gsapDriver } from './gsap-transition.js'
+export { motionDriver } from './motion-transition.js'
+
 // Re-export helpers for community drivers
 export * from './driver-helpers.js'

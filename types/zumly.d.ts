@@ -15,6 +15,12 @@ export interface ViewContext {
   props: Record<string, unknown>
   /** Register component unmount or resource cleanup, run once when this view is discarded. */
   onCleanup(callback: () => void | Promise<void>): void
+  /**
+   * Run `callback` each time this view becomes current again without being
+   * rendered anew: after zooming back out to it, or when a kept-alive lateral
+   * view returns. Use it to repaint from state that changed meanwhile.
+   */
+  onActivate(callback: () => void): void
 }
 
 /** A function that receives context and returns a view. */
@@ -23,7 +29,8 @@ export type ViewFunction = (ctx: ViewContext) => string | HTMLElement | void | P
 /** An object with a render method and optional mounted hook. */
 export interface ViewObject {
   render(ctx: ViewContext): string | HTMLElement | Promise<string | HTMLElement>
-  mounted?(): void | Promise<void>
+  /** Called after the view is inserted into the canvas, with its root node. */
+  mounted?(node: HTMLElement): void | Promise<void>
 }
 
 /** All supported view source types. */
@@ -92,9 +99,12 @@ export interface TransitionOptions {
   driver?: DriverName | DriverFunction
   /** Which dimension to use for cover scale. Default: 'width'. */
   cover?: 'width' | 'height'
-  /** CSS duration string. Default: '1s'. */
-  duration?: string
-  /** CSS easing function. Default: 'ease-in-out'. */
+  /** CSS time ('600ms', '1s') or a number of milliseconds. Default: '1s'. */
+  duration?: string | number
+  /**
+   * CSS timing function (all drivers follow the same curve) or, for the anime,
+   * gsap and motion drivers, a library ease name. Default: 'ease-in-out'.
+   */
   ease?: string
   /** Array of 1-2 CSS filter strings for background view effects. */
   effects?: [string] | [string, string]
@@ -150,8 +160,8 @@ export interface InputsOptions {
 export interface GoToOptions {
   /** Navigation mode. Default: 'depth'. */
   mode?: 'depth' | 'lateral'
-  /** Override transition duration. */
-  duration?: string
+  /** Override transition duration (CSS time or milliseconds). */
+  duration?: string | number
   /** Override transition easing. */
   ease?: string
   /** Props to pass to the target view. */
@@ -160,8 +170,8 @@ export interface GoToOptions {
 
 /** Options for zoomTo(). */
 export interface ZoomToOptions {
-  /** Override transition duration. */
-  duration?: string
+  /** Override transition duration (CSS time or milliseconds). */
+  duration?: string | number
   /** Override transition easing. */
   ease?: string
   /** Props to pass to the target view. */
@@ -176,8 +186,8 @@ export type LateralNavPosition = 'bottom-center' | 'top-center'
 
 /** Zumly constructor options. */
 export interface ZumlyOptions {
-  /** CSS selector for the canvas element (must have class zumly-canvas). */
-  mount: string
+  /** The canvas: a CSS selector or the element itself (e.g. a framework ref). Gets class zumly-canvas. */
+  mount: string | HTMLElement
   /** Name of the first view to show. */
   initialView: string
   /** Map of view names to view sources. */
@@ -206,10 +216,19 @@ export interface ZumlyEventMap {
   viewMounted: { viewName: string; node: HTMLElement }
   beforeZoomIn: { viewName: string }
   afterZoomIn: { viewName: string; zoomLevel: number }
-  beforeZoomOut: { zoomLevel: number }
-  afterZoomOut: { zoomLevel: number }
+  /** viewName is the view being returned to; from is the view being left. */
+  beforeZoomOut: { zoomLevel: number; viewName: string | null; from: string | null }
+  afterZoomOut: { zoomLevel: number; viewName: string | null; from: string | null }
   beforeLateral: { viewName: string; from: string; isBack: boolean }
   afterLateral: { viewName: string; from: string; isBack: boolean }
+  /** Fired after every completed navigation, including init(). */
+  viewChanged: {
+    type: 'init' | 'zoomIn' | 'zoomOut' | 'lateral'
+    viewName: string | null
+    from: string | null
+    zoomLevel: number
+    node: HTMLElement | null
+  }
   destroy: Record<string, never>
 }
 
@@ -234,6 +253,15 @@ export interface RouterOptions {
 }
 
 export const ZumlyRouter: ZumlyPlugin<RouterOptions>
+
+// ─── Library drivers (for bundlers) ─────────────────────────────────
+
+/** Anime.js driver bound to a library instance: `import * as anime from 'animejs'` (v4) or the v3 default export. */
+export function animeDriver(anime: unknown): DriverFunction
+/** GSAP driver bound to a library instance: `import { gsap } from 'gsap'`. */
+export function gsapDriver(gsap: unknown): DriverFunction
+/** Motion driver bound to its animate function: `import { animate } from 'motion'`, then `motionDriver({ animate })`. */
+export function motionDriver(motion: { animate: (...args: any[]) => any } | ((...args: any[]) => any)): DriverFunction
 
 // ─── Zumly class ────────────────────────────────────────────────────
 
@@ -275,6 +303,9 @@ export class Zumly {
 
   /** Alias for zoomLevel(). */
   getZoomLevel(): number
+
+  /** Whether back() would navigate (lateral history at this level, or a level to zoom out to). */
+  canGoBack(): boolean
 
   /** Get the name of the currently active view, or null if not initialized. */
   getCurrentViewName(): string | null

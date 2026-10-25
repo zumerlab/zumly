@@ -8,8 +8,10 @@ import {
   computeLastViewEndTransform,
   parseOrigin,
   parseTranslateScale,
-  computeChildRectAfterParentTransformChange
+  computeChildRectAfterParentTransformChange,
+  splitTranslate
 } from '../src/geometry.js'
+import { readTransitionMatrix } from '../src/drivers/transform-matrix.js'
 
 describe('geometry helpers', () => {
   describe('computeCoverScale()', () => {
@@ -241,5 +243,14 @@ describe('geometry helpers', () => {
       })
       expect(t).toBe('translate(432px, 303px) scale(1)')
     })
+  })
+
+  // WebKit serializes translate(x, 0px) as translate(x). Reading that back as
+  // tx = 0 broke lateral geometry after any zoom-out in Safari.
+  it('parses the one-argument translate that WebKit serializes', () => {
+    expect(splitTranslate('translate(-240px) scale(5)')).toEqual({ tx: -240, ty: 0, rest: 'scale(5)', matched: true })
+    expect(parseTranslateScale('translate(20px) scale(5)')).toEqual({ tx: 20, ty: 0, scale: 5 })
+    const el = document.createElement('div')
+    expect(readTransitionMatrix(el, '0 0', 'translate(-240px) scale(5)')).toEqual({ a: 5, b: 0, c: 0, d: 5, e: -240, f: 0 })
   })
 })

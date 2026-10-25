@@ -4,14 +4,14 @@
 // symbol property shares the scope through the node and is not copied by cloneNode.
 const lifecycleKey = Symbol.for('zumly.viewLifecycles')
 
-function runCleanup (cleanup) {
+function runCleanup (cleanup, label = 'cleanup') {
   try {
     const result = cleanup()
     if (result && typeof result.then === 'function') {
-      result.catch(error => console.error('Zumly: view cleanup failed:', error)) // eslint-disable-line no-console
+      result.catch(error => console.error(`Zumly: view ${label} failed:`, error)) // eslint-disable-line no-console
     }
   } catch (error) {
-    console.error('Zumly: view cleanup failed:', error) // eslint-disable-line no-console
+    console.error(`Zumly: view ${label} failed:`, error) // eslint-disable-line no-console
   }
 }
 
@@ -19,11 +19,19 @@ function runCleanup (cleanup) {
 export function createViewLifecycle () {
   let disposed = false
   const callbacks = []
+  const activations = []
   const lifecycle = {
     onCleanup (cleanup) {
       if (typeof cleanup !== 'function') throw new TypeError('Zumly: onCleanup expects a function')
       if (disposed) runCleanup(cleanup)
       else callbacks.push(cleanup)
+    },
+    onActivate (callback) {
+      if (typeof callback !== 'function') throw new TypeError('Zumly: onActivate expects a function')
+      if (!disposed) activations.push(callback)
+    },
+    activate () {
+      if (!disposed) for (const callback of activations) runCleanup(callback, 'onActivate callback')
     },
     attach (node) {
       let entries = node[lifecycleKey]
@@ -36,6 +44,7 @@ export function createViewLifecycle () {
     dispose () {
       if (disposed) return
       disposed = true
+      activations.length = 0
       for (const cleanup of callbacks.splice(0).reverse()) runCleanup(cleanup)
     }
   }
@@ -67,4 +76,25 @@ export function disposeView (node) {
     for (const lifecycle of entries) lifecycle.dispose()
     delete child[lifecycleKey]
   }
+}
+
+/** Registered lifecycles of a view and its descendants, in document order. */
+function lifecyclesOf (node) {
+  const found = []
+  if (!node) return found
+  if (node[lifecycleKey]) found.push(...node[lifecycleKey])
+  const walker = (node.ownerDocument || node).createTreeWalker(node, 1) // NodeFilter.SHOW_ELEMENT
+  let descendant
+  while ((descendant = walker.nextNode())) {
+    if (descendant[lifecycleKey]) found.push(...descendant[lifecycleKey])
+  }
+  return found
+}
+
+/**
+ * Run onActivate callbacks for a view that becomes current again without being
+ * rendered anew (after zoom-out, or a kept-alive lateral view coming back).
+ */
+export function activateView (node) {
+  for (const lifecycle of lifecyclesOf(node)) lifecycle.activate()
 }

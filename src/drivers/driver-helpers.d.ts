@@ -21,3 +21,8 @@ export function matrixToString(m: MatrixComponents): string
 export function lerp(a: number, b: number, t: number): number
 export function interpolateMatrix(from: MatrixComponents, to: MatrixComponents, t: number): MatrixComponents
 export function readComputedMatrix(element: HTMLElement, origin: string, transformStr: string): MatrixComponents
+
+/** CSS timing function → f(progress). Null for non-CSS names such as 'power2.out'. */
+export function cssEasing(ease: string): ((progress: number) => number) | null
+export function cubicBezier(x1: number, y1: number, x2: number, y2: number): (progress: number) => number
+export function steps(count: number, position?: 'start' | 'end' | 'jump-start' | 'jump-end' | 'jump-none' | 'jump-both'): (progress: number) => number

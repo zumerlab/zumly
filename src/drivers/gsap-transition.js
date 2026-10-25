@@ -1,7 +1,12 @@
 /**
  * GSAP transition driver.
- * Requires global `gsap` — load from CDN before use:
- * <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+ *
+ * Script tag: load GSAP before Zumly and use `driver: 'gsap'` (global `gsap`).
+ *   <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+ * Bundler: pass the library — `driver: gsapDriver(gsap)` with `import { gsap } from 'gsap'`.
+ *
+ * CSS easing strings follow the same curve as the CSS driver; other strings
+ * are GSAP ease names ('power3.inOut', 'expo.out').
  *
  * @param {Object} spec - Transition spec from the engine
  * @param {function} onComplete - MUST be called exactly once when done
@@ -14,13 +19,17 @@ import {
   applyZoomOutLastState,
   removeViewFromCanvas,
   runLateralInstant,
+  createFinishGuard,
+  SAFETY_BUFFER_MS,
 } from './driver-helpers.js'
+import { cssEasing } from './easing.js'
+import { runProgressTransition, warnMissingLibrary } from './progress-tween.js'
 
-export function runTransition (spec, onComplete) {
-  const gsap = typeof globalThis !== 'undefined' && globalThis.gsap
-  if (!gsap || typeof gsap.to !== 'function') {
-    console.warn('Zumly GSAP driver: GSAP not loaded. Add <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>')
-    onComplete()
+export function runTransition (spec, onComplete, lib) {
+  const gsap = lib ?? (typeof globalThis !== 'undefined' && globalThis.gsap)
+  if (!gsap || typeof gsap.timeline !== 'function') {
+    warnMissingLibrary('gsap', 'GSAP not found. Load it with a <script> tag before using driver: \'gsap\', or pass it: driver: gsapDriver(gsap).')
+    runProgressTransition(spec, onComplete, ({ onUpdate, onComplete }) => { onUpdate(1); onComplete() })
     return
   }
 
@@ -57,17 +66,15 @@ function runZoomIn (gsap, currentView, previousView, lastView, currentStage, dur
   setTransform(previousView, v1.backwardState)
   if (v2) setTransform(lastView, v2.backwardState)
 
-  const tl = gsap.timeline({
-    onComplete: () => {
-      applyZoomInEndState(currentView, currentStage)
-      applyZoomInEndState(previousView, currentStage)
-      if (lastView) applyZoomInEndState(lastView, currentStage)
-      onComplete()
-    }
+  const staggerSec = (currentStage.stagger || 0) / 1000
+  const tl = guardedTimeline(gsap, (durationSec + staggerSec * (v2 ? 2 : 1)) * 1000, () => {
+    applyZoomInEndState(currentView, currentStage)
+    applyZoomInEndState(previousView, currentStage)
+    if (lastView) applyZoomInEndState(lastView, currentStage)
+    onComplete()
   })
 
   const gsapEase = normalizeEasing(ease)
-  const staggerSec = (currentStage.stagger || 0) / 1000
   tl.to(currentView, { transform: v0.forwardState.transform, duration: durationSec, ease: gsapEase }, 0)
   tl.to(previousView, { transform: v1.forwardState.transform, duration: durationSec, ease: gsapEase }, staggerSec)
   if (v2) {
@@ -96,16 +103,13 @@ function runZoomOut (gsap, currentView, previousView, lastView, currentStage, du
 
   const gsapEase = normalizeEasing(ease)
 
-  const tl = gsap.timeline({
-    onComplete: () => {
-      removeViewFromCanvas(currentView, canvas)
-      applyZoomOutPreviousState(previousView, to1)
-      if (lastView && to2) applyZoomOutLastState(lastView, to2)
-      onComplete()
-    }
-  })
-
   const staggerSec = (currentStage.stagger || 0) / 1000
+  const tl = guardedTimeline(gsap, (durationSec + staggerSec * (lastView && to2 ? 2 : 1)) * 1000, () => {
+    removeViewFromCanvas(currentView, canvas)
+    applyZoomOutPreviousState(previousView, to1)
+    if (lastView && to2) applyZoomOutLastState(lastView, to2)
+    onComplete()
+  })
 
   // Set initial transforms so views hold position during stagger delay
   gsap.set(previousView, { transform: from1 })
@@ -133,17 +137,37 @@ function runZoomOut (gsap, currentView, previousView, lastView, currentStage, du
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
+/**
+ * A timeline that finishes once: on completion, or at its deadline when GSAP's
+ * ticker is paused (hidden tab). The deadline counts from the first frame.
+ */
+function guardedTimeline (gsap, totalMs, finish) {
+  let tl
+  const guard = createFinishGuard(() => {
+    tl?.kill?.()
+    finish()
+  }, totalMs + SAFETY_BUFFER_MS)
+  tl = gsap.timeline({
+    onStart: () => guard.extend(totalMs + SAFETY_BUFFER_MS),
+    onComplete: () => guard.finish()
+  })
+  return tl
+}
+
 function setTransform (el, state) {
   el.style.transformOrigin = state.origin
   el.style.transform = state.transform
 }
 
+/** CSS easing → the same curve as a function (GSAP accepts ease functions); GSAP names pass through. */
 function normalizeEasing (ease) {
-  if (typeof ease !== 'string') return 'power2.inOut'
-  const s = ease.toLowerCase()
-  if (s === 'linear') return 'none'
-  if (s.includes('ease-in-out')) return 'power2.inOut'
-  if (s.includes('ease-in')) return 'power2.in'
-  if (s.includes('ease-out')) return 'power2.out'
-  return s
+  return cssEasing(ease) ?? (typeof ease === 'string' ? ease : 'power2.inOut')
+}
+
+/**
+ * Driver bound to a GSAP instance (for bundlers, where there is no global).
+ * @param {object} gsap
+ */
+export function gsapDriver (gsap) {
+  return (spec, onComplete) => runTransition(spec, onComplete, gsap)
 }

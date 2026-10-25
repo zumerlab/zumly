@@ -34,6 +34,7 @@
     "./style.css": "./dist/zumly.css",
     "./css": "./dist/zumly.css",
     "./drivers": {
+      "types": "./src/drivers/index.d.ts",
       "import": "./src/drivers/index.js"
     },
     "./driver-helpers": {

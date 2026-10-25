@@ -11,6 +11,25 @@
 
 import { ViewResolver } from './view-resolver.js'
 import { disposeView } from './view-lifecycle.js'
+import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSyntax, isValidCssEasing } from './diagnostics.js'
+
+const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred']
+const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'stagger', 'parallax', 'hideTrigger']
+const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings']
+const DEPTH_NAV_KEYS = ['position']
+const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch']
+
+/** Warn once per unknown key, with the closest known key when there is one. */
+function warnUnknownKeys (object, known, path) {
+  for (const key of unknownKeys(object, known)) {
+    notification(false, `unknown option '${path}${key}' is ignored.${didYouMean(key, known)}`, 'warn')
+  }
+}
+
+/** Raw view templates that the resolver accepts in place of a view name. */
+function isRawViewSource (source) {
+  return source.includes('<') || source.includes('-') || /^https?:\/\/|^\/|\.(?:html|php)(?:[?#].*)?$/i.test(source)
+}
 
 /**
  * Prepare a resolved view node and insert it into the canvas.
@@ -48,7 +67,7 @@ export async function prepareAndInsertView (node, viewName, canvas, isInit, view
   canvas.append(node)
   try {
     if (views[viewName] && typeof views[viewName] === 'object' && typeof views[viewName].mounted === 'function') {
-      await views[viewName].mounted()
+      await views[viewName].mounted(node)
     }
   } catch (error) {
     disposeView(node)
@@ -97,6 +116,38 @@ export function notification (debug, msg, type) {
   }
 }
 
+/**
+ * Normalize a duration option. Numbers are milliseconds; strings use CSS time.
+ * @returns {string} CSS time
+ */
+export function normalizeDuration (value, label, fallback = '1s') {
+  if (value === undefined || value === null) return fallback
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) return `${value}ms`
+  if (typeof value === 'string' && CSS_TIME.test(value.trim())) return value.trim()
+  notification(false, `'${label}' must be a CSS time ('600ms', '1s') or a number of milliseconds. Got ${JSON.stringify(value)}. Falling back to "${fallback}".`, 'warn')
+  return fallback
+}
+
+/**
+ * Normalize an easing option. CSS easing syntax is checked against the browser;
+ * other names pass through to animation-library drivers ('power2.out', 'easeOutExpo').
+ */
+export function normalizeEase (value, driver, label, fallback = 'ease-in-out') {
+  if (value === undefined || value === null) return fallback
+  if (typeof value !== 'string' || !value.trim()) {
+    notification(false, `'${label}' must be a string such as 'ease-in-out' or 'cubic-bezier(.2,.8,.2,1)'. Falling back to "${fallback}".`, 'warn')
+    return fallback
+  }
+  const ease = value.trim()
+  const cssOnly = driver === 'css' || driver === 'waapi'
+  if ((cssOnly || isCssEasingSyntax(ease)) && !isValidCssEasing(ease)) {
+    const hint = cssOnly ? ` The "${driver}" driver needs a CSS timing function.` : ''
+    notification(false, `'${label}' "${ease}" is not a valid CSS easing.${hint} Falling back to "${fallback}".`, 'warn')
+    return fallback
+  }
+  return ease
+}
+
 export function checkParameters (parameters, instance) {
   // Minimal, explicit normalization with safe defaults.
   // Strictness: invalid values warn/error and fall back to safe defaults.
@@ -108,25 +159,36 @@ export function checkParameters (parameters, instance) {
   }
 
   // Required: all must pass for instance to be valid
-  if (typeof parameters.mount !== 'string') {
-    notification(false, '\'mount\' must be a string selector', 'error')
+  const mountIsElement = typeof HTMLElement !== 'undefined' && parameters.mount instanceof HTMLElement
+  if (typeof parameters.mount !== 'string' && !mountIsElement) {
+    notification(false, '\'mount\' must be a CSS selector string or an HTMLElement (e.g. \'.canvas\' or a framework ref).', 'error')
     return
   }
   instance.mount = parameters.mount
 
-  if (typeof parameters.initialView !== 'string') {
-    notification(false, '\'initialView\' must be a string', 'error')
-    return
-  }
-  instance.initialView = parameters.initialView
-
   if (!parameters.views || typeof parameters.views !== 'object') {
-    notification(false, '\'views\' must be an object', 'error')
+    notification(false, '\'views\' must be an object that maps view names to view sources, e.g. { home: \'<div class="z-view">…</div>\' }.', 'error')
     return
   }
   instance.views = parameters.views
 
+  if (typeof parameters.initialView !== 'string' || !parameters.initialView) {
+    notification(false, `'initialView' must be the name of a view. Available: ${Object.keys(parameters.views).join(', ') || '(none)'}.`, 'error')
+    return
+  }
+  if (!Object.prototype.hasOwnProperty.call(parameters.views, parameters.initialView) && !isRawViewSource(parameters.initialView)) {
+    notification(false, `'initialView': ${unknownViewMessage(parameters.initialView, parameters.views)}`, 'error')
+    return
+  }
+  instance.initialView = parameters.initialView
+
   instance.isValid = true
+
+  warnUnknownKeys(parameters, OPTION_KEYS, '')
+  if (parameters.transitions && typeof parameters.transitions === 'object') warnUnknownKeys(parameters.transitions, TRANSITION_KEYS, 'transitions.')
+  if (parameters.lateralNav && typeof parameters.lateralNav === 'object') warnUnknownKeys(parameters.lateralNav, LATERAL_NAV_KEYS, 'lateralNav.')
+  if (parameters.depthNav && typeof parameters.depthNav === 'object') warnUnknownKeys(parameters.depthNav, DEPTH_NAV_KEYS, 'depthNav.')
+  if (parameters.inputs && typeof parameters.inputs === 'object') warnUnknownKeys(parameters.inputs, INPUT_KEYS, 'inputs.')
 
   // Optional
   instance.preload = Array.isArray(parameters.preload) ? parameters.preload : []
@@ -144,8 +206,7 @@ export function checkParameters (parameters, instance) {
     notification(false, '\'transitions.cover\' must be either \"width\" or \"height\". Falling back to \"width\".', 'warn')
   }
 
-  instance.duration = (t && typeof t.duration === 'string') ? t.duration : '1s'
-  instance.ease = (t && typeof t.ease === 'string') ? t.ease : 'ease-in-out'
+  instance.duration = normalizeDuration(t && t.duration, 'transitions.duration')
 
   // Deferred rendering: render view content after zoom animation completes.
   // true = all views deferred, false = all views immediate (default).
@@ -194,6 +255,8 @@ export function checkParameters (parameters, instance) {
   } else {
     instance.transitionDriver = 'css'
   }
+
+  instance.ease = normalizeEase(t && t.ease, instance.transitionDriver, 'transitions.ease')
 
   // Stagger: progressive delay (ms) between view layers during zoom transitions.
   // Current starts immediately, previous after 1*stagger ms, last after 2*stagger ms.

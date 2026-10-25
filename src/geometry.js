@@ -154,16 +154,17 @@ export function parseOrigin (originStr) {
 /**
  * Split a transform string into its leading translate(Xpx, Ypx) part and the rest.
  * Single shared parser for Zumly-style transforms; tolerates exponent notation
- * ("1e-7px") as produced by resize correction re-serialization.
+ * ("1e-7px") as produced by resize correction re-serialization, and the
+ * one-argument form WebKit serializes when Y is zero ("translate(-240px)").
  * @param {string} transform
  * @returns {{ tx: number, ty: number, rest: string, matched: boolean }}
  */
 export function splitTranslate (transform) {
   const str = typeof transform === 'string' ? transform : ''
-  const m = str.match(/translate\s*\(\s*([-+\d.eE]+)px\s*,\s*([-+\d.eE]+)px\s*\)/)
+  const m = str.match(/translate\s*\(\s*([-+\d.eE]+)(?:px)?\s*(?:,\s*([-+\d.eE]+)(?:px)?\s*)?\)/)
   if (!m) return { tx: 0, ty: 0, rest: str.trim(), matched: false }
   const rest = str.replace(/translate\s*\([^)]+\)\s*/, '').trim()
-  return { tx: parseFloat(m[1]), ty: parseFloat(m[2]), rest, matched: true }
+  return { tx: parseFloat(m[1]), ty: m[2] === undefined ? 0 : parseFloat(m[2]), rest, matched: true }
 }
 
 /**

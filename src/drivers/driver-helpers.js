@@ -109,13 +109,14 @@ export function applyZoomOutPreviousState (element, backwardState) {
 
 /**
  * Apply the final zoom-out state to the last view (it becomes previous).
+ * Its background effect (`.has-effect`, `--z-effect-filter`) is left alone: the engine
+ * already set the previous-view effect, and the view stays in the background.
  *
  * @param {HTMLElement} element
  * @param {{ origin: string, transform: string }} backwardState
  */
 export function applyZoomOutLastState (element, backwardState) {
-  element.classList.remove('zoom-last-view-reverse', 'has-no-events', 'has-effect', 'has-effect-reverse')
-  element.style.removeProperty('--z-effect-filter')
+  element.classList.remove('zoom-last-view-reverse', 'has-no-events')
   element.style.transformOrigin = backwardState.origin
   element.style.transform = backwardState.transform
 }
@@ -336,3 +337,7 @@ export function readComputedMatrix (element, origin, transformStr) {
   try { element.getBoundingClientRect() } catch {}
   return parseMatrixString(getComputedStyle(element).transform)
 }
+
+// ─── Easing ──────────────────────────────────────────────────────────
+
+export { cssEasing, cubicBezier, steps } from './easing.js'

@@ -147,7 +147,13 @@ export const ZumlyRouter = {
 
     function onPopState () {
       if (destroyed) return
-      pendingTarget = parsePath(prefix, sep)
+      // A hash this router did not write (another part of the page, or an
+      // entry from before the app started) is left alone.
+      if (!window.location.hash.slice(1).startsWith(prefix) && window.location.hash !== '') return
+      const target = parsePath(prefix, sep)
+      if (target.length && (target[0] !== instance.storedViews[0]?.views?.[0]?.viewName ||
+        target.some(name => !Object.prototype.hasOwnProperty.call(instance.views, name)))) return
+      pendingTarget = target
       void reconcile()
     }
 
