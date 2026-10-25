@@ -44,6 +44,18 @@ const app = new Zumly({
   transitions: { duration, ease: 'ease-in-out', effects, driver: q.get('driver') || 'css' },
   inputs: { wheel: false },
 })
+// Mark when the real driver starts and finishes moving views (wrapped before init, so the
+// compositor wraps this and a 'leave' capture counts before the motion starts).
+const motion = { start: 0, end: 0 }
+{
+  const real = app.transitionDriver
+  app.transitionDriver = {
+    runTransition (spec, done) {
+      motion.start = performance.now()
+      return real.runTransition(spec, () => { motion.end = performance.now(); done() })
+    },
+  }
+}
 let plugin = null
 if (mode !== 'baseline') {
   app.use((instance) => {
@@ -52,6 +64,8 @@ if (mode !== 'baseline') {
       depth: mode === 'depth' || mode === 'both',
       flatten: mode === 'flat' || mode === 'both',
       scale: +(q.get('scale') || 1),
+      when: q.get('when') || 'ahead',
+      bake: q.get('bake') === '1',
     })
   })
 }
@@ -141,8 +155,19 @@ async function step (kind) {
   } else app.zoomOut()
   const times = await framesP
   const total = performance.now() - t0
+  // Worst frame and frames >34 ms per phase: pre (click → motion), start (first 150 ms of
+  // motion), mid, end (last 150 ms), tail (after the driver finished).
+  const phases = { pre: [], start: [], mid: [], end: [], tail: [] }
+  for (let i = 1; i < times.length; i++) {
+    const t = times[i], d = t - times[i - 1]
+    const p = t <= motion.start ? 'pre' : t <= motion.start + 150 ? 'start' : t <= motion.end - 150 ? 'mid' : t <= motion.end + 50 ? 'end' : 'tail'
+    phases[p].push(d)
+  }
+  const phase = {}
+  for (const [k, ds] of Object.entries(phases)) phase[k] = { worst: +Math.max(0, ...ds).toFixed(0), over34: ds.filter(x => x > 34).length }
+  const latency = +(motion.start - t0).toFixed(0)
   const lt = longTasks.slice(ltBefore).filter(e => e.start >= t0 - 1)
-  return { kind, level: app.zoomLevel(), totalMs: +total.toFixed(0), ...frameStats(times, t0),
+  return { kind, level: app.zoomLevel(), totalMs: +total.toFixed(0), latency, phase, ...frameStats(times, t0),
     longTasks: lt.length, longTaskMs: +lt.reduce((a, e) => a + e.dur, 0).toFixed(0), domNodes: domNodes(), canvasMB: +(canvasBytes() / 1048576).toFixed(1) }
 }
 
@@ -183,7 +208,7 @@ window.bench = async ({ settle = 1200, rest = 0 } = {}) => {
   const mem = performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null
   const s = plugin?.stats
   return {
-    mode, scene, source, fx, live, animated, steps, rests, heapMB: mem,
+    mode, scene, source, fx, when: q.get('when') || 'ahead', bake: q.get('bake') === '1', live, animated, steps, rests, heapMB: mem,
     plugin: s ? {
       captures: s.captures, captureMsMedian: median(s.captureMs), captureMsMax: Math.max(0, ...s.captureMs).toFixed?.(0),
       composeMsMedian: median(s.composeMs), fallbacks: s.fallbacks, streamFrames: s.streamFrames, streamFull: s.streamFull, streamMs: Math.round(s.streamMs),

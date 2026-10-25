@@ -32,6 +32,12 @@ const css = `
 .${BACKDROP} { position: absolute; left: 0; top: 0; transform-origin: 0 0; pointer-events: none; }
 `
 
+/** SnapDOM plugin: capture a view without its own background effect (the CSS applies it). */
+const unfilterRoot = {
+  name: 'zumly-unfilter-root',
+  afterClone (ctx) { if (ctx.clone?.style) ctx.clone.style.filter = 'none' },
+}
+
 const idle = (fn) => (typeof requestIdleCallback === 'function'
   ? requestIdleCallback(fn, { timeout: 500 })
   : setTimeout(fn, 50))
@@ -67,6 +73,12 @@ export function compositor (app, options = {}) {
     flatten = true,
     source = stream ? 'stream' : 'snapshot',
     scale = 1,
+    // When a view is frozen into a bitmap: 'ahead' (kept captured while it is current),
+    // 'leave' (captured on zoom-in, before the motion starts), 'after' (captured at rest,
+    // once the transition that moved it to the background has finished).
+    when = 'ahead',
+    // Draw the background effect into the bitmap and drop the CSS filter (no per-frame blur).
+    bake = false,
     capture: captureOptions = {},
   } = options
   if (!snapdom) throw new Error('compositor: pass { snapdom }')
@@ -107,11 +119,17 @@ export function compositor (app, options = {}) {
     return { canvas: bmp, x: -contentX / s, y: -contentY / s, w: vbW / s, h: vbH / s, filtered: getComputedStyle(view).filter !== 'none' }
   }
 
+  /** A capture of the view without its CSS background effect, for flattening. */
+  async function captureRaw (view) {
+    const rec = await captureView(view, { plugins: [unfilterRoot] })
+    return { ...rec, filtered: false }
+  }
+
   /** Keep a fresh bitmap of the current view, ahead of the next zoom-in. */
   function watchCurrent () {
     stopWatching()
     const view = canvas.querySelector('.is-current-view')
-    if (!view) return
+    if (!view || when !== 'ahead') return
     if (source === 'stream') {
       const t0 = performance.now()
       const s = stream(view, {
@@ -162,16 +180,27 @@ export function compositor (app, options = {}) {
     const rec = bitmaps.get(view)
     // A baked filter would apply twice under the view's own CSS filter.
     if (!rec || rec.filtered) { stats.fallbacks++; return false }
-    const layer = rec.canvas.isConnected ? cloneBitmap(rec.canvas) : rec.canvas
+    const effect = bake && view.classList.contains('has-effect') ? view.style.getPropertyValue('--z-effect-filter') : ''
+    const out = effect ? withFilter(rec, effect) : rec
+    const layer = out.canvas.isConnected || out === rec ? cloneBitmap(out.canvas) : out.canvas
     layer.classList.add(LAYER)
-    Object.assign(layer.style, { left: rec.x + 'px', top: rec.y + 'px', width: rec.w + 'px', height: rec.h + 'px' })
+    Object.assign(layer.style, { left: out.x + 'px', top: out.y + 'px', width: out.w + 'px', height: out.h + 'px' })
     view.append(layer)
     view.classList.add(FLAT)
+    if (effect) view.style.setProperty('filter', 'none', 'important')
     return true
+  }
+
+  /** Redo a flattened view whose effect changed (last ↔ previous), from its raw capture. */
+  function reflat (view) {
+    if (!view?.classList.contains(FLAT) || !bake) return
+    unflat(view)
+    flat(view)
   }
 
   function unflat (view) {
     if (!view) return
+    view.style.removeProperty('filter')
     view.classList.remove(FLAT)
     view.querySelectorAll(`:scope > .${LAYER}`).forEach(l => l.remove())
   }
@@ -276,8 +305,16 @@ export function compositor (app, options = {}) {
 
     if (type === 'zoomIn') {
       stopWatching()
+      if (flatten && when === 'leave' && !bitmaps.has(previousView)) {
+        // Capture now and start the motion afterwards: the capture is paid as latency.
+        return captureRaw(previousView).then(rec => {
+          bitmaps.set(previousView, rec)
+          runTransition(spec, onComplete)
+        }, () => { bitmaps.set(previousView, null); runTransition(spec, onComplete) })
+      }
       if (flatten) {
         flat(previousView)
+        reflat(lastView)
         flat(lastView)
       }
       if (depth && lastView) {
@@ -307,7 +344,7 @@ export function compositor (app, options = {}) {
 
     if (type === 'zoomOut') {
       stopWatching()
-      if (flatten) flat(lastView)
+      if (flatten) { reflat(lastView); flat(lastView) }
       // previousView becomes current: keep its bitmap during the motion, go live at the end.
       if (flatten && !previousView.classList.contains(FLAT)) flat(previousView)
       if (depth) {
@@ -342,6 +379,8 @@ export function compositor (app, options = {}) {
       }
       const current = canvas.querySelector('.is-current-view')
       unflat(current)
+      // Frozen 'leave'/'after' bitmaps are of a past state: the current view is live again.
+      if (when !== 'ahead') bitmaps.delete(current)
       if (flatten) {
         flat(canvas.querySelector('.is-previous-view'))
         flat(canvas.querySelector('.is-last-view'))
@@ -349,6 +388,13 @@ export function compositor (app, options = {}) {
       onComplete()
       idle(async () => {
         watchCurrent()
+        if (flatten && when === 'after') {
+          const prev = canvas.querySelector('.is-previous-view')
+          if (prev && !prev.classList.contains(FLAT) && !bitmaps.has(prev)) {
+            bitmaps.set(prev, await captureRaw(prev))
+            if (prev.classList.contains('is-previous-view')) flat(prev)
+          }
+        }
         preparePending()
       })
     })

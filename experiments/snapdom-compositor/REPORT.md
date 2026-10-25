@@ -166,6 +166,49 @@ El `backdrop-filter` sigue necesitando flatten, porque ahí el costo es rasteriz
 capa, no el blur de fondo. El precio visual de `instant` es que el desenfoque aparece de golpe
 en lugar de acompañar el zoom.
 
+### Estrategia "freeze": cuándo congelar el fondo, y con blur horneado
+
+`compositor.js` acepta `when: 'ahead' | 'leave' | 'after'` y `bake` (el blur de `effects` se
+dibuja en el bitmap y se quita el `filter` CSS). El bench separa la transición en fases: **pre**
+(del clic a que arranca el movimiento), **inicio** (primeros 150 ms), **medio**, **final**
+(últimos 150 ms) y **cola** (400 ms después). Una corrida por variante, solo cards y blur.
+
+GPU real, CPU 1×: peor frame por fase (mediana de 10 transiciones) y latencia del clic al movimiento.
+
+| escena | variante | frame medio | clic→mov. | pre | inicio | medio | final | cola |
+|---|---|---|---|---|---|---|---|---|
+| cards | baseline | 26.9 | 11 | 0 | 50 | **150** | **133** | 99 |
+| cards | sin transición del filtro | 19.5 | 3 | 0 | 67 | 117 | 18 | 18 |
+| cards | freeze antes | 19.1 | 19 | 0 | 67 | **18** | 33 | 50 |
+| cards | freeze antes + bake | 18.3 | 17 | 0 | 83 | 18 | 33 | 50 |
+| cards | freeze al salir + bake | 18.6 | **189** | 100 | 67 | 18 | 33 | 18 |
+| cards | freeze después + bake | 22.7 | 5 | 0 | 83 | 67 | 18 | 117 |
+| blur | baseline | 41.2 | 3 | 0 | 50 | **167** | 117 | **217** |
+| blur | sin transición del filtro | 26.1 | 5 | 0 | 50 | 100 | 50 | 34 |
+| blur | freeze antes | 18.7 | 13 | 0 | 33 | **18** | 17 | 83 |
+| blur | freeze antes + bake | 18.8 | 13 | 0 | 50 | 18 | 17 | 83 |
+| blur | freeze al salir + bake | 18.8 | **252** | 83 | 50 | 117 | 17 | 18 |
+| blur | freeze después + bake | 21.4 | 5 | 0 | 50 | 67 | 50 | 100 |
+
+Con CPU 4× ninguna variante con captura gana claro: cards 27.9 ms en baseline contra 24.5–28.0
+con freeze; blur 35.6 contra 25.4–27.7. Las capturas cuestan 430–1000 ms y caen en la cola, y
+congelar al salir suma 0,7–1 s de latencia al clic.
+
+Lectura:
+
+- **La traba de la mitad y del final es del fondo:** re-rasterizar capas con DOM pesado mientras
+  escalan, más el blur animado. Congelar antes la elimina (medio: de 150–167 a 18 ms). Sacar
+  la transición del filtro limpia el final y la cola, pero no la mitad.
+- **La traba del inicio (50–80 ms) está en todas las variantes:** es montar y pintar la vista
+  nueva y promover capas. Congelar el fondo no la toca; corresponde a la estrategia de render
+  de la vista entrante (renderizar y después animar, o al revés).
+- **Hornear el blur** casi no cambia la media; baja un poco los peores frames de cards (máximo
+  de 282 a 100 ms).
+- **Congelar al salir** deja la transición fluida pero mete 190–250 ms entre el clic y el
+  movimiento con CPU 1× (0,7–1 s con 4×). Solo sirve como respaldo cuando no hubo tiempo idle.
+- **Congelar después** no ayuda a la transición que lo dispara, y la captura cae en la cola.
+- **Memoria:** congelar al salir o después no usa stream y baja el heap de ~48 a ~20–29 MB.
+
 ## Lo que anda
 
 - Plugin no invasivo: envuelve el driver, no toca `src/`, funciona con el driver `css` y con
