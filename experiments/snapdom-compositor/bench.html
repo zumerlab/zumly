@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Zumly compositor bench</title>
+<link rel="stylesheet" href="/src/style.css">
+<link rel="stylesheet" href="/orbit/dist/orbit.css">
+<script src="/orbit/dist/orbit.js"></script>
+<script type="importmap">{ "imports": { "@zumer/snapdom": "/snapdom/dist/snapdom.mjs" } }</script>
+<style>
+  html, body { margin: 0; background: #0b1020; color: #ccd; font: 13px system-ui; }
+  #app { position: relative; width: 1000px; height: 700px; background: radial-gradient(circle at 50% 40%, #1b2850, #070a14); }
+  @keyframes spin { to { rotate: 1turn } }
+  #hud { position: fixed; right: 8px; top: 8px; white-space: pre; font: 11px ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<div id="app" class="zumly-canvas"></div>
+<div id="hud"></div>
+<script type="module">
+import { Zumly } from '/src/entry-esm.js'
+import { snapdom } from '@zumer/snapdom'
+import { stream } from '/snapdom/packages/plugins/stream/src/stream.js'
+import { compositor } from './compositor.js'
+import { buildViews } from './scenes.js'
+
+const q = new URLSearchParams(location.search)
+const mode = q.get('mode') || 'baseline' // baseline | depth | flat | both
+const scene = q.get('scene') || 'cards'
+const levels = +(q.get('levels') || 6)
+const source = q.get('source') || 'stream'
+const live = q.get('live') === '1'
+const animated = q.get('animated') === '1'
+const duration = q.get('duration') || '700ms'
+const effects = q.get('effects') === '0' ? undefined : ['blur(3px)', 'blur(8px) saturate(0)']
+// Filter timing variants, orthogonal to mode: anim (Zumly default: filter transitions with the
+// zoom), instant (no filter transition), end (filters frozen during the zoom, faded in after).
+const fx = q.get('fx') || 'anim'
+
+const app = new Zumly({
+  mount: '#app',
+  initialView: 'l0',
+  views: buildViews({ scene, levels, live, animated, outline: q.get('outline') === '1' }),
+  transitions: { duration, ease: 'ease-in-out', effects, driver: q.get('driver') || 'css' },
+  inputs: { wheel: false },
+})
+// Mark when the real driver starts and finishes moving views (wrapped before init, so the
+// compositor wraps this and a 'leave' capture counts before the motion starts).
+const motion = { start: 0, end: 0 }
+{
+  const real = app.transitionDriver
+  app.transitionDriver = {
+    runTransition (spec, done) {
+      motion.start = performance.now()
+      return real.runTransition(spec, () => { motion.end = performance.now(); done() })
+    },
+  }
+}
+let plugin = null
+if (mode !== 'baseline') {
+  app.use((instance) => {
+    plugin = compositor(instance, {
+      snapdom, stream: source === 'stream' ? stream : null, source,
+      depth: mode === 'depth' || mode === 'both',
+      flatten: mode === 'flat' || mode === 'both',
+      scale: +(q.get('scale') || 1),
+      when: q.get('when') || 'ahead',
+      bake: q.get('bake') === '1',
+    })
+  })
+}
+await app.init()
+if (fx === 'instant') {
+  document.head.insertAdjacentHTML('beforeend', '<style>.zumly-canvas .z-view.has-effect, .zumly-canvas .z-view.has-effect-reverse { transition: none !important }</style>')
+}
+if (fx === 'end') {
+  // Pin each view's current filter while the zoom runs; release it afterwards with a short fade.
+  document.head.insertAdjacentHTML('beforeend', '<style>.zumly-canvas .z-view.has-effect { transition: filter 250ms ease-out !important }</style>')
+  const pin = () => {
+    for (const v of app.canvas.querySelectorAll('.z-view')) {
+      v.style.setProperty('transition', 'none', 'important')
+      v.style.setProperty('filter', getComputedStyle(v).filter, 'important')
+    }
+  }
+  const release = () => {
+    for (const v of app.canvas.querySelectorAll('.z-view')) {
+      v.style.removeProperty('filter')
+      v.style.removeProperty('transition')
+    }
+  }
+  for (const e of ['beforeZoomIn', 'beforeZoomOut']) app.on(e, pin)
+  for (const e of ['afterZoomIn', 'afterZoomOut']) app.on(e, release)
+}
+if (scene === 'orbit') await new Promise(r => setTimeout(r, 300))
+
+if (live) {
+  const t0 = performance.now()
+  setInterval(() => {
+    const s = ((performance.now() - t0) / 1000).toFixed(1)
+    document.querySelectorAll('.is-current-view .live-clock').forEach(el => { el.textContent = s })
+  }, 100)
+}
+
+// ── Measurement helpers ───────────────────────────────────────────────
+
+const longTasks = []
+try {
+  new PerformanceObserver(list => { for (const e of list.getEntries()) longTasks.push({ start: e.startTime, dur: e.duration }) })
+    .observe({ type: 'longtask', buffered: true })
+} catch {}
+
+function sampleFrames (untilPromise) {
+  const times = []
+  let done = false
+  const loop = (t) => { times.push(t); if (!done) requestAnimationFrame(loop) }
+  requestAnimationFrame(loop)
+  return untilPromise.then(() => new Promise(r => requestAnimationFrame(t => { done = true; times.push(t); r(times) })))
+}
+
+function frameStats (times, t0) {
+  const d = []
+  for (let i = 1; i < times.length; i++) d.push(times[i] - times[i - 1])
+  const sorted = [...d].sort((a, b) => a - b)
+  const pct = (p) => sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(p * sorted.length))] : 0
+  return {
+    frames: d.length,
+    firstFrame: times.length ? +(times[0] - t0).toFixed(1) : null,
+    mean: +(d.reduce((a, b) => a + b, 0) / (d.length || 1)).toFixed(2),
+    p95: +pct(0.95).toFixed(1),
+    max: +(sorted.at(-1) || 0).toFixed(1),
+    over20: d.filter(x => x > 20).length,
+    over34: d.filter(x => x > 34).length,
+  }
+}
+
+const idleWait = (ms) => new Promise(r => setTimeout(r, ms))
+const once = (event) => new Promise(r => { const fn = () => { app.off(event, fn); r() }; app.on(event, fn) })
+
+function canvasBytes () {
+  let b = 0
+  for (const c of document.querySelectorAll('#app canvas')) b += c.width * c.height * 4
+  return b
+}
+
+function domNodes () { return document.querySelectorAll('#app *').length }
+
+async function step (kind) {
+  const ltBefore = longTasks.length
+  const t0 = performance.now()
+  const doneEvt = once(kind === 'in' ? 'afterZoomIn' : 'afterZoomOut')
+  const framesP = sampleFrames(doneEvt.then(() => idleWait(+(q.get('tail') ?? 400))))
+  if (kind === 'in') {
+    const trig = document.querySelector('.is-current-view .zoom-me')
+    app.zoomIn(trig)
+  } else app.zoomOut()
+  const times = await framesP
+  const total = performance.now() - t0
+  // Worst frame and frames >34 ms per phase: pre (click → motion), start (first 150 ms of
+  // motion), mid, end (last 150 ms), tail (after the driver finished).
+  const phases = { pre: [], start: [], mid: [], end: [], tail: [] }
+  for (let i = 1; i < times.length; i++) {
+    const t = times[i], d = t - times[i - 1]
+    const p = t <= motion.start ? 'pre' : t <= motion.start + 150 ? 'start' : t <= motion.end - 150 ? 'mid' : t <= motion.end + 50 ? 'end' : 'tail'
+    phases[p].push(d)
+  }
+  const phase = {}
+  for (const [k, ds] of Object.entries(phases)) phase[k] = { worst: +Math.max(0, ...ds).toFixed(0), over34: ds.filter(x => x > 34).length }
+  const latency = +(motion.start - t0).toFixed(0)
+  const lt = longTasks.slice(ltBefore).filter(e => e.start >= t0 - 1)
+  return { kind, level: app.zoomLevel(), totalMs: +total.toFixed(0), latency, phase, ...frameStats(times, t0),
+    longTasks: lt.length, longTaskMs: +lt.reduce((a, e) => a + e.dur, 0).toFixed(0), domNodes: domNodes(), canvasMB: +(canvasBytes() / 1048576).toFixed(1) }
+}
+
+/** Main-thread busy time while idling at rest (stream patches, clocks, keyframes). */
+async function restCost (ms) {
+  const ltBefore = longTasks.length
+  const s0 = plugin ? { f: plugin.stats.streamFrames, full: plugin.stats.streamFull, ms: plugin.stats.streamMs, c: plugin.stats.captures } : null
+  const times = []
+  let done = false
+  const loop = (t) => { times.push(t); if (!done) requestAnimationFrame(loop) }
+  requestAnimationFrame(loop)
+  await idleWait(ms)
+  done = true
+  const lt = longTasks.slice(ltBefore)
+  return {
+    ...frameStats(times, times[0] ?? 0),
+    longTasks: lt.length, longTaskMs: +lt.reduce((a, e) => a + e.dur, 0).toFixed(0),
+    streamFrames: s0 ? plugin.stats.streamFrames - s0.f : 0,
+    streamFull: s0 ? plugin.stats.streamFull - s0.full : 0,
+    streamMs: s0 ? +(plugin.stats.streamMs - s0.ms).toFixed(0) : 0,
+    captures: s0 ? plugin.stats.captures - s0.c : 0,
+  }
+}
+
+window.bench = async ({ settle = 1200, rest = 0 } = {}) => {
+  await idleWait(settle)
+  const steps = []
+  const rests = []
+  for (let i = 1; i < levels; i++) {
+    steps.push(await step('in'))
+    await idleWait(settle)
+    if (rest) rests.push({ level: app.zoomLevel(), ...(await restCost(rest)) })
+  }
+  for (let i = 1; i < levels; i++) {
+    steps.push(await step('out'))
+    await idleWait(settle)
+  }
+  const mem = performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null
+  const s = plugin?.stats
+  return {
+    mode, scene, source, fx, when: q.get('when') || 'ahead', bake: q.get('bake') === '1', live, animated, steps, rests, heapMB: mem,
+    plugin: s ? {
+      captures: s.captures, captureMsMedian: median(s.captureMs), captureMsMax: Math.max(0, ...s.captureMs).toFixed?.(0),
+      composeMsMedian: median(s.composeMs), fallbacks: s.fallbacks, streamFrames: s.streamFrames, streamFull: s.streamFull, streamMs: Math.round(s.streamMs),
+    } : null,
+  }
+}
+function median (a) { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); return +s[Math.floor(s.length / 2)].toFixed(1) }
+
+window.zoomTo = async (n, settle = 1200) => {
+  await idleWait(settle)
+  for (let i = 0; i < n; i++) { await step('in'); await idleWait(settle) }
+}
+window.zoomOutBy = async (n, settle = 1200) => { for (let i = 0; i < n; i++) { await step('out'); await idleWait(settle) } }
+window.app = app
+window.ready = true
+</script>
+</body>
+</html>
