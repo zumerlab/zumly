@@ -33,6 +33,9 @@ const live = q.get('live') === '1'
 const animated = q.get('animated') === '1'
 const duration = q.get('duration') || '700ms'
 const effects = q.get('effects') === '0' ? undefined : ['blur(3px)', 'blur(8px) saturate(0)']
+// Filter timing variants, orthogonal to mode: anim (Zumly default: filter transitions with the
+// zoom), instant (no filter transition), end (filters frozen during the zoom, faded in after).
+const fx = q.get('fx') || 'anim'
 
 const app = new Zumly({
   mount: '#app',
@@ -53,6 +56,27 @@ if (mode !== 'baseline') {
   })
 }
 await app.init()
+if (fx === 'instant') {
+  document.head.insertAdjacentHTML('beforeend', '<style>.zumly-canvas .z-view.has-effect, .zumly-canvas .z-view.has-effect-reverse { transition: none !important }</style>')
+}
+if (fx === 'end') {
+  // Pin each view's current filter while the zoom runs; release it afterwards with a short fade.
+  document.head.insertAdjacentHTML('beforeend', '<style>.zumly-canvas .z-view.has-effect { transition: filter 250ms ease-out !important }</style>')
+  const pin = () => {
+    for (const v of app.canvas.querySelectorAll('.z-view')) {
+      v.style.setProperty('transition', 'none', 'important')
+      v.style.setProperty('filter', getComputedStyle(v).filter, 'important')
+    }
+  }
+  const release = () => {
+    for (const v of app.canvas.querySelectorAll('.z-view')) {
+      v.style.removeProperty('filter')
+      v.style.removeProperty('transition')
+    }
+  }
+  for (const e of ['beforeZoomIn', 'beforeZoomOut']) app.on(e, pin)
+  for (const e of ['afterZoomIn', 'afterZoomOut']) app.on(e, release)
+}
 if (scene === 'orbit') await new Promise(r => setTimeout(r, 300))
 
 if (live) {
@@ -110,7 +134,7 @@ async function step (kind) {
   const ltBefore = longTasks.length
   const t0 = performance.now()
   const doneEvt = once(kind === 'in' ? 'afterZoomIn' : 'afterZoomOut')
-  const framesP = sampleFrames(doneEvt)
+  const framesP = sampleFrames(doneEvt.then(() => idleWait(+(q.get('tail') ?? 400))))
   if (kind === 'in') {
     const trig = document.querySelector('.is-current-view .zoom-me')
     app.zoomIn(trig)
@@ -159,7 +183,7 @@ window.bench = async ({ settle = 1200, rest = 0 } = {}) => {
   const mem = performance.memory ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(1) : null
   const s = plugin?.stats
   return {
-    mode, scene, source, live, animated, steps, rests, heapMB: mem,
+    mode, scene, source, fx, live, animated, steps, rests, heapMB: mem,
     plugin: s ? {
       captures: s.captures, captureMsMedian: median(s.captureMs), captureMsMax: Math.max(0, ...s.captureMs).toFixed?.(0),
       composeMsMedian: median(s.composeMs), fallbacks: s.fallbacks, streamFrames: s.streamFrames, streamFull: s.streamFull, streamMs: Math.round(s.streamMs),

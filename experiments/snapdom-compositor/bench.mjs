@@ -32,7 +32,7 @@ const rest = args.includes('--rest') ? +args[args.indexOf('--rest') + 1] : 0
 const throttle = args.includes('--cpu') ? +args[args.indexOf('--cpu') + 1] : 1
 
 const scenes = ['cards', 'blur', 'orbit']
-const modes = ['baseline', 'flat', 'depth', 'both']
+const modes = (args.includes('--modes') ? args[args.indexOf('--modes') + 1] : 'baseline,flat,depth,both').split(',')
 const browser = await chromium.launch({ headless: !headed, args: ['--enable-precise-memory-info', '--enable-gpu-rasterization', '--ignore-gpu-blocklist', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--disable-background-timer-throttling'] })
 const results = []
 let gpuLogged = false

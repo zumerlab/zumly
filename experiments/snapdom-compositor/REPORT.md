@@ -23,9 +23,16 @@ Orbit `dist/` local. Chromium de Playwright, ventana real (GPU Apple M5 vía ANG
 - **Lo de que "el efecto se pierde" tiene además una causa en Zumly, sin relación con SnapDOM:**
   después de un zoom-out, la vista previa pierde el `filter` de `transitions.effects`
   (`applyZoomOutLastState` borra `has-effect` justo después de que el motor lo asigna).
-- **Recomendación: ajustar.** Seguir solo con flatten, como plugin opcional para vistas pesadas,
-  con stream y apagado automático cuando hay animaciones. Descartar depth. Arreglar en el core el
-  bug de los efectos en zoom-out, aparte.
+- **La alternativa barata alcanza para casi todo.** Con el core ya arreglado, sacar la
+  transición del `filter` (el blur se aplica de golpe al empezar el zoom, sin SnapDOM) baja el
+  frame medio de cards de 28,0 a 19,7 ms, contra 18,3 ms con flatten. Aplicar el filtro recién al
+  final rinde menos (21,6 ms), porque el fundido posterior también cuesta. Con `backdrop-filter`,
+  flatten sigue ganando claro: 36,3 ms en baseline, 26,4 ms sin transición y 18,3 ms con flatten.
+- **El bug de los efectos en zoom-out ya está arreglado** en la rama `claude/fix-effects-zoomout`
+  (commit `17ea79c`, con test en 3 drivers; la suite completa pasa).
+- **Recomendación: ajustar.** Ofrecer en el core la opción de no animar el `filter` (barato, sin
+  dependencias). Dejar flatten solo como plugin opcional para vistas con `backdrop-filter` o muy
+  pesadas, con stream y apagado automático cuando hay animaciones. Descartar depth.
 
 ## Qué se probó
 
@@ -127,6 +134,38 @@ El velo gris de `depth` son los ancestros 3, 4 y 5 ampliados 64×, 256× y 1024�
 borrón del entorno de su trigger. El halo claro alrededor de la vista actual en `flat` es el
 anillo de foco del trigger, congelado en el bitmap (ver más abajo).
 
+### Alternativa barata: timing del `filter` (sin SnapDOM)
+
+Corridas nuevas, con el fix de `effects` en zoom-out integrado (así el zoom-out de baseline
+también lleva blur) y con 400 ms de cola después de cada transición, para contar el fundido
+de `end`. Por eso los números no se comparan uno a uno con las tablas de arriba. Variantes
+(`bench.html?fx=`):
+
+- `anim`: lo que hace Zumly hoy. `.has-effect` hace una transición del `filter` junto con el zoom.
+- `instant`: `transition: none` sobre `.has-effect` y `.has-effect-reverse`. El blur se aplica de
+  golpe al empezar.
+- `end`: el `filter` de cada vista queda fijo durante el zoom y al terminar pasa al nuevo valor
+  con un fundido de 250 ms.
+
+GPU real, 20 transiciones por fila en baseline, 10 en flat:
+
+| escena | baseline anim | baseline end | baseline **instant** | flat anim | flat end |
+|---|---|---|---|---|---|
+| cards | 28.0 ms · 5.5 >34 | 21.6 · 3.5 | **19.7 · 2.6** | 18.3 · 2.2 | 18.2 · 2.5 |
+| blur | 36.3 · 7.5 | 32.4 · 7.2 | **26.4 · 6.0** | 18.3 · 2.1 | 19.1 · 2.8 |
+| orbit | 17.5 · 1.4 | 17.5 · 1.4 | 17.5 · 1.3 | 18.2 · 2.5 | 18.6 · 2.7 |
+
+(frame medio · frames de más de 34 ms por transición)
+
+Con CPU 4×: cards 28,8 → 23,2 ms con `end`; blur 35,3 → 30,2 ms. En esas condiciones flatten
+(`end`) **empeora** cards (26,9 ms), porque las capturas de 450–730 ms caen dentro de la cola
+de la transición.
+
+Lectura: en cards, sacar la animación del `filter` captura casi toda la ganancia de flatten.
+El `backdrop-filter` sigue necesitando flatten, porque ahí el costo es rasterizar el DOM de cada
+capa, no el blur de fondo. El precio visual de `instant` es que el desenfoque aparece de golpe
+en lugar de acompañar el zoom.
+
 ## Lo que anda
 
 - Plugin no invasivo: envuelve el driver, no toca `src/`, funciona con el driver `css` y con
@@ -166,7 +205,8 @@ anillo de foco del trigger, congelado en el bitmap (ver más abajo).
 
 ## Hallazgos colaterales (independientes de SnapDOM)
 
-1. **Zumly: los `effects` se pierden después de un zoom-out.** `_performZoomOut` le asigna
+1. **Zumly: los `effects` se pierden después de un zoom-out** (arreglado en
+   `claude/fix-effects-zoomout`, `17ea79c`). `_performZoomOut` le asigna
    `effects[0]` a la vista que pasa a *previous*, pero el driver termina con
    `applyZoomOutLastState` (`src/drivers/driver-helpers.js`), que borra `has-effect` y
    `--z-effect-filter`. La vista que se re-engancha (`detachedNode`) tampoco recupera
@@ -199,12 +239,12 @@ anillo de foco del trigger, congelado en el bitmap (ver más abajo).
 2. **Seguir con flatten como plugin opcional** (`zumly/compositor` o un paquete aparte con
    SnapDOM como peer dependency), recomendado solo para vistas pesadas: más de ~1000 nodos,
    `backdrop-filter`, sombras. No meterlo en el core: Zumly no debe depender de SnapDOM.
-3. **Antes de eso, dos experimentos baratos sin SnapDOM**, porque la tabla sin `effects` muestra
-   que la mitad del jank es el `filter` animado: (a) no animar el `filter` durante la transición
-   (aplicarlo al final, o hacer un crossfade de opacidad); (b) `content-visibility: hidden`
-   sobre la vista *last* durante la transición. Si con eso cards baja a ~20 ms, flatten pasa a
-   ser un nicho.
-4. **Arreglar el bug de effects en zoom-out** en el core, por separado.
+3. **Primero, la opción barata en el core** (medida arriba): una opción tipo
+   `transitions.effectsTransition: false`, o documentar el override de CSS
+   (`.z-view.has-effect, .z-view.has-effect-reverse { transition: none }`). Con eso cards llega a
+   19,7 ms y flatten queda para el nicho de `backdrop-filter` o DOM muy pesado. Falta probar
+   `content-visibility: hidden` sobre la vista *last* durante la transición.
+4. **Bug de effects en zoom-out:** hecho, en `claude/fix-effects-zoomout`.
 
 ### API propuesta (si se sigue)
 
