@@ -279,6 +279,17 @@ describe('utils.checkParameters()', () => {
     warnSpy.mockRestore()
   })
 
+  it('parses transitions.animateEffects', () => {
+    const parse = (transitions) => {
+      const instance = {}
+      checkParameters({ mount: '.first', initialView: 'home', views: { home: '<div class="z-view"></div>' }, transitions }, instance)
+      return instance.animateEffects
+    }
+    expect(parse(undefined)).toBe(true)
+    expect(parse({ animateEffects: false })).toBe(false)
+    expect(parse({ animateEffects: 'no' })).toBe(true)
+  })
+
   it('parses transitions.hideTrigger as true', () => {
     const instance = {}
     checkParameters(

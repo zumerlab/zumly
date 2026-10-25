@@ -53,6 +53,11 @@ describe('option diagnostics', () => {
     expect(text).toMatch(/'inputs\.wheels'.*"wheel"/)
   })
 
+  it('knows every documented transitions option', () => {
+    app = create({ transitions: { driver: 'none', duration: 0, ease: 'linear', cover: 'width', effects: ['none'], animateEffects: false, stagger: 0, hideTrigger: false, parallax: 0 } })
+    expect(messages(warn).join('\n')).not.toMatch(/unknown option/)
+  })
+
   it('accepts durations in milliseconds and warns about invalid ones', () => {
     expect(create({ transitions: { duration: 600 } }).duration).toBe('600ms')
     app = create({ transitions: { duration: 'fast' } })

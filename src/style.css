@@ -69,12 +69,12 @@
 
 /* Background view effects: CSS filter transitions (independent of zoom driver) */
 .z-view.has-effect {
-  transition: filter var(--zoom-duration, 1s) var(--zoom-ease, ease-in-out);
+  transition: filter var(--z-effect-duration, var(--zoom-duration, 1s)) var(--zoom-ease, ease-in-out);
   filter: var(--z-effect-filter, none);
 }
 
 .z-view.has-effect-reverse {
-  transition: filter var(--zoom-duration, 1s) var(--zoom-ease, ease-in-out);
+  transition: filter var(--z-effect-duration, var(--zoom-duration, 1s)) var(--zoom-ease, ease-in-out);
   filter: none;
 }
 

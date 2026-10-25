@@ -297,6 +297,15 @@
         <div class="api-desc">CSS filter strings applied to background views during zoom. First value for the previous view, second for the last (deepest background) view. Example: <code>['blur(3px) brightness(0.7)', 'blur(8px) saturate(0)']</code>.</div>
       </div>
 
+      <div class="api-entry" id="opt-animateeffects">
+        <div class="api-entry-header">
+          <span class="api-name">animateEffects</span>
+          <span class="api-type">boolean</span>
+          <span class="api-default">default: true</span>
+        </div>
+        <div class="api-desc">Whether the <code>effects</code> filter transitions together with the zoom. <code>false</code> applies it at once when the zoom starts and removes it at once on zoom-out. Animating a filter on large background layers is the costliest part of a transition with heavy views, so <code>false</code> makes those zooms noticeably smoother.</div>
+      </div>
+
       <div class="api-entry" id="opt-stagger">
         <div class="api-entry-header">
           <span class="api-name">stagger</span>

@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Add `ViewContext.onActivate()`, the `viewChanged` event, `canGoBack()`, and `viewName`/`from` on zoom-out events; `mounted()` receives the view node.
 - Keep each level's lateral history when zooming deeper and back out, so `back()` matches the router's browser back.
 - Keep the background `effects` on the view that becomes the parent after a zoom-out, including per-trigger overrides (it used to lose its filter).
+- Add `transitions.animateEffects`: `false` applies background filters at once instead of animating them, which makes zooms much smoother with heavy views.
 - Ignore hash entries the router did not write.
 - Do not zoom out on swipes that start on text fields, sliders, horizontal scrollers or `[data-no-swipe]`.
 - Scale the navigation safety reset with long or staggered transitions.

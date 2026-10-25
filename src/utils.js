@@ -14,7 +14,7 @@ import { disposeView } from './view-lifecycle.js'
 import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSyntax, isValidCssEasing } from './diagnostics.js'
 
 const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred']
-const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'stagger', 'parallax', 'hideTrigger']
+const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'parallax', 'hideTrigger']
 const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings']
 const DEPTH_NAV_KEYS = ['position']
 const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch']
@@ -238,6 +238,15 @@ export function checkParameters (parameters, instance) {
     if (effectsIn !== undefined && effectsIn !== null) {
       notification(false, '\'transitions.effects\' must be an array of 1-2 CSS filter strings (e.g. ["blur(3px)", "blur(8px) saturate(0)"]). Falling back to no effects.', 'warn')
     }
+  }
+
+  // animateEffects: false applies background effects at once instead of transitioning the
+  // filter with the zoom. A filter animating on large background layers is the costliest
+  // part of a transition with heavy views.
+  const aeIn = t && t.animateEffects
+  instance.animateEffects = aeIn !== false
+  if (aeIn !== undefined && typeof aeIn !== 'boolean') {
+    notification(false, '\'transitions.animateEffects\' must be a boolean. Falling back to true.', 'warn')
   }
 
   // Transition driver: 'css' | 'waapi' | 'none' | 'anime' | 'gsap' | 'motion' or custom function(spec, onComplete)

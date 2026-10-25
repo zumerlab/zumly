@@ -253,6 +253,7 @@ transitions: {
   duration: '800ms',             // CSS time, or a number of milliseconds
   ease: 'cubic-bezier(.2,.8,.2,1)',
   effects: ['blur(3px) brightness(.6)', 'blur(8px) brightness(.3)'], // filters for the previous and the older view
+  animateEffects: true,          // false applies the filters at once: much smoother zooms with heavy views
   cover: 'width',                // which side of the trigger covers the new view
   stagger: 0,                    // ms between layers
   hideTrigger: false,            // true, or 'fade'
@@ -338,7 +339,7 @@ Triggers are keyboard reachable. Background views are `inert` and hidden from as
 | `mount` | — | **Required.** Selector or element of the canvas. |
 | `initialView` | — | **Required.** Name of the first view. |
 | `views` | — | **Required.** Map of names to view sources. |
-| `transitions` | see above | Duration, easing, effects, driver. |
+| `transitions` | see above | Duration, easing, effects, `animateEffects`, driver. |
 | `lateralNav` | `{ mode: 'auto' }` | Sibling bar: `mode`, `arrows`, `dots`, `position` (`'bottom-center'`, `'top-center'`), `keepAlive`, `siblings`. `false` hides it. |
 | `depthNav` | `{ position: 'bottom-left' }` | Back button; `position` is `'bottom-left'` or `'top-left'`. `false` hides it. It always zooms out. |
 | `inputs` | all `true` | `click`, `keyboard`, `wheel`, `touch`. `false` turns all off. |
