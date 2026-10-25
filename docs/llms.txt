@@ -14,19 +14,23 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 ## Key concepts
 
 - **Canvas**: Container element with class `zumly-canvas` where views render
-- **View**: A DOM subtree with root class `z-view`. Sources: HTML strings, URLs, async functions, objects with `render()`, web components
+- **View**: A DOM subtree with root class `z-view`. Sources: HTML strings, URLs, async functions, objects with `render()`, web components. Function views get `ctx.target` (the view itself), `props`, `onCleanup`, and `onActivate` (repaint when the view becomes current again)
 - **Trigger**: Element with class `zoom-me` and `data-to="viewName"` that initiates zoom-in
 - **Depth navigation**: Zoom in/out through view hierarchy (Z axis)
-- **Lateral navigation**: Navigate between sibling views at the same depth level
+- **Lateral navigation**: Navigate between sibling views at the same depth level. Each level keeps its own lateral history; `back()` undoes lateral moves before zooming out
 - **Driver**: Pluggable animation engine for transitions
 - **Plugin**: Object with `install(instance, options)` or plain function
+- **Events**: `viewChanged` fires after every navigation with `{ type, viewName, from, zoomLevel, node }`
+- **Diagnostics**: the console explains typos in view names and options, and a canvas without size
 
 ## Quick start
 
 ```html
 <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
 <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
-<div class="zumly-canvas" id="app"></div>
+<div style="position: relative; height: 100vh"><!-- the canvas fills this -->
+  <div class="zumly-canvas" id="app"></div>
+</div>
 <script>
   const app = new Zumly({
     mount: '#app',
@@ -52,5 +56,5 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 
 ## Ecosystem
 
-- [Orbit CSS](https://github.com/zumerlab/orbit) — Radial/orbital CSS layout system, pairs well with Zumly
+- [Orbit](https://github.com/zumerlab/orbit) — Radial layouts; satellites work as Zumly triggers. Guide: https://zumerlab.github.io/zumly/integrations/orbit-css.html
 - [SnapDOM](https://github.com/zumerlab/snapdom) — Fast DOM-to-image capture library

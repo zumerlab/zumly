@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Lateral and depth</title>
+  <link rel="stylesheet" href="../dist/zumly.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="../dist/zumly.js"></script>
+  <style>
+    .home { width: 100%; height: 100%; display: grid; place-items: center; }
+    .row { display: flex; gap: 4vw; align-items: center; }
+    .tile { padding: 12px; display: grid; place-items: center; text-align: center; }
+    .t1 { width: 18vw; aspect-ratio: 4 / 3; }
+    .t2 { width: 14vw; aspect-ratio: 1; }
+    .t3 { width: 20vw; aspect-ratio: 16 / 9; }
+    .panel { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+    .p1 { width: min(46vw, 520px); aspect-ratio: 4 / 3; }
+    .p2 { width: min(36vw, 400px); aspect-ratio: 1; }
+    .p3 { width: min(50vw, 560px); aspect-ratio: 16 / 9; }
+    .subs { display: flex; gap: 12px; }
+    .sub { flex: 1; padding: 10px; text-align: center; }
+    .leaf { width: min(30vw, 320px); aspect-ratio: 4 / 3; padding: 20px; }
+    input { font: inherit; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+  </style>
+</head>
+<body>
+  <header class="demo">
+    <h1>02 · Lateral and depth together</h1>
+    <p>Open a tile, then move to its siblings with the bar, the arrow keys of the bar, or by clicking a neighbor that is still visible. Zoom into a sub-item and come back: <b>Back</b> still returns through the siblings you visited, level by level. <a href="./">All demos</a></p>
+  </header>
+  <div class="controls">
+    <button id="back">Back</button>
+    <label><input type="checkbox" id="keep"> keepAlive (siblings keep their state)</label>
+    <span class="log" id="log">…</span>
+  </div>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const tile = (to, size, label) => `<div class="tile card zoom-me ${size}" data-to="${to}">${label}</div>`
+    const panel = (name, size, subs) => `<div class="z-view card panel ${size}">
+      <h2>${name}</h2>
+      <p>Type something, move to a sibling and back: with keepAlive it is still here.</p>
+      <input placeholder="note for ${name}" aria-label="Note">
+      <div class="subs">${subs.map(s => `<div class="sub card zoom-me" data-to="${s}">${s}</div>`).join('')}</div>
+    </div>`
+    const leaf = name => `<div class="z-view card leaf"><h2>${name}</h2><p>Zoom out, then press Back.</p></div>`
+
+    const views = {
+      home: `<div class="z-view home"><div class="row">
+        ${tile('alpha', 't1', 'Alpha')}${tile('beta', 't2', 'Beta')}${tile('gamma', 't3', 'Gamma')}
+      </div></div>`,
+      alpha: panel('Alpha', 'p1', ['a1', 'a2']),
+      beta: panel('Beta', 'p2', ['b1', 'b2']),
+      gamma: panel('Gamma', 'p3', ['c1', 'c2']),
+      a1: leaf('A1'), a2: leaf('A2'), b1: leaf('B1'), b2: leaf('B2'), c1: leaf('C1'), c2: leaf('C2')
+    }
+
+    let app
+    const log = document.getElementById('log')
+    function start () {
+      app?.destroy()
+      document.querySelector('.canvas').replaceChildren()
+      app = new Zumly({
+        mount: '.canvas',
+        initialView: 'home',
+        views,
+        transitions: { duration: '700ms', ease: 'cubic-bezier(.2,.8,.2,1)', effects: ['brightness(.6)', 'brightness(.35)'] },
+        lateralNav: { mode: 'always', keepAlive: document.getElementById('keep').checked }
+      })
+      app.on('viewChanged', ({ type, from, viewName, zoomLevel }) => {
+        log.textContent = `${type}: ${from ?? '—'} → ${viewName} · level ${zoomLevel} · canGoBack: ${app.canGoBack()}`
+      })
+      app.init()
+    }
+    document.getElementById('back').onclick = () => app.back()
+    document.getElementById('keep').onchange = start
+    start()
+  </script>
+</body>
+</html>

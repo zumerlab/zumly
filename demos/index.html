@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly demos</title>
+  <link rel="stylesheet" href="demo.css">
+  <style>
+    body { display: block; overflow: auto; }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { margin: 0 0 4px; }
+    .lead { color: var(--dim); margin: 0 0 24px; }
+    ol { list-style: none; padding: 0; display: grid; gap: 12px; }
+    li a { display: block; padding: 14px 16px; text-decoration: none; color: var(--text); }
+    li a:hover { border-color: var(--accent); }
+    li strong { display: block; }
+    li span { color: var(--dim); font-size: 14px; }
+    code { font-family: var(--mono); font-size: .9em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Zumly demos</h1>
+    <p class="lead">Each page is one file you can read top to bottom. They load the local build: run <code>npm run dev</code> and open <code>http://localhost:9090/demos/</code>. Open the console to see Zumly's diagnostics.</p>
+    <ol>
+      <li><a class="card" href="00-hello.html"><strong>00 · Hello</strong><span>The smallest app: a canvas, two views, one trigger.</span></a></li>
+      <li><a class="card" href="01-depth.html"><strong>01 · Depth</strong><span>Four levels, per-trigger timing, background effects, the back button.</span></a></li>
+      <li><a class="card" href="02-lateral.html"><strong>02 · Lateral and depth together</strong><span>Siblings of different sizes, the sibling bar, keepAlive, and back() keeping each level's history.</span></a></li>
+      <li><a class="card" href="03-views.html"><strong>03 · View sources</strong><span>HTML, URL, function with state and onActivate, object with mounted(), custom element.</span></a></li>
+      <li><a class="card" href="04-drivers.html"><strong>04 · Drivers</strong><span>CSS, WAAPI, Anime.js, GSAP and Motion follow the same curve. Switch them live.</span></a></li>
+      <li><a class="card" href="05-router.html"><strong>05 · Router</strong><span>The hash follows navigation; the browser back button goes back.</span></a></li>
+      <li><a class="card" href="orbit-dial.html"><strong>Orbit · Dials that open dials</strong><span>Orbit satellites as triggers, rings of siblings, a gauge that repaints on return.</span></a></li>
+    </ol>
+  </main>
+</body>
+</html>

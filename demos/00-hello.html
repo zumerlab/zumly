@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Hello</title>
+  <link rel="stylesheet" href="../dist/zumly.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="../dist/zumly.js"></script>
+  <style>
+    .z-view { display: grid; place-items: center; text-align: center; }
+    .hello { width: 100%; height: 100%; font-size: clamp(20px, 5vw, 44px); letter-spacing: .2em; }
+    .hello .zoom-me { color: var(--accent); font-weight: 700; }
+    .world { width: min(60vmin, 360px); aspect-ratio: 1; border-radius: 50%; background: var(--blue); color: white; font-size: 20px; }
+  </style>
+</head>
+<body>
+  <header class="demo">
+    <h1>00 · Hello</h1>
+    <p>Click the yellow O. To come back: click outside the circle, use the back button, scroll down or press ArrowLeft. <a href="./">All demos</a></p>
+  </header>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'hello',
+      views: {
+        hello: '<div class="z-view hello"><p>H E L L O &nbsp; W <span class="zoom-me" data-to="world">O</span> R L D</p></div>',
+        world: '<div class="z-view world">Hi from inside the O</div>'
+      }
+    })
+    app.init()
+  </script>
+</body>
+</html>

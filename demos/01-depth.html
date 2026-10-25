@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Depth</title>
+  <link rel="stylesheet" href="../dist/zumly.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="../dist/zumly.js"></script>
+  <style>
+    .z-view { display: grid; place-items: center; text-align: center; }
+    .space { width: 100%; height: 100%; background: radial-gradient(circle at 50% 50%, #1b2140, var(--bg) 70%); }
+    .orbs { display: flex; gap: 6vmin; align-items: center; justify-content: center; flex-wrap: wrap; }
+    .orb { border-radius: 50%; display: grid; place-items: center; color: #0b0d16; font-weight: 700; }
+    .galaxy { width: 26vmin; aspect-ratio: 1; background: conic-gradient(#f0b428, #ff6b8b, #6b8bff, #f0b428); }
+    .system { width: min(70vmin, 560px); aspect-ratio: 1; border-radius: 50%; background: #121735; }
+    .planet { width: 14vmin; aspect-ratio: 1; background: #3da9fc; }
+    .planet.red { background: #ff7a59; }
+    .world { width: min(60vmin, 480px); aspect-ratio: 1; border-radius: 50%; background: #3da9fc; color: #0b0d16; }
+    .city { width: 12vmin; aspect-ratio: 4 / 3; border-radius: 6px; background: #0b0d16; color: white; font-size: 12px; }
+    .street { width: min(80vw, 640px); aspect-ratio: 4 / 3; padding: 24px; }
+  </style>
+</head>
+<body>
+  <header class="demo">
+    <h1>01 · Depth</h1>
+    <p>Zoom four levels down. The views behind blur and dim (<code>transitions.effects</code>). The red planet uses a slower, per-trigger transition, and the city fades its trigger. <a href="./">All demos</a></p>
+  </header>
+  <div class="controls"><span class="log" id="log">…</span></div>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const views = {
+      universe: `<div class="z-view space">
+        <div class="orbs">
+          <div class="orb galaxy zoom-me" data-to="milkyway">Milky Way</div>
+        </div></div>`,
+      milkyway: `<div class="z-view system">
+        <div class="orbs">
+          <div class="orb planet zoom-me" data-to="earth">Earth</div>
+          <div class="orb planet red zoom-me" data-to="mars" data-with-duration="1.6s" data-with-ease="ease-in-out">Mars</div>
+        </div></div>`,
+      earth: `<div class="z-view world">
+        <div class="orbs">
+          <div class="city zoom-me" data-to="city" data-hide-trigger="fade" data-name="Buenos Aires">Buenos Aires</div>
+        </div></div>`,
+      mars: '<div class="z-view world" style="background:#ff7a59">Mars: no cities yet</div>',
+      city: ({ target, props }) => {
+        target.className = 'z-view card street'
+        target.innerHTML = `<h2>${props.name}</h2><p>Opened with props from the trigger's data-name.</p>`
+      }
+    }
+
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'universe',
+      views,
+      transitions: {
+        duration: 900,
+        ease: 'cubic-bezier(.2,.8,.2,1)',
+        effects: ['blur(3px) brightness(.6)', 'blur(8px) brightness(.35)']
+      }
+    })
+    const log = document.getElementById('log')
+    app.on('viewChanged', ({ type, viewName, zoomLevel }) => {
+      log.textContent = `${type} → ${viewName} · level ${zoomLevel}`
+    })
+    app.init()
+  </script>
+</body>
+</html>

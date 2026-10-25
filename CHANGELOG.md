@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### Unreleased
+
+- Explain mistakes in the console: `initialView` and `data-to` names that are not in `views` (with "Did you mean …?"), unknown option keys, invalid durations and CSS easings, a canvas that stays without size, a mount element without `zumly-canvas`, and a function view that nests another `.z-view` in `ctx.target`.
+- Fail an undefined custom element tag after 10 s instead of locking navigation, and name the view in resolver errors.
+- Keep every root of a multi-root HTML template (wrapped in a `.z-view`) instead of dropping all but the first.
+- Accept an element as `mount` and a number of milliseconds as `duration`.
+- Add `ViewContext.onActivate()`, the `viewChanged` event, `canGoBack()`, and `viewName`/`from` on zoom-out events; `mounted()` receives the view node.
+- Keep each level's lateral history when zooming deeper and back out, so `back()` matches the router's browser back.
+- Keep the background `effects` on the view that becomes the parent after a zoom-out, including per-trigger overrides (it used to lose its filter).
+- Ignore hash entries the router did not write.
+- Do not zoom out on swipes that start on text fields, sliders, horizontal scrollers or `[data-no-swipe]`.
+- Scale the navigation safety reset with long or staggered transitions.
+- Make every driver follow the same curve for a CSS `ease` (shared `cssEasing` helper), support Anime.js v4, pass library ease names through untouched, and apply easing per layer with `stagger`.
+- Finish Anime.js, GSAP and Motion transitions at a deadline when the tab is hidden, and ignore late library callbacks.
+- Add `animeDriver`, `gsapDriver` and `motionDriver` for bundlers, and types for `zumly/drivers`.
+- Stop printing routine no-op messages outside `debug` mode.
+- Rewrite the README around the model, add `demos/` and rewrite the Orbit integration guide with Orbit's real API.
+
 #### [v0.97.0](https://github.com/zumerlab/zumly/compare/v0.92.6...v0.97.0)
 
 > 5 September 2026

@@ -1,0 +1,37 @@
+/* Shared look for the Zumly demos. Each demo is a header and a stage. */
+:root {
+  --bg: #0b0d16;
+  --panel: #141828;
+  --line: rgba(255, 255, 255, .1);
+  --text: #e4e7f2;
+  --dim: rgba(228, 231, 242, .6);
+  --accent: #f0b428;
+  --blue: #3da9fc;
+  --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f6fb; --panel: #ffffff; --line: rgba(15, 25, 60, .12);
+    --text: #0e1225; --dim: rgba(14, 18, 37, .6); --accent: #b8860b; --blue: #1f6fd1;
+    color-scheme: light;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--text); font: 15px/1.5 var(--font); display: flex; flex-direction: column; }
+header.demo { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline; }
+header.demo h1 { margin: 0; font-size: 17px; }
+header.demo p { margin: 0; color: var(--dim); flex: 1 1 320px; }
+header.demo a { color: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.controls button, .controls select { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+.controls label { display: inline-flex; gap: 6px; align-items: center; color: var(--dim); }
+.log { font: 12px/1.4 var(--mono); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+/* The canvas fills its nearest positioned ancestor: the stage. */
+.stage { position: relative; flex: 1; min-height: 320px; }
+.zoom-me { cursor: zoom-in; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.z-view h2 { margin: 0 0 6px; font-size: 22px; }
+.z-view p { margin: 0; color: var(--dim); }

@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · View sources</title>
+  <link rel="stylesheet" href="../dist/zumly.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="../dist/zumly.js"></script>
+  <style>
+    .home { width: 100%; height: 100%; display: grid; place-items: center; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(90px, 16vw)); gap: 2vw; }
+    .grid .zoom-me { aspect-ratio: 4 / 3; display: grid; place-items: center; text-align: center; padding: 8px; font-size: 14px; }
+    .box { width: min(70vw, 460px); aspect-ratio: 4 / 3; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+    .box button { align-self: flex-start; font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); cursor: pointer; }
+    .big { font-size: 48px; font-weight: 700; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header class="demo">
+    <h1>03 · View sources</h1>
+    <p>Every tile opens a view defined a different way. Read the script below the markup. <a href="./">All demos</a></p>
+  </header>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    // State lives outside the views; views read it when they render or come back.
+    const state = { count: 0 }
+
+    // A custom element: a view name with a hyphen that is not a key in `views`.
+    customElements.define('demo-clock', class extends HTMLElement {
+      connectedCallback () {
+        this.classList.add('card', 'box')
+        const tick = () => { this.innerHTML = `<h2>&lt;demo-clock&gt;</h2><p class="big">${new Date().toLocaleTimeString()}</p>` }
+        tick()
+        this.timer = setInterval(tick, 1000)
+      }
+      disconnectedCallback () { clearInterval(this.timer) }
+    })
+
+    const views = {
+      home: `<div class="z-view home"><div class="grid">
+        <div class="card zoom-me" data-to="html">HTML string</div>
+        <div class="card zoom-me" data-to="partials/remote.html">URL</div>
+        <div class="card zoom-me" data-to="counter">Function + onActivate</div>
+        <div class="card zoom-me" data-to="measured">Object + mounted()</div>
+        <div class="card zoom-me" data-to="demo-clock">Custom element</div>
+        <div class="card zoom-me" data-to="roots">Several roots</div>
+      </div></div>`,
+
+      // 1. A template string. Cached and prefetched.
+      html: '<div class="z-view card box"><h2>HTML string</h2><p>The simplest source.</p></div>',
+
+      // 2. A function fills ctx.target. onActivate repaints when the view is current again.
+      counter: ({ target, onActivate, onCleanup }) => {
+        // target is the view: style it here and render only its content.
+        target.className = 'z-view card box'
+        const paint = () => {
+          target.innerHTML = `
+            <h2>Function view</h2>
+            <p class="big">${state.count}</p>
+            <button type="button">+1</button>
+            <p>Zoom into the detail, change the count there, and come back: the number here is repainted by onActivate.</p>
+            <div class="card zoom-me" data-to="counterDetail" style="padding:8px;align-self:flex-start">Detail</div>`
+          target.querySelector('button').onclick = () => { state.count++; paint() }
+        }
+        paint()
+        onActivate(paint)
+        onCleanup(() => console.log('counter view discarded'))
+      },
+      counterDetail: ({ target }) => {
+        target.className = 'z-view card box'
+        target.innerHTML = '<h2>Detail</h2><button type="button">+10 and go back</button>'
+        target.querySelector('button').onclick = () => { state.count += 10; app.back() }
+      },
+
+      // 3. An object: render() returns markup, mounted(node) runs once it is in the canvas.
+      measured: {
+        render: () => '<div class="z-view card box"><h2>Object view</h2><p class="size">…</p></div>',
+        mounted (node) {
+          node.querySelector('.size').textContent = `mounted() measured this view: ${node.offsetWidth}×${node.offsetHeight}px`
+        }
+      },
+
+      // 4. Several root elements are wrapped in one .z-view, nothing is dropped.
+      roots: '<h2>Several roots</h2><p>A template with an h2 and a p, and no wrapper.</p>'
+    }
+
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'home',
+      views,
+      transitions: { duration: '700ms', ease: 'cubic-bezier(.2,.8,.2,1)', effects: ['brightness(.6)', 'brightness(.35)'] },
+      lateralNav: { mode: 'always' }
+    })
+    app.init()
+  </script>
+  <style>.z-view:not(.card):not(.home) { width: min(70vw, 460px); aspect-ratio: 4 / 3; padding: 24px; background: var(--panel); border-radius: 14px; }</style>
+</body>
+</html>

@@ -86,7 +86,22 @@ views that need different content each time. Functions are called fresh each tim
 - `ctx.context` is the `componentContext` from the constructor -- use it to share
   services (API clients, stores, auth state).
 - Return a string, return an HTMLElement, or mount into `ctx.target` and return void.
+  When you return void, `ctx.target` IS the view: set its classes
+  (`ctx.target.className = 'z-view card'`) and render only the content. Never put
+  another `.z-view` inside it (Zumly warns: the zoom would use a canvas-sized box).
 - Functions can be async -- Zumly awaits the result.
+- Views behind the current one are NOT re-rendered. Keep state outside the views and
+  repaint in `ctx.onActivate(fn)`, which runs each time the view becomes current again
+  (after zooming back out to it, or a kept-alive sibling returning):
+
+```js
+views.room = ({ target, onActivate }) => {
+  target.className = 'z-view room'
+  const paint = () => { target.innerHTML = `<h1>${state.temp}°</h1><b class="zoom-me" data-to="thermostat">Adjust</b>` }
+  paint()
+  onActivate(paint)
+}
+```
 
 ### Objects with render() -- Use when you need a mounted() lifecycle hook
 ```js
@@ -95,9 +110,9 @@ views: {
     render(ctx) {
       return `<div class="z-view"><canvas id="chart-${ctx.props.id}"></canvas></div>`
     },
-    mounted() {
-      // Called AFTER the element is in the DOM -- safe to query it
-      new Chart(document.getElementById('chart-' + this.lastId), { ... })
+    mounted(node) {
+      // Called AFTER the element is in the DOM, with the view's root node
+      new Chart(node.querySelector('canvas'), { ... })
     }
   }
 }
@@ -235,8 +250,10 @@ await app.goTo('detail', { mode: 'depth', props: { id: '42' } })
 // Lateral navigation (swap to a sibling at the same depth)
 await app.goTo('settings', { mode: 'lateral' })
 
-// back() pops lateral history first, then zooms out
+// back() pops lateral history first, then zooms out. Each level keeps its own
+// lateral history, also after zooming deeper and back out (same as router back).
 app.back()
+app.canGoBack() // whether back() would do anything
 ```
 Programmatic navigation via `zoomTo()` or `goTo()` uses a centered synthetic trigger.
 The zoom animation originates from the canvas center, which is less spatially meaningful
@@ -392,11 +409,17 @@ Zumly applies resize corrections automatically when the window resizes.
 
 ## Common Pitfalls and Solutions
 
-### 1. "Nothing happens when I click"
+### 0. Read the console first
+Zumly explains most mistakes: unknown `data-to` targets and option keys (with
+"Did you mean …?"), an `initialView` not in `views`, invalid durations/easings, a
+canvas with no size, a function view nesting a `.z-view` in `ctx.target`.
+
+### 1. "Nothing happens when I click" / "nothing is visible"
 - Trigger must have class `zoom-me` AND `data-to="viewName"`
 - View name in `data-to` must exactly match a key in the `views` object
-- Canvas must have class `zumly-canvas`
-- `init()` must be called and awaited
+- The canvas is `position: absolute` and fills its nearest positioned ancestor:
+  give that container `position: relative` and a height
+- `init()` must be called
 
 ### 2. "View appears but has no styling"
 - View root must have class `z-view`
@@ -409,15 +432,27 @@ Zumly applies resize corrections automatically when the window resizes.
 - Avoid synchronous layout-triggering operations in `mounted()`
 
 ### 4. "UI is frozen / nothing responds"
-- A driver failed to call `onComplete()`. Zumly has an 8-second safety timer that
-  force-resets, but check console for driver errors.
+- A driver failed to call `onComplete()`. Zumly has a safety timer (8 s, or longer
+  for long transitions) that force-resets, but check console for driver errors.
+- Built-in library drivers (anime/gsap/motion) finish at their own deadline when the
+  tab is hidden; with a bundler pass the library: `gsapDriver(gsap)`,
+  `animeDriver(anime)`, `motionDriver({ animate })` from `'zumly'`.
 - If using a custom driver, always use `createFinishGuard` from `zumly/driver-helpers`.
 
 ### 5. "Framework component state is lost on zoom-out"
 - Expected: when you zoom out, the child view is removed from the DOM.
 - Solution: lift state to `componentContext`, or use `keepAlive` for lateral views.
 
-### 6. "Multiple Zumly instances conflict"
+### 6. "Siblings don't show up for data-driven views"
+- Siblings are identified by view name. Ten triggers to `data-to="room"` with
+  different `data-id` are NOT siblings. Register one view per item:
+  `for (const id of ids) views[id] = roomView(id)`.
+
+### 7. "Dragging a slider/knob zooms out on touch"
+- A left swipe zooms out. Sliders and text fields are excluded; add `data-no-swipe`
+  to custom drag areas (Orbit knobs, carousels).
+
+### 8. "Multiple Zumly instances conflict"
 - Each instance must have its own canvas element with a unique selector.
 - Input handlers are scoped to the canvas, so separate canvases work fine.
 
@@ -455,6 +490,11 @@ First filter applies to previous view, second to grandparent. Creates depth-of-f
 ## Events for Analytics and Side Effects
 
 ```js
+// One event for every navigation (type: 'init' | 'zoomIn' | 'zoomOut' | 'lateral')
+app.on('viewChanged', ({ type, viewName, from, zoomLevel, node }) => {
+  document.title = viewName
+})
+
 app.on('afterZoomIn', ({ viewName, zoomLevel }) => {
   analytics.track('view_entered', { view: viewName, depth: zoomLevel })
 })
@@ -463,6 +503,17 @@ app.on('viewMounted', ({ viewName, node }) => {
   if (viewName === 'map') initializeMap(node.querySelector('#map-container'))
 })
 ```
+
+---
+
+## With Orbit (radial layouts)
+
+Orbit (`@zumer/orbit`) works inside views without glue. Make satellites' capsules the
+triggers (`<div class="satellite"><div class="capsule zoom-me" data-to="kitchen">`),
+size dial views (`width: min(78vmin, 620px); aspect-ratio: 1`), use
+`hideTrigger: 'fade'` and give dials a background. An `<o-arc>` as trigger zooms from its
+whole ring box, so prefer satellites. Update `<o-progress value>` attributes or repaint
+in `onActivate`. Guide: docs/integrations/orbit-css.html; demo: demos/orbit-dial.html.
 
 ---
 

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Router</title>
+  <link rel="stylesheet" href="../dist/zumly.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="../dist/zumly.js"></script>
+  <style>
+    .home { width: 100%; height: 100%; display: grid; place-items: center; }
+    .row { display: flex; gap: 4vw; }
+    .row .zoom-me { width: 15vw; aspect-ratio: 4 / 3; display: grid; place-items: center; }
+    .box { width: min(60vw, 460px); aspect-ratio: 4 / 3; padding: 24px; }
+    .box .zoom-me { margin-top: 16px; padding: 10px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <header class="demo">
+    <h1>05 · Router</h1>
+    <p>Navigate, then use the browser's back button: it zooms out or returns to the sibling you came from. Opening a deep hash directly is not supported. <a href="./">All demos</a></p>
+  </header>
+  <div class="controls"><span class="log">hash: <b id="hash"></b></span></div>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const room = name => `<div class="z-view card box"><h2>${name}</h2><p>Siblings: use the bar below.</p><div class="card zoom-me" data-to="${name.toLowerCase()}-detail">Details</div></div>`
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'home',
+      views: {
+        home: `<div class="z-view home"><div class="row">
+          <div class="card zoom-me" data-to="kitchen">Kitchen</div><div class="card zoom-me" data-to="living">Living</div><div class="card zoom-me" data-to="garage">Garage</div>
+        </div></div>`,
+        kitchen: room('Kitchen'), living: room('Living'), garage: room('Garage'),
+        'kitchen-detail': '<div class="z-view card box"><h2>Kitchen details</h2></div>',
+        'living-detail': '<div class="z-view card box"><h2>Living details</h2></div>',
+        'garage-detail': '<div class="z-view card box"><h2>Garage details</h2></div>'
+      },
+      transitions: { duration: '700ms', ease: 'cubic-bezier(.2,.8,.2,1)', effects: ['brightness(.6)', 'brightness(.35)'] },
+      lateralNav: { mode: 'always' }
+    })
+    app.use(Zumly.Router)
+    const show = () => { document.getElementById('hash').textContent = location.hash }
+    app.on('viewChanged', () => setTimeout(show))
+    window.addEventListener('hashchange', show)
+    app.init()
+  </script>
+</body>
+</html>

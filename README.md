@@ -11,481 +11,366 @@
 <p align="center"><strong>Focus-driven navigation. Zoom into what matters.</strong></p>
 
 <p align="center">
-  <a href="https://zumerlab.github.io/zumly/"><strong>Live Demo</strong></a>
-</p>
-<p align="center">
-  <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg" alt="npm version"></a>
-</p>
-
-<p align="center">
-  <strong>Zumly</strong> is a JavaScript library for <strong>hierarchical zoom navigation</strong>: you move in <strong>Z</strong> (depth) through discrete views laid out in the <strong>XY</strong> plane, with spatial transitions instead of flat screen swaps. It is inspired by <a href="https://en.wikipedia.org/wiki/Zooming_user_interface">zoomable user interfaces (ZUI)</a> but targets <strong>structured, trigger-driven</strong> zoom—not infinite pan/zoom canvases.
+  <a href="https://zumerlab.github.io/zumly/"><strong>Live demo</strong></a> ·
+  <a href="demos/">Demos</a> ·
+  <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg" alt="npm version" align="center"></a>
 </p>
 
-## Status
+Zumly is a JavaScript library for **hierarchical zoom navigation**. Your interface is a set of screens called **views**. Clicking an element in one view zooms into it, and the next view grows out of that element. Zooming out returns along the same path. Moving between sibling views at the same level slides sideways.
 
-Zumly is under active development. It supports depth and lateral navigation, pluggable transition drivers (CSS, WAAPI, none, Anime.js, GSAP, Motion, custom), separate depth and lateral navigation controls, a view resolver and prefetch cache, an optional **plugin** API (<code>.use()</code>), and the **hash router** plugin. View sources include HTML strings, URLs, async functions, objects with <code>render()</code>, DOM nodes, and web component tags.
+Zumly is not an infinite pan-and-zoom canvas. Movement happens in discrete steps, through elements you mark as triggers. You write the HTML and CSS, Zumly computes and animates the transforms. It works with plain HTML, React, Vue, Svelte and Angular, and pairs with [Orbit](https://github.com/zumerlab/orbit) for radial layouts.
 
-Zoom-out geometry uses batched DOM reads plus pure math where possible to cut layout thrash before animations (see [Geometry optimization](docs/geometry-optimization.md)).
-
-**Docs:** [Roadmap & topics](docs/roadMap.md) · [Transition drivers](docs/DRIVER_API.md) · [Geometry notes](docs/geometry-optimization.md)
-
-## Overview
-
-Unlike free-pan ZUIs, Zumly focuses on **discrete, hierarchical navigation**: users zoom into a focused element (<code>.zoom-me</code>) to open the next view, so **attention** (focus) and **depth** (Z) stay aligned with **layout** (XY).
-
-The engine is **UI-agnostic**—you supply markup and CSS. Transforms and timing are handled for you; design systems and frameworks integrate by resolving each view to a DOM subtree (see **View sources** and **Framework integration** below).
-
-## What Zumly is
-
-Zumly is **not** a freeform zooming canvas or map-like navigation system. It is a **discrete, hierarchical zoom interface**: screens are **views** at different depths, connected by **triggers**, with continuous motion between them.
-
-It fits especially well when:
-
-* you want **focus-driven** flow (zoom into what matters)
-* **spatial context** between parent and child should persist
-* you are building menus, stories, dashboards, or exploratory UIs without a classic router-only metaphor
-
-## Installation
-
-### NPM
+## Install
 
 ```sh
 npm install zumly
-
-# or
-
-yarn add zumly
 ```
-
-### CDN
-
-Include Zumly in your project via a `<script>` tag from [unpkg.com/zumly](https://unpkg.com/zumly).
-
-### Direct download
-
-Download the built files from [unpkg.com/zumly](https://unpkg.com/zumly/) (see the `dist` folder).
-
-## Setup
-
-### Browser bundle (global)
-
-1. Add the CSS in your `<head>`:
-
-```html
-<link rel="stylesheet" href="zumly/dist/zumly.css">
-<!-- or https://unpkg.com/zumly/dist/zumly.css -->
-```
-
-2. Load the JS bundle (it exposes `window.Zumly`):
-
-```html
-<script src="zumly/dist/zumly.js"></script>
-<!-- or https://unpkg.com/zumly/dist/zumly.js -->
-```
-
-## Hello World
-
-1. Add a container with the class `zumly-canvas`:
-
-```html
-<div class="example zumly-canvas"></div>
-```
-
-2. Create your views and start Zumly:
 
 ```js
-const hello = `
-<div class="z-view">
-  H E L L O <br>
-  W <span class="zoom-me" data-to="world">O</span> R L D!
-</div>
-`;
-
-const world = `
-<div class="z-view">
-  <img src="https://raw.githubusercontent.com/zumly/website/gh-pages/images/world.png" alt="World">
-</div>
-`;
-
-const app = new Zumly({
-  mount: '.example',
-  initialView: 'hello',
-  views: { hello, world },
-});
-
-await app.init();
+import Zumly from 'zumly'
+import 'zumly/style.css'
 ```
 
-- Live example: [CodePen](https://codepen.io/zircle/pen/yyaXvRN)
+For a plain HTML page, load the files from a CDN as in the next example.
 
-### Options
+## A first app
 
-**Zumly constructor:**
+Save this as `index.html` and open it in a browser. Click "O" to zoom into the world, then click outside it, press the back button, or scroll down to zoom out.
 
-| Option | Type | Required | Description |
-|--------|------|----------|-------------|
-| `mount` | string | Yes | CSS selector for the canvas element (must have class `zumly-canvas`). |
-| `initialView` | string | Yes | Name of the first view to show. |
-| `views` | object | Yes | Map of view names to view sources (see View sources below). |
-| `preload` | string[] | No | View names to resolve and cache when the app initializes. |
-| `transitions` | object | No | Duration, ease, cover, driver, effects, stagger, hideTrigger for zoom transitions. |
-| `deferred` | boolean | No | Defer content rendering until after animation completes (default: `false`). |
-| `debug` | boolean | No | Enable debug messages (default: `false`). |
-| `lateralNav` | boolean \| object | No | Lateral navigation UI: `{ mode, arrows, dots, keepAlive, position, siblings }`. |
-| `depthNav` | boolean \| object | No | Depth back button: `{ position }`. Default: `'bottom-left'`. |
-| `inputs` | boolean \| object | No | Input methods: `{ click, keyboard, wheel, touch }`. |
-| `componentContext` | object | No | Context passed to component-style views. |
+```html
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hello Zumly</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly@0.98.0/dist/zumly.css">
+  <script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"></script>
+  <style>
+    body { margin: 0; font: 20px system-ui, sans-serif; }
+    /* The canvas fills its nearest positioned ancestor: give it a size. */
+    .stage { position: relative; height: 100vh; }
+    .z-view { display: grid; place-items: center; }
+    .hello { width: 100%; height: 100%; }
+    .world { width: 320px; height: 320px; border-radius: 50%; background: #3da9fc; color: white; }
+    .zoom-me { cursor: zoom-in; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'hello',
+      views: {
+        hello: `<div class="z-view hello">
+                  <p>H E L L O &nbsp; W <span class="zoom-me" data-to="world">O</span> R L D</p>
+                </div>`,
+        world: `<div class="z-view world">Hi from inside the O</div>`
+      }
+    })
+    app.init()
+  </script>
+</body>
+</html>
+```
 
-**Transitions (optional):**
+That is the whole contract: a canvas, a map of named views, and triggers with `class="zoom-me"` and `data-to="viewName"`. Open the browser console while you build: Zumly explains mistakes such as a `data-to` that names no view, an unknown option or a canvas with no size.
+
+## The model
+
+| Piece | What it is |
+| --- | --- |
+| **Canvas** | The element in `mount`, with class `zumly-canvas`. It clips the views and receives clicks, keys, wheel and touch. It is `position: absolute` and fills its nearest positioned ancestor, so that ancestor needs a size. |
+| **View** | One screen, rendered from an entry in `views`. Its root gets the class `z-view`. A view has its own size: full canvas, a card, a circle. |
+| **Trigger** | Any element in a view with `class="zoom-me"` and `data-to="name"`. Zooming in scales the current view until the trigger covers the new view, so the new view seems to come out of the trigger. Its `data-*` attributes reach the new view as `props`. |
+| **Depth** | Zooming in adds a level, zooming out removes one. Zumly keeps three levels on screen (current, previous and the one before it); deeper levels are detached and restored on the way back. |
+| **Lateral** | Moving to a sibling: another view whose trigger is in the same parent. The current view is replaced at the same depth, and the parent slides so that the sibling's trigger is under the focus. |
+| **Back** | `back()` undoes the last lateral move at the current level, and zooms out when there is none. Each level keeps its own lateral history, also after zooming in and out again. |
+
+```
+canvas.zumly-canvas
+├── .z-view.is-last-view        ← two levels up (dimmed)
+├── .z-view.is-previous-view    ← the parent, scaled up so its trigger fills the screen
+│   └── .zoom-me.zoomed         ← the trigger you came through
+└── .z-view.is-current-view     ← the view you are in
+```
+
+Rules:
+
+- The canvas is the only element Zumly writes classes and transforms to, besides the views. Do not scroll it or its ancestors: use `overflow: clip` (not `hidden`) on containers around it.
+- A view should have one root element. If a template has several roots, Zumly wraps them in a `.z-view`.
+- View names are the keys of `views`. A `data-to` with a hyphen that is not a key is treated as a custom element tag.
+- Background views are inert: they do not take clicks or focus until they are current again. Clicking the visible parent around the current view zooms out.
+
+## Views
+
+Each entry in `views` is a view source. Zumly resolves it to a DOM node when the view is needed.
+
+| Source | Example | Cached |
+| --- | --- | --- |
+| HTML string | `'<div class="z-view">…</div>'` | Yes |
+| URL | `'/views/detail.html'`, `'https://…'` | Yes, 5 minutes |
+| Function | `(ctx) => '<div>…</div>'`, or fill `ctx.target` | No |
+| Object | `{ render (ctx) { … }, mounted (node) { … } }` | No |
+| Element | `document.querySelector('#tpl')` (cloned) | No |
+| Custom element | `'my-view'` (a tag, not a key in `views`) | No |
+
+Cached views are prefetched in the background: on hover or focus over a trigger, and for every trigger of a view when it becomes current. Functions, objects and custom elements are never rendered speculatively. `preload: ['a', 'b']` resolves views during `init()`.
+
+### Function and object views
+
+A function or `render()` receives a context:
+
+| Field | Purpose |
+| --- | --- |
+| `target` | A fresh `<div>` you can render into. If the function returns nothing, `target` is the view: give it your classes (`target.className = 'z-view card'`) and put only the content inside. Without classes it fills the canvas. |
+| `props` | The trigger's `data-*` attributes: `data-id="42"` → `props.id === '42'`. From `goTo()` and `zoomTo()`, the `props` option. |
+| `trigger` | The trigger element, when the navigation came from one. |
+| `context` | The `componentContext` option, shared by every view: a store, a router, an API client. |
+| `onCleanup(fn)` | Runs `fn` once when the view is discarded. Unmount components and stop timers here. |
+| `onActivate(fn)` | Runs `fn` each time the view becomes current again without being rendered anew: after zooming back out to it, or when a kept-alive sibling returns. |
+
+Views behind the current one stay in the DOM and are not rendered again. If something changes while the user is deeper, keep the state outside the view and repaint in `onActivate`:
 
 ```js
-transitions: {
-  driver: 'css',       // 'css' | 'waapi' | 'anime' | 'gsap' | 'motion' | 'none' or custom function(spec, onComplete)
-  cover: 'width',      // or 'height' — how the previous view scales to cover the trigger
-  duration: '1s',
-  ease: 'ease-in-out',
-  effects: ['blur(3px) brightness(0.7)', 'blur(8px) saturate(0)'],  // CSS filters for [previous, last] background views
-  stagger: 0,          // delay (ms) between layers during transition
-  hideTrigger: false,  // false | true (visibility:hidden) | 'fade' (opacity crossfade)
-  // threshold: { enabled: true, duration: 300, commitAt: 0.5 }  // parsed but not wired in the engine yet
+const state = { temperature: 21 }
+
+const views = {
+  room: ({ target, onActivate }) => {
+    target.className = 'z-view room'   // target is the view: style it, fill it with content
+    const paint = () => {
+      target.innerHTML = `<h1>${state.temperature}°</h1>
+        <button class="zoom-me" data-to="thermostat">Adjust</button>`
+    }
+    paint()
+    onActivate(paint)
+  },
+  thermostat: ({ target }) => {
+    target.className = 'z-view thermostat'
+    target.innerHTML = '<input type="range" min="15" max="30">'
+    target.querySelector('input').addEventListener('input', e => { state.temperature = e.target.value })
+  }
 }
 ```
 
-`transitions.parallax` is accepted for compatibility but **not applied** (reserved; intensity is fixed to `0` in the engine).
+Object views call `mounted(node)` after the view is in the canvas, which is the place to measure it.
 
-**Transition drivers:** Zoom animations are handled by a pluggable driver (`transitions.driver`). You can swap implementations without changing app logic. To author your own, see [docs/DRIVER_API.md](docs/DRIVER_API.md) and the `zumly/driver-helpers` export.
+### Frameworks
 
-| Driver | Description |
-|--------|-------------|
-| `'css'` (default) | CSS keyframes and `animationend`; uses `zumly.css` variables. |
-| `'waapi'` | Web Animations API (`element.animate()`). No extra dependency. |
-| `'none'` | No animation; applies final state immediately. Useful for tests or instant UX. |
-| `'anime'` | [Anime.js](https://animejs.com/) — requires global `anime` (load from CDN before use). |
-| `'gsap'` | [GSAP](https://greensock.com/gsap/) — requires global `gsap` (load from CDN before use). |
-| `'motion'` | [Motion](https://motion.dev/) — requires global `Motion` (load from CDN before use). |
-| `function(spec, onComplete)` | Custom driver. Receives `{ type, currentView, previousView, lastView, currentStage, duration, ease }` and must call `onComplete()` when done. |
+Mount a component into `ctx.target` and unmount it in `onCleanup`:
 
-> Note: only the `css` and `waapi` drivers animate **lateral** navigation with a slide; `anime`, `gsap`, `motion` and `none` perform lateral moves instantly.
+```jsx
+import { createRoot } from 'react-dom/client'
 
-Example with instant transitions (e.g. for tests):
-
-```js
-const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
-  views: { home, detail },
-  transitions: { driver: 'none', duration: '0s' },
-});
+views: {
+  dashboard: ({ target, props, onCleanup }) => {
+    const root = createRoot(target)
+    onCleanup(() => root.unmount())
+    root.render(<Dashboard id={props.id} />)
+  }
+}
 ```
 
-**Lateral navigation (arrows + dots bar):**
+The same pattern works with Vue (`createApp(...).mount(target)` / `unmount()`), Svelte (`new Component({ target })` / `$destroy()` or `mount` / `unmount`) and Angular (`createComponent` / `destroy()`). `mount` also accepts an element, such as a React ref. Guides: [React](https://zumerlab.github.io/zumly/integrations/react.html) · [Vue](https://zumerlab.github.io/zumly/integrations/vue.html) · [Svelte](https://zumerlab.github.io/zumly/integrations/svelte.html) · [Angular](https://zumerlab.github.io/zumly/integrations/angular.html).
+
+## Navigating
+
+Users navigate with clicks or taps on triggers, Enter or Space on a focused trigger, the wheel or ArrowLeft to zoom out, a swipe to the left, and the built-in back button and sibling bar. From code:
+
+| Method | Does |
+| --- | --- |
+| `zoomIn(triggerElement)` | Zoom into the trigger's view, from the trigger. Use it to open a view from code while keeping its origin. |
+| `zoomTo(name, { props, duration, ease })` | Zoom into a view from the center of the canvas. |
+| `goTo(name, { mode: 'lateral' })` | Move to a sibling at the same level. `goTo(name)` without `mode` is `zoomTo`. |
+| `zoomOut()` | Zoom out one level. |
+| `back()` | Undo the last lateral move at this level, or zoom out. |
+| `canGoBack()` | Whether `back()` would do anything. |
+| `getCurrentViewName()`, `zoomLevel()` | Where the user is. Level 1 is the initial view. |
+
+Every method returns a promise that settles when the transition ends. A call made while another navigation runs is ignored, so await calls you chain:
 
 ```js
-lateralNav: true                            // mode: 'auto' (default), bottom-center
-lateralNav: false                           // disabled
-lateralNav: { mode: 'always' }              // always show when siblings exist
-lateralNav: { mode: 'auto', dots: false }   // auto mode, no dots
-lateralNav: { position: 'top-center' }      // top instead of bottom
-lateralNav: { siblings: ['today', 'tomorrow', 'week'] }        // declared sibling order
-lateralNav: { siblings: { home: ['today', 'tomorrow', 'week'] } } // per-parent groups
+await app.zoomTo('settings')
+await app.goTo('profile', { mode: 'lateral' })
+await app.back()
 ```
 
-| Mode | Description |
-|------|-------------|
-| `'auto'` (default) | Shows lateral nav only when the current view doesn't cover the full canvas — preserving spatial context. |
-| `'always'` | Always shows lateral nav when siblings exist, regardless of coverage. |
+### Triggers
 
-Position: `'bottom-center'` (default) or `'top-center'`.
+| Attribute | Purpose |
+| --- | --- |
+| `data-to` | **Required.** The view to open. |
+| `data-with-duration`, `data-with-ease` | This transition's duration and easing. |
+| `data-with-cover` | `"width"` or `"height"`: which side of the trigger covers the new view. |
+| `data-with-stagger` | Delay in ms between layers. |
+| `data-with-effects` | Filters for the background layers, separated by `\|`. |
+| `data-hide-trigger` | Hide the trigger during the zoom; `"fade"` crossfades it. |
+| `data-deferred` | Insert the view's content after the zoom instead of before. |
+| `data-*` | Anything else reaches the view as `props`. |
 
-`siblings` declares the sibling order for lateral navigation. It takes precedence over inferring the order (and slide direction) from trigger positions in the parent view — non-adjacent jumps slide proportionally further. Use an array for a single lateral group, or a map keyed by parent view name for per-parent groups.
+Triggers that are not buttons or links get `role="button"` and `tabindex="0"`.
 
-**Depth navigation (back button):**
+### Siblings
+
+The siblings of the current view are the other triggers in its parent. The sibling bar (`lateralNav`) shows arrows and dots for them, and the slide direction follows where the triggers are. To set the order yourself, declare it:
 
 ```js
-depthNav: true                              // default: back button at bottom-left
-depthNav: false                             // disabled
-depthNav: { position: 'top-left' }          // top instead of bottom
+lateralNav: { siblings: { home: ['today', 'tomorrow', 'week'] } }
 ```
 
-Position: `'bottom-left'` (default) or `'top-left'`. The depth and lateral nav are separate, independently positioned components.
+By default the bar appears only when the current view does not cover the canvas (`mode: 'auto'`), so a full-screen view keeps the screen to itself. `mode: 'always'` shows it whenever there are siblings. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level.
 
-**Zoomable elements:**
+### Gestures
 
-- Give the view root the class `z-view`.
-- Add class `zoom-me` and `data-to="viewName"` to the element that triggers zoom-in.
-- Per-trigger overrides via `data-*` attributes:
+A swipe to the left zooms out, except when it starts on a text field, a slider, an element that scrolls horizontally, or inside an element with `data-no-swipe`. Use `data-no-swipe` on your own drag areas (a knob, a carousel). `inputs: { wheel: false, touch: false, keyboard: false, click: false }` turns an input off.
 
-| Attribute | Description |
-|-----------|-------------|
-| `data-to` | **Required.** Target view name. |
-| `data-with-duration` | Override transition duration (e.g. `"2s"`). |
-| `data-with-ease` | Override easing function. |
-| `data-with-cover` | Override cover dimension (`"width"` or `"height"`). |
-| `data-with-stagger` | Override stagger delay in ms (e.g. `"100"`). |
-| `data-with-effects` | Override effects (pipe-separated: `"blur(5px)\|blur(10px)"`). |
-| `data-hide-trigger` | Override hideTrigger (`"fade"` or presence = hide). |
-| `data-deferred` | Override deferred rendering (presence = true). |
-| `data-*` | Any other data attribute becomes a prop in `ViewContext.props`. |
+## Events
+
+```js
+app.on('viewChanged', ({ type, viewName, from, zoomLevel, node }) => {
+  document.title = viewName
+})
+```
+
+| Event | Data |
+| --- | --- |
+| `viewChanged` | After every navigation and after `init()`: `type` (`'init'`, `'zoomIn'`, `'zoomOut'`, `'lateral'`), `viewName`, `from`, `zoomLevel`, `node`. |
+| `viewMounted` | A view was inserted: `viewName`, `node`. |
+| `beforeZoomIn` / `afterZoomIn` | `viewName`, and `zoomLevel` after. |
+| `beforeZoomOut` / `afterZoomOut` | `viewName` (the view returned to), `from`, `zoomLevel`. |
+| `beforeLateral` / `afterLateral` | `viewName`, `from`, `isBack`. |
+| `destroy` | The instance is being destroyed. |
+
+`on()` and `off()` are chainable; `off(event)` removes every handler for that event.
+
+## Transitions
+
+```js
+transitions: {
+  duration: '800ms',             // CSS time, or a number of milliseconds
+  ease: 'cubic-bezier(.2,.8,.2,1)',
+  effects: ['blur(3px) brightness(.6)', 'blur(8px) brightness(.3)'], // filters for the previous and the older view
+  cover: 'width',                // which side of the trigger covers the new view
+  stagger: 0,                    // ms between layers
+  hideTrigger: false,            // true, or 'fade'
+  driver: 'css'
+}
+```
+
+The driver animates the transforms that Zumly computes. Every driver follows the same curve for the same CSS `ease`, so you can switch drivers without retuning motion.
+
+| Driver | Notes |
+| --- | --- |
+| `'css'` (default) | CSS keyframes. |
+| `'waapi'` | Web Animations API. |
+| `'none'` | No animation. Used automatically when the user prefers reduced motion. |
+| `'anime'` | [Anime.js](https://animejs.com/) v4 or v3, from the global `anime`. Also accepts Anime.js ease names (`'outExpo'`). |
+| `'gsap'` | [GSAP](https://gsap.com/), from the global `gsap`. Also accepts GSAP ease names (`'power3.inOut'`). |
+| `'motion'` | [Motion](https://motion.dev/), from the global `Motion`. Also accepts Motion easings (`'backOut'`). |
+| a function | Your own driver: `(spec, onComplete) => { … }`. See [docs/DRIVER_API.md](docs/DRIVER_API.md). |
+
+With a bundler there is no global. Pass the library instead:
+
+```js
+import { gsap } from 'gsap'
+import { gsapDriver } from 'zumly'      // also animeDriver, motionDriver
+
+new Zumly({ /* … */ transitions: { driver: gsapDriver(gsap) } })
+```
+
+Only `css` and `waapi` animate lateral moves; the other drivers make them instantly.
+
+## With Orbit
+
+[Orbit](https://github.com/zumerlab/orbit) places elements around a center. Its arcs, rings and satellites work inside Zumly views without glue code: put a `.bigbang` in a view, and make satellites (or their capsules) triggers.
 
 ```html
-<div class="z-view">
-  <div class="zoom-me" data-to="detail"
-       data-with-duration="2s"
-       data-with-ease="ease-in"
-       data-with-cover="height"
-       data-with-stagger="100"
-       data-id="42">
-    Zoom in
+<div class="z-view dial">
+  <div class="bigbang">
+    <div class="gravity-spot">
+      <div class="orbit-7">
+        <div class="satellite"><div class="capsule zoom-me" data-to="lights">Lights</div></div>
+        <div class="satellite"><div class="capsule zoom-me" data-to="climate">Climate</div></div>
+        <div class="satellite"><div class="capsule zoom-me" data-to="security">Security</div></div>
+      </div>
+      <div class="orbit-10"><o-arc></o-arc><o-arc></o-arc><o-arc></o-arc></div>
+    </div>
   </div>
 </div>
 ```
 
-### View sources
+The satellites become siblings, so the sibling bar moves around the ring. The [Orbit integration guide](https://zumerlab.github.io/zumly/integrations/orbit-css.html) covers sizing, state, depth layers and touch, and [demos/orbit-dial.html](demos/orbit-dial.html) is a working example.
 
-Each entry in `views` is a **view source**. The resolver detects the type and resolves to a DOM node. Hyphenated view names (e.g. `'my-dashboard'`) are resolved as keys in `views` first; only raw template strings with a hyphen are treated as web components.
-
-| Type | Example | Cached? |
-|------|---------|---------|
-| **HTML string** | `'<div class="z-view">…</div>'` | Yes (indefinitely) |
-| **URL** | `'/views/detail.html'`, `https://…` | Yes (5 min TTL) |
-| **Async function** | `(ctx) => fetch(...).then(r => r.text())` or return `HTMLElement` | No |
-| **Object with `render()`** | `{ render(ctx) { return '<div>…</div>' }, mounted?() }` | No |
-| **Web component** | `'my-view'` (string with hyphen, not a key in `views`) | No |
-| **DOM element** | `document.createElement('div')` | No; cloned on resolution |
-
-**View pipeline:** Resolve → normalize `.z-view` → insert into canvas → call `mounted()` (if present). Static/URL views are cloned on every retrieval, including simultaneous requests. DOM element sources are also cloned; listeners attached directly to the original element are not copied.
-
-### Framework integration
-
-Use **function views** or **object views** to mount framework components. Register their teardown with `onCleanup()` so the framework releases its resources when the view is discarded:
-
-**React**
-
-```jsx
-import { createRoot } from 'react-dom/client'
-import Dashboard from './Dashboard'
-
-const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
-  views: {
-    home: '<div class="z-view"><div class="zoom-me" data-to="dashboard" data-id="42">Open</div></div>',
-    dashboard: ({ target, props, onCleanup }) => {
-      const root = createRoot(target)
-      onCleanup(() => root.unmount())
-      root.render(<Dashboard id={props.id} />)
-    }
-  }
-})
-```
-
-**Vue**
+## Router
 
 ```js
-import { createApp } from 'vue'
-import Dashboard from './Dashboard.vue'
-
-views: {
-  dashboard: ({ target, props, onCleanup }) => {
-    const component = createApp(Dashboard, { id: props.id })
-    onCleanup(() => component.unmount())
-    component.mount(target)
-  }
-}
+app.use(Zumly.Router)              // script tag
+// import { ZumlyRouter } from 'zumly'; app.use(ZumlyRouter)
 ```
 
-**Svelte**
+The router writes the path to the hash (`#/home/rooms/kitchen`) and makes the browser back button navigate back, laterally or out. Forward and opening a deep URL directly are not supported: a zoom needs the trigger it comes from. Options: `prefix` (default `'/'`) and `separator` (default `'/'`). Hash entries the router did not write are left alone.
 
-```js
-import Dashboard from './Dashboard.svelte'
+## Troubleshooting
 
-views: {
-  dashboard: ({ target, props, onCleanup }) => {
-    const component = new Dashboard({ target, props: { id: props.id } })
-    onCleanup(() => component.$destroy())
-  }
-}
-```
+| You see | Fix |
+| --- | --- |
+| Nothing, and "the canvas is W×0px" in the console | The canvas fills its nearest positioned ancestor. Give that container `position: relative` and a height. |
+| `data-to="x": view "x" is not defined` | A typo in `data-to`, or a view missing from `views`. The message suggests the closest name. |
+| Zooms land displaced after a while | Something scrolled the canvas or an ancestor. Use `overflow: clip` on those containers. |
+| "unknown option 'x' is ignored" | A misspelled option; the message suggests the right one. |
+| A view looks stale after zooming out | Views behind are not rendered again. Repaint in `onActivate`. |
+| A slider or carousel zooms out when dragged | Add `data-no-swipe` to it, or turn off `inputs.touch`. |
+| The anime, gsap or motion driver does not animate | The library is not loaded as a global. Load it before Zumly, or pass it with `animeDriver(anime)`, `gsapDriver(gsap)` or `motionDriver({ animate })`. |
 
-**Angular**
+`debug: true` also logs each navigation step.
 
-```ts
-views: {
-  dashboard: ({ target, props, onCleanup }) => {
-    const compRef = viewContainerRef.createComponent(DashboardComponent)
-    onCleanup(() => compRef.destroy())
-    compRef.instance.id = props.id
-    target.appendChild(compRef.location.nativeElement)
-  }
-}
-```
+## Accessibility
 
-**Key points:**
+Triggers are keyboard reachable. Background views are `inert` and hidden from assistive technology. After each navigation, focus moves to the first control of the new view. With `prefers-reduced-motion: reduce`, transitions are instant. If you build custom controls, give them labels and keyboard behavior.
 
-- The `target` parameter is a fresh `<div>` created by Zumly. When a function mounts into it and returns nothing, Zumly preserves that container and all its children. It defaults to the canvas width and height; set `target.style.width` and `target.style.height` for a smaller view.
-- `props` contains data attributes from the trigger element (`data-id="42"` → `props.id`).
-- `componentContext` (constructor option) is passed as `context` to all function/object views — use it for shared state (router, store, API client).
-- Function/object views are **never cached or prefetched** — they render only when requested by navigation. Initial views receive the same context contract, with empty `props`.
-- Call `onCleanup(fn)` to register unmount, unsubscribe, or timer cleanup. Callbacks run once when the view is permanently removed, rendering fails, an abandoned async result arrives, or the instance is destroyed. Temporarily detached depth views and kept-alive lateral views retain their resources until discarded. Async callbacks are started without waiting for them.
-- Use `mounted()` (object views) for post-insertion setup — it runs after the node is in the DOM.
-- Returning an `HTMLElement` from a function or `render()` transfers that resolved view instance to Zumly; prefer `onCleanup()` over relying on DOM removal to unmount framework components.
+## Options
 
-### Preload and prefetch
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `mount` | — | **Required.** Selector or element of the canvas. |
+| `initialView` | — | **Required.** Name of the first view. |
+| `views` | — | **Required.** Map of names to view sources. |
+| `transitions` | see above | Duration, easing, effects, driver. |
+| `lateralNav` | `{ mode: 'auto' }` | Sibling bar: `mode`, `arrows`, `dots`, `position` (`'bottom-center'`, `'top-center'`), `keepAlive`, `siblings`. `false` hides it. |
+| `depthNav` | `{ position: 'bottom-left' }` | Back button; `position` is `'bottom-left'` or `'top-left'`. `false` hides it. It always zooms out. |
+| `inputs` | all `true` | `click`, `keyboard`, `wheel`, `touch`. `false` turns all off. |
+| `preload` | `[]` | Views to resolve during `init()`. |
+| `componentContext` | `new Map()` | Shared `context` for function and object views. |
+| `deferred` | `false` | Insert view content after the zoom. |
+| `debug` | `false` | Log navigation steps. |
 
-- **Eager preload:** `preload: ['viewA', 'viewB']` — static HTML and URL views are resolved and cached during `init()`; dynamic views and custom elements are skipped.
-- **Hover prefetch:** `mouseover` on a `.zoom-me[data-to]` trigger prefetches its target in the background.
-- **Focus prefetch:** `focusin` on a `.zoom-me[data-to]` also prefetches (for keyboard/accessibility).
-- **Scan prefetch:** When a view becomes current, its unique `.zoom-me[data-to]` targets enter a background queue. This works on touch devices where hover is unavailable. The queue keeps up to 32 pending targets and starts at most two resolutions concurrently, yielding between starts.
+Full types are in [types/zumly.d.ts](types/zumly.d.ts). `destroy()` removes listeners and navigation UI; the DOM inside the canvas stays yours.
 
-All prefetch strategies skip functions, objects, and custom elements to avoid rendering components speculatively.
+## Limitations
 
-Prefetch warms a template without cloning it. Navigation gets an independent clone when it needs the view. New speculative work pauses during navigation and resumes after completion; a requested view can load immediately without waiting for a queue slot. Already-running requests may still finish. Explicit `preload` remains eager.
-
-The template cache holds up to 64 entries, evicts the least recently used, and expires URL responses after five minutes. Eviction only affects reusable templates: mounted views, form values, history, and `keepAlive` nodes stay intact. An evicted or unprefetched target resolves normally when visited.
-
-### Navigation completion and accessibility
-
-`zoomTo()`, `zoomIn()`, `goTo()`, `zoomOut()`, and `back()` return promises that settle after the transition and its completion hooks. Await each call when navigating through several views:
-
-```js
-await app.zoomTo('detail')
-await app.zoomTo('deep')
-await app.back()
-```
-
-Calls made while another view is loading or animating are ignored. Failed navigation resolves after recovery and reports the error through Zumly's diagnostics. `init()` is idempotent, and `destroy()` releases pending navigation promises and discards late view results.
-
-Generic `.zoom-me` triggers receive keyboard focus and support Enter/Space. Native buttons and links retain their semantics; navigation controls also support keyboard activation. Arrow navigation ignores text inputs and editable controls. Background views become `inert` and hidden from assistive technology until active again. Focus moves to the first usable control in the current view, or to the view itself. Zumly uses instant transitions when `prefers-reduced-motion: reduce` is active.
-
-### Plugins
-
-Zumly has a lightweight plugin system. Register plugins with `.use()` before or after `init()`:
-
-```js
-app.use(plugin, options)
-```
-
-A plugin is an object with `install(instance, options)` or a plain function `(instance, options) => void`.
-
-#### Router plugin
-
-Syncs the browser URL hash with Zumly's navigation state. Browser back triggers zoom-out or lateral navigation. Forward is intentionally blocked — in a ZUI, zoom-in requires a trigger element for proper origin and animation context.
-
-```js
-// Script tag
-const app = new Zumly({ ... })
-app.use(Zumly.Router)
-await app.init()
-
-// ES Module (named export from the package entry)
-import { Zumly, ZumlyRouter } from 'zumly'
-const app = new Zumly({ ... })
-app.use(ZumlyRouter)
-await app.init()
-```
-
-The UMD/IIFE bundle attaches the same plugin as `Zumly.Router`. There is no separate published subpath for the router; import it from `'zumly'` or use `Zumly.Router` on `window` when using a script tag.
-
-**Options:**
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `separator` | string | `'/'` | Character used to join view path segments in the hash. |
-| `prefix` | string | `'/'` | Prefix before the path in the hash. |
-
-**Behavior:**
-
-| Action | Hash update | History |
-|--------|-------------|---------|
-| Zoom in | `pushState` | Enables browser back |
-| Lateral | `pushState` | Enables browser back |
-| Zoom out | `replaceState` | No forward entry |
-| Browser back | Triggers `zoomOut()` or lateral `goTo()` | — |
-| Browser forward | Blocked (`history.back()`) | — |
-
-**Example URL:** `#/home/showcases/mercedes`
-
-### Limitations and non-goals
-
-- **No deep-linking:** The router plugin syncs hash on navigation and supports browser back, but does not support forward or deep-linking (entering a multi-level URL directly). In a ZUI, zoom-in requires a trigger element for proper spatial context.
-- **Resize handling:** Cheap correction when canvas resizes — translate and origin scaled by ratio; scale preserved. Correction is deferred if a transition is running.
-- **Remote views:** URL-backed views use `innerHTML`; sanitize external content to avoid XSS.
+- No cold deep links: the router cannot open `#/a/b/c` from scratch.
+- URL views are inserted with `innerHTML` and their scripts do not run. Sanitize remote HTML.
+- Zumly animates three levels at a time; deeper levels reappear on the way back.
 
 ## Development
 
-### Requirements
-
-- Use Node.js 22+ for development. The distributed package entry points support Node.js >= 18; constructing a Zumly instance requires a browser DOM.
-
-### Commands
-
 ```sh
-# Build the library
-npm run compile
-
-# Build and serve the demo at http://localhost:9090
-npm run dev
-
-# Run tests (Vitest + Playwright). Install browsers first:
-npm run test:install-browsers
-npm run test
-
-# Run the suite in Chromium, Firefox, and WebKit
-npm run test:browsers
-
-# Compile and verify the installed npm tarball's public exports
-npm run test:pack
-
-# Run tests with coverage
-npm run test:coverage
-
-# Build and pack for publish
-npm run build
+npm run compile                  # build dist/
+npm run dev                      # build and serve at http://localhost:9090 (demos at /demos/)
+npm run test:install-browsers    # once
+npm test                         # Vitest in Chromium
+npm run test:browsers            # Chromium, Firefox and WebKit
+npm run test:pack                # check the published package
 ```
 
-Tests use [Vitest](https://vitest.dev/) with the browser provider ([Playwright](https://playwright.dev/)). Run `npm run test:install-browsers` once (or after upgrading Playwright) to install Chromium, Firefox, and WebKit. `npm test` defaults to Chromium; `BROWSER=firefox` or `BROWSER=webkit` selects an individual engine. Run `npm run test:browsers` and `npm run test:pack` locally to check all three engines and the package exports.
-
-### Building
-
-```sh
-npm run compile
-```
-
-Output is in the `dist/` folder.
-
-`npm run build` compiles via `prepack` and creates a local tarball. It does not commit, push, or publish.
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history.
-
-## Roadmap
-
-**Done:**
-- Depth and lateral navigation (`zoomIn`, `zoomOut`, `goTo`, `back`, `zoomTo`)
-- Lateral nav bar (`lateralNav`: `mode` auto/always, arrows, dots, `keepAlive`, `position`)
-- Depth back button (`depthNav`: `position` bottom-left/top-left)
-- Inputs toggles (`inputs`: wheel, keyboard, click, touch)
-- Plugin system (`use()`), router plugin (hash sync, back, forward blocked)
-- Resize correction (translate/origin scaling; deferred while transitioning)
-- Pluggable drivers (CSS, WAAPI, none, Anime.js, GSAP, Motion, custom)
-- Batched zoom-out reads + math helpers to reduce reflow (see [geometry-optimization.md](docs/geometry-optimization.md))
-- Keyboard trigger activation, focus management, inactive-view isolation, and reduced-motion support
-- Per-view resource cleanup with `ViewContext.onCleanup()`
-
-**Planned:**
-- Router deep-linking (open a multi-level hash cold)
-- Further accessibility testing with assistive technologies
-
-Details and more topics: [docs/roadMap.md](docs/roadMap.md). Driver contract and helpers: [docs/DRIVER_API.md](docs/DRIVER_API.md).
-
-## Community
-
-- [Telegram group](https://t.me/ZumlyCommunity)
+Use Node.js 22 for development; the package supports Node.js 18 and later. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
 
 ## Origin
 
-Zumly is a reimagined, framework-agnostic zoom engine inspired by [Zircle UI](https://github.com/zircleUI/zircleUI). Part of the [Zumerlab](https://github.com/zumerlab) ecosystem — use it with [Orbit](https://github.com/zumerlab/orbit) for radial layouts and [SnapDOM](https://github.com/zumerlab/snapdom) for DOM-to-image capture. Use [SnapDIFF](https://github.com/zumerlab/snapdiff) to compare captures for visual regression testing.
+Zumly is a reimagined, framework-agnostic zoom engine inspired by [Zircle UI](https://github.com/zircleUI/zircleUI). It is part of [Zumerlab](https://github.com/zumerlab), with [Orbit](https://github.com/zumerlab/orbit) for radial layouts, [SnapDOM](https://github.com/zumerlab/snapdom) for DOM capture and [SnapDIFF](https://github.com/zumerlab/snapdiff) for visual comparison. Community: [Telegram](https://t.me/ZumlyCommunity).
 
 ## License
 

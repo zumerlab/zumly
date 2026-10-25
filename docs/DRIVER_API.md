@@ -133,6 +133,8 @@ function runTransition(spec, onComplete) {
 }
 ```
 
+Animation libraries run on `requestAnimationFrame`, which stops in hidden tabs. Start the deadline from the first frame you paint (`guard.extend(ms)`), so a slow first frame on a heavy page does not cut the animation short, and ignore your library's callbacks once the guard has finished: a late `onUpdate` must never paint over the next navigation. The built-in anime, gsap and motion drivers do this.
+
 *(In this repo, you can import from `../src/drivers/driver-helpers.js` from your own source files.)*
 
 ### 2. Apply final DOM state after animation
@@ -192,12 +194,25 @@ Import from `zumly/driver-helpers` (published) or `src/drivers/driver-helpers.js
 | `parseDurationSec(duration)` | Same but returns seconds |
 | `applyZoomInEndState(el, stage)` | Apply final classes + transforms after zoom-in |
 | `applyZoomOutPreviousState(el, state)` | Final state for previous view after zoom-out |
-| `applyZoomOutLastState(el, state)` | Final state for last view after zoom-out |
+| `applyZoomOutLastState(el, state)` | Final state for last view after zoom-out (keeps its background effect) |
 | `removeViewFromCanvas(el, canvas)` | Safe removal (handles wrapped elements) |
 | `showViews(...elements)` | Remove `hide` class + set `contentVisibility: auto` |
 | `runLateralInstant(spec, onComplete)` | Instant lateral transition (no animation) |
-| `createFinishGuard(cleanup, timeoutMs)` | Once-only finish + safety timeout |
+| `createFinishGuard(cleanup, timeoutMs)` | Once-only finish + safety timeout; `extend(ms)` moves the deadline |
 | `SAFETY_BUFFER_MS` | Default safety buffer (150ms) |
+| `cssEasing(ease)` | CSS timing function → `t => eased t` (`linear`, keywords, `cubic-bezier()`, `steps()`, `linear()`); `null` for non-CSS names such as `'power2.out'` |
+| `cubicBezier(x1, y1, x2, y2)`, `steps(n, position)` | The curves behind `cssEasing` |
+
+### Matching the CSS curve
+
+`spec.ease` is a CSS timing function unless the user chose a library ease name. To move exactly like the CSS and WAAPI drivers, tween a linear 0 → 1 progress and apply `cssEasing(spec.ease)` per layer yourself; pass the string to your library only when `cssEasing` returns `null`:
+
+```js
+import { cssEasing } from 'zumly/driver-helpers'
+
+const curve = cssEasing(spec.ease)          // null for 'power2.out' etc.
+myLib.tween({ ease: curve ? 'linear' : spec.ease, onUpdate: p => paint(curve ? curve(p) : p) })
+```
 
 ### Matrix interpolation toolkit
 

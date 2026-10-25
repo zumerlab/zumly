@@ -35,10 +35,18 @@
     <div class="install-block">
       <h3>Hello World</h3>
       <div class="code-wrap">
-<pre><span class="kw">const</span> app = <span class="kw">new</span> Zumly({
+<pre>&lt;!-- The canvas fills its nearest positioned ancestor: give it a size --&gt;
+&lt;div style="position: relative; height: 100vh"&gt;
+  &lt;div class="canvas zumly-canvas"&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+<span class="kw">const</span> app = <span class="kw">new</span> Zumly({
   mount: <span class="str">'.canvas'</span>,
   initialView: <span class="str">'home'</span>,
-  views: { home, detail }
+  views: {
+    home: <span class="str">'&lt;div class="z-view"&gt;&lt;b class="zoom-me" data-to="detail"&gt;Open&lt;/b&gt;&lt;/div&gt;'</span>,
+    detail: <span class="str">'&lt;div class="z-view"&gt;Detail&lt;/div&gt;'</span>
+  }
 })
 <span class="kw">await</span> app.init()</pre>
         <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.querySelector('pre').textContent);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>

@@ -239,3 +239,9 @@ footer {
   main { padding: 32px 20px 60px; }
   .hero { margin-bottom: 40px; }
 }
+
+/* Tables in guide sections */
+section table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.92rem; display: block; overflow-x: auto; }
+section th, section td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-mid); }
+section th { color: var(--text); font-weight: 600; }
+section td:first-child { white-space: nowrap; color: var(--text); }

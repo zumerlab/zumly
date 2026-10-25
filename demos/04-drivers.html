@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Drivers</title>
+  <link rel="stylesheet" href="../dist/zumly.css">
+  <link rel="stylesheet" href="demo.css">
+  <!-- Library drivers read these globals. With a bundler, pass the library: gsapDriver(gsap). -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@4.2.2/dist/bundles/anime.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/motion@11.18.2/dist/motion.js"></script>
+  <script src="../dist/zumly.js"></script>
+  <style>
+    .home { width: 100%; height: 100%; display: grid; place-items: center; }
+    .row { display: flex; gap: 5vw; }
+    .row .zoom-me { width: 16vw; aspect-ratio: 1; display: grid; place-items: center; }
+    .box { width: min(64vw, 480px); aspect-ratio: 1; display: grid; place-items: center; text-align: center; padding: 24px; }
+  </style>
+</head>
+<body>
+  <header class="demo">
+    <h1>04 · Drivers</h1>
+    <p>The driver animates the transforms Zumly computes. With a CSS easing, every driver follows the same curve; library drivers also take their own ease names. <a href="./">All demos</a></p>
+  </header>
+  <div class="controls">
+    <label>driver
+      <select id="driver"><option>css</option><option>waapi</option><option>anime</option><option>gsap</option><option>motion</option><option>none</option></select>
+    </label>
+    <label>ease
+      <select id="ease">
+        <option>cubic-bezier(.2,.8,.2,1)</option><option>ease-in-out</option><option>linear</option><option>steps(6)</option>
+        <option value="outElastic(1, .6)">outElastic (anime)</option><option value="elastic.out(1, .4)">elastic.out (gsap)</option><option value="backOut">backOut (motion)</option>
+      </select>
+    </label>
+    <label>stagger <select id="stagger"><option>0</option><option>120</option></select></label>
+    <span class="log" id="log"></span>
+  </div>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const views = {
+      home: `<div class="z-view home"><div class="row">
+        <div class="card zoom-me" data-to="one">One</div><div class="card zoom-me" data-to="two">Two</div><div class="card zoom-me" data-to="three">Three</div>
+      </div></div>`,
+      one: '<div class="z-view card box"><div><h2>One</h2><p>Zoom out and try another driver.</p></div></div>',
+      two: '<div class="z-view card box"><div><h2>Two</h2><p>Only css and waapi animate lateral moves.</p></div></div>',
+      three: '<div class="z-view card box"><div><h2>Three</h2><p>A library ease name with the css driver falls back, with a console warning.</p></div></div>'
+    }
+    let app
+    const pick = id => document.getElementById(id).value
+    function start () {
+      app?.destroy()
+      document.querySelector('.canvas').replaceChildren()
+      app = new Zumly({
+        mount: '.canvas',
+        initialView: 'home',
+        views,
+        transitions: { driver: pick('driver'), ease: pick('ease'), duration: 900, stagger: Number(pick('stagger')), effects: ['brightness(.6)', 'brightness(.35)'] },
+        lateralNav: { mode: 'always' }
+      })
+      document.getElementById('log').textContent = `driver: ${pick('driver')} · ease: ${app.ease}`
+      app.init()
+    }
+    for (const id of ['driver', 'ease', 'stagger']) document.getElementById(id).onchange = start
+    start()
+  </script>
+</body>
+</html>
