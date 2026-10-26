@@ -13,11 +13,12 @@ import { ViewResolver } from './view-resolver.js'
 import { disposeView } from './view-lifecycle.js'
 import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSyntax, isValidCssEasing } from './diagnostics.js'
 
-const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels']
+const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures']
 const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'parallax', 'hideTrigger']
 const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings']
 const DEPTH_NAV_KEYS = ['position']
-const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch']
+const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch', 'pinch']
+const GESTURE_KEYS = ['follow', 'threshold']
 const LABEL_KEYS = ['back', 'prev', 'next', 'goTo']
 /** Accessible names of the navigation controls. {title} and {name} name the target view. */
 const DEFAULT_LABELS = { back: 'Back to {title}', prev: 'Previous sibling view', next: 'Next sibling view', goTo: 'Go to {title}' }
@@ -207,6 +208,7 @@ export function checkParameters (parameters, instance) {
   if (parameters.depthNav && typeof parameters.depthNav === 'object') warnUnknownKeys(parameters.depthNav, DEPTH_NAV_KEYS, 'depthNav.')
   if (parameters.inputs && typeof parameters.inputs === 'object') warnUnknownKeys(parameters.inputs, INPUT_KEYS, 'inputs.')
   if (parameters.labels && typeof parameters.labels === 'object') warnUnknownKeys(parameters.labels, LABEL_KEYS, 'labels.')
+  if (parameters.gestures && typeof parameters.gestures === 'object') warnUnknownKeys(parameters.gestures, GESTURE_KEYS, 'gestures.')
 
   // Optional
   instance.preload = Array.isArray(parameters.preload) ? parameters.preload : []
@@ -399,17 +401,35 @@ export function checkParameters (parameters, instance) {
   // Navigation inputs: control which user interactions trigger zoom/navigation.
   // All enabled by default. Set individual keys to false to disable.
   const niIn = parameters.inputs
+  // pinch (two fingers closing zooms out) is opt-in: it competes with page zoom.
   if (niIn === false) {
-    instance.inputs = { wheel: false, keyboard: false, click: false, touch: false }
+    instance.inputs = { wheel: false, keyboard: false, click: false, touch: false, pinch: false }
   } else if (niIn && typeof niIn === 'object') {
     instance.inputs = {
       wheel: typeof niIn.wheel === 'boolean' ? niIn.wheel : true,
       keyboard: typeof niIn.keyboard === 'boolean' ? niIn.keyboard : true,
       click: typeof niIn.click === 'boolean' ? niIn.click : true,
-      touch: typeof niIn.touch === 'boolean' ? niIn.touch : true
+      touch: typeof niIn.touch === 'boolean' ? niIn.touch : true,
+      pinch: niIn.pinch === true
     }
   } else {
-    instance.inputs = { wheel: true, keyboard: true, click: true, touch: true }
+    instance.inputs = { wheel: true, keyboard: true, click: true, touch: true, pinch: false }
+  }
+
+  // Gestures: follow: true makes wheel/trackpad, swipe and pinch drive the
+  // zoom-out with their progress; releasing past threshold (0–1) finishes it.
+  const geIn = parameters.gestures
+  instance.gestures = { follow: false, threshold: 0.5 }
+  if (geIn === true) {
+    instance.gestures.follow = true
+  } else if (geIn && typeof geIn === 'object') {
+    instance.gestures.follow = geIn.follow === true
+    if (geIn.threshold !== undefined) {
+      if (typeof geIn.threshold === 'number' && geIn.threshold > 0 && geIn.threshold < 1) instance.gestures.threshold = geIn.threshold
+      else notification(false, '\'gestures.threshold\' must be a number between 0 and 1. Falling back to 0.5.', 'warn')
+    }
+  } else if (geIn !== undefined && geIn !== false) {
+    notification(false, '\'gestures\' must be true, false or { follow, threshold }. Ignoring.', 'warn')
   }
 }
 

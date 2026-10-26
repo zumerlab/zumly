@@ -158,6 +158,16 @@ export interface InputsOptions {
   click?: boolean
   /** Enable touch navigation. Default: true. */
   touch?: boolean
+  /** Closing two fingers zooms out. Default: false (it competes with page zoom). */
+  pinch?: boolean
+}
+
+/** Gestures that drive the zoom-out with their progress. */
+export interface GesturesOptions {
+  /** Wheel/trackpad, swipe and pinch move the views as they go. Default: false. */
+  follow?: boolean
+  /** Progress (0–1) past which releasing finishes the zoom-out. Default: 0.5. */
+  threshold?: number
 }
 
 /** Options for goTo(). */
@@ -246,6 +256,8 @@ export interface ZumlyOptions {
   inputs?: boolean | InputsOptions
   /** Enable deferred rendering (view content inserted after zoom animation). */
   deferred?: boolean
+  /** Zoom-out that follows the gesture. true = { follow: true }. */
+  gestures?: boolean | GesturesOptions
   /** Labels of the navigation controls. false leaves them all without one. */
   labels?: false | LabelsOptions
 }
@@ -261,6 +273,19 @@ export interface ZumlyEventMap {
   afterZoomOut: { zoomLevel: number; viewName: string | null; from: string | null; levels?: number }
   beforeLateral: { viewName: string; from: string; isBack: boolean }
   afterLateral: { viewName: string; from: string; isBack: boolean }
+  /**
+   * A zoom-out driven by a gesture (gestures.follow). 'start' and 'move' carry
+   * the 0–1 progress; 'commit' or 'cancel' fire on release with the time left
+   * to finish or go back; 'end' when the views have settled.
+   */
+  zoomOutProgress: {
+    phase: 'start' | 'move' | 'commit' | 'cancel' | 'end'
+    progress: number
+    duration?: number
+    viewName: string | null
+    from: string | null
+    source: 'wheel' | 'swipe' | 'pinch'
+  }
   /** Fired after every completed navigation, including init(). */
   viewChanged: {
     type: 'init' | 'zoomIn' | 'zoomOut' | 'lateral'

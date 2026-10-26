@@ -33,6 +33,19 @@ import { unknownViewMessage } from './diagnostics.js'
  */
 const BLOCK_EVENTS_SAFETY_MS = 8000
 
+/** Wheel distance (px) that takes a followed zoom-out from 0 to 1. */
+const WHEEL_FOLLOW_DISTANCE = 400
+/** Wheel silence (ms) that counts as releasing a followed zoom-out. */
+const WHEEL_RELEASE_MS = 140
+/** Fraction of the canvas width a swipe travels for a full zoom-out. */
+const SWIPE_FOLLOW_WIDTH = 0.6
+/** Fraction of the starting finger distance a pinch closes for a full zoom-out. */
+const PINCH_FOLLOW_CLOSE = 0.6
+
+function touchDistance (touches) {
+  return Math.hypot(touches[0].screenX - touches[1].screenX, touches[0].screenY - touches[1].screenY) || 1
+}
+
 /**
  * Zumly
  * Powers your apps with a zoomable user interface (ZUI) taste.
@@ -112,7 +125,14 @@ export class Zumly {
     this._onZoom = this.onZoom.bind(this)
     this._onTouchStart = this.onTouchStart.bind(this)
     this._onTouchEnd = this.onTouchEnd.bind(this)
-    this._onTouchCancel = () => { this.touching = false }
+    this._onTouchMove = this.onTouchMove.bind(this)
+    this._onTouchCancel = () => {
+      this.touching = false
+      this._swipe = null
+      this._pinch = null
+      this._pinchTail = false
+      if (this._scrub && this._scrub.source !== 'wheel') this._endZoomOutScrub(false)
+    }
     this._onKeyUp = this.onKeyUp.bind(this)
     this._onKeyDown = this.onKeyDown.bind(this)
     this._onKeyboardClick = (event) => {
@@ -161,6 +181,7 @@ export class Zumly {
     canvas.addEventListener('mouseup', this._onZoom, false)
     canvas.addEventListener('touchend', this._onZoom, false)
     canvas.addEventListener('touchstart', this._onTouchStart, { passive: true })
+    canvas.addEventListener('touchmove', this._onTouchMove, { passive: false })
     canvas.addEventListener('touchend', this._onTouchEnd, false)
     canvas.addEventListener('touchcancel', this._onTouchCancel, { passive: true })
     canvas.addEventListener('keyup', this._onKeyUp, false)
@@ -189,6 +210,7 @@ export class Zumly {
       canvas.removeEventListener('mouseup', this._onZoom, false)
       canvas.removeEventListener('touchend', this._onZoom, false)
       canvas.removeEventListener('touchstart', this._onTouchStart)
+      canvas.removeEventListener('touchmove', this._onTouchMove)
       canvas.removeEventListener('touchend', this._onTouchEnd, false)
       canvas.removeEventListener('touchcancel', this._onTouchCancel)
       canvas.removeEventListener('keyup', this._onKeyUp, false)
@@ -750,7 +772,7 @@ export class Zumly {
           resolve()
         }
       }
-      const reducedMotion = this._prefersReducedMotion?.()
+      const reducedMotion = this._prefersReducedMotion?.() || spec.instant
       const driver = reducedMotion ? getDriver('none') : this.transitionDriver
       const transitionSpec = reducedMotion
         ? { ...spec, duration: '0s', currentStage: { ...spec.currentStage, stagger: 0 } }
@@ -1018,6 +1040,7 @@ export class Zumly {
     this._destroyed = true
     this._emit('destroy')
     this._cancelNavigation()
+    this._stopScrubAnimations()
 
 
     // Clear blockEvents safety timer
@@ -1985,6 +2008,12 @@ export class Zumly {
 
   /** @private */
   _performZoomOut (options = {}) {
+    // A followed gesture already animated the views: settle at the end state.
+    if (options.instant) {
+      const animateEffects = this.animateEffects
+      this.animateEffects = false
+      try { return this._performZoomOut({ ...options, instant: false, duration: '0s', _instantSpec: true }) } finally { this.animateEffects = animateEffects }
+    }
     const from = this.getCurrentViewName()
     const to = this.canvas.querySelector('.is-previous-view')?.dataset.viewName ?? null
     this._emit('beforeZoomOut', { zoomLevel: this.zoomLevel(), viewName: to, from })
@@ -2065,7 +2094,8 @@ export class Zumly {
       currentStage: this.currentStage,
       duration,
       ease,
-      canvas
+      canvas,
+      instant: !!options._instantSpec
     }
     const complete = () => {
       this.blockEvents = false
@@ -2085,6 +2115,163 @@ export class Zumly {
     return this._runNavigationTransition(spec, complete)
   }
 
+  // ─── Zoom out that follows a gesture ─────────────────────────────
+  // With gestures.follow, wheel, swipe and pinch drive the zoom-out with a
+  // 0 → 1 progress instead of firing it whole. The engine scrubs the three
+  // views with paused Web Animations, so this works with every driver; on
+  // release it animates to the end (then settles the state at once) or back.
+
+  /** @private */
+  _beginZoomOutScrub (source) {
+    if (!this.gestures.follow || this._destroyed || this.blockEvents || this._scrub) return false
+    if (this.storedViews.length < 2 || this._prefersReducedMotion() || typeof Element.prototype.animate !== 'function') return false
+    const canvas = this.canvas
+    const current = canvas.querySelector(':scope > .z-view.is-current-view')
+    const previous = canvas.querySelector(':scope > .z-view.is-previous-view')
+    const last = canvas.querySelector(':scope > .z-view.is-last-view')
+    const stage = this.storedViews[this.storedViews.length - 1]
+    if (!current || !previous || !stage.views[INDEX_PREVIOUS]) return false
+    const returning = this.storedViews[this.storedViews.length - 2]
+    const lastEffect = (returning?.effects ?? this._resolveEffects(null))[0]
+
+    const layers = []
+    const layer = (el, entry, to) => {
+      if (!el || !entry) return
+      const cs = getComputedStyle(el)
+      el.style.transformOrigin = entry.forwardState.origin
+      const from = { transform: el.style.transform || 'none', filter: cs.filter }
+      layers.push({ el, from, to: { transform: entry.backwardState.transform || 'none', ...to } })
+    }
+    // The current view shrinks into its trigger, taking the trigger's rounding.
+    const trigger = previous.querySelector('.zoomed')
+    const radius = trigger ? getComputedStyle(trigger).borderTopLeftRadius : ''
+    const round = {}
+    if (radius && parseFloat(radius) > 0) {
+      round.borderRadius = radius.endsWith('%')
+        ? radius
+        : `${parseFloat(radius) / trigger.offsetWidth * 100}% / ${parseFloat(radius) / trigger.offsetHeight * 100}%`
+    }
+    layer(current, stage.views[INDEX_CURRENT], { filter: 'none', ...round })
+    if (round.borderRadius) layers[0].from.borderRadius = getComputedStyle(current).borderRadius
+    layer(previous, stage.views[INDEX_PREVIOUS], { filter: 'none' })
+    if (last && !last.classList.contains('hide')) {
+      layer(last, stage.views[INDEX_LAST], { filter: lastEffect !== 'none' ? lastEffect : 'none' })
+    }
+    for (const entry of layers) {
+      entry.animation = entry.el.animate([entry.from, entry.to], { duration: 1000, fill: 'both', easing: 'linear' })
+      entry.animation.pause()
+      entry.animation.currentTime = 0
+    }
+
+    this.blockEvents = true
+    this.prefetcher?.pause()
+    const from = this.getCurrentViewName()
+    const to = returning?.views[INDEX_CURRENT]?.viewName ?? null
+    this._scrub = { source, layers, progress: 0, from, to, delta: 0 }
+    this._emit('zoomOutProgress', { phase: 'start', progress: 0, viewName: to, from, source })
+    return true
+  }
+
+  /** @private */
+  _scrubZoomOut (progress) {
+    const scrub = this._scrub
+    if (!scrub) return
+    const p = Math.min(1, Math.max(0, progress))
+    if (p === scrub.progress) return
+    scrub.progress = p
+    for (const { animation } of scrub.layers) animation.currentTime = p * 1000
+    this._emit('zoomOutProgress', { phase: 'move', progress: p, viewName: scrub.to, from: scrub.from, source: scrub.source })
+  }
+
+  /**
+   * Release the gesture: finish the zoom-out, or put every view back.
+   * @private
+   * @param {boolean} commit
+   */
+  _endZoomOutScrub (commit) {
+    const scrub = this._scrub
+    if (!scrub) return Promise.resolve()
+    this._scrub = null
+    clearTimeout(scrub.idleTimer)
+    const stage = this.storedViews[this.storedViews.length - 1]
+    const full = parseDurationMs(stage.views[INDEX_CURRENT]?.forwardState?.duration ?? this.duration) || 600
+    const p = scrub.progress
+    const duration = Math.max(120, full * (commit ? 1 - p : p))
+    const phase = commit ? 'commit' : 'cancel'
+    this._emit('zoomOutProgress', { phase, progress: p, duration, viewName: scrub.to, from: scrub.from, source: scrub.source })
+
+    // Continue from where each view is now, decelerating like a released drag.
+    const settle = scrub.layers.map(entry => {
+      const cs = getComputedStyle(entry.el)
+      const now = { transform: cs.transform, filter: cs.filter }
+      if (entry.to.borderRadius) now.borderRadius = cs.borderRadius
+      const target = commit ? entry.to : entry.from
+      const animation = entry.el.animate([now, target], { duration, fill: 'both', easing: 'cubic-bezier(.2,.8,.2,1)' })
+      entry.animation.cancel()
+      entry.animation = animation
+      return animation.finished.catch(() => {})
+    })
+    this._scrubLayers = scrub.layers
+    return Promise.all(settle).then(async () => {
+      if (this._destroyed || this._scrubLayers !== scrub.layers) return
+      this.blockEvents = false
+      this.prefetcher?.resume()
+      if (commit) {
+        const navigation = this.zoomOut({ instant: true })
+        this._stopScrubAnimations()
+        await navigation
+      } else {
+        this._stopScrubAnimations()
+      }
+      this._emit('zoomOutProgress', { phase: 'end', progress: commit ? 1 : 0, viewName: scrub.to, from: scrub.from, source: scrub.source })
+    })
+  }
+
+  /** @private */
+  _stopScrubAnimations () {
+    const layers = this._scrub?.layers ?? this._scrubLayers
+    if (this._scrub) clearTimeout(this._scrub.idleTimer)
+    this._scrub = null
+    this._scrubLayers = null
+    for (const { animation } of layers ?? []) animation?.cancel()
+  }
+
+  /**
+   * Wheel and trackpad: small continuous deltas drive the zoom-out; a mouse
+   * wheel notch (large or line-based delta) still zooms out at once.
+   * @private
+   * @returns {boolean} whether the event belongs to a followed gesture
+   */
+  _onWheelFollow (event) {
+    const delta = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaMode === 2 ? event.deltaY * 400 : event.deltaY
+    const scrub = this._scrub
+    if (scrub) {
+      if (scrub.source !== 'wheel') return true
+      scrub.delta += delta
+      this._scrubZoomOut(scrub.delta / WHEEL_FOLLOW_DISTANCE)
+      clearTimeout(scrub.idleTimer)
+      if (scrub.progress >= 1) this._releaseWheel(true)
+      else scrub.idleTimer = setTimeout(() => this._releaseWheel(scrub.progress >= this.gestures.threshold), WHEEL_RELEASE_MS)
+      return true
+    }
+    if (this._wheelSettling) {
+      // Momentum after a released gesture must not start another one.
+      clearTimeout(this._wheelSettling)
+      this._wheelSettling = setTimeout(() => { this._wheelSettling = null }, WHEEL_RELEASE_MS * 2)
+      return true
+    }
+    if (!this.gestures.follow || delta <= 0 || event.deltaMode !== 0 || Math.abs(delta) >= 50) return false
+    if (!this._beginZoomOutScrub('wheel')) return false
+    return this._onWheelFollow(event)
+  }
+
+  /** @private */
+  _releaseWheel (commit) {
+    clearTimeout(this._wheelSettling)
+    this._wheelSettling = setTimeout(() => { this._wheelSettling = null }, WHEEL_RELEASE_MS * 2)
+    this._endZoomOutScrub(commit)
+  }
+
   // ─── Event handling ──────────────────────────────────────────────
 
   onZoom (event) {
@@ -2093,7 +2280,7 @@ export class Zumly {
     if (event.type === 'click' && !this.inputs.keyboard) return
     // Check if this input type is enabled
     if (event.type === 'mouseup' && !this.inputs.click) return
-    if (event.type === 'touchend' && !this.inputs.touch) return
+    if (event.type === 'touchend' && (!this.inputs.touch || this._pinch || this._pinchTail || this._scrub)) return
     const target = event.target
     if (target.closest?.('[inert]')) return
     // Ignore events from navigation UI
@@ -2416,6 +2603,7 @@ export class Zumly {
     if (this._isInsideScrollable(event.target, event.deltaY)) return
     // Prevent browser scroll on the canvas — it causes jank during zoom transitions
     event.preventDefault()
+    if (this._onWheelFollow(event)) return
     if (this.blockEvents || this._wheelCooldown) return
     if (event.deltaY > 0 && this.storedViews.length > 1) {
       // Leading-edge: fire immediately on first wheel event, then ignore the rest
@@ -2455,12 +2643,85 @@ export class Zumly {
 
   onTouchStart (event) {
     if (this._destroyed) return
+    if (this.inputs.pinch && event.touches?.length === 2) {
+      // A second finger turns the touch into a pinch: no tap, no swipe.
+      this._pinch = { distance: touchDistance(event.touches), ratio: 1 }
+      this._swipe = null
+      this.touching = false
+      return
+    }
     if (!this.inputs.touch) return
     this.tracing('onTouchStart()')
     this.touching = true
     this.touchstartX = event.changedTouches[0].screenX
     this.touchstartY = event.changedTouches[0].screenY
     this._swipeBlocked = this._ownsHorizontalDrag(event.target)
+    const now = performance.now()
+    this._swipe = { x: this.touchstartX, time: now, velocity: 0 }
+  }
+
+  /**
+   * Followed swipe and pinch: move the zoom-out with the fingers.
+   * @private
+   */
+  onTouchMove (event) {
+    if (this._destroyed) return
+    const pinch = this._pinch
+    if (pinch && event.touches.length >= 2) {
+      event.preventDefault()
+      pinch.ratio = touchDistance(event.touches) / pinch.distance
+      const progress = (1 - pinch.ratio) / PINCH_FOLLOW_CLOSE
+      if (!this._scrub && progress > 0.02) this._beginZoomOutScrub('pinch')
+      if (this._scrub?.source === 'pinch') this._scrubZoomOut(progress)
+      return
+    }
+    const swipe = this._swipe
+    if (!swipe || !this.inputs.touch || this._swipeBlocked || event.touches.length !== 1) return
+    const touch = event.touches[0]
+    const now = performance.now()
+    if (now > swipe.time) swipe.velocity = (touch.screenX - swipe.x) / (now - swipe.time)
+    swipe.x = touch.screenX
+    swipe.time = now
+    const dx = touch.screenX - this.touchstartX
+    const dy = touch.screenY - this.touchstartY
+    if (!this._scrub && dx < -10 && Math.abs(dx) > Math.abs(dy) * 1.2) this._beginZoomOutScrub('swipe')
+    if (this._scrub?.source !== 'swipe') return
+    event.preventDefault()
+    this._scrubZoomOut(-dx / (this.canvas.clientWidth * SWIPE_FOLLOW_WIDTH))
+  }
+
+  /**
+   * Finish a pinch or a followed swipe. Returns true when the touch was one.
+   * @private
+   */
+  _endTouchGesture (event) {
+    const scrub = this._scrub
+    const remaining = event.touches?.length ?? 0
+    if (this._pinchTail) {
+      // The other finger of a finished pinch lifting.
+      if (remaining === 0) this._pinchTail = false
+      return true
+    }
+    if (this._pinch && remaining < 2) {
+      const { ratio } = this._pinch
+      this._pinch = null
+      this._pinchTail = remaining > 0
+      this._swipe = null
+      this.touching = false
+      if (scrub?.source === 'pinch') this._endZoomOutScrub(scrub.progress >= this.gestures.threshold)
+      else if (!scrub && ratio < 0.8 && this.storedViews.length > 1) this.zoomOut()
+      return true
+    }
+    if (scrub?.source === 'swipe' && (event.touches?.length ?? 0) === 0) {
+      // A fast release flicks the zoom-out through; a finger held still does not.
+      const swipe = this._swipe
+      const flick = swipe && performance.now() - swipe.time < 80 && swipe.velocity < -0.5 && scrub.progress > 0.1
+      this._swipe = null
+      this.touching = false
+      this._endZoomOutScrub(flick || scrub.progress >= this.gestures.threshold)
+      return true
+    }
+    return false
   }
 
   /**
@@ -2482,6 +2743,8 @@ export class Zumly {
 
   onTouchEnd (event) {
     if (this._destroyed) return
+    if (this._endTouchGesture(event)) return
+    this._swipe = null
     if (!this.inputs.touch) return
     if (!this.blockEvents) {
       this.tracing('onTouchEnd()')

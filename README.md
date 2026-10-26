@@ -236,7 +236,15 @@ labels: { back: 'Volver a {title}', goTo: view => `Ir a ${view.title}`, prev: fa
 
 ### Gestures
 
-A swipe to the left zooms out, except when it starts on a text field, a slider, an element that scrolls horizontally, or inside an element with `data-no-swipe`. Use `data-no-swipe` on your own drag areas (a knob, a carousel). `inputs: { wheel: false, touch: false, keyboard: false, click: false }` turns an input off.
+A swipe to the left zooms out, except when it starts on a text field, a slider, an element that scrolls horizontally, or inside an element with `data-no-swipe`. Use `data-no-swipe` on your own drag areas (a knob, a carousel). `inputs: { wheel: false, touch: false, keyboard: false, click: false }` turns an input off, and `inputs: { pinch: true }` adds closing two fingers to zoom out.
+
+By default a gesture fires the whole zoom-out at once. With `gestures: { follow: true }`, the trackpad, a swipe and a pinch move it as they go: the current view shrinks toward its trigger (rounding to its shape) while the one behind loses its blur. Releasing past `threshold` (default `0.5`) or flicking finishes it; otherwise everything returns. A mouse wheel notch still zooms out at once. `zoomOutProgress` reports the progress, so your own back button can follow along:
+
+```js
+app.on('zoomOutProgress', ({ phase, progress }) => {
+  backButton.style.setProperty('--progress', progress)
+})
+```
 
 ## Events
 
@@ -251,7 +259,8 @@ app.on('viewChanged', ({ type, viewName, from, zoomLevel, node }) => {
 | `viewChanged` | After every navigation and after `init()`: `type` (`'init'`, `'zoomIn'`, `'zoomOut'`, `'lateral'`), `viewName`, `from`, `zoomLevel`, `node`. |
 | `viewMounted` | A view was inserted: `viewName`, `node`. |
 | `beforeZoomIn` / `afterZoomIn` | `viewName`, and `zoomLevel` after. |
-| `beforeZoomOut` / `afterZoomOut` | `viewName` (the view returned to), `from`, `zoomLevel`. |
+| `beforeZoomOut` / `afterZoomOut` | `viewName` (the view returned to), `from`, `zoomLevel`, and `levels` when climbing several. |
+| `zoomOutProgress` | A followed gesture: `phase` (`'start'`, `'move'`, `'commit'`, `'cancel'`, `'end'`), `progress` 0–1, `duration` on release, `viewName`, `from`, `source`. |
 | `beforeLateral` / `afterLateral` | `viewName`, `from`, `isBack`. |
 | `destroy` | The instance is being destroyed. |
 
