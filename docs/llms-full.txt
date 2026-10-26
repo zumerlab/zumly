@@ -982,6 +982,13 @@ Always include `zumly.css` (or `zumly.min.css`). This provides the canvas layout
 | `--z-effect-filter` | View with effect | CSS filter value |
 | `--zoom-duration` | Various | Transition duration |
 | `--zoom-ease` | Various | Transition easing |
+| `--z-lateral-bg` | Canvas or `.z-lateral-nav` | Sibling bar background |
+| `--z-lateral-color` | Canvas or `.z-lateral-nav` | Arrows and dots color |
+| `--z-lateral-active` | Canvas or `.z-lateral-nav` | Current dot color (default: `--z-lateral-color`) |
+| `--z-lateral-border` | Canvas or `.z-lateral-nav` | Sibling bar hairline border color |
+| `--z-lateral-shadow` | Canvas or `.z-lateral-nav` | Sibling bar drop shadow |
+| `--z-lateral-blur` | Canvas or `.z-lateral-nav` | Sibling bar `backdrop-filter` |
+| `--z-lateral-hover` | Canvas or `.z-lateral-nav` | Arrow hover background |
 
 ---
 

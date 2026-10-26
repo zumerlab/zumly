@@ -227,6 +227,12 @@ lateralNav: { siblings: { home: ['today', 'tomorrow', 'week'] } }
 
 By default the bar appears only when the current view does not cover the canvas (`mode: 'auto'`), so a full-screen view keeps the screen to itself. `mode: 'always'` shows it whenever there are siblings. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level. `swipe: true` lets a horizontal swipe move between siblings (left: next, right: previous); where a view has no siblings, a swipe left still zooms out.
 
+The bar is a translucent capsule that reads on dark and light views. To restyle it, set these on the canvas or on `.z-lateral-nav`: `--z-lateral-bg`, `--z-lateral-color` (arrows and dots), `--z-lateral-active` (current dot), `--z-lateral-border`, `--z-lateral-shadow`, `--z-lateral-blur` (its `backdrop-filter`) and `--z-lateral-hover`.
+
+```css
+.zumly-canvas { --z-lateral-bg: rgba(255, 255, 255, 0.7); --z-lateral-color: #123; }
+```
+
 ### Back button
 
 `depthNav` places the back button (`position: 'bottom-left'` or `'top-left'`) and picks its `style`:
