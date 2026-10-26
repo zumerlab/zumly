@@ -478,10 +478,16 @@
   background: var(--z-lateral-active, currentColor);
 }
 
-/* Touch: every target at least 36px tall, dots 24px wide, same look. */
+/* Touch: every target at least 36px tall, dots 24px wide, same look.
+   The back button grows to the bar's height so both line up on a shared edge. */
 @media (pointer: coarse) {
-  .z-lateral-nav {
+  .z-lateral-nav,
+  .z-nav-back {
     height: 40px;
+  }
+
+  .z-nav-back:not(.z-nav-back--title) {
+    width: 40px;
   }
 
   .z-nav-arrow {
