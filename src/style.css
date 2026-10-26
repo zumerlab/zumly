@@ -230,23 +230,33 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(12px);
-  color: #fff;
+  border: 0;
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, border-color 0.15s;
   padding: 0;
 }
 
-.z-nav-back:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.4);
+/* Back button, rings bands and sibling bar share one frosted material.
+   Restyle all of it with the --z-nav-* properties on the canvas, or on
+   .z-depth-nav / .z-lateral-nav for one of them. */
+.z-nav-back,
+.z-depth-band,
+.z-lateral-nav {
+  color: var(--z-nav-color, #fff);
+  background: var(--z-nav-bg, rgba(20, 22, 28, 0.42));
+  backdrop-filter: var(--z-nav-blur, blur(14px) saturate(1.4));
+  box-shadow: inset 0 0 0 1px var(--z-nav-border, rgba(255, 255, 255, 0.14)), var(--z-nav-shadow, 0 2px 10px rgba(0, 0, 0, 0.18));
+  transition: background 0.15s;
+}
+
+.z-nav-back:hover,
+.z-depth-band:hover,
+.z-depth-band:focus-visible {
+  background: linear-gradient(var(--z-nav-hover, color-mix(in srgb, currentColor 14%, transparent)) 0 0), var(--z-nav-bg, rgba(20, 22, 28, 0.42));
 }
 
 /* depthNav.style: 'title' — a dot in its ring and the name of the view above */
@@ -336,19 +346,10 @@
   height: 30px;
   padding: 0 14px 0 9px;
   border-radius: 100px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(12px);
-  color: #fff;
+  border: 0;
   font: 500 0.8125rem/1 system-ui, sans-serif;
   cursor: pointer;
   animation: z-depth-band-in 0.16s ease-out both;
-}
-
-.z-depth-band:hover,
-.z-depth-band:focus-visible {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .z-depth-band-mark {
@@ -366,9 +367,8 @@
 
 /* ─── Lateral navigation (arrows + dots) ─────────────────────── */
 
-/* A low frosted capsule: light enough to sit over any view, dark enough
-   that the white marks read on light backgrounds too. Restyle it by setting
-   the --z-lateral-* properties on the canvas or on .z-lateral-nav. */
+/* A low capsule in the shared material: light enough to sit over any view,
+   dark enough that the white marks read on light backgrounds too. */
 .z-lateral-nav {
   position: absolute;
   z-index: 10;
@@ -377,11 +377,7 @@
   height: 32px;
   padding: 0 2px;
   pointer-events: none;
-  color: var(--z-lateral-color, #fff);
-  background: var(--z-lateral-bg, rgba(20, 22, 28, 0.42));
-  backdrop-filter: var(--z-lateral-blur, blur(14px) saturate(1.4));
   border-radius: 100px;
-  box-shadow: inset 0 0 0 1px var(--z-lateral-border, rgba(255, 255, 255, 0.14)), var(--z-lateral-shadow, 0 2px 10px rgba(0, 0, 0, 0.18));
 }
 
 .z-lateral-nav > * {
@@ -420,7 +416,7 @@
 }
 
 .z-nav-arrow:hover:not(:disabled) {
-  background: var(--z-lateral-hover, color-mix(in srgb, currentColor 14%, transparent));
+  background: var(--z-nav-hover, color-mix(in srgb, currentColor 14%, transparent));
 }
 
 .z-nav-arrow:disabled {
@@ -475,7 +471,7 @@
 .z-nav-dot.is-active::after {
   width: 14px;
   opacity: 1;
-  background: var(--z-lateral-active, currentColor);
+  background: var(--z-nav-active, currentColor);
 }
 
 /* Touch: every target at least 36px tall, dots 24px wide, same look.
