@@ -264,7 +264,7 @@ export function checkParameters (parameters, instance) {
   // animateEffects: false applies background effects at once instead of transitioning the
   // filter with the zoom. A filter animating on large background layers is the costliest
   // part of a transition with heavy views.
-  const aeIn = t && t.animateEffects
+  const aeIn = t ? t.animateEffects : undefined
   instance.animateEffects = aeIn !== false
   if (aeIn !== undefined && typeof aeIn !== 'boolean') {
     notification(false, '\'transitions.animateEffects\' must be a boolean. Falling back to true.', 'warn')

@@ -290,6 +290,13 @@ describe('utils.checkParameters()', () => {
     expect(parse({ animateEffects: 'no' })).toBe(true)
   })
 
+  it('does not warn about animateEffects when transitions is omitted', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    checkParameters({ mount: '.first', initialView: 'home', views: { home: '<div class="z-view"></div>' } }, {})
+    expect(warnSpy.mock.calls.some(args => args.join(' ').includes('animateEffects'))).toBe(false)
+    warnSpy.mockRestore()
+  })
+
   it('parses transitions.hideTrigger as true', () => {
     const instance = {}
     checkParameters(
