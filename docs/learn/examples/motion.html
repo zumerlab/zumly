@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Motion and gestures</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly@0.98.0/dist/zumly.css">
+  <script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"></script>
+  <style>
+    body { margin: 0; font: 17px/1.4 system-ui, sans-serif; color: white; }
+    .stage { position: relative; height: 100vh; }
+    .z-view { display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; }
+    .deep { width: 100%; height: 100%; background: radial-gradient(circle at 50% 30%, #1d5a8c, #020912 70%); }
+    .bubbles { display: flex; gap: 16px; }
+    .bubble { cursor: zoom-in; width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center;
+              background: radial-gradient(circle at 35% 30%, #dff3ff, #3da9fc 60%); color: #0b2a44; font-weight: 700; }
+    .big { width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #dff3ff, #3da9fc 60%); color: #0b2a44; }
+    .meter { position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: #dff3ff; z-index: 10; }
+    h2, p { margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+    <div class="meter"></div>
+  </div>
+  <script>
+    const bubble = name => `<div class="z-view big" data-title="${name}"><h2>${name}</h2><p>Swipe left, pinch<br>or scroll to go back.</p></div>`
+
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'deep',
+      views: {
+        deep: `<div class="z-view deep" data-title="The deep">
+                 <p>Pick a bubble</p>
+                 <div class="bubbles">
+                   <div class="zoom-me bubble" data-to="one">1</div>
+                   <div class="zoom-me bubble" data-to="two" data-with-duration="1.6s">2</div>
+                   <div class="zoom-me bubble" data-to="three">3</div>
+                 </div>
+               </div>`,
+        one: bubble('One'),
+        two: bubble('Two, slowly'),
+        three: bubble('Three')
+      },
+      transitions: {
+        duration: '900ms',
+        ease: 'cubic-bezier(.2,.8,.2,1)',
+        effects: ['blur(3px) brightness(.6)', 'blur(8px) brightness(.3)'],
+        hideTrigger: 'fade'
+      },
+      // Zoom-out follows the trackpad, a swipe or a pinch as it moves
+      gestures: { follow: true, threshold: 0.4 },
+      inputs: { pinch: true },
+      lateralNav: false
+    })
+
+    // The gesture's progress, from 0 to 1
+    const meter = document.querySelector('.meter')
+    app.on('zoomOutProgress', ({ phase, progress }) => {
+      meter.style.width = phase === 'end' ? '0' : progress * 100 + '%'
+    })
+    app.init()
+  </script>
+</body>
+</html>

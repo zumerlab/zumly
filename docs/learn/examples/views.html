@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Views</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly@0.98.0/dist/zumly.css">
+  <script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"></script>
+  <style>
+    body { margin: 0; font: 17px/1.4 system-ui, sans-serif; color: #0b2a44; }
+    .stage { position: relative; height: 100vh; }
+    .z-view { display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; }
+    .shop { width: 100%; height: 100%; background: #eaf5fd; }
+    .card { width: 270px; height: 210px; padding: 16px; box-sizing: border-box; border-radius: 24px; background: white; box-shadow: 0 12px 40px #0b2a4433; }
+    .item { cursor: zoom-in; width: 200px; padding: 10px; border-radius: 12px; background: white; font-weight: 600; }
+    h1, h2, p { margin: 0; }
+    button { font: inherit; padding: 8px 16px; border: 0; border-radius: 99px; background: #3da9fc; color: white; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const basket = []
+
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'shop',
+      views: {
+        // A function: paints from state, and again each time you come back
+        shop: ({ target, onActivate }) => {
+          target.className = 'z-view shop'
+          const paint = () => {
+            target.innerHTML = `
+              <h1>Fish shop</h1>
+              <p>Basket: ${basket.join(', ') || 'empty'}</p>
+              <div class="zoom-me item" data-to="fish" data-name="Clownfish">Clownfish</div>
+              <div class="zoom-me item" data-to="fish" data-name="Blue tang">Blue tang</div>
+              <div class="zoom-me item" data-to="hours">Opening hours</div>`
+          }
+          paint()
+          onActivate(paint)
+        },
+        // The trigger's data-* attributes arrive as props
+        fish: ({ target, props }) => {
+          target.className = 'z-view card'
+          target.dataset.title = props.name
+          target.innerHTML = `<h2>${props.name}</h2><button>Add to basket</button>`
+          target.querySelector('button').onclick = () => {
+            basket.push(props.name)
+            app.zoomOut()
+          }
+        },
+        // A URL: fetched when needed, then cached
+        hours: 'hours.html'
+      },
+      lateralNav: false
+    })
+    app.init()
+  </script>
+</body>
+</html>

@@ -56,29 +56,22 @@
   }
   </script>
 
-  <script>
-    (function(){var t=localStorage.getItem('zumly-theme');if(t==='light')document.documentElement.classList.add('light');else localStorage.setItem('zumly-theme','dark')})();
-    function toggleTheme(){
-      var h=document.documentElement;h.classList.toggle('light');
-      localStorage.setItem('zumly-theme',h.classList.contains('light')?'light':'dark');
-      var b=document.getElementById('theme-btn');if(b)b.innerHTML=h.classList.contains('light')?'&#9728;':'&#9790;';
-    }
-  </script>
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
 
-  <link rel="stylesheet" href="../css/docs-page.css" />
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
 </head>
 
 <body>
 
   <nav class="site-nav">
     <div class="nav-inner">
-      <a href="../" class="nav-brand">
-        <img src="../zumly-logo.png" alt="Zumly">
-        <span>ZUMLY</span>
-      </a>
-      <div class="crumbs">
-        <a href="../">Home</a><span>›</span><a href="./">Integrations</a><span>›</span>React
-      </div>
+      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/">Learn</a>
+      <a class="nav-link" href="../learn/#guides" aria-current="page">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
     </div>
   </nav>
@@ -316,51 +309,62 @@ const dashboard: ViewFunction = ({ target, props, onCleanup }) =&gt; {
 
     <div class="final-cta">
       <h3>See Zumly in action</h3>
-      <p>The full interactive demo runs the same engine described above — zoom into the API card, the showcases, or the playground.</p>
-      <a href="../" class="cta-primary">Open the live demo &rarr;</a>
+      <p>The full interactive demo runs the same engine described above — zoom into Learn, the showcases or the API reference.</p>
+      <a href="../" class="cta-primary">Open the live demo &rarr;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
     </div>
 
   </main>
 
-  <footer>
-    <div class="footer-grid">
-      <div>
-        <h4>Zumly</h4>
-        <ul>
-          <li><a href="../">Live demo</a></li>
-          <li><a href="../views/api.html">API reference</a></li>
-          <li><a href="https://github.com/zumerlab/zumly" target="_blank" rel="noopener">GitHub</a></li>
-          <li><a href="https://www.npmjs.com/package/zumly" target="_blank" rel="noopener">npm</a></li>
-        </ul>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frameworks</h4>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Drivers</h4>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Zumly</h4>
+          <ul>
+            <li><a href="../">Live demo</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
       </div>
-      <div>
-        <h4>Integrations</h4>
-        <ul>
-          <li>React (you are here)</li>
-          <li><a href="vue.html">Vue</a></li>
-          <li><a href="svelte.html">Svelte</a></li>
-          <li><a href="angular.html">Angular</a></li>
-          <li><a href="orbit-css.html">Orbit CSS</a></li>
-        </ul>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
       </div>
-      <div>
-        <h4>Zumerlab</h4>
-        <ul>
-          <li><a href="https://github.com/zumerlab/orbit" target="_blank" rel="noopener">Orbit CSS</a></li>
-          <li><a href="https://github.com/zumerlab/snapdom" target="_blank" rel="noopener">SnapDOM</a></li>
-          <li><a href="https://github.com/zumerlab" target="_blank" rel="noopener">All projects</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <strong>Zumly</strong> by <a href="https://github.com/zumerlab" target="_blank" rel="noopener">Zumerlab</a> · MIT License
     </div>
   </footer>
-
-  <script>
-    var tb = document.getElementById('theme-btn');
-    if (tb && document.documentElement.classList.contains('light')) tb.innerHTML = '&#9728;';
-  </script>
 
 </body>
 </html>

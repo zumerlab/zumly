@@ -28,8 +28,8 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 ## Quick start
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
-<script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/zumly@0.98.0/dist/zumly.css">
+<script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"></script>
 <div style="position: relative; height: 100vh"><!-- the canvas fills this -->
   <div class="zumly-canvas" id="app"></div>
 </div>
@@ -52,7 +52,8 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 - GitHub: https://github.com/zumerlab/zumly
 - npm: https://www.npmjs.com/package/zumly
 - Full LLM reference: https://zumerlab.github.io/zumly/llms-full.txt
-- API docs: https://zumerlab.github.io/zumly/ (zoom into API card)
+- Learn in six steps (each with a runnable single-file example): https://zumerlab.github.io/zumly/learn/
+- API reference: https://zumerlab.github.io/zumly/api.html
 - Driver API: https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md
 - TypeScript types: https://github.com/zumerlab/zumly/blob/main/types/zumly.d.ts
 

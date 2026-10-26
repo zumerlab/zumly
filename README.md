@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="https://zumerlab.github.io/zumly/"><strong>Live demo</strong></a> ·
+  <a href="https://zumerlab.github.io/zumly/learn/"><strong>Learn in six steps</strong></a> ·
   <a href="demos/">Demos</a> ·
   <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg" alt="npm version" align="center"></a>
 </p>

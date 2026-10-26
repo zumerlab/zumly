@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag () { dataLayer.push(arguments) } gtag('js', new Date()); gtag('config', 'G-TCJ276G8QK')</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Siblings — Learn Zumly, step 3</title>
+  <meta name="description" content="Step 3 of 6: Move sideways between views of the same parent. Views opened from the same parent are siblings. Zumly moves between them sideways, without zooming out first." />
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/siblings.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Siblings — Learn Zumly, step 3" />
+  <meta property="og:description" content="Step 3 of 6: Move sideways between views of the same parent. Views opened from the same parent are siblings. Zumly moves between them sideways, without zooming out first." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/siblings.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/" aria-current="page">Learn</a>
+      <a class="nav-link" href="../learn/#guides">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="step-meta"><span class="hero-eyebrow">Step 3 of 6</span><div class="step-dots"><a href="first-app.html" aria-label="Step 1: Your first app" class="is-done"></a><a href="depth.html" aria-label="Step 2: Going deeper" class="is-done"></a><a href="siblings.html" aria-label="Step 3: Siblings" aria-current="step"></a><a href="views.html" aria-label="Step 4: Where views come from"></a><a href="navigate.html" aria-label="Step 5: Navigating from code"></a><a href="motion.html" aria-label="Step 6: Motion and gestures"></a></div></div>
+      <h1 class="hero-title">Siblings</h1>
+      <p class="hero-sub">Views opened from the same parent are siblings. Zumly moves between them sideways, without zooming out first.</p>
+    </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example</span><button type="button" data-reload="demo">Restart</button><a href="examples/siblings.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="demo" src="examples/siblings.html" title="Siblings: live example" loading="lazy"></iframe>
+    </div>
+    <p class="demo-hint">Open a zone, then use the arrows or the dots at the bottom, or swipe left and right.</p>
+
+    <section>
+      <h2>The code</h2>
+      <pre data-example="siblings#script"><code>const zone = (title, depth, text) =&gt; `
+  &lt;div class="z-view card" data-title="${title}"&gt;
+    &lt;h2&gt;${title}&lt;/h2&gt;&lt;small&gt;${depth}&lt;/small&gt;&lt;p&gt;${text}&lt;/p&gt;
+  &lt;/div&gt;`
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'ocean',
+  views: {
+    ocean: `&lt;div class="z-view ocean" data-title="Ocean"&gt;
+              &lt;div class="zoom-me zone" data-to="sunlight"&gt;Sunlight zone&lt;/div&gt;
+              &lt;div class="zoom-me zone" data-to="twilight"&gt;Twilight zone&lt;/div&gt;
+              &lt;div class="zoom-me zone" data-to="midnight"&gt;Midnight zone&lt;/div&gt;
+            &lt;/div&gt;`,
+    sunlight: zone('Sunlight zone', '0–200 m', 'Light, plants and most of the fish.'),
+    twilight: zone('Twilight zone', '200–1000 m', 'Dim blue light. Many animals glow.'),
+    midnight: zone('Midnight zone', '1000 m and deeper', 'No sunlight. The anglerfish brings its own.')
+  },
+  // A horizontal swipe moves to the next or previous sibling
+  lateralNav: { swipe: true }
+})
+app.init()</code></pre>
+    </section>
+
+    <section>
+      <h2>How it works</h2>
+      <ul>
+        <li>Siblings are found for you: they are the views of the other triggers in the parent. The slide direction follows where those triggers sit.</li>
+        <li>The sibling bar appears when the current view does not cover the canvas. <code>lateralNav: { mode: 'always' }</code> shows it on full-screen views too.</li>
+        <li><code>swipe: true</code> makes a horizontal swipe move between siblings. Where there are none, a swipe left still zooms out.</li>
+        <li><code>back()</code> first undoes the sideways moves at this level, then zooms out.</li>
+      </ul>
+      <p>To set the order yourself, or keep siblings alive in the DOM while you move between them:</p>
+      <pre><code>lateralNav: {
+  siblings: { ocean: ['sunlight', 'twilight', 'midnight'] },
+  keepAlive: true,   // form fields and scroll positions survive
+  swipe: true
+}</code></pre>
+      <div class="tip"><img src="../fish-160.png" alt="" width="44" height="44"><div><p>Siblings are told apart by view name. Several triggers that open the <em>same</em> view with different <code>data-*</code> are one view, not siblings. That pattern is in the next step.</p></div></div>
+    </section>
+
+    <nav class="pager" aria-label="Steps"><a class="prev" href="depth.html"><small>&larr; Step 2</small>Going deeper</a><a class="next" href="views.html"><small>Step 4 &rarr;</small>Where views come from</a></nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frameworks</h4>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Drivers</h4>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Zumly</h4>
+          <ul>
+            <li><a href="../">Live demo</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hello Zumly</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly@0.98.0/dist/zumly.css">
+  <script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"></script>
+  <style>
+    body { margin: 0; font: 20px system-ui, sans-serif; }
+    /* The canvas fills its nearest positioned ancestor: give it a size. */
+    .stage { position: relative; height: 100vh; }
+    .z-view { display: grid; place-items: center; }
+    .hello { width: 100%; height: 100%; }
+    .world { width: 320px; height: 320px; border-radius: 50%; background: #3da9fc; color: white; }
+    .zoom-me { cursor: zoom-in; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'hello',
+      views: {
+        hello: `<div class="z-view hello">
+                  <p>H E L L O &nbsp; W <span class="zoom-me" data-to="world">O</span> R L D</p>
+                </div>`,
+        world: `<div class="z-view world">Hi from inside the O</div>`
+      }
+    })
+    app.init()
+  </script>
+</body>
+</html>

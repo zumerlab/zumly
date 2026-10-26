@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag () { dataLayer.push(arguments) } gtag('js', new Date()); gtag('config', 'G-TCJ276G8QK')</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Where views come from — Learn Zumly, step 4</title>
+  <meta name="description" content="Step 4 of 6: Functions with props and state, URLs and frameworks. A view can be more than a string: a function that builds it from data, a URL, an object with hooks, or a component from your framework." />
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/views.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Where views come from — Learn Zumly, step 4" />
+  <meta property="og:description" content="Step 4 of 6: Functions with props and state, URLs and frameworks. A view can be more than a string: a function that builds it from data, a URL, an object with hooks, or a component from your framework." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/views.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/" aria-current="page">Learn</a>
+      <a class="nav-link" href="../learn/#guides">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="step-meta"><span class="hero-eyebrow">Step 4 of 6</span><div class="step-dots"><a href="first-app.html" aria-label="Step 1: Your first app" class="is-done"></a><a href="depth.html" aria-label="Step 2: Going deeper" class="is-done"></a><a href="siblings.html" aria-label="Step 3: Siblings" class="is-done"></a><a href="views.html" aria-label="Step 4: Where views come from" aria-current="step"></a><a href="navigate.html" aria-label="Step 5: Navigating from code"></a><a href="motion.html" aria-label="Step 6: Motion and gestures"></a></div></div>
+      <h1 class="hero-title">Where views come from</h1>
+      <p class="hero-sub">A view can be more than a string: a function that builds it from data, a URL, an object with hooks, or a component from your framework.</p>
+    </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example</span><button type="button" data-reload="demo">Restart</button><a href="examples/views.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="demo" src="examples/views.html" title="Where views come from: live example" loading="lazy"></iframe>
+    </div>
+    <p class="demo-hint">Add a fish to the basket. The shop repaints when you come back to it. "Opening hours" comes from another file.</p>
+
+    <section>
+      <h2>The code</h2>
+      <pre data-example="views#script"><code>const basket = []
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'shop',
+  views: {
+    // A function: paints from state, and again each time you come back
+    shop: ({ target, onActivate }) =&gt; {
+      target.className = 'z-view shop'
+      const paint = () =&gt; {
+        target.innerHTML = `
+          &lt;h1&gt;Fish shop&lt;/h1&gt;
+          &lt;p&gt;Basket: ${basket.join(', ') || 'empty'}&lt;/p&gt;
+          &lt;div class="zoom-me item" data-to="fish" data-name="Clownfish"&gt;Clownfish&lt;/div&gt;
+          &lt;div class="zoom-me item" data-to="fish" data-name="Blue tang"&gt;Blue tang&lt;/div&gt;
+          &lt;div class="zoom-me item" data-to="hours"&gt;Opening hours&lt;/div&gt;`
+      }
+      paint()
+      onActivate(paint)
+    },
+    // The trigger's data-* attributes arrive as props
+    fish: ({ target, props }) =&gt; {
+      target.className = 'z-view card'
+      target.dataset.title = props.name
+      target.innerHTML = `&lt;h2&gt;${props.name}&lt;/h2&gt;&lt;button&gt;Add to basket&lt;/button&gt;`
+      target.querySelector('button').onclick = () =&gt; {
+        basket.push(props.name)
+        app.zoomOut()
+      }
+    },
+    // A URL: fetched when needed, then cached
+    hours: 'hours.html'
+  },
+  lateralNav: false
+})
+app.init()</code></pre>
+      <p class="code-label">hours.html</p>
+      <pre data-example="hours"><code>&lt;div class="z-view card" data-title="Opening hours"&gt;
+  &lt;h2&gt;Opening hours&lt;/h2&gt;
+  &lt;p&gt;Every day, 9 to 18.&lt;br&gt;This view came from &lt;code&gt;hours.html&lt;/code&gt;.&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+    </section>
+
+    <section>
+      <h2>How it works</h2>
+      <ul>
+        <li>A <strong>function view</strong> receives a context. <code>target</code> is a fresh element that becomes the view: give it your classes and fill it. <code>props</code> holds the trigger's <code>data-*</code> attributes, so <code>data-name="Clownfish"</code> arrives as <code>props.name</code>.</li>
+        <li>Views behind the current one are not rendered again. Keep state outside the view and repaint in <code>onActivate</code>, which runs each time the view becomes current again.</li>
+        <li>A <strong>URL view</strong> is fetched the first time it is needed and then cached. <code>hours.html</code> is just a fragment with one <code>z-view</code> root.</li>
+        <li><code>onCleanup(fn)</code> runs once when the view is discarded: unmount components and stop timers there.</li>
+      </ul>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Source</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>HTML string</td><td><code>'&lt;div class="z-view"&gt;…&lt;/div&gt;'</code></td></tr>
+          <tr><td>URL</td><td><code>'views/detail.html'</code></td></tr>
+          <tr><td>Function</td><td><code>({ target, props, onActivate, onCleanup }) =&gt; { … }</code></td></tr>
+          <tr><td>Object</td><td><code>{ title: 'Detail', render (ctx) { … }, mounted (node) { … } }</code></td></tr>
+          <tr><td>Element</td><td><code>document.querySelector('#template')</code> (cloned)</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h2>With a framework</h2>
+      <p>Mount a component into <code>target</code> and unmount it in <code>onCleanup</code>. This is React; the guides show the same for the others.</p>
+      <pre><code>dashboard: ({ target, props, onCleanup }) => {
+  const root = createRoot(target)
+  onCleanup(() => root.unmount())
+  root.render(&lt;Dashboard id={props.id} /&gt;)
+}</code></pre>
+      <p><a href="../integrations/react.html">React</a> · <a href="../integrations/vue.html">Vue</a> · <a href="../integrations/svelte.html">Svelte</a> · <a href="../integrations/angular.html">Angular</a> · <a href="../integrations/orbit-css.html">Orbit CSS</a></p>
+      <div class="tip"><img src="../fish-160.png" alt="" width="44" height="44"><div><p>URL views are inserted as HTML and their <code>&lt;script&gt;</code> tags do not run. Put behaviour in a function view, and sanitize HTML that comes from elsewhere.</p></div></div>
+    </section>
+
+    <nav class="pager" aria-label="Steps"><a class="prev" href="siblings.html"><small>&larr; Step 3</small>Siblings</a><a class="next" href="navigate.html"><small>Step 5 &rarr;</small>Navigating from code</a></nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frameworks</h4>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Drivers</h4>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Zumly</h4>
+          <ul>
+            <li><a href="../">Live demo</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

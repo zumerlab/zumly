@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Siblings</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly@0.98.0/dist/zumly.css">
+  <script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"></script>
+  <style>
+    body { margin: 0; font: 17px/1.4 system-ui, sans-serif; color: #0b2a44; }
+    .stage { position: relative; height: 100vh; }
+    .z-view { display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; }
+    .ocean { width: 100%; height: 100%; background: linear-gradient(#bfe6ff, #0b2a44); }
+    .zone { cursor: zoom-in; width: 220px; padding: 12px; border-radius: 14px; background: #ffffffcc; font-weight: 600; }
+    .card { width: 260px; height: 200px; padding: 16px; box-sizing: border-box; border-radius: 24px; background: white; }
+    h2, p { margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const zone = (title, depth, text) => `
+      <div class="z-view card" data-title="${title}">
+        <h2>${title}</h2><small>${depth}</small><p>${text}</p>
+      </div>`
+
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'ocean',
+      views: {
+        ocean: `<div class="z-view ocean" data-title="Ocean">
+                  <div class="zoom-me zone" data-to="sunlight">Sunlight zone</div>
+                  <div class="zoom-me zone" data-to="twilight">Twilight zone</div>
+                  <div class="zoom-me zone" data-to="midnight">Midnight zone</div>
+                </div>`,
+        sunlight: zone('Sunlight zone', '0–200 m', 'Light, plants and most of the fish.'),
+        twilight: zone('Twilight zone', '200–1000 m', 'Dim blue light. Many animals glow.'),
+        midnight: zone('Midnight zone', '1000 m and deeper', 'No sunlight. The anglerfish brings its own.')
+      },
+      // A horizontal swipe moves to the next or previous sibling
+      lateralNav: { swipe: true }
+    })
+    app.init()
+  </script>
+</body>
+</html>

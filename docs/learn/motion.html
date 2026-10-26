@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag () { dataLayer.push(arguments) } gtag('js', new Date()); gtag('config', 'G-TCJ276G8QK')</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Motion and gestures — Learn Zumly, step 6</title>
+  <meta name="description" content="Step 6 of 6: Timing, effects, drivers and gestures that follow your fingers. Tune how a zoom feels, and let a gesture drive the zoom-out as it moves." />
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/motion.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Motion and gestures — Learn Zumly, step 6" />
+  <meta property="og:description" content="Step 6 of 6: Timing, effects, drivers and gestures that follow your fingers. Tune how a zoom feels, and let a gesture drive the zoom-out as it moves." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/motion.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/" aria-current="page">Learn</a>
+      <a class="nav-link" href="../learn/#guides">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="step-meta"><span class="hero-eyebrow">Step 6 of 6</span><div class="step-dots"><a href="first-app.html" aria-label="Step 1: Your first app" class="is-done"></a><a href="depth.html" aria-label="Step 2: Going deeper" class="is-done"></a><a href="siblings.html" aria-label="Step 3: Siblings" class="is-done"></a><a href="views.html" aria-label="Step 4: Where views come from" class="is-done"></a><a href="navigate.html" aria-label="Step 5: Navigating from code" class="is-done"></a><a href="motion.html" aria-label="Step 6: Motion and gestures" aria-current="step"></a></div></div>
+      <h1 class="hero-title">Motion and gestures</h1>
+      <p class="hero-sub">Tune how a zoom feels, and let a gesture drive the zoom-out as it moves.</p>
+    </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example</span><button type="button" data-reload="demo">Restart</button><a href="examples/motion.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="demo" src="examples/motion.html" title="Motion and gestures: live example" loading="lazy"></iframe>
+    </div>
+    <p class="demo-hint">Bubble 2 has its own duration. To go back slowly: on a phone, swipe left or pinch; on a laptop, scroll with two fingers. The line at the bottom shows the gesture’s progress.</p>
+
+    <section>
+      <h2>The code</h2>
+      <pre data-example="motion#script"><code>const bubble = name =&gt; `&lt;div class="z-view big" data-title="${name}"&gt;&lt;h2&gt;${name}&lt;/h2&gt;&lt;p&gt;Swipe left, pinch&lt;br&gt;or scroll to go back.&lt;/p&gt;&lt;/div&gt;`
+
+const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'deep',
+  views: {
+    deep: `&lt;div class="z-view deep" data-title="The deep"&gt;
+             &lt;p&gt;Pick a bubble&lt;/p&gt;
+             &lt;div class="bubbles"&gt;
+               &lt;div class="zoom-me bubble" data-to="one"&gt;1&lt;/div&gt;
+               &lt;div class="zoom-me bubble" data-to="two" data-with-duration="1.6s"&gt;2&lt;/div&gt;
+               &lt;div class="zoom-me bubble" data-to="three"&gt;3&lt;/div&gt;
+             &lt;/div&gt;
+           &lt;/div&gt;`,
+    one: bubble('One'),
+    two: bubble('Two, slowly'),
+    three: bubble('Three')
+  },
+  transitions: {
+    duration: '900ms',
+    ease: 'cubic-bezier(.2,.8,.2,1)',
+    effects: ['blur(3px) brightness(.6)', 'blur(8px) brightness(.3)'],
+    hideTrigger: 'fade'
+  },
+  // Zoom-out follows the trackpad, a swipe or a pinch as it moves
+  gestures: { follow: true, threshold: 0.4 },
+  inputs: { pinch: true },
+  lateralNav: false
+})
+
+// The gesture's progress, from 0 to 1
+const meter = document.querySelector('.meter')
+app.on('zoomOutProgress', ({ phase, progress }) =&gt; {
+  meter.style.width = phase === 'end' ? '0' : progress * 100 + '%'
+})
+app.init()</code></pre>
+    </section>
+
+    <section>
+      <h2>Transitions</h2>
+      <ul>
+        <li><code>duration</code> and <code>ease</code> set the timing; <code>effects</code> are CSS filters for the two views behind the current one.</li>
+        <li><code>hideTrigger: 'fade'</code> crossfades the trigger into the new view.</li>
+        <li>Any trigger can override them: <code>data-with-duration</code>, <code>data-with-ease</code>, <code>data-with-effects</code>.</li>
+        <li>With <code>prefers-reduced-motion</code>, transitions are instant.</li>
+      </ul>
+      <h2>Gestures</h2>
+      <ul>
+        <li><code>gestures: { follow: true }</code> makes the trackpad, a swipe and a pinch move the views as they go. Releasing past <code>threshold</code> finishes the zoom-out; otherwise everything returns.</li>
+        <li><code>inputs: { pinch: true }</code> adds closing two fingers. It is off by default because it competes with page zoom.</li>
+        <li><code>zoomOutProgress</code> reports the progress from 0 to 1, so your own controls can follow along.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Drivers</h2>
+      <p>The driver is the engine that animates the transforms. The default is CSS. <code>'waapi'</code> uses Web Animations; <code>'gsap'</code>, <code>'anime'</code> and <code>'motion'</code> use those libraries; and a function is your own. They all follow the same curve, so you can switch without retuning.</p>
+      <pre><code>transitions: { driver: 'gsap', ease: 'power3.inOut' }</code></pre>
+      <p><a href="../drivers/gsap.html">GSAP</a> · <a href="../drivers/anime.html">Anime.js</a> · <a href="../drivers/motion.html">Motion</a> · <a href="../drivers/custom.html">Write your own</a></p>
+    </section>
+
+    <div class="final-cta">
+      <h3>That's the whole tour</h3>
+      <p>Every option, method and event is in the API reference. The demo shows what Zumly looks like in bigger interfaces.</p>
+      <div class="cta-row"><a class="cta-primary" href="../api.html">API reference</a><a class="cta-secondary" href="../">Open the demo</a></div>
+    </div>
+
+    <nav class="pager" aria-label="Steps"><a class="prev" href="navigate.html"><small>&larr; Step 5</small>Navigating from code</a><a class="next" href="../api.html"><small>Next &rarr;</small>API reference</a></nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frameworks</h4>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Drivers</h4>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Zumly</h4>
+          <ul>
+            <li><a href="../">Live demo</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

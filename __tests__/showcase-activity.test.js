@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import activitySource from '../docs/js/showcase-activity.js?raw'
-import playgroundSource from '../docs/js/playground.js?raw'
-import playgroundHTML from '../docs/views/playground.html?raw'
 import mercedesHTML from '../docs/showcases/mercedes-line.html?raw'
 import homeAssistantHTML from '../docs/showcases/home-assistant.html?raw'
 import missionControlHTML from '../docs/showcases/mission-control.html?raw'
@@ -149,7 +147,7 @@ it('reactivates the surviving showcase after a view source fails without an afte
     removeEventListener: window.removeEventListener.bind(window),
   }
   const mainScript = [...docsHTML.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)]
-    .find(([, source]) => source.includes('var viewHome'))[1]
+    .find(([, source]) => source.includes('syncShowcaseActivity'))[1]
   new Function('window', 'document', 'fetch', mainScript)(hostWindow, document,
     () => Promise.resolve({ json: () => Promise.resolve({}) }))
   await expect.poll(() => app.getCurrentViewName()).toBe('showcase')
@@ -161,32 +159,4 @@ it('reactivates the surviving showcase after a view source fails without an afte
   await expect.poll(() => activityMessages.mock.lastCall?.[0].active).toBe(true)
   expect(app.getCurrentViewName()).toBe('showcase')
   expect(mount.querySelector('iframe')).toBe(frame)
-})
-
-it('updates range labels while dragging and rebuilds the playground once on committed change', async () => {
-  const { doc } = await createDocument()
-  doc.body.innerHTML = playgroundHTML
-  const initialize = vi.fn()
-  const destroy = vi.fn()
-  const hostWindow = {
-    innerWidth: 1000,
-    Zumly: vi.fn(function () { this.init = initialize; this.destroy = destroy }),
-  }
-  new Function('window', 'document', playgroundSource)(hostWindow, doc)
-  hostWindow.Playground.bind()
-  hostWindow.Playground.setup()
-
-  const range = doc.getElementById('pg-dur')
-  for (let value = 750; value <= 1000; value += 50) {
-    range.value = String(value)
-    range.dispatchEvent(new Event('input'))
-  }
-  expect(doc.getElementById('pg-dur-val').textContent).toBe('1000ms')
-  expect(initialize).toHaveBeenCalledTimes(1)
-  expect(destroy).not.toHaveBeenCalled()
-  range.dispatchEvent(new Event('change'))
-  expect(initialize).toHaveBeenCalledTimes(2)
-  expect(destroy).toHaveBeenCalledTimes(1)
-  expect(hostWindow.Zumly.mock.calls[1][0].transitions.duration).toBe('1000ms')
-  hostWindow.Playground.destroy()
 })

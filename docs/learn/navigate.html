@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag () { dataLayer.push(arguments) } gtag('js', new Date()); gtag('config', 'G-TCJ276G8QK')</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Navigating from code — Learn Zumly, step 5</title>
+  <meta name="description" content="Step 5 of 6: zoomTo, goTo, zoomOut, back, events and the router. Everything a user does with clicks, you can do from code. Every method returns a promise that settles when the transition ends." />
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/navigate.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Navigating from code — Learn Zumly, step 5" />
+  <meta property="og:description" content="Step 5 of 6: zoomTo, goTo, zoomOut, back, events and the router. Everything a user does with clicks, you can do from code. Every method returns a promise that settles when the transition ends." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/navigate.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/" aria-current="page">Learn</a>
+      <a class="nav-link" href="../learn/#guides">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="step-meta"><span class="hero-eyebrow">Step 5 of 6</span><div class="step-dots"><a href="first-app.html" aria-label="Step 1: Your first app" class="is-done"></a><a href="depth.html" aria-label="Step 2: Going deeper" class="is-done"></a><a href="siblings.html" aria-label="Step 3: Siblings" class="is-done"></a><a href="views.html" aria-label="Step 4: Where views come from" class="is-done"></a><a href="navigate.html" aria-label="Step 5: Navigating from code" aria-current="step"></a><a href="motion.html" aria-label="Step 6: Motion and gestures"></a></div></div>
+      <h1 class="hero-title">Navigating from code</h1>
+      <p class="hero-sub">Everything a user does with clicks, you can do from code. Every method returns a promise that settles when the transition ends.</p>
+    </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example</span><button type="button" data-reload="demo">Restart</button><a href="examples/navigate.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="demo" src="examples/navigate.html" title="Navigating from code: live example" loading="lazy"></iframe>
+    </div>
+    <p class="demo-hint">Use the buttons above the canvas. Each one turns on in the views where it applies.</p>
+
+    <section>
+      <h2>The code</h2>
+      <p class="code-label">The buttons call the app directly:</p>
+      <pre data-example="navigate#nav"><code>&lt;nav class="toolbar"&gt;
+  &lt;button data-in="home" onclick="app.zoomTo('settings')"&gt;zoomTo('settings')&lt;/button&gt;
+  &lt;button data-in="profile" onclick="app.goTo('privacy', { mode: 'lateral' })"&gt;goTo('privacy', lateral)&lt;/button&gt;
+  &lt;button data-in="settings profile privacy" onclick="app.zoomOut({ to: 'home' })"&gt;zoomOut({ to: 'home' })&lt;/button&gt;
+  &lt;button onclick="app.back()"&gt;back()&lt;/button&gt;
+&lt;/nav&gt;</code></pre>
+      <pre data-example="navigate#script"><code>const app = new Zumly({
+  mount: '.canvas',
+  initialView: 'home',
+  views: {
+    home: `&lt;div class="z-view home" data-title="Home"&gt;
+             &lt;h1&gt;Home&lt;/h1&gt;
+             &lt;div class="zoom-me" data-to="settings"&gt;Settings&lt;/div&gt;
+           &lt;/div&gt;`,
+    settings: `&lt;div class="z-view card" data-title="Settings"&gt;
+                 &lt;h2&gt;Settings&lt;/h2&gt;
+                 &lt;div class="zoom-me" data-to="profile"&gt;Profile&lt;/div&gt;
+                 &lt;div class="zoom-me" data-to="privacy"&gt;Privacy&lt;/div&gt;
+               &lt;/div&gt;`,
+    profile: `&lt;div class="z-view card" data-title="Profile"&gt;&lt;h2&gt;Profile&lt;/h2&gt;&lt;/div&gt;`,
+    privacy: `&lt;div class="z-view card" data-title="Privacy"&gt;&lt;h2&gt;Privacy&lt;/h2&gt;&lt;/div&gt;`
+  }
+})
+
+// After every navigation: show where we are, enable the buttons that apply here
+app.on('viewChanged', ({ viewName }) =&gt; {
+  document.querySelector('.path').textContent =
+    app.getViewStack().map(view =&gt; view.title).join(' › ')
+  document.querySelectorAll('[data-in]').forEach(button =&gt; {
+    button.disabled = !button.dataset.in.split(' ').includes(viewName)
+  })
+})
+
+// Optional: the URL hash follows navigation, and the browser back button goes back
+app.use(Zumly.Router)
+app.init()</code></pre>
+    </section>
+
+    <section>
+      <h2>Methods</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td><code>zoomTo(name)</code></td><td>Zoom into a view from the center of the canvas.</td></tr>
+          <tr><td><code>zoomIn(trigger)</code></td><td>Zoom in from a trigger element, as a click would.</td></tr>
+          <tr><td><code>goTo(name, { mode: 'lateral' })</code></td><td>Move to a sibling.</td></tr>
+          <tr><td><code>zoomOut()</code>, <code>zoomOut(2)</code>, <code>zoomOut({ to: 'home' })</code></td><td>Zoom out one level, several, or up to an ancestor, in one transition.</td></tr>
+          <tr><td><code>back()</code></td><td>Undo the last sideways move, or zoom out.</td></tr>
+          <tr><td><code>getCurrentViewName()</code>, <code>getViewStack()</code></td><td>Where the user is, and the views from the root down with their titles.</td></tr>
+        </tbody>
+      </table></div>
+      <p>A call made while another navigation runs is ignored, so <code>await</code> the calls you chain:</p>
+      <pre><code>await app.zoomTo('settings')
+await app.goTo('privacy', { mode: 'lateral' })
+await app.back()</code></pre>
+    </section>
+
+    <section>
+      <h2>Events</h2>
+      <p><code>viewChanged</code> fires after every navigation, including the first render. There are also <code>beforeZoomIn</code>, <code>afterZoomOut</code>, <code>afterLateral</code> and others; the <a href="../api.html#events">API reference</a> lists them all.</p>
+      <h2>Router</h2>
+      <p><code>app.use(Zumly.Router)</code> writes the path to the hash (<code>#/home/settings/profile</code>) and makes the browser back button go back. Opening a deep URL directly is not supported: a zoom needs the trigger it comes from.</p>
+      <div class="tip"><img src="../fish-160.png" alt="" width="44" height="44"><div><p>With a bundler there is no global <code>Zumly</code>: <code>import { ZumlyRouter } from 'zumly'</code> and <code>app.use(ZumlyRouter)</code>.</p></div></div>
+    </section>
+
+    <nav class="pager" aria-label="Steps"><a class="prev" href="views.html"><small>&larr; Step 4</small>Where views come from</a><a class="next" href="motion.html"><small>Step 6 &rarr;</small>Motion and gestures</a></nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frameworks</h4>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Drivers</h4>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Zumly</h4>
+          <ul>
+            <li><a href="../">Live demo</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

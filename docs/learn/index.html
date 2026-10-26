@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag () { dataLayer.push(arguments) } gtag('js', new Date()); gtag('config', 'G-TCJ276G8QK')</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learn Zumly — zoom navigation in six short steps</title>
+  <meta name="description" content="Learn Zumly, the JavaScript library for zoom-based navigation, in six short steps. Each step has one idea, a live example and the code to copy." />
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Learn Zumly — zoom navigation in six short steps" />
+  <meta property="og:description" content="Learn Zumly, the JavaScript library for zoom-based navigation, in six short steps. Each step has one idea, a live example and the code to copy." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/" aria-current="page">Learn</a>
+      <a class="nav-link" href="../learn/#guides">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero learn-hero">
+      <div>
+        <span class="hero-eyebrow">Learn</span>
+        <h1 class="hero-title">Learn Zumly in six short steps</h1>
+        <p class="hero-sub">Each step is one idea, a small example running on the page, and the code to copy. From the first view to gestures, it takes about twenty minutes.</p>
+        <div class="cta-row"><a class="cta-primary" href="first-app.html">Start with step 1 &rarr;</a></div>
+      </div>
+      <img class="learn-fish" src="../fish-480.png" alt="Zumly's anglerfish" width="240" height="240">
+    </header>
+
+    <section>
+      <ol class="step-list">
+        <li><a href="first-app.html"><strong>Your first app</strong><span>A canvas, two views and one trigger.</span></a></li>
+        <li><a href="depth.html"><strong>Going deeper</strong><span>More levels, view titles and the back button.</span></a></li>
+        <li><a href="siblings.html"><strong>Siblings</strong><span>Move sideways between views of the same parent.</span></a></li>
+        <li><a href="views.html"><strong>Where views come from</strong><span>Functions with props and state, URLs and frameworks.</span></a></li>
+        <li><a href="navigate.html"><strong>Navigating from code</strong><span>zoomTo, goTo, zoomOut, back, events and the router.</span></a></li>
+        <li><a href="motion.html"><strong>Motion and gestures</strong><span>Timing, effects, drivers and gestures that follow your fingers.</span></a></li>
+      </ol>
+    </section>
+
+    <section id="what">
+      <h2>What Zumly is</h2>
+      <p>Zumly is a JavaScript library for <strong>zoom navigation</strong>, also called a zooming user interface (ZUI). Your interface is a set of screens called views. Clicking an element zooms into it, and the next view grows out of that element. Zooming out goes back the same way.</p>
+      <ul>
+        <li><strong>The trigger becomes the destination.</strong> You never wonder where a screen came from: it grew out of what you clicked.</li>
+        <li><strong>Context stays visible.</strong> The view you came from stays behind the current one, dimmed, so you know where you are.</li>
+        <li><strong>Zooming out is going back.</strong> Click outside, scroll, swipe or press the back button.</li>
+      </ul>
+      <p>It is not an infinite pan-and-zoom canvas like a map or a whiteboard. Movement happens in steps, through the elements you mark as triggers, and each view loads only when it is needed. You write the HTML and CSS; Zumly computes and animates the transforms.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th></th><th>Zumly</th><th>Pan-and-zoom canvas</th></tr></thead>
+        <tbody>
+          <tr><td>Moves</td><td>In steps, from a trigger to its view</td><td>Freely, to any point and scale</td></tr>
+          <tr><td>Content</td><td>Separate views, loaded on demand</td><td>One large surface</td></tr>
+          <tr><td>Good for</td><td>Dashboards, drill-downs, menus, kiosks, configurators</td><td>Maps, whiteboards, diagrams</td></tr>
+        </tbody>
+      </table></div>
+      <p>It is a poor fit for long reading flows and plain forms, where there is nothing to zoom into.</p>
+    </section>
+
+    <section id="guides">
+      <h2>Guides</h2>
+      <div class="guide-grid">
+        <div class="guide-card">
+          <h3>Frameworks</h3>
+          <p>Mount components as views and clean them up.</p>
+          <p><a href="../integrations/react.html">React</a> · <a href="../integrations/vue.html">Vue</a> · <a href="../integrations/svelte.html">Svelte</a> · <a href="../integrations/angular.html">Angular</a></p>
+        </div>
+        <div class="guide-card">
+          <h3>Orbit CSS</h3>
+          <p>Radial layouts where satellites open dials.</p>
+          <p><a href="../integrations/orbit-css.html">Zumly with Orbit</a></p>
+        </div>
+        <div class="guide-card">
+          <h3>Drivers</h3>
+          <p>Animate with an animation library, or write your own driver.</p>
+          <p><a href="../drivers/gsap.html">GSAP</a> · <a href="../drivers/anime.html">Anime.js</a> · <a href="../drivers/motion.html">Motion</a> · <a href="../drivers/custom.html">Custom</a></p>
+        </div>
+        <div class="guide-card">
+          <h3>Reference</h3>
+          <p>Every option, method and event, and a summary for AI assistants.</p>
+          <p><a href="../api.html">API reference</a> · <a href="../llms.txt">llms.txt</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frameworks</h4>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Drivers</h4>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Zumly</h4>
+          <ul>
+            <li><a href="../">Live demo</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

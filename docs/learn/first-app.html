@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag () { dataLayer.push(arguments) } gtag('js', new Date()); gtag('config', 'G-TCJ276G8QK')</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your first app — Learn Zumly, step 1</title>
+  <meta name="description" content="Step 1 of 6: A canvas, two views and one trigger. A Zumly app is a canvas, a map of named views, and triggers that zoom from one view into the next." />
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/learn/first-app.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Your first app — Learn Zumly, step 1" />
+  <meta property="og:description" content="Step 1 of 6: A canvas, two views and one trigger. A Zumly app is a canvas, a map of named views, and triggers that zoom from one view into the next." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/learn/first-app.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/" aria-current="page">Learn</a>
+      <a class="nav-link" href="../learn/#guides">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="step-meta"><span class="hero-eyebrow">Step 1 of 6</span><div class="step-dots"><a href="first-app.html" aria-label="Step 1: Your first app" aria-current="step"></a><a href="depth.html" aria-label="Step 2: Going deeper"></a><a href="siblings.html" aria-label="Step 3: Siblings"></a><a href="views.html" aria-label="Step 4: Where views come from"></a><a href="navigate.html" aria-label="Step 5: Navigating from code"></a><a href="motion.html" aria-label="Step 6: Motion and gestures"></a></div></div>
+      <h1 class="hero-title">Your first app</h1>
+      <p class="hero-sub">A Zumly app is a canvas, a map of named views, and triggers that zoom from one view into the next.</p>
+    </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example</span><button type="button" data-reload="demo">Restart</button><a href="examples/first-app.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="demo" src="examples/first-app.html" title="Your first app: live example" loading="lazy"></iframe>
+    </div>
+    <p class="demo-hint">Click the <strong>O</strong>. To come back, click outside the circle, press the button at the bottom left, scroll down or press ArrowLeft.</p>
+
+    <section>
+      <h2>The code</h2>
+      <pre data-example="first-app"><code>&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+  &lt;title&gt;Hello Zumly&lt;/title&gt;
+  &lt;link rel="stylesheet" href="https://unpkg.com/zumly@0.98.0/dist/zumly.css"&gt;
+  &lt;script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"&gt;&lt;/script&gt;
+  &lt;style&gt;
+    body { margin: 0; font: 20px system-ui, sans-serif; }
+    /* The canvas fills its nearest positioned ancestor: give it a size. */
+    .stage { position: relative; height: 100vh; }
+    .z-view { display: grid; place-items: center; }
+    .hello { width: 100%; height: 100%; }
+    .world { width: 320px; height: 320px; border-radius: 50%; background: #3da9fc; color: white; }
+    .zoom-me { cursor: zoom-in; font-weight: bold; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div class="stage"&gt;
+    &lt;div class="canvas zumly-canvas"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;script&gt;
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'hello',
+      views: {
+        hello: `&lt;div class="z-view hello"&gt;
+                  &lt;p&gt;H E L L O &amp;nbsp; W &lt;span class="zoom-me" data-to="world"&gt;O&lt;/span&gt; R L D&lt;/p&gt;
+                &lt;/div&gt;`,
+        world: `&lt;div class="z-view world"&gt;Hi from inside the O&lt;/div&gt;`
+      }
+    })
+    app.init()
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+    </section>
+
+    <section>
+      <h2>How it works</h2>
+      <ul>
+        <li><strong>The canvas</strong> is the element with class <code>zumly-canvas</code>. It fills its nearest positioned ancestor, here <code>.stage</code>, so that ancestor needs a height.</li>
+        <li><strong>Views</strong> are the screens. <code>views</code> maps a name to its HTML, and the root of each view has class <code>z-view</code>. Each view sets its own size: <code>hello</code> fills the canvas, <code>world</code> is a 320&nbsp;px circle.</li>
+        <li><strong>A trigger</strong> is any element with <code>class="zoom-me"</code> and <code>data-to="name"</code>. Clicking it scales the current view until the trigger covers the new one, so the new view seems to grow out of it.</li>
+        <li><code>initialView</code> is the first view, and <code>app.init()</code> renders it.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Install</h2>
+      <p>The example loads Zumly from a CDN, so you can save it as a file and open it. With a bundler:</p>
+      <pre><code>npm install zumly</code></pre>
+      <pre><code>import Zumly from 'zumly'
+import 'zumly/style.css'</code></pre>
+      <div class="tip"><img src="../fish-160.png" alt="" width="44" height="44"><div><p>Keep the browser console open while you build. Zumly explains its mistakes there: a <code>data-to</code> that names no view, an option with a typo, or a canvas with no height.</p></div></div>
+    </section>
+
+    <nav class="pager" aria-label="Steps"><a class="prev" href="./"><small>&larr; Overview</small>Learn Zumly</a><a class="next" href="depth.html"><small>Step 2 &rarr;</small>Going deeper</a></nav>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frameworks</h4>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Drivers</h4>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Zumly</h4>
+          <ul>
+            <li><a href="../">Live demo</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
