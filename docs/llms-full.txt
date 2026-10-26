@@ -80,8 +80,8 @@ import 'zumly/style.css'
 ### CDN (unpkg)
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/zumly@0.98.0/dist/zumly.css">
-<script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/zumly@1.0.0/dist/zumly.css">
+<script src="https://unpkg.com/zumly@1.0.0/dist/zumly.js"></script>
 ```
 
 When using the CDN, `Zumly` is available as a global (`window.Zumly`).
@@ -101,8 +101,8 @@ When using the CDN, `Zumly` is available as a global (`window.Zumly`).
 ## 3. Quick Start
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/zumly@0.98.0/dist/zumly.css">
-<script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/zumly@1.0.0/dist/zumly.css">
+<script src="https://unpkg.com/zumly@1.0.0/dist/zumly.js"></script>
 
 <div class="zumly-canvas" id="app"></div>
 
@@ -875,7 +875,7 @@ app.init()
 Or with script tag:
 
 ```html
-<script src="https://unpkg.com/zumly@0.98.0/dist/zumly.js"></script>
+<script src="https://unpkg.com/zumly@1.0.0/dist/zumly.js"></script>
 <script>
   const app = new Zumly({ ... })
   app.use(Zumly.Router)
