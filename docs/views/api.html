@@ -345,6 +345,7 @@
             <tr><td><code>dots</code></td><td>boolean</td><td><code>true</code></td><td>Show dot indicators for siblings</td></tr>
             <tr><td><code>keepAlive</code></td><td>boolean | 'visible'</td><td><code>false</code></td><td>Keep views in DOM: false = remove, true = hidden, 'visible' = visible</td></tr>
             <tr><td><code>position</code></td><td>'bottom-center' | 'top-center'</td><td><code>'bottom-center'</code></td><td>Placement of the lateral nav bar</td></tr>
+            <tr><td><code>swipe</code></td><td>boolean</td><td><code>false</code></td><td>A horizontal swipe moves between siblings (left: next, right: previous) instead of zooming out. Without siblings, a swipe left still zooms out; <code>[data-no-swipe]</code> is respected</td></tr>
             <tr><td><code>siblings</code></td><td>string[] | object</td><td><code>—</code></td><td>Declared sibling order; wins over inferring it from trigger positions. Array = one group, or a map keyed by parent view: <code>{ home: ['a','b','c'] }</code></td></tr>
           </tbody>
         </table>

@@ -140,6 +140,8 @@ export interface LateralNavOptions {
    * @example { home: ['today', 'tomorrow', 'week'] }
    */
   siblings?: string[] | Record<string, string[]>
+  /** A horizontal swipe moves between siblings (left: next, right: previous) instead of zooming out. Default: false. */
+  swipe?: boolean
 }
 
 /** Depth navigation UI configuration. */

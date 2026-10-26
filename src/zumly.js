@@ -2377,6 +2377,19 @@ export class Zumly {
    * @returns {string[]|null}
    * @private
    */
+  /**
+   * Siblings a horizontal swipe can reach, when lateralNav.swipe is on and
+   * the current view has any.
+   * @returns {{ prev: string|null, next: string|null }|null}
+   * @private
+   */
+  _lateralSwipe () {
+    if (!this.lateralNav?.swipe || this.storedViews.length < 2) return null
+    const { siblings, currentIndex } = this._getSiblings()
+    if (siblings.length < 2 || currentIndex === -1) return null
+    return { prev: siblings[currentIndex - 1] ?? null, next: siblings[currentIndex + 1] ?? null }
+  }
+
   _declaredSiblings () {
     const conf = this.lateralNav && typeof this.lateralNav === 'object' ? this.lateralNav.siblings : null
     if (!conf) return null
@@ -2689,7 +2702,7 @@ export class Zumly {
     this.touchstartY = event.changedTouches[0].screenY
     this._swipeBlocked = this._ownsHorizontalDrag(event.target)
     const now = performance.now()
-    this._swipe = { x: this.touchstartX, time: now, velocity: 0 }
+    this._swipe = { x: this.touchstartX, time: now, velocity: 0, lateral: !!this._lateralSwipe() }
   }
 
   /**
@@ -2708,7 +2721,8 @@ export class Zumly {
       return
     }
     const swipe = this._swipe
-    if (!swipe || !this.inputs.touch || this._swipeBlocked || event.touches.length !== 1) return
+    // A swipe that moves between siblings does not drive the zoom-out.
+    if (!swipe || swipe.lateral || !this.inputs.touch || this._swipeBlocked || event.touches.length !== 1) return
     const touch = event.touches[0]
     const now = performance.now()
     if (now > swipe.time) swipe.velocity = (touch.screenX - swipe.x) / (now - swipe.time)
@@ -2797,7 +2811,16 @@ export class Zumly {
     const dx = this.touchendX - this.touchstartX
     const dy = this.touchendY - this.touchstartY
     const isTap = Math.abs(dx) < 10 && Math.abs(dy) < 10
-    if (dx < -30 && !this._swipeBlocked) {
+    // With lateralNav.swipe, a horizontal swipe moves between siblings
+    // (left: next, right: previous) and no longer zooms out.
+    const lateral = Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy) && !this._swipeBlocked ? this._lateralSwipe() : null
+    if (lateral) {
+      const to = dx < 0 ? lateral.next : lateral.prev
+      if (to && !this.blockEvents) {
+        this.tracing(dx < 0 ? 'swipe left → next sibling' : 'swipe right → previous sibling')
+        this._doLateral(to)
+      }
+    } else if (dx < -30 && !this._swipeBlocked) {
       if (this.storedViews.length > 1 && !this.blockEvents) {
         this.tracing('swipe left')
         this.zoomOut()

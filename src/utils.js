@@ -15,7 +15,7 @@ import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSynta
 
 const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures']
 const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'parallax', 'hideTrigger']
-const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings']
+const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings', 'swipe']
 const DEPTH_NAV_KEYS = ['position', 'style']
 const DEPTH_NAV_STYLES = ['button', 'title', 'rings']
 const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch', 'pinch']
@@ -345,10 +345,12 @@ export function checkParameters (parameters, instance) {
       arrows: typeof lnIn.arrows === 'boolean' ? lnIn.arrows : true,
       dots: typeof lnIn.dots === 'boolean' ? lnIn.dots : true,
       keepAlive: (lnIn.keepAlive === true || lnIn.keepAlive === 'visible') ? lnIn.keepAlive : false,
-      siblings: siblingsIn
+      siblings: siblingsIn,
+      // swipe: a horizontal swipe moves between siblings instead of zooming out.
+      swipe: lnIn.swipe === true
     }
   } else {
-    instance.lateralNav = { mode: 'auto', arrows: true, dots: true, keepAlive: false, siblings: null }
+    instance.lateralNav = { mode: 'auto', arrows: true, dots: true, keepAlive: false, siblings: null, swipe: false }
   }
 
   // Depth navigation UI: zoom-out back button.

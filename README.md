@@ -224,7 +224,7 @@ The siblings of the current view are the other triggers in its parent. The sibli
 lateralNav: { siblings: { home: ['today', 'tomorrow', 'week'] } }
 ```
 
-By default the bar appears only when the current view does not cover the canvas (`mode: 'auto'`), so a full-screen view keeps the screen to itself. `mode: 'always'` shows it whenever there are siblings. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level.
+By default the bar appears only when the current view does not cover the canvas (`mode: 'auto'`), so a full-screen view keeps the screen to itself. `mode: 'always'` shows it whenever there are siblings. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level. `swipe: true` lets a horizontal swipe move between siblings (left: next, right: previous); where a view has no siblings, a swipe left still zooms out.
 
 ### Back button
 

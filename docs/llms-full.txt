@@ -165,6 +165,7 @@ new Zumly({
     keepAlive: false,         // true = keep lateral views in DOM (hidden), 'visible' = keep visible
     position: 'bottom-center', // 'bottom-center' | 'top-center'
     siblings: null,           // Declared sibling order: ['a','b','c'] or { parentView: ['a','b','c'] }
+    swipe: false,             // Horizontal swipe moves between siblings instead of zooming out
   },
 
   // ─── Input controls ──────────────────────
@@ -579,6 +580,7 @@ Siblings are identified by view name: triggers to the same view with different `
 | Click outside current view | Zoom out | `inputs.click` |
 | Click sibling trigger in parent | Lateral navigation | `inputs.click` |
 | Swipe left | Zoom out (not when it starts on a text field, slider, horizontal scroller or `[data-no-swipe]`); follows the finger with `gestures.follow` | `inputs.touch` |
+| Swipe left / right with `lateralNav.swipe` | Next / previous sibling (zooms out on a swipe left when there are no siblings) | `inputs.touch` |
 | Pinch (two fingers closing) | Zoom out; follows the fingers with `gestures.follow` | `inputs.pinch` (off by default) |
 | Tap `.zoom-me` | Zoom in | `inputs.touch` |
 | Tap outside current view | Zoom out | `inputs.touch` |

@@ -220,3 +220,85 @@ describe('inputs.pinch', () => {
     app.destroy()
   })
 })
+
+describe('lateralNav.swipe', () => {
+  beforeEach(() => { document.body.innerHTML = '' })
+
+  const siblingViews = {
+    home: `<div class="z-view" style="width:400px;height:300px">
+      ${['a', 'b', 'c'].map((n, i) => `<span class="zoom-me" data-to="${n}" style="position:absolute;left:${40 + i * 120}px;top:60px;width:80px;height:60px">${n}</span>`).join('')}
+    </div>`,
+    a: '<div class="z-view" style="width:400px;height:300px">a</div>',
+    b: '<div class="z-view" style="width:400px;height:300px">b</div>',
+    c: '<div class="z-view" style="width:400px;height:300px">c</div>'
+  }
+
+  async function atSibling (opts = {}) {
+    const app = createApp({ views: siblingViews, gestures: undefined, ...opts })
+    await app.init()
+    await app.zoomTo('b')
+    return app
+  }
+
+  const swipe = (app, from, to) => {
+    touch(app, 'touchstart', [[from, 300]])
+    touch(app, 'touchmove', [[(from + to) / 2, 300]])
+    touch(app, 'touchend', [[to, 300]])
+  }
+
+  it('is off by default: a swipe left zooms out', async () => {
+    const app = await atSibling()
+    swipe(app, 600, 400)
+    await until(() => expect(app.getCurrentViewName()).toBe('home'))
+    app.destroy()
+  })
+
+  it('moves to the next sibling on a swipe left and back on a swipe right', async () => {
+    const app = await atSibling({ lateralNav: { swipe: true } })
+    swipe(app, 600, 400)
+    await until(() => expect(app.getCurrentViewName()).toBe('c'))
+    expect(app.zoomLevel()).toBe(2)
+    swipe(app, 300, 500)
+    await until(() => expect(app.getCurrentViewName()).toBe('b'))
+    swipe(app, 300, 500)
+    await until(() => expect(app.getCurrentViewName()).toBe('a'))
+    // No sibling before the first one: nothing happens
+    swipe(app, 300, 500)
+    await new Promise(r => setTimeout(r, 30))
+    expect(app.getCurrentViewName()).toBe('a')
+    app.destroy()
+  })
+
+  it('does not drive a followed zoom-out where siblings exist', async () => {
+    const app = await atSibling({ lateralNav: { swipe: true }, gestures: { follow: true } })
+    const progress = vi.fn()
+    app.on('zoomOutProgress', progress)
+    swipe(app, 700, 300)
+    await until(() => expect(app.getCurrentViewName()).toBe('c'))
+    expect(progress).not.toHaveBeenCalled()
+    app.destroy()
+  })
+
+  it('still zooms out with a swipe where there are no siblings', async () => {
+    const app = createApp({ lateralNav: { swipe: true }, gestures: undefined })
+    await app.init()
+    await app.zoomIn(app.canvas.querySelector('.zoom-me'))
+    swipe(app, 600, 400)
+    await until(() => expect(app.getCurrentViewName()).toBe('home'))
+    app.destroy()
+  })
+
+  it('respects data-no-swipe', async () => {
+    const views = { ...siblingViews, b: '<div class="z-view" style="width:400px;height:300px"><div data-no-swipe style="position:absolute;inset:0"></div></div>' }
+    const app = await atSibling({ views, lateralNav: { swipe: true } })
+    const area = app.canvas.querySelector('[data-no-swipe]')
+    const at = (type, x) => {
+      const t = new Touch({ identifier: 0, target: area, screenX: x, screenY: 300, clientX: x, clientY: 300 })
+      area.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: type === 'touchend' ? [] : [t], changedTouches: [t] }))
+    }
+    at('touchstart', 600); at('touchmove', 500); at('touchend', 400)
+    await new Promise(r => setTimeout(r, 30))
+    expect(app.getCurrentViewName()).toBe('b')
+    app.destroy()
+  })
+})
