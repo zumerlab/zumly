@@ -112,7 +112,7 @@ export const ZumlyRouter = {
 
           while (current.length > target.length && current.length > 1) {
             const depth = current.length
-            await instance.zoomOut()
+            await instance.zoomOut(current.length - target.length)
             if (destroyed) return
             current = buildPath(instance, sep).split(sep).filter(Boolean)
             if (pendingTarget || current.length >= depth) break

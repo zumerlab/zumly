@@ -158,6 +158,8 @@ const views = {
 
 Object views call `mounted(node)` after the view is in the canvas, which is the place to measure it.
 
+A view can carry a human-readable name for the navigation UI: `title: 'Security'` in an object view, or `data-title="Security"` on the view's root element. Without one, the view name is used.
+
 ### Frameworks
 
 Mount a component into `ctx.target` and unmount it in `onCleanup`:
@@ -185,10 +187,11 @@ Users navigate with clicks or taps on triggers, Enter or Space on a focused trig
 | `zoomIn(triggerElement)` | Zoom into the trigger's view, from the trigger. Use it to open a view from code while keeping its origin. |
 | `zoomTo(name, { props, duration, ease })` | Zoom into a view from the center of the canvas. |
 | `goTo(name, { mode: 'lateral' })` | Move to a sibling at the same level. `goTo(name)` without `mode` is `zoomTo`. |
-| `zoomOut()` | Zoom out one level. |
+| `zoomOut()`, `zoomOut(2)`, `zoomOut({ to: 'home' })` | Zoom out one level, several, or up to an ancestor, in one transition. |
 | `back()` | Undo the last lateral move at this level, or zoom out. |
 | `canGoBack()` | Whether `back()` would do anything. |
 | `getCurrentViewName()`, `zoomLevel()` | Where the user is. Level 1 is the initial view. |
+| `getViewStack()`, `getViewTitle(name)` | The views from the root down, with their titles. |
 
 Every method returns a promise that settles when the transition ends. A call made while another navigation runs is ignored, so await calls you chain:
 
@@ -222,6 +225,14 @@ lateralNav: { siblings: { home: ['today', 'tomorrow', 'week'] } }
 ```
 
 By default the bar appears only when the current view does not cover the canvas (`mode: 'auto'`), so a full-screen view keeps the screen to itself. `mode: 'always'` shows it whenever there are siblings. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level.
+
+### Labels
+
+The back button, arrows and dots get accessible names from `labels`. Each one is a template with `{title}` and `{name}`, a function that receives `{ name, title }`, or `false` for none. `labels: false` turns them all off.
+
+```js
+labels: { back: 'Volver a {title}', goTo: view => `Ir a ${view.title}`, prev: false, next: false }
+```
 
 ### Gestures
 

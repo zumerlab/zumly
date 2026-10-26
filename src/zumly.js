@@ -1,4 +1,4 @@
-import { prepareAndInsertView, notification, checkParameters, normalizeDuration, normalizeEase } from './utils.js'
+import { prepareAndInsertView, definitionTitle, formatLabel, notification, checkParameters, normalizeDuration, normalizeEase } from './utils.js'
 import {
   computeCoverScale,
   computeCurrentViewStartTransform,
@@ -10,11 +10,16 @@ import {
   computeChildRectAfterParentTransformChange,
   parseOrigin,
   parseTranslateScale,
-  splitTranslate
+  splitTranslate,
+  poseFromTransform,
+  composePoses,
+  invertPose,
+  poseToTransform
 } from './geometry.js'
 import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetachedNode, INDEX_CURRENT, INDEX_PREVIOUS, INDEX_LAST } from './snapshots.js'
 import { ViewPrefetcher } from './view-prefetcher.js'
 import { getDriver, parseDurationMs } from './drivers/index.js'
+import { removeViewFromCanvas } from './drivers/driver-helpers.js'
 import { applyResizeCorrection } from './resize-correction.js'
 import { hideViewContent, showViewContent, restoreViewContent } from './view-visibility.js'
 import { disposeView, activateView } from './view-lifecycle.js'
@@ -807,6 +812,47 @@ export class Zumly {
   }
 
   /**
+   * The view node at a stack depth (0 = root): one of the three views in the
+   * canvas, or an ancestor detached into the snapshot that hid it.
+   * @private
+   * @param {number} depth
+   * @returns {HTMLElement|null}
+   */
+  _viewNodeAt (depth) {
+    const top = this.storedViews.length - 1
+    const role = ['is-current-view', 'is-previous-view', 'is-last-view'][top - depth]
+    if (role) return this.canvas?.querySelector(`:scope > .z-view.${role}`) ?? null
+    return getDetachedNode(this.storedViews[depth + 3] ?? {}) ?? null
+  }
+
+  /**
+   * Human-readable name of a view: its data-title, else the `title` of its
+   * definition, else the view name itself.
+   * @param {string} viewName
+   * @returns {string}
+   */
+  getViewTitle (viewName) {
+    for (let depth = this.storedViews.length - 1; depth >= 0; depth--) {
+      if (this.storedViews[depth].views[INDEX_CURRENT]?.viewName !== viewName) continue
+      const title = this._viewNodeAt(depth)?.dataset?.title
+      if (title) return title
+    }
+    return definitionTitle(this.views?.[viewName]) ?? viewName
+  }
+
+  /**
+   * The views from the root to the current one, with their titles.
+   * @returns {Array<{ name: string, title: string, depth: number }>}
+   */
+  getViewStack () {
+    return this.storedViews.map((stage, depth) => {
+      const name = stage.views[INDEX_CURRENT]?.viewName ?? null
+      const title = this._viewNodeAt(depth)?.dataset?.title || definitionTitle(this.views?.[name]) || name
+      return { name, title, depth }
+    })
+  }
+
+  /**
    * Navigate back. If there is lateral history at current depth, goes back laterally first.
    * Otherwise zooms out one level. Safe no-op at root with no lateral history.
    * Returns a Promise that settles after the selected navigation completes.
@@ -1077,6 +1123,10 @@ export class Zumly {
         // but detach its children so the browser only paints an empty shell during animation.
         const node = await this.prefetcher.get(targetViewName, context)
         if (this._destroyed) { disposeView(node); return }
+        // mounted() runs after the animation, so prepareAndInsertView gets no
+        // views map here: carry the definition's title over explicitly.
+        const title = !node.dataset?.title && definitionTitle(this.views[targetViewName])
+        if (title) node.dataset.title = title
         deferredContent = document.createDocumentFragment()
         while (node.firstChild) deferredContent.appendChild(node.firstChild)
         currentView = await prepareAndInsertView(node, targetViewName, canvas, false, {}, this.componentContext)
@@ -1743,12 +1793,198 @@ export class Zumly {
 
   // ─── Zoom out ────────────────────────────────────────────────────
 
-  zoomOut () {
-    return this._runNavigation(() => this._performZoomOut())
+  /**
+   * Zoom out one level, several levels (`zoomOut(2)`), or up to an ancestor
+   * view (`zoomOut({ to: 'home' })`). Several levels run as one transition.
+   * @param {number|{ to?: string, levels?: number, duration?: string, ease?: string }} [target]
+   */
+  zoomOut (target) {
+    const options = target && typeof target === 'object' && !(target instanceof Event) ? target : {}
+    const levels = this._zoomOutLevels(typeof target === 'number' ? target : options)
+    if (levels === 0) return Promise.resolve()
+    return this._runNavigation(() => levels > 1
+      ? this._performZoomOutLevels(levels, options)
+      : this._performZoomOut(options))
+  }
+
+  /**
+   * Levels a zoomOut() argument climbs, clamped to the root. 0 means no-op.
+   * @private
+   */
+  _zoomOutLevels (target) {
+    const depth = this.storedViews.length - 1
+    if (typeof target === 'number') {
+      if (!Number.isInteger(target) || target < 1) {
+        this.notify(`zoomOut(${target}): levels must be a positive integer.`, 'warn')
+        return 0
+      }
+      return Math.max(1, Math.min(target, depth))
+    }
+    if (typeof target.to === 'string') {
+      for (let level = depth - 1; level >= 0; level--) {
+        if (this.storedViews[level].views[INDEX_CURRENT]?.viewName === target.to) return depth - level
+      }
+      this.notify(`zoomOut({ to: "${target.to}" }): no such view above the current one. Stack: ${this.getViewStack().map(v => v.name).join(' > ')}`, 'warn')
+      return 0
+    }
+    if (target.levels !== undefined) return this._zoomOutLevels(target.levels)
+    return 1
+  }
+
+  /**
+   * Zoom out several levels in one transition. The child of the target view
+   * (c1) shrinks back into its trigger as in a one-level zoomOut; the deeper
+   * views still in the canvas ride along with it as passengers.
+   * @private
+   */
+  _performZoomOutLevels (levels, options = {}) {
+    const top = this.storedViews.length - 1
+    const t = top - levels
+    const c1Depth = t + 1
+    const from = this.getCurrentViewName()
+    const to = this.storedViews[t].views[INDEX_CURRENT].viewName
+    this._emit('beforeZoomOut', { zoomLevel: this.zoomLevel(), viewName: to, from, levels })
+    if (this._destroyed) return
+    this.tracing(`zoomOut(${levels})`)
+    const canvas = this.canvas
+    this._resetCanvasScroll(canvas)
+    this._cleanupLateralKeepAlive()
+    this.lateralHistory = []
+
+    const stage = this.storedViews[c1Depth]
+    const c1 = this._viewNodeAt(c1Depth)
+    const target = this._viewNodeAt(t)
+    const targetParent = t >= 1 ? this._viewNodeAt(t - 1) : null
+    const targetGrand = t >= 2 ? getDetachedNode(stage) ?? null : null
+    if (!c1 || !target || (t >= 1 && !targetParent)) {
+      this.notify('zoomOut: a view of the stack was not found (animation may still be running)', 'warn')
+      return
+    }
+    const passengers = []
+    for (let depth = c1Depth + 1; depth <= top; depth++) {
+      if (top - depth <= 2) passengers.push(this._viewNodeAt(depth))
+    }
+    const dropped = []
+    for (let depth = c1Depth + 1; depth <= top - 3; depth++) dropped.push(this._viewNodeAt(depth))
+
+    // Where each view sits now, as poses in canvas space (see geometry.js).
+    const stylePose = el => poseFromTransform(el.style.transformOrigin, el.style.transform)
+    const statePose = state => poseFromTransform(state.origin, state.transform)
+    const step = k => composePoses(
+      statePose(this.storedViews[k].views[INDEX_PREVIOUS].forwardState),
+      invertPose(statePose(this.storedViews[k].views[INDEX_PREVIOUS].backwardState)))
+    let c1Pose
+    if (c1.isConnected) {
+      c1Pose = stylePose(c1)
+    } else {
+      // Detached when it was the last view at depth c1 + 2; follow each
+      // zoom-in since then, which moves the whole scene by its previous view.
+      c1Pose = statePose(this.storedViews[c1Depth + 2].views[INDEX_LAST].forwardState)
+      for (let k = c1Depth + 3; k <= top; k++) c1Pose = composePoses(step(k), c1Pose)
+    }
+    // The scene at depth c1, as seen now.
+    const scene = composePoses(c1Pose, invertPose(statePose(stage.views[INDEX_CURRENT].forwardState)))
+    const startState = (el, entry) => {
+      const pose = el.isConnected ? stylePose(el) : composePoses(scene, statePose(entry.forwardState))
+      const origin = entry.forwardState.origin
+      el.style.transformOrigin = origin
+      el.style.transform = poseToTransform(pose, origin)
+      return { ...entry, forwardState: { ...entry.forwardState, origin, transform: el.style.transform } }
+    }
+    const passengerStart = passengers.map(el => ({ el, pose: stylePose(el) }))
+
+    const duration = options.duration !== undefined
+      ? normalizeDuration(options.duration, 'zoomOut() duration', this.duration)
+      : stage.views[INDEX_CURRENT]?.forwardState?.duration ?? this.duration
+    const ease = options.ease !== undefined
+      ? normalizeEase(options.ease, this.transitionDriverName, 'zoomOut() ease', this.ease)
+      : stage.views[INDEX_CURRENT]?.forwardState?.ease ?? this.ease
+
+    const views = [startState(c1, stage.views[INDEX_CURRENT]), startState(target, stage.views[INDEX_PREVIOUS])]
+    if (targetParent) views.push(startState(targetParent, stage.views[INDEX_LAST]))
+    // Put the target and its ancestors back, oldest first, before the views in the canvas.
+    const first = canvas.querySelector(':scope > .z-view')
+    for (const node of [targetGrand, targetParent, target, c1]) {
+      if (node && !node.isConnected) canvas.insertBefore(node, first)
+    }
+    const synthetic = { ...stage, views }
+    this.currentStage = synthetic
+
+    for (const el of passengers) {
+      this._removeEffect(el)
+      el.classList.remove('is-current-view', 'is-previous-view', 'is-last-view')
+      el.classList.add('has-no-events')
+    }
+    const zoomedEl = target.querySelector('.zoomed')
+    if (zoomedEl) zoomedEl.classList.remove('zoomed')
+    if (stage.hideTriggerMode && zoomedEl) this._restoreHideTrigger(zoomedEl, stage.hideTriggerMode, duration, ease)
+    this._removeEffect(c1)
+    c1.classList.remove('is-previous-view', 'is-last-view', 'hide')
+    c1.classList.add('is-current-view')
+    showViewContent(c1)
+    this._removeEffect(target)
+    target.classList.remove('is-previous-view', 'is-last-view', 'hide')
+    target.classList.add('is-current-view')
+    showViewContent(target)
+    if (targetParent) {
+      const effect = (this.storedViews[t]?.effects ?? this._resolveEffects(null))[0]
+      targetParent.classList.remove('is-current-view', 'is-last-view', 'hide', 'has-effect-reverse')
+      targetParent.classList.add('is-previous-view')
+      if (effect !== 'none' && !this._prefersReducedMotion()) this._applyEffects(targetParent, null, [effect, 'none'], duration, ease)
+      else this._removeEffect(targetParent)
+      showViewContent(targetParent)
+    }
+    if (targetGrand) {
+      targetGrand.classList.remove('is-current-view', 'is-previous-view')
+      targetGrand.classList.add('is-last-view', 'hide')
+      showViewContent(targetGrand)
+    }
+
+    // Passengers follow c1 whatever the driver: read its pose every frame.
+    let frame = null
+    const c1Start = invertPose(stylePose(c1))
+    const follow = () => {
+      const cs = getComputedStyle(c1)
+      const delta = composePoses(poseFromTransform(cs.transformOrigin, cs.transform), c1Start)
+      for (const { el, pose } of passengerStart) {
+        el.style.transformOrigin = '0 0'
+        el.style.transform = poseToTransform(composePoses(delta, pose), '0 0')
+      }
+      frame = requestAnimationFrame(follow)
+    }
+    if (passengers.length) frame = requestAnimationFrame(follow)
+
+    const spec = {
+      type: 'zoomOut',
+      currentView: c1,
+      previousView: target,
+      lastView: targetParent,
+      currentStage: synthetic,
+      duration,
+      ease,
+      canvas
+    }
+    const complete = () => {
+      if (frame !== null) cancelAnimationFrame(frame)
+      for (const el of passengers) removeViewFromCanvas(el, canvas)
+      for (const node of dropped) disposeView(node)
+      this.blockEvents = false
+      this.storedViews.length = t + 1
+      const parent = this.storedViews[t]
+      this.lateralHistory = parent?.lateralHistory ?? []
+      if (parent) delete parent.lateralHistory
+      this._onTransitionComplete()
+      this._updateNav()
+      activateView(target)
+      this._emit('afterZoomOut', { zoomLevel: this.zoomLevel(), viewName: to, from, levels })
+      this._emitViewChanged('zoomOut', from)
+      this.tracing('ended')
+    }
+    return this._runNavigationTransition(spec, complete)
   }
 
   /** @private */
-  _performZoomOut () {
+  _performZoomOut (options = {}) {
     const from = this.getCurrentViewName()
     const to = this.canvas.querySelector('.is-previous-view')?.dataset.viewName ?? null
     this._emit('beforeZoomOut', { zoomLevel: this.zoomLevel(), viewName: to, from })
@@ -1768,8 +2004,12 @@ export class Zumly {
     const lastView = canvas.querySelector('.is-last-view')
     this.tracing('setCSSVariables()')
 
-    const duration = this.currentStage.views[INDEX_CURRENT]?.forwardState?.duration ?? this.duration
-    const ease = this.currentStage.views[INDEX_CURRENT]?.forwardState?.ease ?? this.ease
+    const duration = options.duration !== undefined
+      ? normalizeDuration(options.duration, 'zoomOut() duration', this.duration)
+      : this.currentStage.views[INDEX_CURRENT]?.forwardState?.duration ?? this.duration
+    const ease = options.ease !== undefined
+      ? normalizeEase(options.ease, this.transitionDriverName, 'zoomOut() ease', this.ease)
+      : this.currentStage.views[INDEX_CURRENT]?.forwardState?.ease ?? this.ease
 
     const zoomedEl = previousView.querySelector('.zoomed')
     if (zoomedEl) zoomedEl.classList.remove('zoomed')
@@ -1997,7 +2237,6 @@ export class Zumly {
       nav = document.createElement('div')
       const backBtn = document.createElement('button')
       backBtn.className = 'z-nav-back'
-      backBtn.setAttribute('aria-label', 'Zoom out (go back)')
       backBtn.innerHTML = '&#8249;'
       backBtn.type = 'button'
       backBtn.addEventListener('click', (e) => {
@@ -2009,7 +2248,22 @@ export class Zumly {
     }
     const className = 'z-depth-nav z-depth-nav--' + pos
     if (nav.className !== className) nav.className = className
+    const parent = this.storedViews[this.storedViews.length - 2]?.views[INDEX_CURRENT]?.viewName
+    this._setLabel(nav.querySelector('.z-nav-back'), this.labels.back, parent)
     if (nav.parentNode !== this.canvas) this.canvas.appendChild(nav)
+  }
+
+  /**
+   * Apply a navigation label (see the `labels` option) as the control's
+   * aria-label, or remove it when that label is turned off.
+   * @private
+   */
+  _setLabel (element, label, viewName) {
+    if (!element) return
+    const view = viewName ? { name: viewName, title: this.getViewTitle(viewName) } : {}
+    const text = formatLabel(label, view)
+    if (text === null) element.removeAttribute('aria-label')
+    else if (element.getAttribute('aria-label') !== text) element.setAttribute('aria-label', text)
   }
 
   /**
@@ -2043,13 +2297,13 @@ export class Zumly {
       const arrow = (direction, label, glyph) => {
         const button = document.createElement('button')
         button.className = 'z-nav-arrow z-nav-' + direction
-        button.setAttribute('aria-label', label)
+        this._setLabel(button, label)
         button.innerHTML = glyph
         button.type = 'button'
         return button
       }
       if (arrows) {
-        state.prevButton = arrow('prev', 'Previous sibling view', '&#8249;')
+        state.prevButton = arrow('prev', this.labels.prev, '&#8249;')
         nav.appendChild(state.prevButton)
       }
       if (dots) {
@@ -2058,7 +2312,7 @@ export class Zumly {
         for (const name of siblings) {
           const dot = document.createElement('button')
           dot.className = 'z-nav-dot z-nav-lat-dot'
-          dot.setAttribute('aria-label', `Go to ${name}`)
+          this._setLabel(dot, this.labels.goTo, name)
           dot.dataset.to = name
           dot.type = 'button'
           state.dotButtons.push(dot)
@@ -2067,7 +2321,7 @@ export class Zumly {
         nav.appendChild(dotsContainer)
       }
       if (arrows) {
-        state.nextButton = arrow('next', 'Next sibling view', '&#8250;')
+        state.nextButton = arrow('next', this.labels.next, '&#8250;')
         nav.appendChild(state.nextButton)
       }
       // Resolve targets from the current state, not the index at creation time.

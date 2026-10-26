@@ -29,6 +29,8 @@ export type ViewFunction = (ctx: ViewContext) => string | HTMLElement | void | P
 /** An object with a render method and optional mounted hook. */
 export interface ViewObject {
   render(ctx: ViewContext): string | HTMLElement | Promise<string | HTMLElement>
+  /** Human-readable name for navigation UI. A data-title on the view root wins. */
+  title?: string
   /** Called after the view is inserted into the canvas, with its root node. */
   mounted?(node: HTMLElement): void | Promise<void>
 }
@@ -170,6 +172,40 @@ export interface GoToOptions {
   props?: Record<string, unknown>
 }
 
+/** A navigation label: template with {title} and {name}, a function, or false for none. */
+export type NavLabel = string | ((view: { name?: string; title?: string }) => string) | false
+
+/** Accessible names of the built-in navigation controls. */
+export interface LabelsOptions {
+  /** Back button. Default: 'Back to {title}' (the view above). */
+  back?: NavLabel
+  /** Previous-sibling arrow. Default: 'Previous sibling view'. */
+  prev?: NavLabel
+  /** Next-sibling arrow. Default: 'Next sibling view'. */
+  next?: NavLabel
+  /** Sibling dots. Default: 'Go to {title}'. */
+  goTo?: NavLabel
+}
+
+/** Options for zoomOut() with an object. */
+export interface ZoomOutOptions {
+  /** Ancestor view to zoom out to (the nearest one with this name). */
+  to?: string
+  /** Levels to climb. Default: 1. */
+  levels?: number
+  /** Override transition duration (CSS time or milliseconds). */
+  duration?: string | number
+  /** Override transition easing. */
+  ease?: string
+}
+
+/** A view in the stack, root first. */
+export interface StackEntry {
+  name: string
+  title: string
+  depth: number
+}
+
 /** Options for zoomTo(). */
 export interface ZoomToOptions {
   /** Override transition duration (CSS time or milliseconds). */
@@ -210,6 +246,8 @@ export interface ZumlyOptions {
   inputs?: boolean | InputsOptions
   /** Enable deferred rendering (view content inserted after zoom animation). */
   deferred?: boolean
+  /** Labels of the navigation controls. false leaves them all without one. */
+  labels?: false | LabelsOptions
 }
 
 // ─── Events ─────────────────────────────────────────────────────────
@@ -219,8 +257,8 @@ export interface ZumlyEventMap {
   beforeZoomIn: { viewName: string }
   afterZoomIn: { viewName: string; zoomLevel: number }
   /** viewName is the view being returned to; from is the view being left. */
-  beforeZoomOut: { zoomLevel: number; viewName: string | null; from: string | null }
-  afterZoomOut: { zoomLevel: number; viewName: string | null; from: string | null }
+  beforeZoomOut: { zoomLevel: number; viewName: string | null; from: string | null; levels?: number }
+  afterZoomOut: { zoomLevel: number; viewName: string | null; from: string | null; levels?: number }
   beforeLateral: { viewName: string; from: string; isBack: boolean }
   afterLateral: { viewName: string; from: string; isBack: boolean }
   /** Fired after every completed navigation, including init(). */
@@ -327,8 +365,17 @@ export class Zumly {
   /** Zoom into the view indicated by a trigger element with data-to="viewName". */
   zoomIn(el: HTMLElement): Promise<void>
 
-  /** Zoom out one level. Resolves after animation; no-op at root. */
-  zoomOut(): Promise<void>
+  /**
+   * Zoom out one level, `levels` levels (`zoomOut(2)`), or up to an ancestor
+   * (`zoomOut({ to: 'home' })`), in one transition. Clamped to the root.
+   */
+  zoomOut(target?: number | ZoomOutOptions): Promise<void>
+
+  /** Title of a view: its data-title, else `title` in its definition, else its name. */
+  getViewTitle(viewName: string): string
+
+  /** The views from the root to the current one. */
+  getViewStack(): StackEntry[]
 
   /**
    * Navigate back. Pops lateral history first, then zooms out.

@@ -249,3 +249,44 @@ export function computeChildRectAfterParentTransformChange (
     bottom: newY + newH
   }
 }
+
+// ─── Poses ──────────────────────────────────────────────────────────
+// A pose is the uniform-scale affine map a view's CSS transform applies to
+// canvas coordinates: point → s · point + (x, y), with transform-origin folded
+// in. Poses compose, so a whole stack of views can move as one scene.
+
+/**
+ * Pose of a CSS transform applied around a transform-origin.
+ * @param {string} origin - transform-origin in px ("12px 34px" or "0 0")
+ * @param {string} transform - Any CSS transform with uniform scale ('' and 'none' are identity)
+ * @returns {{ s: number, x: number, y: number }}
+ */
+export function poseFromTransform (origin, transform) {
+  const o = parseOrigin(origin || '0 0')
+  const m = new DOMMatrix(!transform || transform === 'none' ? undefined : transform)
+  return { s: m.a, x: m.e + o.x * (1 - m.a), y: m.f + o.y * (1 - m.a) }
+}
+
+/** Pose that applies `b` first, then `a`. */
+export function composePoses (a, b) {
+  return { s: a.s * b.s, x: a.s * b.x + a.x, y: a.s * b.y + a.y }
+}
+
+/** Inverse pose. */
+export function invertPose (p) {
+  return { s: 1 / p.s, x: -p.x / p.s, y: -p.y / p.s }
+}
+
+/**
+ * CSS transform that renders `pose` around `origin`, in Zumly's
+ * translate(...) scale(...) form.
+ * @param {{ s: number, x: number, y: number }} pose
+ * @param {string} origin
+ * @returns {string}
+ */
+export function poseToTransform (pose, origin) {
+  const o = parseOrigin(origin || '0 0')
+  const tx = pose.x - o.x * (1 - pose.s)
+  const ty = pose.y - o.y * (1 - pose.s)
+  return `translate(${tx}px, ${ty}px) scale(${pose.s})`
+}

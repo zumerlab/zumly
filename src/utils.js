@@ -13,11 +13,14 @@ import { ViewResolver } from './view-resolver.js'
 import { disposeView } from './view-lifecycle.js'
 import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSyntax, isValidCssEasing } from './diagnostics.js'
 
-const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred']
+const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels']
 const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'parallax', 'hideTrigger']
 const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings']
 const DEPTH_NAV_KEYS = ['position']
 const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch']
+const LABEL_KEYS = ['back', 'prev', 'next', 'goTo']
+/** Accessible names of the navigation controls. {title} and {name} name the target view. */
+const DEFAULT_LABELS = { back: 'Back to {title}', prev: 'Previous sibling view', next: 'Next sibling view', goTo: 'Go to {title}' }
 
 /** Warn once per unknown key, with the closest known key when there is one. */
 function warnUnknownKeys (object, known, path) {
@@ -29,6 +32,17 @@ function warnUnknownKeys (object, known, path) {
 /** Raw view templates that the resolver accepts in place of a view name. */
 function isRawViewSource (source) {
   return source.includes('<') || source.includes('-') || /^https?:\/\/|^\/|\.(?:html|php)(?:[?#].*)?$/i.test(source)
+}
+
+/**
+ * The `title` a view definition declares (`{ render, title }`, or a function
+ * view with a `title` property), if any.
+ * @param {*} definition - Value from the views map
+ * @returns {string|undefined}
+ */
+export function definitionTitle (definition) {
+  if (!definition || (typeof definition !== 'object' && typeof definition !== 'function')) return undefined
+  return typeof definition.title === 'string' && definition.title ? definition.title : undefined
 }
 
 /**
@@ -54,8 +68,11 @@ export async function prepareAndInsertView (node, viewName, canvas, isInit, view
     node.classList.add('z-view')
   }
   node.dataset.viewName = viewName
+  // Human-readable name: data-title on the view wins over `title` in its definition.
+  const title = node.dataset.title || definitionTitle(views[viewName])
+  if (title) node.dataset.title = title
   if (!node.getAttribute('aria-label')) {
-    node.setAttribute('aria-label', `View: ${viewName}`)
+    node.setAttribute('aria-label', `View: ${title || viewName}`)
   }
   node.style.transformOrigin = '0 0'
   node.style.position = 'absolute'
@@ -189,6 +206,7 @@ export function checkParameters (parameters, instance) {
   if (parameters.lateralNav && typeof parameters.lateralNav === 'object') warnUnknownKeys(parameters.lateralNav, LATERAL_NAV_KEYS, 'lateralNav.')
   if (parameters.depthNav && typeof parameters.depthNav === 'object') warnUnknownKeys(parameters.depthNav, DEPTH_NAV_KEYS, 'depthNav.')
   if (parameters.inputs && typeof parameters.inputs === 'object') warnUnknownKeys(parameters.inputs, INPUT_KEYS, 'inputs.')
+  if (parameters.labels && typeof parameters.labels === 'object') warnUnknownKeys(parameters.labels, LABEL_KEYS, 'labels.')
 
   // Optional
   instance.preload = Array.isArray(parameters.preload) ? parameters.preload : []
@@ -360,6 +378,24 @@ export function checkParameters (parameters, instance) {
     instance.lateralNav.position = lpOk ? lnpIn : 'bottom-center'
   }
 
+  // Navigation labels: each a template ('Back to {title}'), a function
+  // ({ name, title }) => string, or false to leave the control without one.
+  // labels: false turns them all off.
+  const lbIn = parameters.labels
+  instance.labels = { ...DEFAULT_LABELS }
+  if (lbIn === false) {
+    for (const key of LABEL_KEYS) instance.labels[key] = false
+  } else if (lbIn && typeof lbIn === 'object') {
+    for (const key of LABEL_KEYS) {
+      const value = lbIn[key]
+      if (value === undefined) continue
+      if (value === false || typeof value === 'string' || typeof value === 'function') instance.labels[key] = value
+      else notification(false, `'labels.${key}' must be a string, a function or false. Using the default.`, 'warn')
+    }
+  } else if (lbIn !== undefined) {
+    notification(false, '\'labels\' must be an object or false. Using the defaults.', 'warn')
+  }
+
   // Navigation inputs: control which user interactions trigger zoom/navigation.
   // All enabled by default. Set individual keys to false to disable.
   const niIn = parameters.inputs
@@ -375,4 +411,19 @@ export function checkParameters (parameters, instance) {
   } else {
     instance.inputs = { wheel: true, keyboard: true, click: true, touch: true }
   }
+}
+
+/**
+ * Resolve a navigation label (see the `labels` option) for a target view.
+ * @param {string|Function|false} label
+ * @param {{ name?: string, title?: string }} [view]
+ * @returns {string|null} null when the label is turned off
+ */
+export function formatLabel (label, view = {}) {
+  if (label === false || label == null) return null
+  if (typeof label === 'function') {
+    const text = label(view)
+    return typeof text === 'string' && text ? text : null
+  }
+  return label.replace(/\{(title|name)\}/g, (_, key) => view[key] ?? '')
 }

@@ -96,7 +96,7 @@ describe('ZumlyRouter plugin', () => {
     app.destroy()
   })
 
-  it('awaits every zoom-out in a history jump without rewriting browser history', async () => {
+  it('climbs a history jump in one zoom-out without rewriting browser history', async () => {
     const app = createApp()
     app.use(ZumlyRouter)
     await app.init()
@@ -113,12 +113,10 @@ describe('ZumlyRouter plugin', () => {
     try {
       window.dispatchEvent(new PopStateEvent('popstate'))
       await vi.waitFor(() => expect(pending).toHaveLength(1))
-      pending.shift()()
-      await vi.waitFor(() => expect(pending).toHaveLength(1))
-      expect(app.getCurrentViewName()).toBe('detail')
-      expect(window.location.hash).toBe('#/home')
+      expect(app.getCurrentViewName()).toBe('other')
       pending.shift()()
       await vi.waitFor(() => expect(app.getCurrentViewName()).toBe('home'))
+      expect(pending).toHaveLength(0)
       expect(app.getZoomLevel()).toBe(1)
       expect(push).not.toHaveBeenCalled()
       expect(replace).not.toHaveBeenCalled()
@@ -146,10 +144,8 @@ describe('ZumlyRouter plugin', () => {
       window.dispatchEvent(new PopStateEvent('popstate'))
       pending.shift()()
       await navigation
-      for (let i = 0; i < 2; i++) {
-        await vi.waitFor(() => expect(pending).toHaveLength(1))
-        pending.shift()()
-      }
+      await vi.waitFor(() => expect(pending).toHaveLength(1))
+      pending.shift()()
       await vi.waitFor(() => expect(app.getCurrentViewName()).toBe('home'))
       expect(window.location.hash).toBe('#/home')
     } finally { app.destroy() }
