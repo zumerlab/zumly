@@ -162,6 +162,18 @@
         After the animation, the current view is removed from the DOM, the previous view
         becomes the new current, and the grandparent (if any) is promoted to "previous."
       </p>
+      <p>
+        A zoom-out can also climb several levels at once: <code>zoomOut(2)</code> or
+        <code>zoomOut({ to: 'home' })</code> run as a single transition, with the deeper views
+        riding along as the scene shrinks back into the target's trigger. With
+        <code>gestures: { follow: true }</code>, the trackpad, a swipe or a pinch moves the
+        zoom-out as the fingers move, and releasing before the halfway point puts everything back.
+      </p>
+      <p>
+        The back button shows where you are going: <code>depthNav: { style: 'title' }</code> names
+        the view above, and <code>style: 'rings'</code> draws one ring per level, with a band per
+        level to jump straight to any ancestor.
+      </p>
     </section>
 
     <section>

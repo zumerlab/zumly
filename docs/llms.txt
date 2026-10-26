@@ -21,6 +21,8 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 - **Driver**: Pluggable animation engine for transitions
 - **Plugin**: Object with `install(instance, options)` or plain function
 - **Events**: `viewChanged` fires after every navigation with `{ type, viewName, from, zoomLevel, node }`
+- **Back button** (`depthNav`): styles `'button'`, `'title'` (title of the view above) or `'rings'` (a ring per level, bands to jump several). Views name themselves with `title` or `data-title`
+- **Gestures**: `gestures: { follow: true }` makes trackpad, swipe and pinch (`inputs.pinch`) drive the zoom-out with their progress (`zoomOutProgress` event); `zoomOut(2)` / `zoomOut({ to })` climb several levels in one transition
 - **Diagnostics**: the console explains typos in view names and options, and a canvas without size
 
 ## Quick start

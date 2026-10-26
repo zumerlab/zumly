@@ -16,7 +16,8 @@ import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSynta
 const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures']
 const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'parallax', 'hideTrigger']
 const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings']
-const DEPTH_NAV_KEYS = ['position']
+const DEPTH_NAV_KEYS = ['position', 'style']
+const DEPTH_NAV_STYLES = ['button', 'title', 'rings']
 const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch', 'pinch']
 const GESTURE_KEYS = ['follow', 'threshold']
 const LABEL_KEYS = ['back', 'prev', 'next', 'goTo']
@@ -362,11 +363,19 @@ export function checkParameters (parameters, instance) {
     if (dpIn && !dpOk) {
       notification(false, '\'depthNav.position\' must be "bottom-left" or "top-left". Falling back to "bottom-left".', 'warn')
     }
+    // style: 'button' (chevron), 'title' (name of the view above), 'rings'
+    // (a ring per level above; hover or long press to jump several).
+    const dsIn = typeof dnIn.style === 'string' ? dnIn.style.toLowerCase() : null
+    const dsOk = DEPTH_NAV_STYLES.includes(dsIn)
+    if (dnIn.style !== undefined && !dsOk) {
+      notification(false, '\'depthNav.style\' must be "button", "title" or "rings". Falling back to "button".', 'warn')
+    }
     instance.depthNav = {
-      position: dpOk ? dpIn : 'bottom-left'
+      position: dpOk ? dpIn : 'bottom-left',
+      style: dsOk ? dsIn : 'button'
     }
   } else {
-    instance.depthNav = { position: 'bottom-left' }
+    instance.depthNav = { position: 'bottom-left', style: 'button' }
   }
 
   // Lateral navigation position: 'bottom-center' (default) or 'top-center'.

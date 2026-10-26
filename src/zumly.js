@@ -20,6 +20,7 @@ import { createViewEntry, createRemovedViewEntry, createZoomSnapshot, getDetache
 import { ViewPrefetcher } from './view-prefetcher.js'
 import { getDriver, parseDurationMs } from './drivers/index.js'
 import { removeViewFromCanvas } from './drivers/driver-helpers.js'
+import { DepthNav } from './depth-nav.js'
 import { applyResizeCorrection } from './resize-correction.js'
 import { hideViewContent, showViewContent, restoreViewContent } from './view-visibility.js'
 import { disposeView, activateView } from './view-lifecycle.js'
@@ -355,6 +356,7 @@ export class Zumly {
     if (this._resizeDebounceTimer) clearTimeout(this._resizeDebounceTimer)
     this._resizeDebounceTimer = setTimeout(() => {
       this._resizeDebounceTimer = null
+      this._layoutNav()
       if (!this.isValid || !this.canvas || this._lastCanvasWidth === 0) return
       const newW = this.canvas.offsetWidth
       const newH = this.canvas.offsetHeight
@@ -2180,6 +2182,7 @@ export class Zumly {
     if (p === scrub.progress) return
     scrub.progress = p
     for (const { animation } of scrub.layers) animation.currentTime = p * 1000
+    this._depthNav?.setProgress(p, this.gestures.threshold)
     this._emit('zoomOutProgress', { phase: 'move', progress: p, viewName: scrub.to, from: scrub.from, source: scrub.source })
   }
 
@@ -2199,6 +2202,7 @@ export class Zumly {
     const duration = Math.max(120, full * (commit ? 1 - p : p))
     const phase = commit ? 'commit' : 'cancel'
     this._emit('zoomOutProgress', { phase, progress: p, duration, viewName: scrub.to, from: scrub.from, source: scrub.source })
+    this._depthNav?.setProgress(commit ? 1 : null, this.gestures.threshold)
 
     // Continue from where each view is now, decelerating like a released drag.
     const settle = scrub.layers.map(entry => {
@@ -2223,6 +2227,7 @@ export class Zumly {
       } else {
         this._stopScrubAnimations()
       }
+      this._depthNav?.setProgress(null)
       this._emit('zoomOutProgress', { phase: 'end', progress: commit ? 1 : 0, viewName: scrub.to, from: scrub.from, source: scrub.source })
     })
   }
@@ -2402,10 +2407,11 @@ export class Zumly {
     }
     this._updateDepthNav(showDepth)
     this._updateLateralNav(lateralData)
+    this._layoutNav()
   }
 
   /**
-   * Create the depth navigation button (back arrow in a circle).
+   * Show or hide the depth navigation (see depth-nav.js for its styles).
    * Position: bottom-left (default) or top-left.
    * @private
    */
@@ -2415,29 +2421,53 @@ export class Zumly {
       visible = !!this.depthNav && this.storedViews.length > 1 && !cv?.querySelector('.z-depth-nav')
     }
     if (!visible) {
+      this._depthNav?.close()
       this._depthNavElement?.remove()
       return
     }
-    const pos = this.depthNav.position || 'bottom-left'
-    let nav = this._depthNavElement
-    if (!nav) {
-      nav = document.createElement('div')
-      const backBtn = document.createElement('button')
-      backBtn.className = 'z-nav-back'
-      backBtn.innerHTML = '&#8249;'
-      backBtn.type = 'button'
-      backBtn.addEventListener('click', (e) => {
-        e.stopPropagation()
-        if (!this._destroyed && nav.parentNode === this.canvas && !this.blockEvents && this.storedViews.length > 1) this.zoomOut()
+    if (!this._depthNav) {
+      const ready = () => !this._destroyed && this.canvas.contains(this._depthNav.element) && !this.blockEvents && this.storedViews.length > 1
+      this._depthNav = new DepthNav({
+        onBack: () => { if (ready()) this.zoomOut() },
+        onJump: levels => { if (ready()) this.zoomOut(levels) }
       })
-      nav.appendChild(backBtn)
-      this._depthNavElement = nav
+      this._depthNavElement = this._depthNav.element
     }
-    const className = 'z-depth-nav z-depth-nav--' + pos
-    if (nav.className !== className) nav.className = className
-    const parent = this.storedViews[this.storedViews.length - 2]?.views[INDEX_CURRENT]?.viewName
-    this._setLabel(nav.querySelector('.z-nav-back'), this.labels.back, parent)
-    if (nav.parentNode !== this.canvas) this.canvas.appendChild(nav)
+    const levels = this.getViewStack().slice(0, -1).reverse().map((view, i) => ({ ...view, up: i + 1 }))
+    this._depthNav.update({
+      position: this.depthNav.position || 'bottom-left',
+      style: this.depthNav.style || 'button',
+      label: formatLabel(this.labels.back, levels[0] ?? {}),
+      levels
+    })
+    if (this._depthNavElement.parentNode !== this.canvas) this.canvas.appendChild(this._depthNavElement)
+  }
+
+  /**
+   * Keep the depth button and the sibling bar apart when they share an edge:
+   * shift the bar sideways, or stack it over the button when there is no room.
+   * Sets --z-nav-shift-x / --z-nav-shift-y on the bar.
+   * @private
+   */
+  _layoutNav () {
+    const lateral = this._lateralNavState?.element
+    if (!lateral || lateral.parentNode !== this.canvas) return
+    lateral.style.removeProperty('--z-nav-shift-x')
+    lateral.style.removeProperty('--z-nav-shift-y')
+    const depth = this._depthNavElement
+    if (!depth || depth.parentNode !== this.canvas) return
+    const edge = position => position.split('-')[0]
+    if (edge(this.depthNav.position || 'bottom-left') !== edge(this.lateralNav.position || 'bottom-center')) return
+    const gap = 8
+    const width = this.canvas.clientWidth
+    const depthRight = depth.offsetLeft + depth.offsetWidth + gap
+    const lateralLeft = (width - lateral.offsetWidth) / 2
+    if (lateralLeft >= depthRight) return
+    if (depthRight + lateral.offsetWidth <= width - depth.offsetLeft) {
+      lateral.style.setProperty('--z-nav-shift-x', `${depthRight - lateralLeft}px`)
+    } else {
+      lateral.style.setProperty('--z-nav-shift-y', `${depth.offsetHeight + gap}px`)
+    }
   }
 
   /**
@@ -2545,6 +2575,8 @@ export class Zumly {
    * @private
    */
   _removeNav () {
+    this._depthNav?.destroy()
+    this._depthNav = null
     this._depthNavElement?.remove()
     this._lateralNavState?.element.remove()
     this._depthNavElement = null

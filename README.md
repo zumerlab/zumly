@@ -226,6 +226,22 @@ lateralNav: { siblings: { home: ['today', 'tomorrow', 'week'] } }
 
 By default the bar appears only when the current view does not cover the canvas (`mode: 'auto'`), so a full-screen view keeps the screen to itself. `mode: 'always'` shows it whenever there are siblings. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level.
 
+### Back button
+
+`depthNav` places the back button (`position: 'bottom-left'` or `'top-left'`) and picks its `style`:
+
+- `'button'` (default): a chevron.
+- `'title'`: a dot in its ring and the title of the view above.
+- `'rings'`: a dot inside one ring per level above. A tap goes up one level; hovering, a long press or an arrow key opens a band per level, so you can jump several at once.
+
+Each ring and band has classes per level (`z-depth-ring--up-1` is the view right above, `z-depth-ring--depth-0` the root) and `data-view`, so your CSS can mark a level:
+
+```css
+.z-depth-ring[data-view="security"] { stroke: tomato; opacity: 1; }
+```
+
+With `gestures.follow`, the dot grows into its ring as a zoom-out gesture reaches the threshold (`--z-grow` on `.z-depth-nav`). When the back button and the sibling bar share an edge, the bar moves aside, or above the button when there is no room.
+
 ### Labels
 
 The back button, arrows and dots get accessible names from `labels`. Each one is a template with `{title}` and `{name}`, a function that receives `{ name, title }`, or `false` for none. `labels: false` turns them all off.

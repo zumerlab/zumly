@@ -146,6 +146,13 @@ export interface LateralNavOptions {
 export interface DepthNavOptions {
   /** Position of the back button. Default: 'bottom-left'. */
   position?: 'bottom-left' | 'top-left'
+  /**
+   * 'button' (default): a chevron. 'title': a dot in its ring and the title of
+   * the view above. 'rings': a ring per level above around a dot; hover, a long
+   * press or an arrow key opens a band per level to jump to. Rings and bands
+   * carry z-depth-ring--up-N / --depth-N classes and data-view for styling.
+   */
+  style?: 'button' | 'title' | 'rings'
 }
 
 /** Input types that can be individually enabled/disabled. */

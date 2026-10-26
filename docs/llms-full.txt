@@ -154,6 +154,7 @@ new Zumly({
   // ─── Depth navigation UI ─────────────────
   depthNav: {                 // true = default, false = disabled, or object:
     position: 'bottom-left',  // 'bottom-left' | 'top-left'
+    style: 'button',          // 'button' | 'title' | 'rings'
   },
 
   // ─── Lateral navigation UI ───────────────
@@ -172,6 +173,21 @@ new Zumly({
     keyboard: true,           // Arrow keys
     click: true,              // Click/mouseup
     touch: true,              // Touch/swipe
+    pinch: false,             // Closing two fingers zooms out (opt-in)
+  },
+
+  // ─── Gestures ────────────────────────────
+  gestures: {                 // true = { follow: true }; default false
+    follow: false,            // Trackpad, swipe and pinch drive the zoom-out with their progress
+    threshold: 0.5,           // Releasing past this progress (0-1) finishes it
+  },
+
+  // ─── Navigation labels (aria-label) ──────
+  labels: {                   // false = none; each: template, function, or false
+    back: 'Back to {title}',
+    prev: 'Previous sibling view',
+    next: 'Next sibling view',
+    goTo: 'Go to {title}',
   },
 })
 ```
@@ -236,7 +252,22 @@ Declared sibling order for lateral navigation. Takes precedence over inferring o
 
 #### `depthNav`
 
-Depth navigation is the back button. It's a standalone `<` arrow in a circle. It only appears when depth > 0 (i.e., you've zoomed in at least once). If the current view already contains a `.z-depth-nav` (e.g., from a nested Zumly instance in an iframe), the parent's depth nav is suppressed to avoid duplicates.
+Depth navigation is the back button. It only appears when depth > 0 (i.e., you've zoomed in at least once). If the current view already contains a `.z-depth-nav` (e.g., from a nested Zumly instance, or a back button of your own), the built-in one is suppressed.
+
+Styles:
+- `'button'` (default): a `‹` chevron in a circle.
+- `'title'`: a dot in its ring plus the title of the view above.
+- `'rings'`: a dot inside one ring per level above (up to 6; innermost = right above). A tap zooms out one level; hover, a long press or ArrowUp opens a band per level (`.z-depth-fan` > `.z-depth-band`) to jump several levels in one transition. Rings and bands carry `z-depth-ring--up-N` / `z-depth-band--up-N` (1 = right above), `--depth-N` (0 = root) and `data-view`, so CSS can mark a level: `.z-depth-ring[data-view="security"] { stroke: tomato }`. With `gestures.follow`, `--z-grow` (0-1) and `.is-past-threshold` on `.z-depth-nav` let the dot grow into its ring.
+
+When the back button and the sibling bar share an edge, the bar is shifted aside (`--z-nav-shift-x`) or stacked above the button (`--z-nav-shift-y`) so they never overlap.
+
+#### `gestures`
+
+With `follow: true`, the trackpad (two-finger scroll), a swipe left and a pinch (with `inputs.pinch`) carry a 0-1 progress instead of firing the zoom-out at once. The current view shrinks toward its trigger (taking the trigger's border-radius), the previous view loses its effect, the last view takes the previous-view effect. Release past `threshold` or flick → finish; otherwise everything returns. A mouse wheel notch (large or line-based delta) still zooms out at once; momentum after a release is ignored. Implemented with engine-owned Web Animations, then the end state settles with the none driver, so it works with every driver. Skipped under prefers-reduced-motion. Progress is reported by the `zoomOutProgress` event.
+
+#### `labels`
+
+Accessible names of the built-in nav controls. Each is a template with `{title}` and `{name}` (of the target view), a function `({ name, title }) => string`, or `false` for none. `labels: false` removes them all.
 
 ---
 
@@ -304,6 +335,10 @@ views: {
   }
 }
 ```
+
+### View titles
+
+A view can carry a human-readable name for the navigation UI: `title: 'Security'` in an object view (or as a property of a function view), or `data-title="Security"` on the view root, which wins. Without one, the view name is used. Used by the back button, sibling dots, `getViewStack()`, `getViewTitle()` and the view's aria-label.
 
 ### HTMLElement
 
@@ -389,10 +424,11 @@ Subscribe with `instance.on(event, callback)`. Unsubscribe with `instance.off(ev
 | `viewMounted` | `{ viewName, node }` | After a view is inserted into the DOM |
 | `beforeZoomIn` | `{ viewName }` | Before zoom-in animation starts |
 | `afterZoomIn` | `{ viewName, zoomLevel }` | After zoom-in animation completes |
-| `beforeZoomOut` | `{ zoomLevel, viewName, from }` | Before zoom-out starts (viewName = view returned to) |
-| `afterZoomOut` | `{ zoomLevel, viewName, from }` | After zoom-out completes |
+| `beforeZoomOut` | `{ zoomLevel, viewName, from, levels? }` | Before zoom-out starts (viewName = view returned to; levels when climbing several) |
+| `afterZoomOut` | `{ zoomLevel, viewName, from, levels? }` | After zoom-out completes |
 | `beforeLateral` | `{ viewName, from, isBack }` | Before lateral navigation starts |
 | `afterLateral` | `{ viewName, from, isBack }` | After lateral navigation completes |
+| `zoomOutProgress` | `{ phase, progress, duration?, viewName, from, source }` | Gesture-driven zoom-out (gestures.follow): phase 'start' \| 'move' \| 'commit' \| 'cancel' \| 'end'; source 'wheel' \| 'swipe' \| 'pinch' |
 | `destroy` | `{}` | When instance is destroyed |
 
 ### Example
@@ -457,9 +493,17 @@ Returns the name of the currently active view, or null if not initialized.
 
 Zoom into the view indicated by trigger element (must have `data-to="viewName"`).
 
-### `zoomOut(): Promise<void>`
+### `zoomOut(target?): Promise<void>`
 
-Zoom out one level. No-op at root.
+Zoom out one level. No-op at root. `zoomOut(2)` climbs two levels; `zoomOut({ to: 'home' })` climbs to the nearest ancestor with that name; the object form also takes `levels`, `duration` and `ease`. Several levels run as ONE transition (the target's child shrinks into its trigger while deeper views ride along) and clamp at the root. An unknown `to` warns and does nothing. The router uses it for multi-level browser back.
+
+### `getViewStack(): Array<{ name, title, depth }>`
+
+The views from the root (depth 0) to the current one, with their titles.
+
+### `getViewTitle(viewName): string`
+
+The view's `data-title`, else the `title` of its definition, else its name.
 
 ### `zoomTo(viewName, options?): Promise<void>`
 
@@ -534,11 +578,12 @@ Siblings are identified by view name: triggers to the same view with different `
 | Click `.zoom-me` | Zoom in to `data-to` view | `inputs.click` |
 | Click outside current view | Zoom out | `inputs.click` |
 | Click sibling trigger in parent | Lateral navigation | `inputs.click` |
-| Swipe left | Zoom out (not when it starts on a text field, slider, horizontal scroller or `[data-no-swipe]`) | `inputs.touch` |
+| Swipe left | Zoom out (not when it starts on a text field, slider, horizontal scroller or `[data-no-swipe]`); follows the finger with `gestures.follow` | `inputs.touch` |
+| Pinch (two fingers closing) | Zoom out; follows the fingers with `gestures.follow` | `inputs.pinch` (off by default) |
 | Tap `.zoom-me` | Zoom in | `inputs.touch` |
 | Tap outside current view | Zoom out | `inputs.touch` |
 | ArrowLeft / ArrowDown | Zoom out | `inputs.keyboard` |
-| Wheel scroll down | Zoom out | `inputs.wheel` |
+| Wheel scroll down | Zoom out; trackpad scrolling follows with `gestures.follow` | `inputs.wheel` |
 
 Wheel events inside scrollable containers are not intercepted.
 

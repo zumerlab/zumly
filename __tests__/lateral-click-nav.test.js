@@ -106,7 +106,7 @@ describe('depthNav option parsing', () => {
       initialView: 'home',
       views: { home: '<div class="z-view"></div>' },
     }, instance)
-    expect(instance.depthNav).toEqual({ position: 'bottom-left' })
+    expect(instance.depthNav).toEqual({ position: 'bottom-left', style: 'button' })
   })
 
   it('can be disabled with false', () => {
@@ -128,7 +128,7 @@ describe('depthNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       depthNav: { position: 'top-left' },
     }, instance)
-    expect(instance.depthNav).toEqual({ position: 'top-left' })
+    expect(instance.depthNav).toEqual({ position: 'top-left', style: 'button' })
   })
 })
 

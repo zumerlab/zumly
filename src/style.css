@@ -30,7 +30,9 @@
 @media (prefers-reduced-motion: reduce) {
   .zumly-canvas .z-view,
   .zumly-canvas .zoom-me,
-  .zumly-canvas .z-nav-dot {
+  .zumly-canvas .z-nav-dot,
+  .zumly-canvas .z-depth-dot,
+  .zumly-canvas .z-depth-band {
     transition-duration: 0s !important;
     animation-duration: 0s !important;
     animation-delay: 0s !important;
@@ -246,6 +248,121 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
+/* depthNav.style: 'title' — a dot in its ring and the name of the view above */
+
+.z-nav-back--title {
+  width: auto;
+  max-width: min(240px, 45vw);
+  border-radius: 100px;
+  gap: 8px;
+  padding: 0 14px 0 7px;
+  font: 500 0.8125rem/1 system-ui, sans-serif;
+}
+
+.z-nav-icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.z-nav-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.z-depth-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  opacity: 0.55;
+}
+
+.z-depth-dot {
+  fill: currentColor;
+  transform-box: fill-box;
+  transform-origin: center;
+  /* --z-grow (0–1) follows a gesture's zoom-out: the dot fills its ring at the threshold. */
+  transform: scale(calc(1 + var(--z-grow, 0) * var(--z-dot-grow, 1.67)));
+  transition: transform 0.12s;
+}
+
+/* depthNav.style: 'rings' — one ring per level above; hover or long press opens the bands */
+
+.z-nav-back--rings {
+  width: 40px;
+  height: 40px;
+}
+
+.z-depth-rings {
+  width: 32px;
+  height: 32px;
+}
+
+.z-depth-rings .z-depth-ring {
+  stroke-width: 1.25;
+}
+
+.z-depth-rings .z-depth-ring--up-1 {
+  opacity: 0.9;
+}
+
+.z-depth-fan {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.z-depth-fan[hidden] {
+  display: none;
+}
+
+.z-depth-nav--top-left .z-depth-fan {
+  top: calc(100% + 8px);
+  bottom: auto;
+  flex-direction: column;
+}
+
+.z-depth-band {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(260px, 70vw);
+  height: 30px;
+  padding: 0 14px 0 9px;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  font: 500 0.8125rem/1 system-ui, sans-serif;
+  cursor: pointer;
+  animation: z-depth-band-in 0.16s ease-out both;
+}
+
+.z-depth-band:hover,
+.z-depth-band:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.z-depth-band-mark {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  opacity: 0.7;
+}
+
+@keyframes z-depth-band-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
 /* ─── Lateral navigation (arrows + dots) ─────────────────────── */
 
 .z-lateral-nav {
@@ -266,12 +383,15 @@
   pointer-events: auto;
 }
 
+/* --z-nav-shift-x / -y keep the bar clear of the depth button on the same edge. */
 .z-lateral-nav--bottom-center {
-  bottom: 20px; left: 50%; transform: translateX(-50%);
+  bottom: 20px; left: 50%;
+  transform: translate(calc(-50% + var(--z-nav-shift-x, 0px)), calc(-1 * var(--z-nav-shift-y, 0px)));
 }
 
 .z-lateral-nav--top-center {
-  top: 20px; left: 50%; transform: translateX(-50%);
+  top: 20px; left: 50%;
+  transform: translate(calc(-50% + var(--z-nav-shift-x, 0px)), var(--z-nav-shift-y, 0px));
 }
 
 /* ── Buttons (arrows) ── */

@@ -179,6 +179,8 @@
       font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px;
     }
     td code { font-size: 0.8em; }
+    .api-desc a, td a { color: var(--accent); text-decoration: none; }
+    .api-desc a:hover, td a:hover { text-decoration: underline; }
 
     /* ━━━ Footer ━━━ */
     footer {
@@ -224,6 +226,8 @@
             <tr><td><code>deferred</code></td><td>boolean</td><td></td><td><code>false</code></td><td>Defer content rendering until after animation completes</td></tr>
             <tr><td><code>debug</code></td><td>boolean</td><td></td><td><code>false</code></td><td>Enable debug logging to console</td></tr>
             <tr><td><code>componentContext</code></td><td>Map | object</td><td></td><td><code>new Map()</code></td><td>Shared context passed to function/object view sources</td></tr>
+            <tr><td><code>gestures</code></td><td>boolean | object</td><td></td><td><code>false</code></td><td>Zoom-out that follows the trackpad, a swipe or a pinch. See <a href="#opt-gestures">gestures</a></td></tr>
+            <tr><td><code>labels</code></td><td>object | false</td><td></td><td>English labels</td><td>Accessible names of the back button, arrows and dots. See <a href="#opt-labels">labels</a></td></tr>
           </tbody>
         </table>
       </div>
@@ -370,6 +374,7 @@
           <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td><code>position</code></td><td>'bottom-left' | 'top-left'</td><td><code>'bottom-left'</code></td><td>Placement of the back button</td></tr>
+            <tr><td><code>style</code></td><td>'button' | 'title' | 'rings'</td><td><code>'button'</code></td><td><code>'button'</code>: a chevron. <code>'title'</code>: a dot in its ring and the title of the view above. <code>'rings'</code>: a ring per level above; hover, a long press or an arrow key opens a band per level to jump to</td></tr>
           </tbody>
         </table>
       </div>
@@ -380,8 +385,23 @@
           <span class="api-type">boolean | object</span>
           <span class="api-default">default: true</span>
         </div>
-        <div class="api-desc">Controls the depth navigation UI: a back button shown from depth 1 onwards. Pass <code>false</code> to disable it, or an object to choose its position.</div>
+        <div class="api-desc">Controls the depth navigation UI: a back button shown from depth 1 onwards. Pass <code>false</code> to disable it, or an object to choose its position and style. A view that brings its own <code>.z-depth-nav</code> replaces the built-in one. When the back button and the sibling bar share an edge, the bar moves aside, or above the button when there is no room (<code>--z-nav-shift-x</code> / <code>--z-nav-shift-y</code> on <code>.z-lateral-nav</code>).</div>
       </div>
+
+      <div class="api-entry" id="opt-depthnav-rings">
+        <div class="api-entry-header">
+          <span class="api-name">style: 'rings'</span>
+          <span class="api-type">depthNav</span>
+        </div>
+        <div class="api-desc">A dot inside one ring per level above (up to six; the innermost is the view right above). A tap goes up one level. Hovering, a long press or ArrowUp opens a band per level with its title; picking one zooms out to it in a single transition. Each ring and band carries <code>z-depth-ring--up-N</code> / <code>z-depth-band--up-N</code> (1 = right above), <code>--depth-N</code> (0 = root) and <code>data-view</code>, so your CSS can mark a level without Zumly knowing why. With <code>gestures.follow</code>, the dot grows into its ring as a zoom-out gesture reaches the threshold (<code>--z-grow</code> and <code>.is-past-threshold</code> on <code>.z-depth-nav</code>).</div>
+      </div>
+
+<pre><code>new Zumly({ ..., depthNav: { style: 'rings' } })
+
+/* Mark a level that needs attention */
+.z-depth-ring[data-view="security"] { stroke: tomato; opacity: 1; }
+.z-depth-band[data-view="security"] .z-depth-band-mark { background: tomato; }
+</code></pre>
 
       <h3>inputs</h3>
       <div class="table-wrap">
@@ -392,6 +412,7 @@
             <tr><td><code>keyboard</code></td><td>boolean</td><td><code>true</code></td><td>Enter/Space open a focused trigger; ArrowLeft or ArrowDown zoom out</td></tr>
             <tr><td><code>wheel</code></td><td>boolean</td><td><code>true</code></td><td>Mouse wheel zoom-out</td></tr>
             <tr><td><code>touch</code></td><td>boolean</td><td><code>true</code></td><td>Tap to zoom in; swipe left to zoom out (not on sliders, text fields, horizontal scrollers or <code>[data-no-swipe]</code>)</td></tr>
+            <tr><td><code>pinch</code></td><td>boolean</td><td><code>false</code></td><td>Closing two fingers zooms out. Off by default because it competes with page zoom</td></tr>
           </tbody>
         </table>
       </div>
@@ -404,6 +425,58 @@
         </div>
         <div class="api-desc">Selectively enable or disable input methods. Pass <code>false</code> to disable all, or an object to toggle individual inputs. Useful for kiosk mode or custom input handling.</div>
       </div>
+
+      <h3>gestures</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>Type</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>follow</code></td><td>boolean</td><td><code>false</code></td><td>The trackpad, a swipe and a pinch move the zoom-out as they go instead of firing it whole</td></tr>
+            <tr><td><code>threshold</code></td><td>number (0–1)</td><td><code>0.5</code></td><td>Progress past which releasing finishes the zoom-out</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="api-entry" id="opt-gestures">
+        <div class="api-entry-header">
+          <span class="api-name">gestures</span>
+          <span class="api-type">boolean | object</span>
+          <span class="api-default">default: false</span>
+        </div>
+        <div class="api-desc">With <code>follow</code>, the gesture carries a progress from 0 to 1: the current view shrinks toward its trigger (rounding to the trigger's shape) while the view behind loses its blur and dimming. Releasing past <code>threshold</code>, or flicking, finishes it; otherwise every view returns to its place. A mouse wheel notch still zooms out at once, and momentum after a release does not start another gesture. It works with every driver, and is skipped under <code>prefers-reduced-motion</code>. <code>gestures: true</code> is <code>{ follow: true }</code>. Progress is reported by <a href="#events">zoomOutProgress</a>.</div>
+      </div>
+
+<pre><code>new Zumly({ ..., gestures: { follow: true, threshold: 0.4 }, inputs: { pinch: true } })
+</code></pre>
+
+      <h3>labels</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>Default</th><th>Used by</th></tr></thead>
+          <tbody>
+            <tr><td><code>back</code></td><td><code>'Back to {title}'</code></td><td>Back button (title of the view above)</td></tr>
+            <tr><td><code>prev</code></td><td><code>'Previous sibling view'</code></td><td>Sibling bar arrow</td></tr>
+            <tr><td><code>next</code></td><td><code>'Next sibling view'</code></td><td>Sibling bar arrow</td></tr>
+            <tr><td><code>goTo</code></td><td><code>'Go to {title}'</code></td><td>Sibling dots</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="api-entry" id="opt-labels">
+        <div class="api-entry-header">
+          <span class="api-name">labels</span>
+          <span class="api-type">object | false</span>
+        </div>
+        <div class="api-desc">Accessible names (<code>aria-label</code>) of the built-in navigation controls. Each is a template with <code>{title}</code> and <code>{name}</code>, a function that receives <code>{ name, title }</code>, or <code>false</code> to leave that control without one. <code>labels: false</code> turns them all off.</div>
+      </div>
+
+<pre><code>labels: {
+  back: 'Volver a {title}',
+  goTo: view =&gt; `Ir a ${view.title}`,
+  prev: false,
+  next: false
+}
+</code></pre>
     </section>
 
     <!-- ═══════════════ METHODS ═══════════════ -->
@@ -421,10 +494,12 @@
             <tr><td><code>back()</code></td><td>Promise</td><td>Undo the last lateral move at this level, or zoom out. Each level keeps its own lateral history, also after zooming in and out again</td></tr>
             <tr><td><code>canGoBack()</code></td><td>boolean</td><td>Whether <code>back()</code> would navigate</td></tr>
             <tr><td><code>zoomIn(el)</code></td><td>Promise</td><td>Zoom into the view indicated by a trigger element</td></tr>
-            <tr><td><code>zoomOut()</code></td><td>Promise</td><td>Zoom out one level. No-op at root</td></tr>
+            <tr><td><code>zoomOut(target?)</code></td><td>Promise</td><td>Zoom out one level; <code>zoomOut(2)</code> climbs two, <code>zoomOut({ to: 'home' })</code> climbs to the nearest ancestor with that name. Several levels run as one transition and clamp at the root. Also takes <code>levels</code>, <code>duration</code> and <code>ease</code></td></tr>
             <tr><td><code>zoomLevel()</code></td><td>number</td><td>Current zoom depth (1 = root view)</td></tr>
             <tr><td><code>getZoomLevel()</code></td><td>number</td><td>Alias for <code>zoomLevel()</code></td></tr>
             <tr><td><code>getCurrentViewName()</code></td><td>string | null</td><td>Name of the currently active view</td></tr>
+            <tr><td><code>getViewStack()</code></td><td>array</td><td>The views from the root to the current one: <code>[{ name, title, depth }]</code></td></tr>
+            <tr><td><code>getViewTitle(name)</code></td><td>string</td><td>The view's <code>data-title</code>, else the <code>title</code> of its definition, else its name</td></tr>
             <tr><td><code>on(event, fn)</code></td><td>this</td><td>Subscribe to lifecycle event (chainable)</td></tr>
             <tr><td><code>off(event, fn?)</code></td><td>this</td><td>Unsubscribe. Omit fn to remove all for that event</td></tr>
             <tr><td><code>use(plugin, opts?)</code></td><td>this</td><td>Register a plugin (e.g. <code>Zumly.Router</code>); installed during <code>init()</code></td></tr>
@@ -452,6 +527,9 @@ await app.back();                   // zoom out
 await app.goTo('page2', { mode: 'lateral' });  // slide to sibling
 await app.back();                   // back to previous sibling
 
+await app.zoomOut(2);               // two levels up, one transition
+await app.zoomOut({ to: 'home' });  // up to an ancestor by name
+
 console.log(app.zoomLevel());           // 2
 console.log(app.getCurrentViewName());  // 'detail'
 </code></pre>
@@ -470,8 +548,9 @@ console.log(app.getCurrentViewName());  // 'detail'
             <tr><td><code>viewMounted</code></td><td><code>{ viewName, node }</code></td><td>View inserted into DOM and mounted() hook (if any) complete</td></tr>
             <tr><td><code>beforeZoomIn</code></td><td><code>{ viewName }</code></td><td>Just before zoom-in animation starts</td></tr>
             <tr><td><code>afterZoomIn</code></td><td><code>{ viewName, zoomLevel }</code></td><td>After zoom-in animation completes</td></tr>
-            <tr><td><code>beforeZoomOut</code></td><td><code>{ zoomLevel, viewName, from }</code></td><td>Just before zoom-out starts; <code>viewName</code> is the view returned to</td></tr>
-            <tr><td><code>afterZoomOut</code></td><td><code>{ zoomLevel, viewName, from }</code></td><td>After zoom-out completes</td></tr>
+            <tr><td><code>beforeZoomOut</code></td><td><code>{ zoomLevel, viewName, from, levels? }</code></td><td>Just before zoom-out starts; <code>viewName</code> is the view returned to, <code>levels</code> when climbing several</td></tr>
+            <tr><td><code>afterZoomOut</code></td><td><code>{ zoomLevel, viewName, from, levels? }</code></td><td>After zoom-out completes</td></tr>
+            <tr><td><code>zoomOutProgress</code></td><td><code>{ phase, progress, duration?, viewName, from, source }</code></td><td>A zoom-out driven by a gesture (<code>gestures.follow</code>): <code>'start'</code> and <code>'move'</code> carry the 0–1 progress, <code>'commit'</code> or <code>'cancel'</code> fire on release with the <code>duration</code> left, <code>'end'</code> when the views settle. <code>source</code> is <code>'wheel'</code>, <code>'swipe'</code> or <code>'pinch'</code></td></tr>
             <tr><td><code>beforeLateral</code></td><td><code>{ viewName, from, isBack }</code></td><td>Before lateral navigation animation</td></tr>
             <tr><td><code>afterLateral</code></td><td><code>{ viewName, from, isBack }</code></td><td>After lateral navigation animation</td></tr>
             <tr><td><code>destroy</code></td><td><code>{}</code></td><td>When destroy() is called</td></tr>
@@ -494,6 +573,9 @@ app.on('beforeZoomOut', ({ zoomLevel }) => { /* ... */ });
 app.on('afterZoomOut',  ({ zoomLevel }) => { /* ... */ });
 app.on('beforeLateral', ({ viewName, from, isBack }) => { /* ... */ });
 app.on('afterLateral',  ({ viewName, from, isBack }) => { /* ... */ });
+app.on('zoomOutProgress', ({ phase, progress }) => {
+  backButton.style.setProperty('--progress', progress);  // follow the gesture
+});
 app.on('destroy',       () => { /* ... */ });
 </code></pre>
     </section>
@@ -528,6 +610,8 @@ app.on('destroy',       () => { /* ... */ });
 
 <p class="desc">Function and object views receive a context: <code>target</code> (a fresh div; if the function returns nothing, <code>target</code> is the view: give it your classes and render only the content), <code>props</code> (the trigger's data attributes), <code>trigger</code>, <code>context</code> (<code>componentContext</code>), <code>onCleanup(fn)</code> (runs when the view is discarded) and <code>onActivate(fn)</code> (runs each time the view becomes current again without being rendered anew, for example after zooming back out to it). A template with several root elements is wrapped in one <code>.z-view</code>.</p>
 
+<p class="desc">A view can carry a human-readable name for the navigation UI: <code>title</code> in an object view (or a function view's <code>title</code> property), or <code>data-title</code> on the view's root element, which wins. Without one, the view name is used. The back button, the sibling dots, <code>getViewStack()</code> and the view's <code>aria-label</code> show it.</p>
+
 <pre><code>// HTML string
 const myView = '&lt;div class="z-view"&gt;Hello&lt;/div&gt;';
 
@@ -558,6 +642,10 @@ const myView = {
 
 // URL (fetched and cached for 5 minutes)
 const myView = '/views/detail.html';
+
+// Human-readable title for the navigation UI
+const security = { title: 'Security', render: () =&gt; '&lt;div class="z-view"&gt;...&lt;/div&gt;' };
+const log = '&lt;div class="z-view" data-title="Audit log"&gt;...&lt;/div&gt;';
 </code></pre>
     </section>
 
