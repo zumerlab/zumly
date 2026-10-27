@@ -181,21 +181,22 @@ export interface GesturesOptions {
 }
 
 /**
- * Views behind shown as a SnapDOM photo (flatten). SnapDOM is passed in or read from the
- * global `snapdom`; Zumly does not depend on it.
+ * Views behind shown as a SnapDOM photo (flatten). SnapDOM and its stream plugin are optional
+ * peer dependencies, passed in; snapdom may also come from its script build's global.
  */
 export interface FlattenOptions {
   /** The snapdom function from @zumer/snapdom. Default: the global snapdom. */
   snapdom?: (element: Element, options?: Record<string, unknown>) => Promise<{ toCanvas(): Promise<HTMLCanvasElement> }>
+  /**
+   * The stream function from @zumer/snapdom-plugins/stream. Keeps the photo of the current
+   * view current, so live views can be flattened too. Without it, only views that hold still
+   * are.
+   */
+  stream?: (element: Element, options?: Record<string, unknown>) => { canvas: HTMLCanvasElement, ready: Promise<void>, stop(): void }
   /** Views with fewer elements are photographed only if they use backdrop-filter. Default: 800. */
   minNodes?: number
   /** Resolution of the photo (1–4). Default: 1. */
   scale?: number
-  /**
-   * false keeps the photo taken on arrival, renewed after changes made by hand. A number of
-   * milliseconds also follows other changes (live data), at most that often. Default: false.
-   */
-  refresh?: number | false
 }
 
 /** Options for goTo(). */
@@ -295,8 +296,9 @@ export interface ZumlyOptions {
   /** Labels of the navigation controls. false leaves them all without one. */
   labels?: false | LabelsOptions
   /**
-   * Show views behind as a SnapDOM photo, for smooth zooms with heavy views. true reads the
-   * global snapdom. Per view: data-flatten="true" | "false". Default: false.
+   * Show views behind as a SnapDOM photo, for smooth zooms with heavy views:
+   * { snapdom, stream }, or true for the global snapdom. Per view: data-flatten="true" | "false".
+   * Default: false.
    */
   flatten?: boolean | FlattenOptions
 }

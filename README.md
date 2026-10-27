@@ -350,17 +350,24 @@ Every driver but `none` slides between siblings, with the same motion as `css` a
 
 ### Heavy views
 
-A view with thousands of nodes, or with frosted glass (`backdrop-filter`), is costly to scale and blur on every frame. `flatten` takes a photo of each view with [SnapDOM](https://github.com/zumerlab/snapdom) while you are in it, and moves the photo while the view sits behind:
+A view with thousands of nodes, or with frosted glass (`backdrop-filter`), is costly to scale and blur on every frame. `flatten` keeps a photo of the current view with [SnapDOM](https://github.com/zumerlab/snapdom), and moves the photo while the view sits behind:
+
+```sh
+npm install @zumer/snapdom @zumer/snapdom-plugins
+```
 
 ```js
 import { snapdom } from '@zumer/snapdom'
+import { stream } from '@zumer/snapdom-plugins/stream'
 
-new Zumly({ /* … */ flatten: { snapdom } })
+new Zumly({ /* … */ flatten: { snapdom, stream } })
 ```
 
-SnapDOM is an optional peer dependency: install it yourself (`npm install @zumer/snapdom`) when you use `flatten`. With script tags, load `https://unpkg.com/@zumer/snapdom/dist/snapdom.js` before Zumly and pass `flatten: true`.
+Both are optional peer dependencies: `npm install zumly` alone does not bring them.
 
-The photo is taken at idle, never during a transition; until it is ready, the view moves as itself. Light views are left alone (fewer than `minNodes` elements, 800, and no `backdrop-filter`), and `data-flatten="false"` keeps a view live behind. While a view is behind, it stands still. Try `animateEffects: false` first: it costs nothing and is often enough. The [heavy views guide](https://zumerlab.com/zumly/guides/heavy-views.html) has a live comparison and every option.
+With `stream`, the photo follows the view, repainting only what changed, so a zoom always starts from what is on screen. If keeping it current costs too much, that view moves as itself. Without `stream` there is one photo, taken again once the view stops changing, and a view that changed since its photo moves as itself: live views are not flattened then. With script tags, load `https://unpkg.com/@zumer/snapdom/dist/snapdom.js` before Zumly and pass `flatten: true` (no stream).
+
+Photos are never taken during a transition; until one is ready, the view moves as itself. Light views are left alone (fewer than `minNodes` elements, 800, and no `backdrop-filter`), and `data-flatten="false"` keeps a view live behind. Try `animateEffects: false` first: it costs nothing and is often enough. The [heavy views guide](https://zumerlab.com/zumly/guides/heavy-views.html) has a live comparison and every option.
 
 ## With Orbit
 
@@ -425,7 +432,7 @@ Triggers are keyboard reachable. Background views are `inert` and hidden from as
 | `componentContext` | `new Map()` | Shared `context` for function and object views. |
 | `deferred` | `false` | Insert view content after the zoom. |
 | `debug` | `false` | Log navigation steps. |
-| `flatten` | `false` | Show views behind as a SnapDOM photo: `{ snapdom, minNodes, scale, refresh }`, or `true` for the global `snapdom`. See [Heavy views](#heavy-views). |
+| `flatten` | `false` | Show views behind as a SnapDOM photo: `{ snapdom, stream, minNodes, scale }`, or `true` for the global `snapdom`. See [Heavy views](#heavy-views). |
 
 Full types are in [types/zumly.d.ts](types/zumly.d.ts). `destroy()` removes listeners, navigation UI and the views it put in the canvas, so a new instance can start there at once (React StrictMode, hot reload). Anything else in the canvas stays yours.
 

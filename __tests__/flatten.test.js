@@ -4,6 +4,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { snapdom as realSnapdom } from '@zumer/snapdom'
+import { stream as realStream } from '@zumer/snapdom-plugins/stream'
 import { Zumly } from '../src/zumly.js'
 import { animeDriver, gsapDriver, motionDriver } from '../src/drivers/index.js'
 import '../src/style.css'
@@ -37,6 +38,32 @@ function fakeSnapdom () {
       return canvas
     }
   }))
+}
+
+/**
+ * A stream stand-in: a canvas the size of the element, ready at once. frame() reports a
+ * repaint to the caller, as the real plugin does after each one.
+ */
+function fakeStream () {
+  const streams = []
+  const fn = vi.fn((element, options) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = element.offsetWidth
+    canvas.height = element.offsetHeight
+    const handle = {
+      element,
+      options,
+      canvas,
+      stats: {},
+      stop: vi.fn(),
+      frame: (frame) => options.onFrame?.({ full: false, reason: null, rects: [], ms: 5, canvas, ...frame })
+    }
+    handle.ready = Promise.resolve().then(() => handle.frame({ full: true, reason: 'start', ms: 0 }))
+    streams.push(handle)
+    return handle
+  })
+  fn.streams = streams
+  return fn
 }
 
 beforeEach(() => {
@@ -243,32 +270,139 @@ describe('flatten', () => {
     expect(isFlat(named('opted'))).toBe(false)
   })
 
-  it('keeps a view live behind when the user changed it after its photo', async () => {
+  it('never shows a photo that no longer matches the view', async () => {
     await start()
     await photographed()
     const home = role('current')
-    const text = home.querySelector('.text')
-    text.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
-    text.textContent = 'switched on'
+    // Content that arrives after the photo (data loading, a value that changed).
+    home.querySelector('.text').textContent = 'loaded later'
     await new Promise(resolve => setTimeout(resolve, 0))
-    // Straight to the next view, before a new photo: the old one would show the old text.
+    // Straight to the next view, before a new photo: the old one would open the zoom on old content.
     await app.zoomIn(home.querySelector('.zoom-me[data-to="a"]'))
     await settled()
     expect(isFlat(home)).toBe(false)
+    expect(getComputedStyle(home.querySelector('.text')).visibility).toBe('visible')
   })
 
-  it('takes a new photo after the user changes the view, and uses it', async () => {
+  it('takes a new photo once the view stops changing, and uses it', async () => {
     await start()
     await photographed()
     const home = role('current')
-    const text = home.querySelector('.text')
-    text.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
-    text.textContent = 'switched on'
+    home.querySelector('.text').textContent = 'loaded later'
     await vi.waitFor(() => expect(snapdom.mock.calls.length).toBe(2), { timeout: 3000 })
     await new Promise(resolve => setTimeout(resolve, 0))
     await app.zoomIn(home.querySelector('.zoom-me[data-to="a"]'))
     await settled()
     expect(isFlat(home)).toBe(true)
+  })
+
+  it('gives up on a view that never holds still', async () => {
+    await start()
+    const home = role('current')
+    const text = home.querySelector('.text')
+    // A value that changes faster than a photo can be taken.
+    let n = 0
+    const timer = setInterval(() => { text.textContent = String(n++) }, 20)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 2500))
+      // No photo is worth taking: it would be old before it is used.
+      expect(snapdom.mock.calls.length).toBeLessThanOrEqual(3)
+      await app.zoomIn(home.querySelector('.zoom-me[data-to="a"]'))
+      await settled()
+      expect(isFlat(home)).toBe(false)
+    } finally {
+      clearInterval(timer)
+    }
+  })
+
+  describe('with stream', () => {
+    async function startStreaming () {
+      const stream = fakeStream()
+      await start({ flatten: { stream } })
+      await vi.waitFor(() => expect(stream.streams.length).toBe(1), { timeout: 3000, interval: 20 })
+      await stream.streams[0].ready
+      return stream
+    }
+
+    it('follows the current view and freezes a copy when the zoom starts', async () => {
+      const stream = await startStreaming()
+      const handle = stream.streams[0]
+      const home = role('current')
+      expect(handle.element).toBe(home)
+      // Ten repaints a second at most: the photo is never more than 100 ms behind.
+      expect(handle.options).toMatchObject({ fps: 10, animations: false, fast: false, outerTransforms: false })
+      // No one-shot photos while a stream follows the view.
+      expect(snapdom).not.toHaveBeenCalled()
+      await app.zoomIn(home.querySelector('.zoom-me[data-to="a"]'))
+      await settled()
+      expect(handle.stop).toHaveBeenCalled()
+      expect(isFlat(home)).toBe(true)
+      // A canvas of its own: the stream may still draw into its canvas after stopping.
+      expect(layer(home)).not.toBe(handle.canvas)
+      expect(layer(home).width).toBe(handle.canvas.width)
+    })
+
+    it('follows the view again on each visit', async () => {
+      const stream = await startStreaming()
+      const home = role('current')
+      await app.zoomIn(home.querySelector('.zoom-me[data-to="a"]'))
+      await settled()
+      await vi.waitFor(() => expect(stream.streams.length).toBe(2), { timeout: 3000 })
+      expect(stream.streams[1].element).toBe(role('current'))
+      await app.zoomOut()
+      await settled()
+      await vi.waitFor(() => expect(stream.streams.length).toBe(3), { timeout: 3000 })
+      expect(stream.streams[2].element).toBe(home)
+    })
+
+    it('turns a stream off when it costs too much, and keeps that view live', async () => {
+      const stream = await startStreaming()
+      const handle = stream.streams[0]
+      const home = role('current')
+      // Full frames of 150 ms, five a second: most of the main thread.
+      for (let i = 0; i < 8; i++) handle.frame({ full: true, reason: 'no host for <div>', ms: 150 })
+      expect(handle.stop).toHaveBeenCalled()
+      await app.zoomIn(home.querySelector('.zoom-me[data-to="a"]'))
+      await settled()
+      expect(isFlat(home)).toBe(false)
+    })
+
+    it('turns a stream off when one full frame is too slow for the device', async () => {
+      const stream = await startStreaming()
+      const handle = stream.streams[0]
+      handle.frame({ full: true, reason: 'root resized', ms: 400 })
+      expect(handle.stop).toHaveBeenCalled()
+      await app.zoomIn(role('current').querySelector('.zoom-me[data-to="a"]'))
+      await settled()
+      expect(isFlat(named('home'))).toBe(false)
+    })
+
+    it('stops the stream on destroy', async () => {
+      const stream = await startStreaming()
+      app.destroy()
+      expect(stream.streams[0].stop).toHaveBeenCalled()
+      app = null
+    })
+
+    it('works with the real stream plugin', async () => {
+      app = new Zumly({
+        mount: '.canvas',
+        initialView: 'home',
+        views,
+        transitions: { driver: 'none', effects: ['blur(3px)', 'blur(8px)'] },
+        flatten: { snapdom: realSnapdom, stream: realStream, minNodes: 0 }
+      })
+      await app.init()
+      const home = role('current')
+      await vi.waitFor(() => expect(app._flattener.photos.has(home)).toBe(true), { timeout: 8000, interval: 50 })
+      await app.zoomIn(home.querySelector('.zoom-me[data-to="a"]'))
+      await settled()
+      expect(isFlat(home)).toBe(true)
+      const photo = layer(home)
+      expect(photo.width).toBeGreaterThanOrEqual(400)
+      const pixel = photo.getContext('2d').getImageData(Math.round(photo.width / 2), Math.round(photo.height * 0.9), 1, 1).data
+      expect(pixel[3]).toBeGreaterThan(0)
+    }, 15000)
   })
 
   it('keeps the parent a photo while a zoom-out gesture moves, and the view under it live', async () => {
@@ -368,11 +502,11 @@ describe('flatten', () => {
   })
 
   it('warns about wrong options and falls back', async () => {
-    app = new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom: 'yes', minNodes: -1, scale: 9, refresh: 'often', speed: 1 } })
-    for (const key of ['flatten.snapdom', 'flatten.minNodes', 'flatten.scale', 'flatten.refresh', 'flatten.speed']) {
+    app = new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom: 'yes', stream: 'yes', minNodes: -1, scale: 9, speed: 1 } })
+    for (const key of ['flatten.snapdom', 'flatten.stream', 'flatten.minNodes', 'flatten.scale', 'flatten.speed']) {
       expect(warned(key)).toBe(true)
     }
-    expect(app.flatten).toMatchObject({ minNodes: 800, scale: 1, refresh: false })
+    expect(app.flatten).toMatchObject({ snapdom: null, stream: null, minNodes: 800, scale: 1 })
   })
 
   it('takes a real photo with SnapDOM', async () => {

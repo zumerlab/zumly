@@ -20,7 +20,7 @@ const DEPTH_NAV_KEYS = ['position', 'style']
 const DEPTH_NAV_STYLES = ['button', 'title', 'rings']
 const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch', 'pinch']
 const GESTURE_KEYS = ['follow', 'threshold']
-const FLATTEN_KEYS = ['snapdom', 'minNodes', 'scale', 'refresh']
+const FLATTEN_KEYS = ['snapdom', 'stream', 'minNodes', 'scale']
 const LABEL_KEYS = ['back', 'prev', 'next', 'goTo']
 /** Accessible names of the navigation controls. {title} and {name} name the target view. */
 const DEFAULT_LABELS = { back: 'Back to {title}', prev: 'Previous sibling view', next: 'Next sibling view', goTo: 'Go to {title}' }
@@ -461,10 +461,14 @@ export function checkParameters (parameters, instance) {
   instance.flatten = false
   if (flIn === true || (flIn && typeof flIn === 'object')) {
     const o = flIn === true ? {} : flIn
-    instance.flatten = { snapdom: null, minNodes: 800, scale: 1, refresh: false }
+    instance.flatten = { snapdom: null, stream: null, minNodes: 800, scale: 1 }
     if (o.snapdom !== undefined) {
       if (typeof o.snapdom === 'function') instance.flatten.snapdom = o.snapdom
       else notification(false, '\'flatten.snapdom\' must be the snapdom function (import { snapdom } from \'@zumer/snapdom\'). Trying the global snapdom.', 'warn')
+    }
+    if (o.stream !== undefined) {
+      if (typeof o.stream === 'function') instance.flatten.stream = o.stream
+      else notification(false, '\'flatten.stream\' must be the stream function (import { stream } from \'@zumer/snapdom-plugins/stream\'). Going without it.', 'warn')
     }
     if (o.minNodes !== undefined) {
       if (Number.isInteger(o.minNodes) && o.minNodes >= 0) instance.flatten.minNodes = o.minNodes
@@ -474,12 +478,8 @@ export function checkParameters (parameters, instance) {
       if (typeof o.scale === 'number' && o.scale > 0 && o.scale <= 4) instance.flatten.scale = o.scale
       else notification(false, '\'flatten.scale\' must be a number above 0 and up to 4. Falling back to 1.', 'warn')
     }
-    if (o.refresh !== undefined) {
-      if (o.refresh === false || (typeof o.refresh === 'number' && o.refresh >= 0)) instance.flatten.refresh = o.refresh
-      else notification(false, '\'flatten.refresh\' must be a number of milliseconds or false. Falling back to false.', 'warn')
-    }
   } else if (flIn !== undefined && flIn !== false) {
-    notification(false, '\'flatten\' must be true, false or { snapdom, minNodes, scale, refresh }. Ignoring.', 'warn')
+    notification(false, '\'flatten\' must be true, false or { snapdom, stream, minNodes, scale }. Ignoring.', 'warn')
   }
 }
 

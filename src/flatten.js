@@ -2,33 +2,46 @@
  * flatten: background views shown as a still photo while they are behind.
  *
  * Scaling and blurring a view with thousands of nodes, or with backdrop-filter, costs a lot
- * every frame. With the `flatten` option, Zumly takes a photo of the current view with
- * SnapDOM while the user is still in it, at idle. When the view moves behind, its content is
- * hidden (it keeps its layout) and a canvas with the photo stands in for it. The view element
- * itself still moves, takes the effects filter and answers hit-tests, so geometry, sibling
- * detection and every driver work as before. Back in front, the real view returns.
+ * every frame. With the `flatten` option, Zumly keeps a photo of the current view with
+ * SnapDOM while the user is in it. When the view moves behind, its content is hidden (it
+ * keeps its layout) and a canvas with the photo stands in for it. The view element itself
+ * still moves, takes the effects filter and answers hit-tests, so geometry, sibling detection
+ * and every driver work as before. Back in front, the real view returns.
  *
- * SnapDOM is not a dependency: it is passed in (`flatten: { snapdom }`) or read from the
- * global `snapdom` of its script build.
+ * The photo must show the view as it is when the zoom starts, or the zoom opens on old
+ * content. With SnapDOM's stream plugin the photo follows the view, repainting only what
+ * changed; a stream that costs too much (transparent animations force full frames) is turned
+ * off and that view moves as itself. Without stream there is one photo, taken again once the
+ * view stops changing, and a view that changed after its photo moves as itself.
+ *
+ * SnapDOM is not a dependency: it is passed in (`flatten: { snapdom, stream }`) or read from
+ * the global `snapdom` of its script build.
  */
 
 const FLAT = 'z-flat'
 const LAYER = 'z-flat-layer'
-/** Input must be this quiet (ms) before a capture starts, also right after arriving. */
+/** Input, and the view itself, must be this quiet (ms) before a capture starts; also right after arriving. */
 const QUIET_MS = 300
-/** A change this soon (ms) after a touch inside the view is the user's own. */
-const TOUCH_MS = 1000
-/** With refresh on, captures use at most 1/DUTY of the main thread. */
+/** Repaints per second of a stream: the photo is at most this old when a zoom starts. */
+const STREAM_FPS = 10
+/** A stream may use at most this share of the main thread, over the last STREAM_WINDOW ms. */
+const STREAM_BUDGET = 0.5
+const STREAM_WINDOW = 2000
+/** A full frame slower than this means the device cannot keep the photo current. */
+const STREAM_SLOW_MS = 250
+/** Without stream, captures use at most 1/DUTY of the main thread. */
 const DUTY = 10
+/** Without stream, a view that changed during this many photos in a row is left live. */
+const MAX_STALE = 3
 /** Crossfade from the photo to the real view when a view comes back to the front. */
 const FADE_MS = 160
 const INPUTS = ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'wheel']
 
 /**
- * SnapDOM options for a photo. fast: false pauses about every frame, so taps and drags right
- * after arriving still answer. Outlines are left out (a focus ring would stay frozen); as a
- * function, the rule also turns off SnapDOM's memo, whose watchers redo a capture in one task
- * when anything on the page changes while it pauses, which in a live UI is always.
+ * SnapDOM options for a photo. fast: false pauses about every frame, so taps and drags still
+ * answer. Outlines are left out (a focus ring would stay frozen); as a function, the rule
+ * also turns off SnapDOM's memo, whose watchers redo a capture in one task when anything on
+ * the page changes while it pauses, which in a live UI is always.
  */
 const CAPTURE = {
   outerTransforms: false,
@@ -60,37 +73,44 @@ function isOwnMutation (record, view) {
   return false
 }
 
+/** A canvas of its own with the same pixels: a stream keeps drawing into its canvas. */
+function copyCanvas (source) {
+  const canvas = document.createElement('canvas')
+  canvas.width = source.width
+  canvas.height = source.height
+  canvas.getContext('2d')?.drawImage(source, 0, 0)
+  return canvas
+}
+
 export class Flattener {
   /**
    * @param {object} app - The Zumly instance
-   * @param {{ snapdom: Function, minNodes: number, scale: number, refresh: number|false }} options
-   *   refresh: also follow changes nobody made by hand (live data), photographing again at
-   *   most every `refresh` ms. With false, the photo taken on arrival stays until the user
-   *   changes something in the view.
+   * @param {{ snapdom?: Function, stream?: Function, minNodes: number, scale: number }} options
    */
   constructor (app, options) {
     this.app = app
     this.canvas = app.canvas
     this.snapdom = options.snapdom
+    this.stream = options.stream
     this.minNodes = options.minNodes
     this.scale = options.scale
-    this.refresh = options.refresh
-    /**
-     * view → { canvas, width, height, at, outdated }: the view as it was in front. outdated:
-     * the user changed it afterwards, so the photo would show the old state.
-     */
+    /** view → { canvas, width, height, streaming }: the view as it was in front. */
     this.photos = new WeakMap()
-    /** Views that changed after their photo was taken (what refresh follows). */
+    /** Views that changed after their photo was taken (without stream). */
     this.stale = new WeakSet()
+    /** Views whose stream cost too much, or that never hold still, this visit: they move as themselves. */
+    this.live = new WeakSet()
+    /** Photos in a row of the current view that it outdated while they were taken (without stream). */
+    this.misses = 0
+    /** The stream following the current view: { view, handle, frames }. */
+    this.streaming = null
     this.timer = null
     this.idle = null
     this.watched = null
     this.fades = new Set()
     this.lastInput = -Infinity
-    /** Last input inside the current view that was not a navigation (a toggle, a drag). */
-    this.lastTouch = -Infinity
-    /** Last change the user made by hand in the current view. */
-    this.touchedAt = -Infinity
+    /** Last change in the current view (without stream). */
+    this.lastChange = -Infinity
     this.settledAt = 0
     this.nextCapture = 0
     this.destroyed = false
@@ -100,12 +120,6 @@ export class Flattener {
     this._onInput = (event) => {
       if (event.type === 'pointermove' && !event.buttons) return
       this.lastInput = now()
-      if (event.type === 'wheel') return
-      const view = this.watched
-      const target = event.target
-      if (view && target instanceof Node && view.contains(target) && !target.closest?.('.zoom-me')) {
-        this.lastTouch = this.lastInput
-      }
     }
     for (const type of INPUTS) window.addEventListener(type, this._onInput, { capture: true, passive: true })
   }
@@ -147,10 +161,12 @@ export class Flattener {
       else this._unflat(view, view === current)
     }
     if (!current) return
-    // A photo is of one visit: a view seen again gets a fresh one.
+    // A photo is of one visit: a view seen again gets a fresh one, and a fresh chance.
     this.photos.delete(current)
     this.stale.delete(current)
-    this.touchedAt = -Infinity
+    this.live.delete(current)
+    this.misses = 0
+    this.lastChange = -Infinity
     this._watch(current)
     this._schedule()
   }
@@ -166,7 +182,8 @@ export class Flattener {
         this.photos.delete(view)
       }
     }
-    if (this._current() && !this.app.blockEvents) this._schedule()
+    const current = this._current()
+    if (current && !this.app.blockEvents && !this.streaming && !this.photos.has(current)) this._schedule()
   }
 
   destroy () {
@@ -185,9 +202,10 @@ export class Flattener {
     return this.canvas?.querySelector(':scope > .z-view.is-current-view') || null
   }
 
-  /** Stop watching and capturing: the views are about to move. */
+  /** Stop watching, streaming and capturing: the views are about to move. */
   _pause () {
     this._cancelCapture()
+    this._stopStream()
     this._unwatch()
     this._finishFades()
   }
@@ -209,28 +227,24 @@ export class Flattener {
     return false
   }
 
-  /** Whether the current view needs a (new) photo. */
-  _wantsPhoto (view) {
-    const photo = this.photos.get(view)
-    return !photo || photo.outdated || (this.refresh !== false && this.stale.has(view))
-  }
-
-  /** Take a photo of the current view once input has been quiet for a while, at idle. */
+  /** Start the photo of the current view once input has been quiet for a while, at idle. */
   _schedule () {
     this._cancelCapture()
     const view = this._current()
     if (!view || this.destroyed) return
-    const at = Math.max(this.settledAt + QUIET_MS, this.lastInput + QUIET_MS, this.nextCapture)
+    const at = Math.max(this.settledAt + QUIET_MS, this.lastInput + QUIET_MS, this.lastChange + QUIET_MS, this.nextCapture)
     this.timer = setTimeout(() => {
       this.timer = null
       if (this.destroyed || view !== this._current()) return
-      if (now() - this.lastInput < QUIET_MS || this.app.blockEvents || this.app._scrub) {
+      const busy = now() - Math.max(this.lastInput, this.lastChange) < QUIET_MS
+      if (busy || this.app.blockEvents || this.app._scrub) {
         this._schedule()
         return
       }
       this.idle = requestIdle(() => {
         this.idle = null
-        this._capture(view)
+        if (this.stream) this._startStream(view)
+        else this._capture(view)
       })
     }, Math.max(0, at - now()))
   }
@@ -242,34 +256,98 @@ export class Flattener {
     this.idle = null
   }
 
+  /** Never start a capture during a transition or a gesture, or for a view that does not pay off. */
+  _canCapture (view) {
+    return !this.destroyed && !this.app.blockEvents && !this.app._scrub && view === this._current() &&
+      !this.live.has(view) && this._eligible(view)
+  }
+
+  /** The SnapDOM scale for a view: outerTransforms: false keeps a root scale, so undo it. */
+  _scaleFor (view) {
+    const matrix = new DOMMatrix(getComputedStyle(view).transform)
+    return this.scale / (Math.hypot(matrix.a, matrix.b) || 1)
+  }
+
+  /** Keep the photo of the current view current with SnapDOM's stream plugin. */
+  _startStream (view) {
+    if (!this._canCapture(view) || this.streaming) return
+    const state = { view, frames: [], handle: null }
+    const off = (why) => {
+      this.app.notify(`flatten: view "${view.dataset.viewName}" stays live (${why}).`, 'info')
+      this.live.add(view)
+      this.photos.delete(view)
+      this._stopStream()
+    }
+    try {
+      state.handle = this.stream(view, {
+        ...CAPTURE,
+        scale: this._scaleFor(view),
+        fps: STREAM_FPS,
+        // A spinner's angle does not matter in a photo behind; following it would make every
+        // frame a full one when it spins over nothing opaque.
+        animations: false,
+        onFrame: (frame) => {
+          if (this.streaming !== state) return
+          const t = now()
+          if (frame.reason !== 'start') state.frames.push({ t, ms: frame.ms })
+          state.frames = state.frames.filter(f => t - f.t < STREAM_WINDOW)
+          const busy = state.frames.reduce((sum, f) => sum + f.ms, 0)
+          if (frame.full && frame.reason !== 'start' && frame.ms > STREAM_SLOW_MS) off(`full frames take ${Math.round(frame.ms)} ms`)
+          else if (busy > STREAM_BUDGET * STREAM_WINDOW) off('keeping its photo current costs too much')
+        }
+      })
+    } catch (error) {
+      this.app.notify(`flatten: no stream of view "${view.dataset.viewName}": ${error.message}`, 'info')
+      this.live.add(view)
+      return
+    }
+    this.streaming = state
+    state.handle.ready.then(() => {
+      if (this.streaming !== state) return
+      this.photos.set(view, { canvas: state.handle.canvas, width: view.offsetWidth, height: view.offsetHeight, streaming: true })
+    }, (error) => {
+      if (this.streaming === state) off(error.message)
+    })
+  }
+
+  /** Stop the stream; its last frame becomes the photo, in a canvas of its own. */
+  _stopStream () {
+    const state = this.streaming
+    if (!state) return
+    this.streaming = null
+    state.handle?.stop()
+    const photo = this.photos.get(state.view)
+    if (photo?.streaming) this.photos.set(state.view, { ...photo, canvas: copyCanvas(photo.canvas), streaming: false })
+  }
+
+  /** One photo of the current view (without stream). */
   async _capture (view) {
-    // Never start one during a transition or a gesture.
-    if (this.destroyed || this.app.blockEvents || this.app._scrub || view !== this._current()) return
-    if (!this._wantsPhoto(view) || !this._eligible(view)) return
+    if (!this._canCapture(view)) return
+    if (this.photos.has(view) && !this.stale.has(view)) return
     const started = now()
     this.stale.delete(view)
     let photo = null
     try {
-      // outerTransforms: false drops the view's translate but keeps a scale: undo it.
-      const matrix = new DOMMatrix(getComputedStyle(view).transform)
-      const scale = Math.hypot(matrix.a, matrix.b) || 1
-      const result = await this.snapdom(view, { ...CAPTURE, scale: this.scale / scale })
+      const result = await this.snapdom(view, { ...CAPTURE, scale: this._scaleFor(view) })
       const canvas = await result.toCanvas()
-      photo ={ canvas, width: view.offsetWidth, height: view.offsetHeight, at: started, outdated: false }
+      photo = { canvas, width: view.offsetWidth, height: view.offsetHeight, streaming: false }
     } catch (error) {
       this.app.notify(`flatten: no photo of view "${view.dataset.viewName}": ${error.message}`, 'info')
     }
-    this.nextCapture = now() + (this.refresh === false ? 0 : Math.max(this.refresh, (now() - started) * DUTY))
+    this.nextCapture = now() + (now() - started) * DUTY
     if (this.destroyed || !photo || !view.isConnected) return
-    // The user changed the view while the photo was being taken.
-    photo.outdated = this.touchedAt > started
     this.photos.set(view, photo)
     if (!this.app.blockEvents && !this.app._scrub &&
       (view.classList.contains('is-previous-view') || view.classList.contains('is-last-view'))) {
       // The user moved on while the photo was being taken: use it now.
       this._flat(view)
-    } else if (view === this._current() && this._wantsPhoto(view)) {
-      this._schedule()
+    } else if (view === this._current() && this.stale.has(view)) {
+      // It changed while the photo was being taken: try again once it settles, or give up on
+      // a view that never holds still (live data).
+      if (++this.misses >= MAX_STALE) this.live.add(view)
+      else this._schedule()
+    } else {
+      this.misses = 0
     }
   }
 
@@ -277,11 +355,11 @@ export class Flattener {
     return photo.width === view.offsetWidth && photo.height === view.offsetHeight
   }
 
-  /** Show the photo in place of the view's content, when there is one that still fits. */
+  /** Show the photo in place of the view's content, when there is one that still shows it. */
   _flat (view) {
     if (!view || view.classList.contains(FLAT) || view.dataset.flatten === 'false') return
     const photo = this.photos.get(view)
-    if (!photo || photo.outdated || !this._fits(photo, view)) return
+    if (!photo || photo.streaming || this.stale.has(view) || !this._fits(photo, view)) return
     const layer = photo.canvas
     layer.classList.add(LAYER)
     layer.setAttribute('aria-hidden', 'true')
@@ -322,12 +400,12 @@ export class Flattener {
     this.fades.clear()
   }
 
-  // ─── Changes in the current view ─────────────────────────────────
+  // ─── Changes in the current view (without stream) ────────────────
 
   _watch (view) {
     this._unwatch()
     this.watched = view
-    this.observer?.observe(view, { subtree: true, childList: true, attributes: true, characterData: true })
+    if (!this.stream) this.observer?.observe(view, { subtree: true, childList: true, attributes: true, characterData: true })
   }
 
   _unwatch () {
@@ -339,14 +417,11 @@ export class Flattener {
     const view = this.watched
     if (!view || this.destroyed) return
     if (records.every(record => isOwnMutation(record, view))) return
+    // The photo no longer shows the view: it is not used until a new one is taken, once the
+    // view holds still.
     this.stale.add(view)
-    if (now() - this.lastTouch < TOUCH_MS) {
-      // The user's own change (a toggle, a drag): the photo would show the old state.
-      this.touchedAt = now()
-      const photo = this.photos.get(view)
-      if (photo) photo.outdated = true
-    }
-    if (this._wantsPhoto(view) && !this.timer && !this.idle) this._schedule()
+    this.lastChange = now()
+    if (!this.live.has(view) && !this.timer && !this.idle) this._schedule()
   }
 }
 
@@ -356,10 +431,11 @@ export class Flattener {
  */
 export function createFlattener (app, options) {
   const snapdom = options.snapdom || globalThis.snapdom
-  if (typeof snapdom !== 'function') {
-    app.notify('flatten needs SnapDOM: pass flatten: { snapdom }, or load SnapDOM before Zumly. Views stay live.', 'warn')
+  const stream = options.stream || null
+  if (typeof snapdom !== 'function' && typeof stream !== 'function') {
+    app.notify('flatten needs SnapDOM: pass flatten: { snapdom, stream }, or load SnapDOM before Zumly. Views stay live.', 'warn')
     return null
   }
   if (typeof DOMMatrix !== 'function') return null
-  return new Flattener(app, { ...options, snapdom })
+  return new Flattener(app, { ...options, snapdom, stream })
 }
