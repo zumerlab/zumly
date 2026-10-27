@@ -59,6 +59,8 @@
       mount: '.canvas',
       initialView: 'board',
       views: { board: board(), detail },
+      // Blur and dim the board behind: the costly part, on thousands of nodes and glass.
+      transitions: { effects: ['blur(3px) brightness(.7)', 'blur(8px) brightness(.5)'] },
       // true reads the global snapdom from its script tag.
       flatten
     })

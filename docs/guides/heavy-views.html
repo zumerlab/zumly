@@ -62,7 +62,7 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom } }
       <p>With script tags, load SnapDOM before Zumly and pass <code>flatten: true</code>, which reads the global <code>snapdom</code>:</p>
       <pre><code>&lt;script src="https://unpkg.com/@zumer/snapdom/dist/snapdom.js"&gt;&lt;/script&gt;
 &lt;script src="https://unpkg.com/zumly/dist/zumly.js"&gt;&lt;/script&gt;</code></pre>
-      <p>Zumly does not depend on SnapDOM. If it is missing, Zumly says so once in the console and the views stay as they are.</p>
+      <p>SnapDOM is an optional peer dependency: <code>npm install zumly</code> alone does not bring it. If it is missing, Zumly says so once in the console and the views stay as they are.</p>
     </section>
 
     <section>
@@ -80,8 +80,13 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom } }
       <p>Three zooms in and three out, with a clock, spinners and numbers changing in every view. Chrome on a MacBook; a dropped frame is one the screen never got.</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Views</th><th>Without</th><th><code>animateEffects: false</code></th><th>With <code>flatten</code></th></tr></thead>
-        <tbody id="bench-rows"></tbody>
+        <tbody>
+          <tr><td>Cards, about 3,000 nodes</td><td>6.8% dropped</td><td>5.2%</td><td>1.3%, no hitch</td></tr>
+          <tr><td>Frosted glass</td><td>52% dropped, 48% at rest</td><td>48%, 48% at rest</td><td>0%, 0% at rest</td></tr>
+          <tr><td>Orbit dials (light)</td><td>0.6%</td><td>0%</td><td>left alone</td></tr>
+        </tbody>
       </table></div>
+      <p>With the processor four times slower, frosted glass drops 47% without and 0.6% with <code>flatten</code>.</p>
       <p>A light view gains nothing, so <code>flatten</code> leaves it alone. It photographs a view with at least <code>minNodes</code> elements, or with <code>backdrop-filter</code> inside. Mark a view <code>data-flatten="true"</code> to photograph it anyway, or <code>data-flatten="false"</code> to keep it live behind (a video, a game). Views with an iframe stay live: SnapDOM can only draw a placeholder for it.</p>
     </section>
 
@@ -103,8 +108,9 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom } }
       <ul>
         <li>The view behind stands still. A clock or a chart that updates stops while the view is behind, and is current again when you come back. Set <code>refresh</code> if the photo should follow it.</li>
         <li>Change something by hand, a toggle or a slider, and leave at once: that view moves as itself until its new photo is ready, so its old state never flashes.</li>
+        <li>A zoom-in starts a frame or two later: hiding the content of the view that grows takes a moment, about 25 ms on a laptop and 65 ms on a phone-class processor. The motion that follows is the smooth part.</li>
         <li>Each view behind keeps its photo in a canvas: width × height × 4 bytes, times the pixel ratio squared.</li>
-        <li>On a slow tablet a photo takes up to a second, spread over many frames. Zumly waits for a quiet moment to start one.</li>
+        <li>On a slow tablet a photo takes up to a second. Most of it runs in small pieces between frames, but a tap that lands on the longest piece waits for it: about a tenth of a second, a third with frosted glass. Zumly starts a photo only after input has been quiet for a moment.</li>
       </ul>
     </section>
 
