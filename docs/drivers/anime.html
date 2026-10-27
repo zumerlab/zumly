@@ -12,14 +12,14 @@
   </script>
 
   <title>Zumly Anime.js driver — Matrix-interpolated zoom transitions</title>
-  <meta name="description" content="Run Zumly's zoom transitions through Anime.js. The bundled adapter interpolates computed CSS matrices so transform-origin changes stay perfectly aligned." />
+  <meta name="description" content="Run Zumly's zoom transitions on Anime.js v4 or v3: script tag or bundler, CSS or Anime.js ease names, stagger, and wrapping the driver." />
   <meta name="keywords" content="zumly anime.js, anime.js zoom transition, anime.js zui, zooming user interface anime, anime.js driver, zumly transition driver" />
 
   <link rel="canonical" href="https://zumerlab.github.io/zumly/drivers/anime.html" />
 
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Zumly Anime.js driver — Matrix-interpolated zoom transitions" />
-  <meta property="og:description" content="Run Zumly's zoom transitions through Anime.js. The bundled adapter interpolates computed CSS matrices so transform-origin changes stay perfectly aligned." />
+  <meta property="og:description" content="Run Zumly's zoom transitions on Anime.js v4 or v3: script tag or bundler, CSS or Anime.js ease names, stagger, and wrapping the driver." />
   <meta property="og:url" content="https://zumerlab.github.io/zumly/drivers/anime.html" />
   <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -77,167 +77,101 @@
   </nav>
 
   <main>
-
     <header class="hero">
-      <span class="hero-eyebrow">Driver · Anime.js</span>
-      <h1 class="hero-title">Zumly + Anime.js</h1>
-      <p class="hero-sub">
-        Run Zumly's zoom transitions through Anime.js. The bundled adapter interpolates the
-        browser-computed CSS matrix between view states, so origins, scales, and translations
-        stay aligned even when transform-origin shifts during the animation.
-      </p>
-      <div class="cta-row">
-        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
-        <a href="https://github.com/zumerlab/zumly" class="cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
-      </div>
+      <span class="hero-eyebrow">Guide · Driver</span>
+      <h1 class="hero-title">Zumly with Anime.js</h1>
+      <p class="hero-sub">A driver decides how views move; Zumly decides where. This one runs the zooms on Anime.js: same views, same timing, Anime.js draws the frames.</p>
     </header>
 
     <section>
-      <h2>Why use the Anime.js driver?</h2>
-      <p>
-        The Anime.js adapter is a good choice when you need <strong>geometrically faithful</strong>
-        intermediate frames. Instead of tweening <code>transform</code> as a string, the driver
-        reads the computed matrix at the start and end of the transition and interpolates between
-        them frame-by-frame.
-      </p>
-      <p>That matters when:</p>
+      <h2>Do you need it?</h2>
+      <p>Probably not to start. The default <code>css</code> driver is small and smooth, and every driver follows the same curve for the same <code>ease</code>. Use this one when:</p>
       <ul>
-        <li>The current and previous views have different <code>transform-origin</code> values
-        (very common in zoom-into-element flows where each child has its own bounding box).</li>
-        <li>You want a smooth visual line between two states that browsers would otherwise stitch
-        with a slight pop because they tween origin and transform separately.</li>
-        <li>You're already using Anime.js elsewhere and want the same easing engine across your
-        UI for visual consistency.</li>
+        <li>Your app already uses Anime.js (v4 or v3) and you want one animation engine and one set of ease names.</li>
+        <li>You want to hook into each transition from that library, for logging or to run another animation alongside.</li>
       </ul>
     </section>
 
     <section>
-      <h2>Install</h2>
-      <p>The driver ships inside the <code>zumly</code> package. Add Anime.js as a global:</p>
-      <pre>npm install zumly</pre>
-      <pre>&lt;script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"&gt;&lt;/script&gt;</pre>
-      <div class="callout">
-        <strong>Anime.js v3.</strong> The bundled adapter targets Anime.js v3 (the global
-        <code>anime</code> function). v4's named exports work too, as long as you assign the
-        default export to <code>globalThis.anime</code> before Zumly initialises.
-      </div>
-    </section>
-
-    <section id="quick-start">
-      <h2>Quick start</h2>
-      <pre>import Zumly from 'zumly'
-import 'zumly/css'
-
-const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
-  views: { home, gallery, photo },
-  transitions: {
-    driver: 'anime',
-    duration: '500ms',
-    ease: 'easeInOutQuad',
-  },
-})
-
-await app.init()</pre>
-      <p>
-        Any Anime.js easing string is valid for the <code>ease</code> field — the adapter passes
-        it straight through to <code>anime()</code>. CSS-style strings like
-        <code>'ease-in-out'</code> are also accepted and mapped to a sensible default curve.
-      </p>
-    </section>
-
-    <section>
-      <h2>Working example: photo gallery drill-down</h2>
-      <pre>const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'gallery',
-  views: { gallery, photo },
-  transitions: {
-    driver: 'anime',
-    duration: '700ms',
-    ease: 'easeOutExpo',
-    effects: ['blur(3px) brightness(0.8)', 'blur(8px) brightness(0.4)'],
-  },
-})
-
-await app.init()</pre>
-      <p>
-        Because the driver interpolates computed matrices, each photo zooms into its exact
-        bounding rectangle without the typical "pop" you get when transform-origin changes
-        late in the animation.
-      </p>
-    </section>
-
-    <section>
-      <h2>What the adapter actually does</h2>
-      <ul>
-        <li>Calls <code>showViews()</code> on current, previous, and grandparent views.</li>
-        <li>Uses <code>readComputedMatrix()</code> to capture the start and end matrix for each view
-        (this forces a single layout read — see the
-        <a href="../api.html">API reference</a> for the timing).</li>
-        <li>Drives Anime.js with a <code>{ progress }</code> object and applies
-        <code>matrixToString(interpolateMatrix(from, to, t))</code> to each view's
-        <code>transform</code> on every tick.</li>
-        <li>On <code>complete</code>, applies the canonical end state via
-        <code>applyZoomInEndState()</code> / <code>applyZoomOutPreviousState()</code> and calls
-        <code>onComplete()</code>.</li>
-      </ul>
-      <p>
-        Lateral transitions are passed to <code>runLateralInstant()</code> — Zumly's lateral
-        slide is geometric, not curved, so adding Anime.js to it adds no value.
-      </p>
+      <h2>With a script tag</h2>
+      <p>Load Anime.js before Zumly and name the driver:</p>
+      <pre><code>&lt;script src=&quot;https://cdn.jsdelivr.net/npm/animejs@4/dist/bundles/anime.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/zumly/dist/zumly.js&quot;&gt;&lt;/script&gt;</code></pre>
+      <pre><code>const app = new Zumly({
+  mount: &#x27;.canvas&#x27;,
+  initialView: &#x27;home&#x27;,
+  views,
+  transitions: { driver: &#x27;anime&#x27;, duration: &#x27;700ms&#x27;, ease: &#x27;outExpo&#x27; }
+})</code></pre>
     </section>
 
     <section>
       <h2>With a bundler</h2>
-      <p>With a bundler there is no global <code>anime</code>. Pass the library to <code>animeDriver</code> instead:</p>
-      <pre>import * as anime from 'animejs'          // Anime.js v4; for v3: import anime from 'animejs'
-import Zumly, { animeDriver } from 'zumly'
+      <p>There is no global, so hand the library to the driver:</p>
+      <pre><code>import * as anime from &#x27;animejs&#x27;          // v4; for v3: import anime from &#x27;animejs&#x27;
+import Zumly, { animeDriver } from &#x27;zumly&#x27;
 
 const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
-  views: { home, detail },
-  transitions: {
-    driver: animeDriver(anime),
-    duration: '500ms',
-  },
-})</pre>
-      <p>
-        Wrapping or extending the function works the same way as for any built-in driver. See
-        <a href="custom.html">writing a custom driver</a> for the full <code>spec</code> shape.
-      </p>
+  mount: &#x27;.canvas&#x27;,
+  initialView: &#x27;home&#x27;,
+  views,
+  transitions: { driver: animeDriver(anime), duration: &#x27;700ms&#x27; }
+})</code></pre>
     </section>
 
     <section>
-      <h2>Common gotchas</h2>
+      <h2>Easing</h2>
       <ul>
-        <li>
-          <strong>Anime.js must be on <code>globalThis</code> before Zumly initialises.</strong>
-          The adapter checks at construction time. If Anime.js is missing, the driver warns once
-          and falls through to <code>onComplete()</code> — views still navigate, just instantly.
-        </li>
-        <li>
-          <strong>Matrix interpolation forces one extra layout read</strong> per transition. On
-          modern devices this is invisible; on very low-end mobile, the <code>gsap</code> or
-          <code>css</code> drivers (which animate the transform string directly) are slightly
-          cheaper.
-        </li>
-        <li>
-          <strong>Keep custom transforms off the views during a zoom.</strong> The driver writes
-          a full <code>matrix(...)</code> on every tick; concurrent inline transforms will be
-          overwritten.
-        </li>
+        <li>A CSS easing (<code>'ease-in-out'</code>, <code>'cubic-bezier(.2,.8,.2,1)'</code>) gives the same curve as the default driver, so switching drivers does not change the feel.</li>
+        <li>Anything else goes to Anime.js untouched: &#x27;outExpo&#x27; (v4), &#x27;easeOutExpo&#x27; (v3).</li>
+        <li><code>stagger</code> (in ms) delays each layer behind the current one; each layer keeps its own curve.</li>
+        <li>Works with Anime.js v4 (<code>animate</code>) and v3 (<code>anime()</code>); the driver detects which one you pass.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>What it animates</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Move</th><th>With Anime.js</th></tr></thead>
+        <tbody>
+          <tr><td>Zoom in, zoom out, several levels out</td><td>Animated, with <code>effects</code> and <code>stagger</code></td></tr>
+          <tr><td>Siblings (lateral)</td><td>Switch at once. For a slide between siblings, use the <code>css</code> or <code>waapi</code> driver</td></tr>
+          <tr><td>Zoom-out that follows a gesture</td><td>Works the same as with any driver</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li>If Anime.js is missing, Zumly warns once in the console and keeps navigating without animation.</li>
+        <li>In a hidden tab, where Anime.js stops getting frames, each transition still finishes on time.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Wrapping it</h2>
+      <p>A driver is a function, so you can wrap one:</p>
+      <pre><code>const animated = animeDriver(anime)
+
+transitions: {
+  driver: (spec, onComplete) =&gt; {
+    console.log(spec.type)          // &#x27;zoomIn&#x27;, &#x27;zoomOut&#x27; or &#x27;lateral&#x27;
+    animated(spec, onComplete)
+  }
+}</code></pre>
+      <p>The full contract is in <a href="custom.html">Write your own driver</a>.</p>
+    </section>
+
+    <section>
+      <h2>Things to know</h2>
+      <ul>
+        <li>Zumly owns <code>transform</code> on the views during a zoom. Do not tween the same views from your own Anime.js code at that moment.</li>
+        <li>Background <code>effects</code> work the same with every driver; <code>animateEffects: false</code> applies them at once, which is smoother with heavy views.</li>
       </ul>
     </section>
 
     <div class="final-cta">
-      <h3>See the engine in action</h3>
-      <p>Try the live demo to see Zumly's zoom flow — then swap to the Anime.js driver in your own project for matrix-interpolated transitions.</p>
+      <h3>Next</h3>
+      <p>Timing, effects and gestures in <a href="../learn/motion.html">step 6</a>. The other drivers: <a href="gsap.html">GSAP</a> · <a href="motion.html">Motion</a> · <a href="custom.html">your own</a>.</p>
       <a href="../" class="cta-primary">Open the live demo &rarr;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
     </div>
-
   </main>
 
   <footer class="site-footer">

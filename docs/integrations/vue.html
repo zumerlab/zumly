@@ -12,14 +12,14 @@
   </script>
 
   <title>Zumly with Vue — Zoom navigation for Vue 3 apps</title>
-  <meta name="description" content="Add zoom-based navigation to any Vue 3 application with Zumly. Framework-agnostic ZUI engine that mounts Vue components into zoomable views." />
+  <meta name="description" content="Mount Vue components as Zumly views: an app per view, unmounted when the view is discarded, with props from the trigger and shared plugins like Pinia." />
   <meta name="keywords" content="zumly vue, zoom navigation vue, ZUI vue, vue zoom interface, vue 3 spatial navigation, zooming user interface vue" />
 
   <link rel="canonical" href="https://zumerlab.github.io/zumly/integrations/vue.html" />
 
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Zumly with Vue — Zoom navigation for Vue 3 apps" />
-  <meta property="og:description" content="Add zoom-based navigation to any Vue 3 application with Zumly. Framework-agnostic ZUI engine that mounts Vue components into zoomable views." />
+  <meta property="og:description" content="Mount Vue components as Zumly views: an app per view, unmounted when the view is discarded, with props from the trigger and shared plugins like Pinia." />
   <meta property="og:url" content="https://zumerlab.github.io/zumly/integrations/vue.html" />
   <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -77,266 +77,152 @@
   </nav>
 
   <main>
-
     <header class="hero">
-      <span class="hero-eyebrow">Integration · Vue</span>
+      <span class="hero-eyebrow">Guide · Vue</span>
       <h1 class="hero-title">Zumly with Vue</h1>
-      <p class="hero-sub">
-        Add zoom-based navigation to any Vue 3 application. Zumly is a framework-agnostic
-        Zooming User Interface (ZUI) engine — your Vue components mount into zoomable views
-        with no plugin, no Vue-specific bridge, and no Zumly-aware code in your Single File
-        Components.
-      </p>
-      <div class="cta-row">
-        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
-        <a href="https://github.com/zumerlab/zumly" class="cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
-      </div>
+      <p class="hero-sub">A view can be a Vue component. Zumly hands you an empty element; you mount an app in it and unmount it when the view goes away.</p>
     </header>
 
     <section>
-      <h2>Why use Zumly with Vue?</h2>
-      <p>
-        Vue handles your component tree; Zumly handles the spatial relationship <em>between</em>
-        trees. Each Zumly view is a self-contained DOM subtree where you can call
-        <code>createApp(...).mount(target)</code> exactly the same way you'd bootstrap Vue into
-        any other container. Zumly takes care of the zoom transition, the focus origin, and the
-        navigation stack.
-      </p>
-      <p>
-        That means Zumly doesn't replace Vue Router or compete with Pinia. It's an orthogonal
-        layer for <strong>spatial, focus-driven navigation</strong>: instead of swapping URLs in
-        a flat space, users zoom into a card, a row, an item, and the Vue component for that
-        view renders inside the zoomed-in target.
-      </p>
-      <p>Common use cases for Zumly + Vue:</p>
+      <h2>The pattern</h2>
+      <p>Make the view a function. It receives a context; mount an app in <code>target</code>.</p>
+      <pre><code>import Zumly from &#x27;zumly&#x27;
+import &#x27;zumly/style.css&#x27;
+import { createApp } from &#x27;vue&#x27;
+import Detail from &#x27;./Detail.vue&#x27;
+
+const app = new Zumly({
+  mount: &#x27;.canvas&#x27;,
+  initialView: &#x27;home&#x27;,
+  views: {
+    home: &#x27;&lt;div class=&quot;z-view&quot;&gt;&lt;div class=&quot;zoom-me&quot; data-to=&quot;detail&quot; data-id=&quot;42&quot;&gt;Open&lt;/div&gt;&lt;/div&gt;&#x27;,
+    detail: ({ target, props, onCleanup }) =&gt; {
+      const view = createApp(Detail, { id: props.id })
+      view.mount(target)
+      onCleanup(() =&gt; view.unmount())
+    }
+  }
+})
+app.init()</code></pre>
       <ul>
-        <li>Dashboards with hierarchical drill-down (KPIs &rarr; charts &rarr; raw data)</li>
-        <li>IoT and home control panels (rooms &rarr; devices &rarr; settings)</li>
-        <li>Settings UIs that zoom into nested sections instead of pushing routes</li>
-        <li>Kiosk and signage interfaces where focus is the primary navigation metaphor</li>
-        <li>Product configurators with zoomable detail levels</li>
+        <li><code>target</code> is a fresh element that becomes the view. Zumly gives it the <code>z-view</code> class; add your own classes or a size to it if the view should not fill the canvas.</li>
+        <li><code>props</code> holds the trigger's <code>data-*</code> attributes. <code>data-id="42"</code> arrives as <code>props.id</code>, a string.</li>
+        <li><code>onCleanup</code> runs once, when the view is discarded. Unmount there; removing the DOM alone does not.</li>
       </ul>
     </section>
 
     <section>
-      <h2>Install</h2>
-      <pre>npm install zumly</pre>
-      <p>Zumly has zero dependencies. The package ships ESM, CJS, and a UMD build for plain HTML.</p>
-    </section>
+      <h2>A list that opens a detail</h2>
+      <p>Zumly is created once, in the component that owns the canvas, and destroyed with it. The list renders the triggers; any element with <code>zoom-me</code> and <code>data-to</code> works, whoever rendered it.</p>
+      <p class="code-file">App.vue</p>
+      <pre><code>&lt;script setup&gt;
+import { ref, onMounted, onBeforeUnmount, createApp } from &#x27;vue&#x27;
+import Zumly from &#x27;zumly&#x27;
+import &#x27;zumly/style.css&#x27;
+import List from &#x27;./List.vue&#x27;
+import Detail from &#x27;./Detail.vue&#x27;
 
-    <section id="quick-start">
-      <h2>Quick start</h2>
-      <p>
-        The simplest pattern: declare your views as <strong>function views</strong>. Zumly hands
-        you a fresh <code>target</code> element, and you mount a Vue app into it with
-        <code>createApp</code>.
-      </p>
-      <pre>import Zumly from 'zumly'
-import 'zumly/css'
-import { createApp } from 'vue'
-import Dashboard from './Dashboard.vue'
+// Each view gets its own Vue app
+const mountView = (component, toProps = () =&gt; ({})) =&gt; ({ target, props, onCleanup }) =&gt; {
+  const view = createApp(component, toProps(props))
+  view.mount(target)
+  onCleanup(() =&gt; view.unmount())
+}
 
-const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
-  views: {
-    home: '&lt;div class="z-view"&gt;&lt;div class="zoom-me" data-to="dashboard" data-id="42"&gt;Open dashboard&lt;/div&gt;&lt;/div&gt;',
-    dashboard: ({ target, props, onCleanup }) =&gt; {
-      const component = createApp(Dashboard, { id: props.id })
-      onCleanup(() =&gt; component.unmount())
-      component.mount(target)
-    }
-  }
-})
+const canvas = ref(null)
+let app
 
-await app.init()</pre>
-      <p>
-        Any element inside a view with class <code>zoom-me</code> and a <code>data-to</code>
-        attribute becomes a zoom trigger. Data attributes on the trigger
-        (like <code>data-id="42"</code>) get passed into your Vue component as
-        <code>props.id</code>.
-      </p>
-    </section>
-
-    <section>
-      <h2>Working example: Dashboard with drill-down</h2>
-      <p>
-        A two-level pattern where a list of items zooms into a detail view, with the Vue
-        component receiving the selected item's id from the trigger.
-      </p>
-
-      <h3>App.vue</h3>
-      <pre>&lt;script setup&gt;
-import { onMounted, onBeforeUnmount } from 'vue'
-import { createApp } from 'vue'
-import Zumly from 'zumly'
-import 'zumly/css'
-
-import ItemList from './ItemList.vue'
-import ItemDetail from './ItemDetail.vue'
-
-let zumly
-
-onMounted(async () =&gt; {
-  zumly = new Zumly({
-    mount: '#dashboard-canvas',
-    initialView: 'list',
+onMounted(() =&gt; {
+  app = new Zumly({
+    mount: canvas.value,
+    initialView: &#x27;list&#x27;,
     views: {
-      list: ({ target, onCleanup }) =&gt; {
-        const component = createApp(ItemList)
-        onCleanup(() =&gt; component.unmount())
-        component.mount(target)
-      },
-      detail: ({ target, props, onCleanup }) =&gt; {
-        const component = createApp(ItemDetail, { id: props.id })
-        onCleanup(() =&gt; component.unmount())
-        component.mount(target)
-      }
-    },
-    transitions: {
-      duration: '600ms',
-      ease: 'cubic-bezier(.4,0,.2,1)',
-      effects: ['blur(4px) brightness(0.6)', 'blur(10px) brightness(0.3)']
+      list: mountView(List),
+      detail: mountView(Detail, props =&gt; ({ id: props.id }))
     }
   })
-  await zumly.init()
+  app.init()
 })
 
-onBeforeUnmount(() =&gt; zumly?.destroy())
+onBeforeUnmount(() =&gt; {
+  app?.destroy()
+  canvas.value?.replaceChildren()   // destroy() leaves the views in place
+})
 &lt;/script&gt;
 
 &lt;template&gt;
-  &lt;div id="dashboard-canvas" class="zumly-canvas" style="height: 100vh"&gt;&lt;/div&gt;
-&lt;/template&gt;</pre>
-
-      <h3>ItemList.vue</h3>
-      <pre>&lt;script setup&gt;
+  &lt;!-- The canvas fills its nearest positioned ancestor: give that a height --&gt;
+  &lt;div style=&quot;position: relative; height: 100vh&quot;&gt;
+    &lt;div ref=&quot;canvas&quot; class=&quot;zumly-canvas&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/template&gt;</code></pre>
+      <p class="code-file">List.vue</p>
+      <pre><code>&lt;script setup&gt;
 const items = [
-  { id: '1', name: 'Engine telemetry' },
-  { id: '2', name: 'Battery health' },
-  { id: '3', name: 'Brake system' }
+  { id: &#x27;1&#x27;, name: &#x27;Engine&#x27; },
+  { id: &#x27;2&#x27;, name: &#x27;Battery&#x27; },
+  { id: &#x27;3&#x27;, name: &#x27;Brakes&#x27; }
 ]
 &lt;/script&gt;
 
 &lt;template&gt;
-  &lt;div class="dashboard-view"&gt;
+  &lt;div class=&quot;list&quot;&gt;
     &lt;h1&gt;Subsystems&lt;/h1&gt;
-    &lt;div
-      v-for="item in items"
-      :key="item.id"
-      class="zoom-me"
-      data-to="detail"
-      :data-id="item.id"&gt;
+    &lt;div v-for=&quot;item in items&quot; :key=&quot;item.id&quot; class=&quot;zoom-me&quot; data-to=&quot;detail&quot; :data-id=&quot;item.id&quot;&gt;
       {{ item.name }}
     &lt;/div&gt;
   &lt;/div&gt;
-&lt;/template&gt;</pre>
-
-      <h3>ItemDetail.vue</h3>
-      <pre>&lt;script setup&gt;
-defineProps(['id'])
-&lt;/script&gt;
-
-&lt;template&gt;
-  &lt;div class="dashboard-view"&gt;
-    &lt;h1&gt;Detail for {{ id }}&lt;/h1&gt;
-  &lt;/div&gt;
-&lt;/template&gt;</pre>
+&lt;/template&gt;</code></pre>
     </section>
 
     <section>
-      <h2>Lifecycle and cleanup</h2>
-      <p>
-        Function views are <strong>never cached</strong>. Each newly resolved view creates a
-        Vue application. Register <code>onCleanup(() =&gt; component.unmount())</code> on the
-        instance returned by <code>createApp()</code> so Vue runs its unmount hooks when Zumly
-        permanently removes that view or is destroyed. DOM removal alone does not unmount Vue.
-      </p>
-      <div class="callout">
-        <strong>Retained views:</strong> A view kept in depth history or by
-        <code>lateralNav.keepAlive</code> keeps its Vue application until permanent removal.
-        Temporary detachment does not run <code>onCleanup</code>. Object views also resolve
-        fresh; choosing <code>render()</code> does not preserve an instance by itself.
-      </div>
-    </section>
-
-    <section>
-      <h2>Sharing context (Pinia, Vue Router, plugins)</h2>
-      <p>
-        Pass your Pinia instance, router, or any Vue plugin to every view via
-        <code>componentContext</code> on the Zumly constructor. Zumly forwards it as
-        <code>context</code> to all function and object views, so each Vue app can install
-        the same plugins on bootstrap.
-      </p>
-      <pre>import { createPinia } from 'pinia'
-
-const pinia = createPinia()
-
-const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
-  componentContext: { pinia },
-  views: {
-    dashboard: ({ target, context, onCleanup }) =&gt; {
-      const component = createApp(Dashboard)
-      onCleanup(() =&gt; component.unmount())
-      component.use(context.pinia).mount(target)
-    }
-  }
-})</pre>
-    </section>
-
-    <section>
-      <h2>TypeScript</h2>
-      <p>
-        Zumly ships TypeScript types out of the box. View functions are typed with the
-        <code>target</code>, <code>props</code>, <code>context</code>, and <code>onCleanup</code>
-        parameters, so your
-        Vue mount code gets full IntelliSense.
-      </p>
-      <pre>import Zumly, { ViewFunction } from 'zumly'
-import { createApp } from 'vue'
-import Dashboard from './Dashboard.vue'
-
-const dashboard: ViewFunction = ({ target, props, onCleanup }) =&gt; {
-  const component = createApp(Dashboard, { id: props.id as string })
-  onCleanup(() =&gt; component.unmount())
-  component.mount(target)
-}</pre>
-    </section>
-
-    <section>
-      <h2>Common gotchas</h2>
+      <h2>When a view comes back</h2>
       <ul>
-        <li>
-          <strong>The <code>target</code> is a fresh <code>&lt;div&gt;</code></strong> created by
-          Zumly — don't try to mount into <code>document.body</code> or query for an existing
-          element. Just call <code>createApp(...).mount(target)</code>.
-        </li>
-        <li>
-          <strong>Zumly keeps <code>target</code> as the view wrapper</strong> and adds
-          <code>z-view</code> there. Set dimensions on <code>target</code> if the default
-          canvas-sized wrapper is unsuitable; Vue keeps its own DOM roots.
-        </li>
-        <li>
-          <strong>Trigger data attributes become strings.</strong>
-          <code>data-id="42"</code> arrives as <code>props.id === "42"</code>, not as a number.
-          Cast or parse on the Vue side.
-        </li>
-        <li>
-          <strong>Each view gets its own <code>createApp</code> instance.</strong> If you depend
-          on a single global Pinia store or Vue Router, install them on every view via
-          <code>componentContext</code> rather than relying on a top-level app.
-        </li>
+        <li>The views behind the current one stay mounted, so their component state survives a zoom in and out. Nothing renders again.</li>
+        <li>If something changed meanwhile (a store, a fetch), repaint in <code>onActivate(fn)</code>, which runs each time the view becomes current again.</li>
+        <li>Siblings you leave are discarded, unless <code>lateralNav: { keepAlive: true }</code> keeps them while you stay at that level.</li>
       </ul>
     </section>
 
+    <section>
+      <h2>Sharing services and state</h2>
+      <p>Each view is its own Vue app, so install Pinia, the router or any plugin on it. Pass the shared instances once in <code>componentContext</code>; every view receives them as <code>context</code>.</p>
+      <pre><code>const app = new Zumly({
+  ...,
+  componentContext: { pinia },
+  views: {
+    detail: ({ target, props, context, onCleanup }) =&gt; {
+      const view = createApp(Detail, { id: props.id }).use(context.pinia)
+      view.mount(target)
+      onCleanup(() =&gt; view.unmount())
+    }
+  }
+})</code></pre>
+    </section>
+
+    <section>
+      <h2>Things to know</h2>
+      <ul>
+        <li><code>destroy()</code> leaves the views in the canvas. Empty it, as above, if the component that creates Zumly can mount again (hot reload, a <code>v-if</code>).</li>
+        <li>Do not render another <code>z-view</code> inside <code>target</code>: <code>target</code> already is the view. Zumly warns in the console if you do.</li>
+        <li>Views are plain DOM, not Shadow DOM: your global styles apply inside them.</li>
+        <li>Zumly ships its own types; <code>ViewFunction</code> and <code>ViewContext</code> type the view context.</li>
+      </ul>
+      <pre><code>import { createApp } from &#x27;vue&#x27;
+import type { ViewFunction } from &#x27;zumly&#x27;
+
+const detail: ViewFunction = ({ target, props, onCleanup }) =&gt; {
+  const view = createApp(Detail, { id: String(props.id) })
+  view.mount(target)
+  onCleanup(() =&gt; view.unmount())
+}</code></pre>
+    </section>
+
     <div class="final-cta">
-      <h3>See Zumly in action</h3>
-      <p>The full interactive demo runs the same engine described above — zoom into Learn, the showcases or the API reference.</p>
+      <h3>Next</h3>
+      <p>Where views come from, in <a href="../learn/views.html">step 4</a>. The same pattern for <a href="react.html">React</a> · <a href="svelte.html">Svelte</a> · <a href="angular.html">Angular</a>, and for radial layouts with <a href="orbit-css.html">Orbit</a>.</p>
       <a href="../" class="cta-primary">Open the live demo &rarr;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
     </div>
-
   </main>
 
   <footer class="site-footer">

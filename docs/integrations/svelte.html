@@ -12,14 +12,14 @@
   </script>
 
   <title>Zumly with Svelte — Zoom navigation for Svelte 5 apps</title>
-  <meta name="description" content="Add zoom-based navigation to any Svelte 5 application with Zumly. Framework-agnostic ZUI engine that mounts Svelte components into zoomable views." />
+  <meta name="description" content="Mount Svelte 5 components as Zumly views with mount() and unmount(), props from the trigger and shared stores." />
   <meta name="keywords" content="zumly svelte, zoom navigation svelte, ZUI svelte, svelte zoom interface, svelte 5 spatial navigation, zooming user interface svelte" />
 
   <link rel="canonical" href="https://zumerlab.github.io/zumly/integrations/svelte.html" />
 
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Zumly with Svelte — Zoom navigation for Svelte 5 apps" />
-  <meta property="og:description" content="Add zoom-based navigation to any Svelte 5 application with Zumly. Framework-agnostic ZUI engine that mounts Svelte components into zoomable views." />
+  <meta property="og:description" content="Mount Svelte 5 components as Zumly views with mount() and unmount(), props from the trigger and shared stores." />
   <meta property="og:url" content="https://zumerlab.github.io/zumly/integrations/svelte.html" />
   <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -77,260 +77,143 @@
   </nav>
 
   <main>
-
     <header class="hero">
-      <span class="hero-eyebrow">Integration · Svelte 5</span>
+      <span class="hero-eyebrow">Guide · Svelte</span>
       <h1 class="hero-title">Zumly with Svelte</h1>
-      <p class="hero-sub">
-        Add zoom-based navigation to any Svelte 5 application. Zumly is a framework-agnostic
-        Zooming User Interface (ZUI) engine — your Svelte components mount into zoomable views
-        using Svelte 5's <code>mount()</code> API, with no Zumly-aware code in your <code>.svelte</code>
-        files.
-      </p>
-      <div class="cta-row">
-        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
-        <a href="https://github.com/zumerlab/zumly" class="cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
-      </div>
+      <p class="hero-sub">A view can be a Svelte component. Zumly hands you an empty element; you mount the component in it and unmount it when the view goes away.</p>
     </header>
 
     <section>
-      <h2>Why use Zumly with Svelte?</h2>
-      <p>
-        Svelte handles your component tree; Zumly handles the spatial relationship <em>between</em>
-        trees. Each Zumly view is a self-contained DOM subtree where you call Svelte 5's
-        <code>mount(Component, { target, props })</code> exactly the same way you'd bootstrap a
-        Svelte app into any other container element.
-      </p>
-      <p>
-        That means Zumly doesn't replace SvelteKit's router or compete with stores. It's an
-        orthogonal layer for <strong>spatial, focus-driven navigation</strong>: instead of
-        swapping URLs in a flat space, users zoom into a card, a row, an item, and the Svelte
-        component for that view renders inside the zoomed-in target.
-      </p>
-      <p>Common use cases for Zumly + Svelte:</p>
-      <ul>
-        <li>Dashboards with hierarchical drill-down (KPIs &rarr; charts &rarr; raw data)</li>
-        <li>IoT and home control panels (rooms &rarr; devices &rarr; settings)</li>
-        <li>Settings UIs that zoom into nested sections instead of pushing routes</li>
-        <li>Kiosk and signage interfaces where focus is the primary navigation metaphor</li>
-        <li>Product configurators with zoomable detail levels</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2>Install</h2>
-      <pre>npm install zumly</pre>
-      <p>Zumly has zero dependencies. The package ships ESM, CJS, and a UMD build for plain HTML.</p>
-    </section>
-
-    <section id="quick-start">
-      <h2>Quick start</h2>
-      <p>
-        The simplest pattern: declare your views as <strong>function views</strong>. Zumly hands
-        you a fresh <code>target</code> element, and you mount a Svelte component into it with
-        Svelte 5's <code>mount()</code> function.
-      </p>
-      <pre>import Zumly from 'zumly'
-import 'zumly/css'
-import { mount, unmount } from 'svelte'
-import Dashboard from './Dashboard.svelte'
+      <h2>The pattern</h2>
+      <p>Make the view a function. It receives a context; mount a component in <code>target</code>.</p>
+      <pre><code>import Zumly from &#x27;zumly&#x27;
+import &#x27;zumly/style.css&#x27;
+import { mount, unmount } from &#x27;svelte&#x27;
+import Detail from &#x27;./Detail.svelte&#x27;
 
 const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
+  mount: &#x27;.canvas&#x27;,
+  initialView: &#x27;home&#x27;,
   views: {
-    home: '&lt;div class="z-view"&gt;&lt;div class="zoom-me" data-to="dashboard" data-id="42"&gt;Open dashboard&lt;/div&gt;&lt;/div&gt;',
-    dashboard: ({ target, props, onCleanup }) =&gt; {
-      const component = mount(Dashboard, { target, props: { id: props.id } })
-      onCleanup(() =&gt; unmount(component))
+    home: &#x27;&lt;div class=&quot;z-view&quot;&gt;&lt;div class=&quot;zoom-me&quot; data-to=&quot;detail&quot; data-id=&quot;42&quot;&gt;Open&lt;/div&gt;&lt;/div&gt;&#x27;,
+    detail: ({ target, props, onCleanup }) =&gt; {
+      const view = mount(Detail, { target, props: { id: props.id } })
+      onCleanup(() =&gt; unmount(view))
     }
   }
 })
-
-await app.init()</pre>
-      <p>
-        Any element inside a view with class <code>zoom-me</code> and a <code>data-to</code>
-        attribute becomes a zoom trigger. Data attributes on the trigger
-        (like <code>data-id="42"</code>) get passed into your Svelte component as
-        <code>props.id</code>.
-      </p>
-      <div class="callout">
-        <strong>Svelte 4?</strong> Replace <code>mount(Dashboard, { target, props })</code> with
-        <code>new Dashboard({ target, props })</code>, keep the returned instance, and
-        register <code>onCleanup(() =&gt; component.$destroy())</code> instead of
-        <code>unmount(component)</code>.
-      </div>
-    </section>
-
-    <section>
-      <h2>Working example: Dashboard with drill-down</h2>
-      <p>
-        A two-level pattern where a list of items zooms into a detail view, with the Svelte
-        component receiving the selected item's id from the trigger.
-      </p>
-
-      <h3>App.svelte</h3>
-      <pre>&lt;script&gt;
-  import { onMount, onDestroy } from 'svelte'
-  import { mount, unmount } from 'svelte'
-  import Zumly from 'zumly'
-  import 'zumly/css'
-
-  import ItemList from './ItemList.svelte'
-  import ItemDetail from './ItemDetail.svelte'
-
-  let zumly
-
-  onMount(async () =&gt; {
-    zumly = new Zumly({
-      mount: '#dashboard-canvas',
-      initialView: 'list',
-      views: {
-        list: ({ target, onCleanup }) =&gt; {
-          const component = mount(ItemList, { target })
-          onCleanup(() =&gt; unmount(component))
-        },
-        detail: ({ target, props, onCleanup }) =&gt; {
-          const component = mount(ItemDetail, { target, props: { id: props.id } })
-          onCleanup(() =&gt; unmount(component))
-        }
-      },
-      transitions: {
-        duration: '600ms',
-        ease: 'cubic-bezier(.4,0,.2,1)',
-        effects: ['blur(4px) brightness(0.6)', 'blur(10px) brightness(0.3)']
-      }
-    })
-    await zumly.init()
-  })
-
-  onDestroy(() =&gt; zumly?.destroy())
-&lt;/script&gt;
-
-&lt;div id="dashboard-canvas" class="zumly-canvas" style="height: 100vh"&gt;&lt;/div&gt;</pre>
-
-      <h3>ItemList.svelte</h3>
-      <pre>&lt;script&gt;
-  const items = [
-    { id: '1', name: 'Engine telemetry' },
-    { id: '2', name: 'Battery health' },
-    { id: '3', name: 'Brake system' }
-  ]
-&lt;/script&gt;
-
-&lt;div class="dashboard-view"&gt;
-  &lt;h1&gt;Subsystems&lt;/h1&gt;
-  {#each items as item (item.id)}
-    &lt;div class="zoom-me" data-to="detail" data-id={item.id}&gt;
-      {item.name}
-    &lt;/div&gt;
-  {/each}
-&lt;/div&gt;</pre>
-
-      <h3>ItemDetail.svelte (Svelte 5)</h3>
-      <pre>&lt;script&gt;
-  let { id } = $props()
-&lt;/script&gt;
-
-&lt;div class="dashboard-view"&gt;
-  &lt;h1&gt;Detail for {id}&lt;/h1&gt;
-&lt;/div&gt;</pre>
-    </section>
-
-    <section>
-      <h2>Lifecycle and cleanup</h2>
-      <p>
-        Function views are <strong>never cached</strong>. Each newly resolved view mounts a
-        Svelte component. Register <code>onCleanup(() =&gt; unmount(component))</code> so Svelte
-        runs its destruction hooks when Zumly permanently removes that view or is destroyed.
-        DOM removal alone does not run Svelte's component teardown.
-      </p>
-      <div class="callout">
-        <strong>Retained views:</strong> A view kept in depth history or by
-        <code>lateralNav.keepAlive</code> keeps its component until permanent removal.
-        Temporary detachment does not run <code>onCleanup</code>. Register teardown per view
-        instead of using a global <code>'beforeZoomOut'</code> hook, which runs before removal.
-      </div>
-    </section>
-
-    <section>
-      <h2>Sharing context (stores, runes, services)</h2>
-      <p>
-        Pass shared state — Svelte stores, rune-based state objects, API clients — to every view
-        via <code>componentContext</code> on the Zumly constructor. Zumly forwards it as
-        <code>context</code> to all function and object views, so each Svelte component can read
-        from a single source of truth.
-      </p>
-      <pre>import { writable } from 'svelte/store'
-
-const userStore = writable({ id: 1, name: 'Ada' })
-
-const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
-  componentContext: { userStore },
-  views: {
-    dashboard: ({ target, context, onCleanup }) =&gt; {
-      const component = mount(Dashboard, {
-        target,
-        props: { user: context.userStore }
-      })
-      onCleanup(() =&gt; unmount(component))
-    }
-  }
-})</pre>
-    </section>
-
-    <section>
-      <h2>TypeScript</h2>
-      <p>
-        Zumly ships TypeScript types out of the box. View functions are typed with the
-        <code>target</code>, <code>props</code>, <code>context</code>, and <code>onCleanup</code>
-        parameters, so your
-        Svelte mount code gets full IntelliSense.
-      </p>
-      <pre>import Zumly, { ViewFunction } from 'zumly'
-import { mount, unmount } from 'svelte'
-import Dashboard from './Dashboard.svelte'
-
-const dashboard: ViewFunction = ({ target, props, onCleanup }) =&gt; {
-  const component = mount(Dashboard, { target, props: { id: props.id as string } })
-  onCleanup(() =&gt; unmount(component))
-}</pre>
-    </section>
-
-    <section>
-      <h2>Common gotchas</h2>
+app.init()</code></pre>
       <ul>
-        <li>
-          <strong>Use Svelte 5's <code>mount()</code>, not <code>new Component()</code>.</strong>
-          Svelte 5 deprecated the constructor pattern. The new API takes
-          <code>(Component, { target, props })</code>.
-        </li>
-        <li>
-          <strong>The <code>target</code> is a fresh <code>&lt;div&gt;</code></strong> created by
-          Zumly — don't try to mount into <code>document.body</code> or query for an existing
-          element. Just call <code>mount(Component, { target })</code>.
-        </li>
-        <li>
-          <strong>Zumly keeps <code>target</code> as the view wrapper</strong> and adds
-          <code>z-view</code> there, preserving Svelte's DOM roots. Set dimensions on
-          <code>target</code> if the default canvas-sized wrapper is unsuitable.
-        </li>
-        <li>
-          <strong>Trigger data attributes become strings.</strong>
-          <code>data-id="42"</code> arrives as <code>props.id === "42"</code>, not as a number.
-          Cast or parse on the Svelte side.
-        </li>
+        <li><code>target</code> is a fresh element that becomes the view. Zumly gives it the <code>z-view</code> class; add your own classes or a size to it if the view should not fill the canvas.</li>
+        <li><code>props</code> holds the trigger's <code>data-*</code> attributes. <code>data-id="42"</code> arrives as <code>props.id</code>, a string.</li>
+        <li><code>onCleanup</code> runs once, when the view is discarded. Unmount there; removing the DOM alone does not.</li>
       </ul>
     </section>
 
+    <section>
+      <h2>A list that opens a detail</h2>
+      <p>Zumly is created once, in the component that owns the canvas, and destroyed with it. The list renders the triggers; any element with <code>zoom-me</code> and <code>data-to</code> works, whoever rendered it.</p>
+      <p class="code-file">App.svelte</p>
+      <pre><code>&lt;script&gt;
+  import { onMount } from &#x27;svelte&#x27;
+  import { mount, unmount } from &#x27;svelte&#x27;
+  import Zumly from &#x27;zumly&#x27;
+  import &#x27;zumly/style.css&#x27;
+  import List from &#x27;./List.svelte&#x27;
+  import Detail from &#x27;./Detail.svelte&#x27;
+
+  // Each view mounts its own component
+  const mountView = (component, toProps = () =&gt; ({})) =&gt; ({ target, props, onCleanup }) =&gt; {
+    const view = mount(component, { target, props: toProps(props) })
+    onCleanup(() =&gt; unmount(view))
+  }
+
+  let canvas
+
+  onMount(() =&gt; {
+    const app = new Zumly({
+      mount: canvas,
+      initialView: &#x27;list&#x27;,
+      views: {
+        list: mountView(List),
+        detail: mountView(Detail, props =&gt; ({ id: props.id }))
+      }
+    })
+    app.init()
+    return () =&gt; {
+      app.destroy()
+      canvas.replaceChildren()   // destroy() leaves the views in place
+    }
+  })
+&lt;/script&gt;
+
+&lt;!-- The canvas fills its nearest positioned ancestor: give that a height --&gt;
+&lt;div style=&quot;position: relative; height: 100vh&quot;&gt;
+  &lt;div bind:this={canvas} class=&quot;zumly-canvas&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+      <p class="code-file">List.svelte</p>
+      <pre><code>&lt;script&gt;
+  const items = [
+    { id: &#x27;1&#x27;, name: &#x27;Engine&#x27; },
+    { id: &#x27;2&#x27;, name: &#x27;Battery&#x27; },
+    { id: &#x27;3&#x27;, name: &#x27;Brakes&#x27; }
+  ]
+&lt;/script&gt;
+
+&lt;div class=&quot;list&quot;&gt;
+  &lt;h1&gt;Subsystems&lt;/h1&gt;
+  {#each items as item (item.id)}
+    &lt;div class=&quot;zoom-me&quot; data-to=&quot;detail&quot; data-id={item.id}&gt;{item.name}&lt;/div&gt;
+  {/each}
+&lt;/div&gt;</code></pre>
+    </section>
+
+    <section>
+      <h2>When a view comes back</h2>
+      <ul>
+        <li>The views behind the current one stay mounted, so their component state survives a zoom in and out. Nothing renders again.</li>
+        <li>If something changed meanwhile (a store, a fetch), repaint in <code>onActivate(fn)</code>, which runs each time the view becomes current again.</li>
+        <li>Siblings you leave are discarded, unless <code>lateralNav: { keepAlive: true }</code> keeps them while you stay at that level.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Sharing services and state</h2>
+      <p>Pass stores or shared state once in <code>componentContext</code>; every view receives them as <code>context</code> and can hand them to its component as props.</p>
+      <pre><code>const app = new Zumly({
+  ...,
+  componentContext: { user },
+  views: {
+    detail: ({ target, props, context, onCleanup }) =&gt; {
+      const view = mount(Detail, { target, props: { id: props.id, user: context.user } })
+      onCleanup(() =&gt; unmount(view))
+    }
+  }
+})</code></pre>
+    </section>
+
+    <section>
+      <h2>Things to know</h2>
+      <ul>
+        <li><code>destroy()</code> leaves the views in the canvas. Empty it, as above, if the component that creates Zumly can mount again (hot reload, an <code>{#if}</code>).</li>
+        <li>Do not render another <code>z-view</code> inside <code>target</code>: <code>target</code> already is the view. Zumly warns in the console if you do.</li>
+        <li>Views are plain DOM, not Shadow DOM: your global styles apply inside them.</li>
+        <li>Zumly ships its own types; <code>ViewFunction</code> and <code>ViewContext</code> type the view context.</li>
+      </ul>
+      <pre><code>import { mount, unmount } from &#x27;svelte&#x27;
+import type { ViewFunction } from &#x27;zumly&#x27;
+
+const detail: ViewFunction = ({ target, props, onCleanup }) =&gt; {
+  const view = mount(Detail, { target, props: { id: String(props.id) } })
+  onCleanup(() =&gt; unmount(view))
+}</code></pre>
+    </section>
+
     <div class="final-cta">
-      <h3>See Zumly in action</h3>
-      <p>The full interactive demo runs the same engine described above — zoom into Learn, the showcases or the API reference.</p>
+      <h3>Next</h3>
+      <p>Where views come from, in <a href="../learn/views.html">step 4</a>. The same pattern for <a href="react.html">React</a> · <a href="vue.html">Vue</a> · <a href="angular.html">Angular</a>, and for radial layouts with <a href="orbit-css.html">Orbit</a>.</p>
       <a href="../" class="cta-primary">Open the live demo &rarr;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
     </div>
-
   </main>
 
   <footer class="site-footer">

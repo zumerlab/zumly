@@ -12,14 +12,14 @@
   </script>
 
   <title>Zumly with React — Zoom navigation for React apps</title>
-  <meta name="description" content="Add zoom-based navigation to any React application with Zumly. Framework-agnostic ZUI engine that mounts React components into zoomable views." />
+  <meta name="description" content="Mount React components as Zumly views: a root per view, unmounted when the view is discarded, with props from the trigger and a shared store." />
   <meta name="keywords" content="zumly react, zoom navigation react, ZUI react, react zoom interface, react spatial navigation, zooming user interface react" />
 
   <link rel="canonical" href="https://zumerlab.github.io/zumly/integrations/react.html" />
 
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Zumly with React — Zoom navigation for React apps" />
-  <meta property="og:description" content="Add zoom-based navigation to any React application with Zumly. Framework-agnostic ZUI engine that mounts React components into zoomable views." />
+  <meta property="og:description" content="Mount React components as Zumly views: a root per view, unmounted when the view is discarded, with props from the trigger and a shared store." />
   <meta property="og:url" content="https://zumerlab.github.io/zumly/integrations/react.html" />
   <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -77,242 +77,148 @@
   </nav>
 
   <main>
-
     <header class="hero">
-      <span class="hero-eyebrow">Integration · React</span>
+      <span class="hero-eyebrow">Guide · React</span>
       <h1 class="hero-title">Zumly with React</h1>
-      <p class="hero-sub">
-        Add zoom-based navigation to any React application. Zumly is a framework-agnostic
-        Zooming User Interface (ZUI) engine — your React components mount into zoomable
-        views with no wrapper, no bridge library, and no Zumly-aware code in your component tree.
-      </p>
-      <div class="cta-row">
-        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
-        <a href="https://github.com/zumerlab/zumly" class="cta-secondary" target="_blank" rel="noopener">View on GitHub</a>
-      </div>
+      <p class="hero-sub">A view can be a React component. Zumly hands you an empty element; you mount a root in it and unmount it when the view goes away.</p>
     </header>
 
     <section>
-      <h2>Why use Zumly with React?</h2>
-      <p>
-        React handles your component tree; Zumly handles the spatial relationship <em>between</em>
-        trees. Each Zumly view is a self-contained DOM subtree where you can mount a React root,
-        render a component, and tear it down on zoom-out — exactly the same way you'd mount React
-        into any other container element.
-      </p>
-      <p>
-        That means Zumly doesn't replace React Router or compete with your state management.
-        It's an orthogonal layer for <strong>spatial, focus-driven navigation</strong>: instead
-        of swapping URLs in a flat space, users zoom into a card, a row, an item, and the React
-        component for that view renders inside the zoomed-in target.
-      </p>
-      <p>Common use cases for Zumly + React:</p>
-      <ul>
-        <li>Dashboards with hierarchical drill-down (KPIs &rarr; charts &rarr; raw data)</li>
-        <li>IoT and home control panels (rooms &rarr; devices &rarr; settings)</li>
-        <li>Settings UIs that zoom into nested sections instead of pushing pages</li>
-        <li>Kiosk and signage interfaces where focus is the primary navigation metaphor</li>
-        <li>Product configurators with zoomable detail levels</li>
-      </ul>
-    </section>
-
-    <section>
-      <h2>Install</h2>
-      <pre>npm install zumly</pre>
-      <p>Zumly has zero dependencies. The package ships ESM, CJS, and a UMD build for plain HTML.</p>
-    </section>
-
-    <section id="quick-start">
-      <h2>Quick start</h2>
-      <p>
-        The simplest pattern: declare your views as <strong>function views</strong>. Zumly hands
-        you a fresh <code>target</code> element, and you mount a React root into it with
-        <code>createRoot</code>.
-      </p>
-      <pre>import Zumly from 'zumly'
-import 'zumly/css'
-import { createRoot } from 'react-dom/client'
-import Dashboard from './Dashboard'
+      <h2>The pattern</h2>
+      <p>Make the view a function. It receives a context; mount a root in <code>target</code>.</p>
+      <pre><code>import Zumly from &#x27;zumly&#x27;
+import &#x27;zumly/style.css&#x27;
+import { createRoot } from &#x27;react-dom/client&#x27;
+import Detail from &#x27;./Detail&#x27;
 
 const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
+  mount: &#x27;.canvas&#x27;,
+  initialView: &#x27;home&#x27;,
   views: {
-    home: '&lt;div class="z-view"&gt;&lt;div class="zoom-me" data-to="dashboard" data-id="42"&gt;Open dashboard&lt;/div&gt;&lt;/div&gt;',
-    dashboard: ({ target, props, onCleanup }) =&gt; {
+    home: &#x27;&lt;div class=&quot;z-view&quot;&gt;&lt;div class=&quot;zoom-me&quot; data-to=&quot;detail&quot; data-id=&quot;42&quot;&gt;Open&lt;/div&gt;&lt;/div&gt;&#x27;,
+    detail: ({ target, props, onCleanup }) =&gt; {
       const root = createRoot(target)
+      root.render(&lt;Detail id={props.id} /&gt;)
       onCleanup(() =&gt; root.unmount())
-      root.render(&lt;Dashboard id={props.id} /&gt;)
     }
   }
 })
-
-await app.init()</pre>
-      <p>
-        That's it. Any element inside a view with class <code>zoom-me</code> and a
-        <code>data-to</code> attribute becomes a zoom trigger. Data attributes on the trigger
-        (like <code>data-id="42"</code>) get passed into your React component as
-        <code>props.id</code>.
-      </p>
-    </section>
-
-    <section>
-      <h2>Working example: Dashboard with drill-down</h2>
-      <p>
-        A two-level pattern where a list of items zooms into a detail view, with the React
-        component receiving the selected item's id from the trigger.
-      </p>
-      <pre>// App.jsx
-import { useEffect } from 'react'
-import Zumly from 'zumly'
-import { createRoot } from 'react-dom/client'
-import 'zumly/css'
-
-import ItemList from './ItemList'
-import ItemDetail from './ItemDetail'
-
-export default function App() {
-  useEffect(() =&gt; {
-    const app = new Zumly({
-      mount: '#dashboard-canvas',
-      initialView: 'list',
-      views: {
-        list: ({ target, onCleanup }) =&gt; {
-          const root = createRoot(target)
-          onCleanup(() =&gt; root.unmount())
-          root.render(&lt;ItemList /&gt;)
-        },
-        detail: ({ target, props, onCleanup }) =&gt; {
-          const root = createRoot(target)
-          onCleanup(() =&gt; root.unmount())
-          root.render(&lt;ItemDetail id={props.id} /&gt;)
-        }
-      },
-      transitions: {
-        duration: '600ms',
-        ease: 'cubic-bezier(.4,0,.2,1)',
-        effects: ['blur(4px) brightness(0.6)', 'blur(10px) brightness(0.3)']
-      }
-    })
-    app.init()
-    return () =&gt; app.destroy()
-  }, [])
-
-  return &lt;div id="dashboard-canvas" className="zumly-canvas" style={{ height: '100vh' }} /&gt;
-}</pre>
-
-      <pre>// ItemList.jsx
-export default function ItemList() {
-  const items = [
-    { id: '1', name: 'Engine telemetry' },
-    { id: '2', name: 'Battery health' },
-    { id: '3', name: 'Brake system' }
-  ]
-  return (
-    &lt;div className="dashboard-view"&gt;
-      &lt;h1&gt;Subsystems&lt;/h1&gt;
-      {items.map(item =&gt; (
-        &lt;div key={item.id} className="zoom-me" data-to="detail" data-id={item.id}&gt;
-          {item.name}
-        &lt;/div&gt;
-      ))}
-    &lt;/div&gt;
-  )
-}</pre>
-    </section>
-
-    <section>
-      <h2>Lifecycle and cleanup</h2>
-      <p>
-        Function views are <strong>never cached</strong>. Each newly resolved view creates a
-        React root. Register <code>onCleanup(() =&gt; root.unmount())</code> so React runs its
-        effect cleanup when Zumly permanently removes that view or the Zumly instance is
-        destroyed. Removing DOM alone does not unmount a React root.
-      </p>
-      <div class="callout">
-        <strong>Retained views:</strong> A view kept in depth history or by
-        <code>lateralNav.keepAlive</code> keeps its React root until permanent removal.
-        Temporary detachment does not run <code>onCleanup</code>. Object views also resolve
-        fresh; choosing <code>render()</code> does not preserve an instance by itself.
-      </div>
-    </section>
-
-    <section>
-      <h2>Sharing context (Redux, Zustand, React Context)</h2>
-      <p>
-        Pass your store or context provider to every view via <code>componentContext</code> on
-        the constructor. Zumly forwards it as <code>context</code> to all function and object
-        views, so each React subtree can wrap its rendered tree in the same provider.
-      </p>
-      <pre>const store = createStore(...)
-
-const app = new Zumly({
-  mount: '.canvas',
-  initialView: 'home',
-  componentContext: { store },
-  views: {
-    dashboard: ({ target, context, onCleanup }) =&gt; {
-      const root = createRoot(target)
-      onCleanup(() =&gt; root.unmount())
-      root.render(
-        &lt;Provider store={context.store}&gt;
-          &lt;Dashboard /&gt;
-        &lt;/Provider&gt;
-      )
-    }
-  }
-})</pre>
-    </section>
-
-    <section>
-      <h2>TypeScript</h2>
-      <p>
-        Zumly ships TypeScript types out of the box. View functions are typed with the
-        <code>target</code>, <code>props</code>, <code>context</code>, and <code>onCleanup</code>
-        parameters, so your
-        React mount code gets full IntelliSense.
-      </p>
-      <pre>import Zumly, { ViewFunction } from 'zumly'
-
-const dashboard: ViewFunction = ({ target, props, onCleanup }) =&gt; {
-  const root = createRoot(target)
-  onCleanup(() =&gt; root.unmount())
-  root.render(&lt;Dashboard id={props.id as string} /&gt;)
-}</pre>
-    </section>
-
-    <section>
-      <h2>Common gotchas</h2>
+app.init()</code></pre>
       <ul>
-        <li>
-          <strong>The <code>target</code> is a fresh <code>&lt;div&gt;</code></strong> created by
-          Zumly — don't try to mount into <code>document.body</code> or query for an existing
-          element. Just call <code>createRoot(target).render(...)</code>.
-        </li>
-        <li>
-          <strong>Zumly keeps <code>target</code> as the view wrapper</strong> and adds
-          <code>z-view</code> there. Set dimensions on <code>target</code> if the default
-          canvas-sized wrapper is unsuitable; your component keeps its own DOM roots.
-        </li>
-        <li>
-          <strong>Trigger data attributes become strings.</strong>
-          <code>data-id="42"</code> arrives as <code>props.id === "42"</code>, not as a number.
-          Cast or parse on the React side.
-        </li>
-        <li>
-          <strong>Style isolation:</strong> each view is a normal DOM subtree, not a Shadow DOM.
-          Your global React styles apply normally — but so do parent view styles, so scope
-          carefully if you mix CSS-in-JS and global stylesheets.
-        </li>
+        <li><code>target</code> is a fresh element that becomes the view. Zumly gives it the <code>z-view</code> class; add your own classes or a size to it if the view should not fill the canvas.</li>
+        <li><code>props</code> holds the trigger's <code>data-*</code> attributes. <code>data-id="42"</code> arrives as <code>props.id</code>, a string.</li>
+        <li><code>onCleanup</code> runs once, when the view is discarded. Unmount there; removing the DOM alone does not.</li>
       </ul>
     </section>
 
+    <section>
+      <h2>A list that opens a detail</h2>
+      <p>Zumly is created once, in the component that owns the canvas, and destroyed with it. The list renders the triggers; any element with <code>zoom-me</code> and <code>data-to</code> works, whoever rendered it.</p>
+      <p class="code-file">App.jsx</p>
+      <pre><code>import { useEffect, useRef } from &#x27;react&#x27;
+import { createRoot } from &#x27;react-dom/client&#x27;
+import Zumly from &#x27;zumly&#x27;
+import &#x27;zumly/style.css&#x27;
+import List from &#x27;./List&#x27;
+import Detail from &#x27;./Detail&#x27;
+
+// Each view gets its own React root
+const mountView = (render) =&gt; ({ target, props, onCleanup }) =&gt; {
+  const root = createRoot(target)
+  root.render(render(props))
+  onCleanup(() =&gt; root.unmount())
+}
+
+export default function App () {
+  const canvas = useRef(null)
+
+  useEffect(() =&gt; {
+    const element = canvas.current
+    const app = new Zumly({
+      mount: element,
+      initialView: &#x27;list&#x27;,
+      views: {
+        list: mountView(() =&gt; &lt;List /&gt;),
+        detail: mountView(props =&gt; &lt;Detail id={props.id} /&gt;)
+      }
+    })
+    app.init()
+    return () =&gt; {
+      app.destroy()
+      element.replaceChildren()   // destroy() leaves the views in place
+    }
+  }, [])
+
+  // The canvas fills its nearest positioned ancestor: give that a height
+  return &lt;div style={{ position: &#x27;relative&#x27;, height: &#x27;100vh&#x27; }}&gt;
+    &lt;div ref={canvas} className=&quot;zumly-canvas&quot; /&gt;
+  &lt;/div&gt;
+}</code></pre>
+      <p class="code-file">List.jsx</p>
+      <pre><code>const items = [
+  { id: &#x27;1&#x27;, name: &#x27;Engine&#x27; },
+  { id: &#x27;2&#x27;, name: &#x27;Battery&#x27; },
+  { id: &#x27;3&#x27;, name: &#x27;Brakes&#x27; }
+]
+
+export default function List () {
+  return &lt;div className=&quot;list&quot;&gt;
+    &lt;h1&gt;Subsystems&lt;/h1&gt;
+    {items.map(item =&gt;
+      &lt;div key={item.id} className=&quot;zoom-me&quot; data-to=&quot;detail&quot; data-id={item.id}&gt;{item.name}&lt;/div&gt;
+    )}
+  &lt;/div&gt;
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>When a view comes back</h2>
+      <ul>
+        <li>The views behind the current one stay mounted, so their component state survives a zoom in and out. Nothing renders again.</li>
+        <li>If something changed meanwhile (a store, a fetch), repaint in <code>onActivate(fn)</code>, which runs each time the view becomes current again.</li>
+        <li>Siblings you leave are discarded, unless <code>lateralNav: { keepAlive: true }</code> keeps them while you stay at that level.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Sharing services and state</h2>
+      <p>Redux, Zustand or a React context: pass it once in <code>componentContext</code> and every view receives it as <code>context</code>.</p>
+      <pre><code>const app = new Zumly({
+  ...,
+  componentContext: { store },
+  views: {
+    detail: ({ target, props, context, onCleanup }) =&gt; {
+      const root = createRoot(target)
+      root.render(&lt;Provider store={context.store}&gt;&lt;Detail id={props.id} /&gt;&lt;/Provider&gt;)
+      onCleanup(() =&gt; root.unmount())
+    }
+  }
+})</code></pre>
+    </section>
+
+    <section>
+      <h2>Things to know</h2>
+      <ul>
+        <li>In <code>StrictMode</code> React runs the effect twice in development. Empty the canvas after <code>destroy()</code>, as above, or the second instance starts on top of the first one's views.</li>
+        <li>Do not render another <code>z-view</code> inside <code>target</code>: <code>target</code> already is the view. Zumly warns in the console if you do.</li>
+        <li>Views are plain DOM, not Shadow DOM: your global styles apply inside them.</li>
+        <li>Zumly ships its own types; <code>ViewFunction</code> and <code>ViewContext</code> type the view context.</li>
+      </ul>
+      <pre><code>import { createRoot } from &#x27;react-dom/client&#x27;
+import type { ViewFunction } from &#x27;zumly&#x27;
+
+const detail: ViewFunction = ({ target, props, onCleanup }) =&gt; {
+  const root = createRoot(target)
+  root.render(&lt;Detail id={String(props.id)} /&gt;)
+  onCleanup(() =&gt; root.unmount())
+}</code></pre>
+    </section>
+
     <div class="final-cta">
-      <h3>See Zumly in action</h3>
-      <p>The full interactive demo runs the same engine described above — zoom into Learn, the showcases or the API reference.</p>
+      <h3>Next</h3>
+      <p>Where views come from, in <a href="../learn/views.html">step 4</a>. The same pattern for <a href="vue.html">Vue</a> · <a href="svelte.html">Svelte</a> · <a href="angular.html">Angular</a>, and for radial layouts with <a href="orbit-css.html">Orbit</a>.</p>
       <a href="../" class="cta-primary">Open the live demo &rarr;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
     </div>
-
   </main>
 
   <footer class="site-footer">

@@ -222,6 +222,9 @@ section > table { display: block; overflow-x: auto; }
 }
 
 /* ━━━ Final CTA ━━━ */
+/* File name above a code block */
+.code-file { margin: 18px 0 -8px; font: 600 0.78rem var(--mono); color: var(--text-dim); }
+
 .final-cta {
   margin-top: 56px; padding: 32px 24px;
   background: radial-gradient(ellipse at top, var(--glow), transparent 70%), var(--surface);

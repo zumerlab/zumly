@@ -12,14 +12,14 @@
   </script>
 
   <title>Write a Zumly transition driver — Custom zoom animations</title>
-  <meta name="description" content="Build your own Zumly transition driver. The full spec object, the runTransition contract, the helpers, and a minimal complete example you can copy." />
+  <meta name="description" content="Write a Zumly transition driver: one function that receives the computed states and calls onComplete, with helpers for final states, easing and matrices." />
   <meta name="keywords" content="zumly custom driver, zumly transition driver, runTransition zumly, custom zoom transition, zumly driver api, write zumly driver" />
 
   <link rel="canonical" href="https://zumerlab.github.io/zumly/drivers/custom.html" />
 
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Write a Zumly transition driver — Custom zoom animations" />
-  <meta property="og:description" content="Build your own Zumly transition driver. The full spec object, the runTransition contract, the helpers, and a minimal complete example you can copy." />
+  <meta property="og:description" content="Write a Zumly transition driver: one function that receives the computed states and calls onComplete, with helpers for final states, easing and matrices." />
   <meta property="og:url" content="https://zumerlab.github.io/zumly/drivers/custom.html" />
   <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -76,44 +76,25 @@
   </nav>
 
   <main>
-
     <header class="hero">
-      <span class="hero-eyebrow">Driver · Custom</span>
-      <h1 class="hero-title">Write a Zumly driver</h1>
-      <p class="hero-sub">
-        A Zumly transition driver is a single function: <code>runTransition(spec, onComplete)</code>.
-        The engine computes <em>what</em> moves where; your driver decides <em>how</em>. This page
-        is the contract — the spec shape, the rules, the helpers, and a minimal driver you can
-        copy and modify.
-      </p>
-      <div class="cta-row">
-        <a href="#quick-start" class="cta-primary">Get started &rarr;</a>
-        <a href="https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md" class="cta-secondary" target="_blank" rel="noopener">Full reference</a>
-      </div>
+      <span class="hero-eyebrow">Guide · Driver</span>
+      <h1 class="hero-title">Write your own driver</h1>
+      <p class="hero-sub">A driver is one function: <code>(spec, onComplete)</code>. Zumly works out where every view starts and ends; your function moves them there and says when it is done.</p>
     </header>
 
     <section>
-      <h2>When to write your own driver</h2>
-      <p>
-        Zumly already ships six built-in drivers — <code>css</code> (default), <code>waapi</code>,
-        <code>none</code>, <code>gsap</code>, <code>anime</code>, and <code>motion</code>. Reach for
-        a custom driver only when:
-      </p>
+      <h2>Do you need one?</h2>
+      <p>The built-in drivers (<code>css</code>, the default, <code>waapi</code>, <code>none</code>, and <a href="gsap.html">GSAP</a>, <a href="anime.html">Anime.js</a> and <a href="motion.html">Motion</a>) cover most apps. Write your own when:</p>
       <ul>
-        <li>You want a transition shape the bundled drivers don't express — for example, a
-        Lottie playback synced to the zoom progress, a WebGL ripple, or a parallax fade.</li>
-        <li>You're integrating with an animation engine that isn't on the built-in list (Theatre.js,
-        Rive, Lottie, etc.) and you'd rather write 50 lines of glue than fork the package.</li>
-        <li>You want to <strong>wrap</strong> a built-in driver — for example, log every transition
-        or compose two drivers — by importing the function and calling it from your wrapper.</li>
+        <li>The move is not a zoom: a crossfade, a flip, a WebGL effect.</li>
+        <li>Your animation engine is not on the list.</li>
+        <li>You want to wrap a built-in driver to log or add something, which takes a few lines (see the end of this page).</li>
       </ul>
     </section>
 
-    <section id="quick-start">
-      <h2>Quick start</h2>
-      <p>
-        A driver is a function. Pass it to the constructor as <code>transitions.driver</code>:
-      </p>
+    <section>
+      <h2>The smallest driver</h2>
+      <p>Pass a function as <code>transitions.driver</code>. Zumly calls it on every zoom in, zoom out and sideways move:</p>
       <pre>function myDriver(spec, onComplete) {
   // Animate based on spec.type, then call onComplete()
   onComplete()
@@ -131,15 +112,10 @@ const app = new Zumly({
 })
 
 await app.init()</pre>
-      <p>
-        That's it. Zumly wraps your function in a tiny adapter and calls it on every zoom-in,
-        zoom-out, and lateral transition.
-      </p>
     </section>
 
     <section>
-      <h2>The <code>spec</code> object</h2>
-      <p>Your function receives a single object with everything you need:</p>
+      <h2>What you receive</h2>
       <pre>{
   type: 'zoomIn' | 'zoomOut' | 'lateral',
   currentView:  HTMLElement,         // incoming (zoom-in) or outgoing (zoom-out)
@@ -150,11 +126,10 @@ await app.init()</pre>
   ease:         'ease-in-out',
   canvas:       HTMLElement,         // canvas container (zoom-out and lateral)
 }</pre>
-      <p>
-        <code>currentStage.views</code> is an array indexed by role:
-        <code>views[0]</code> is the current view, <code>views[1]</code> is the previous view,
-        <code>views[2]</code> is the grandparent (when depth &gt; 2). Each entry has:
-      </p>
+      <ul>
+        <li>For <code>'zoomIn'</code> and <code>'zoomOut'</code>, <code>previousView</code> is the parent. For <code>'lateral'</code>, <code>currentView</code> is the sibling coming in and <code>previousView</code> the one going out.</li>
+        <li><code>currentStage.views</code> holds the computed states by role: <code>[0]</code> current, <code>[1]</code> parent, <code>[2]</code> grandparent (from three levels deep).</li>
+      </ul>
       <pre>{
   viewName: 'detail',
   backwardState: {
@@ -170,22 +145,12 @@ await app.init()</pre>
     ease:      'ease-in-out',
   }
 }</pre>
-      <p>
-        For <strong>zoom-in</strong>, animate from <code>backwardState.transform</code> to
-        <code>forwardState.transform</code>. For <strong>zoom-out</strong>, animate the other
-        direction.
-      </p>
+      <p>Zoom in goes from <code>backwardState</code> to <code>forwardState</code>; zoom out goes back.</p>
     </section>
 
     <section>
-      <h2>The two rules</h2>
-
-      <h3>1. Always call <code>onComplete()</code> exactly once</h3>
-      <p>
-        The engine sets <code>blockEvents = true</code> before calling your driver and only
-        resets it inside <code>onComplete</code>. If you forget, the UI freezes permanently.
-        Use the <code>createFinishGuard</code> helper to make this impossible to get wrong:
-      </p>
+      <h2>Two rules</h2>
+      <p><strong>1. Always call <code>onComplete()</code>, once.</strong> Navigation stays locked until you do. <code>createFinishGuard</code> calls it for you if your animation never ends:</p>
       <pre>import {
   createFinishGuard,
   parseDurationMs,
@@ -203,12 +168,7 @@ function runTransition(spec, onComplete) {
   myAnimation.onfinish = finish
   // If the animation cancels, the safety timer calls finish() anyway.
 }</pre>
-
-      <h3>2. Apply the final DOM state</h3>
-      <p>
-        When animation ends, the DOM must reflect the final state — the engine does NOT do this
-        for you. Use the shared helpers:
-      </p>
+      <p><strong>2. Leave the views in their final state.</strong> Zumly does not tidy up after you. The helpers do it:</p>
       <pre>import {
   showViews,
   applyZoomInEndState,
@@ -232,36 +192,27 @@ if (lastView) applyZoomOutLastState(lastView, currentStage.views[2].backwardStat
     </section>
 
     <section>
-      <h2>Available helpers</h2>
-      <p>Imported from <code>zumly/driver-helpers</code>:</p>
-      <ul>
-        <li><code>parseDurationMs(duration)</code> — parse <code>'1s'</code>/<code>'500ms'</code>/number → ms</li>
-        <li><code>parseDurationSec(duration)</code> — same but returns seconds</li>
-        <li><code>showViews(...elements)</code> — remove the <code>hide</code> class and prime <code>contentVisibility</code></li>
-        <li><code>applyZoomInEndState(el, stage)</code> — final classes + transforms after zoom-in</li>
-        <li><code>applyZoomOutPreviousState(el, state)</code> — final state for previous view after zoom-out</li>
-        <li><code>applyZoomOutLastState(el, state)</code> — final state for grandparent after zoom-out</li>
-        <li><code>removeViewFromCanvas(el, canvas)</code> — safe removal that handles wrapped elements</li>
-        <li><code>runLateralInstant(spec, onComplete)</code> — instant lateral transition (no animation)</li>
-        <li><code>createFinishGuard(cleanup, timeoutMs)</code> — once-only finish + safety timeout</li>
-        <li><code>SAFETY_BUFFER_MS</code> — default safety buffer (150ms)</li>
-      </ul>
-      <p>For drivers that interpolate computed matrices (when transform-origin varies between states):</p>
-      <ul>
-        <li><code>readComputedMatrix(el, origin, transform)</code> — read the browser-computed matrix (forces one reflow)</li>
-        <li><code>interpolateMatrix(from, to, t)</code> — lerp between two matrix objects</li>
-        <li><code>matrixToString(m)</code> &amp; <code>parseMatrixString(str)</code> — round-trip conversion</li>
-        <li><code>identityMatrix()</code> &amp; <code>lerp(a, b, t)</code> — primitives</li>
-      </ul>
+      <h2>Helpers</h2>
+      <p>From <code>zumly/driver-helpers</code>:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Helper</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td><code>parseDurationMs</code>, <code>parseDurationSec</code></td><td><code>'1s'</code>, <code>'500ms'</code> or a number, to ms or seconds</td></tr>
+          <tr><td><code>showViews(...views)</code></td><td>Makes the views visible before animating</td></tr>
+          <tr><td><code>applyZoomInEndState(view, stage)</code></td><td>Final classes and transform after a zoom in</td></tr>
+          <tr><td><code>applyZoomOutPreviousState</code>, <code>applyZoomOutLastState</code></td><td>Final state of the parent and grandparent after a zoom out</td></tr>
+          <tr><td><code>removeViewFromCanvas(view, canvas)</code></td><td>Removes the view you zoomed out of</td></tr>
+          <tr><td><code>runLateralInstant(spec, onComplete)</code></td><td>A sideways move with no animation</td></tr>
+          <tr><td><code>createFinishGuard(cleanup, ms)</code>, <code>SAFETY_BUFFER_MS</code></td><td>Finish once, with a safety timeout</td></tr>
+          <tr><td><code>cssEasing</code>, <code>cubicBezier</code>, <code>steps</code></td><td>CSS easings as functions of progress, to match the built-in curve</td></tr>
+          <tr><td><code>readComputedMatrix</code>, <code>interpolateMatrix</code>, <code>matrixToString</code>, <code>parseMatrixString</code></td><td>For drivers that paint frames themselves: correct in-between frames when <code>transform-origin</code> changes</td></tr>
+        </tbody>
+      </table></div>
     </section>
 
     <section>
-      <h2>Minimal complete driver: opacity crossfade</h2>
-      <p>
-        Here's a complete custom driver — about 50 lines — that does an opacity crossfade
-        instead of a zoom. Copy it as a starting point and replace the animation body with
-        whatever effect you want.
-      </p>
+      <h2>A complete driver: crossfade</h2>
+      <p>About fifty lines, an opacity crossfade instead of a zoom. Copy it and replace the animation.</p>
       <pre>import {
   parseDurationMs,
   showViews,
@@ -334,10 +285,6 @@ export function runTransition(spec, onComplete) {
 
     <section>
       <h2>Wrapping a built-in driver</h2>
-      <p>
-        You don't have to start from zero. Every built-in driver is exported by name; wrap one
-        to add logging, analytics, or compose with another effect:
-      </p>
       <pre>import { gsap } from 'gsap'
 import Zumly, { gsapDriver } from 'zumly'
 
@@ -357,17 +304,12 @@ const app = new Zumly({
     </section>
 
     <section>
-      <h2>Testing your driver</h2>
-      <p>
-        The <code>'none'</code> driver is the canonical reference: it applies the final state
-        instantly and calls <code>onComplete()</code> synchronously. Your driver should produce
-        the same final DOM state, just animated. Key invariants to verify:
-      </p>
+      <h2>Checking it</h2>
+      <p>The <code>'none'</code> driver applies the final state at once. Yours should end in the same DOM, animated:</p>
       <ul>
-        <li>After zoom-in, <code>.is-current-view</code> exists with the correct <code>dataset.viewName</code>.</li>
-        <li>After zoom-out, the previous view is now <code>.is-current-view</code> and the old current is removed from the DOM.</li>
-        <li><code>onComplete()</code> is always called, even if elements are removed mid-animation.</li>
-        <li>The engine resets <code>blockEvents</code> in its own <code>onComplete</code> wrapper, but only if you call it.</li>
+        <li>After a zoom in, <code>.is-current-view</code> is the new view.</li>
+        <li>After a zoom out, the parent is <code>.is-current-view</code> and the old view is gone.</li>
+        <li><code>onComplete()</code> runs even when a view is removed mid-animation.</li>
       </ul>
       <pre>const app = new Zumly({
   mount: '.canvas',
@@ -383,11 +325,10 @@ expect(app.getCurrentViewName()).toBe('home')</pre>
     </section>
 
     <div class="final-cta">
-      <h3>Read the full reference</h3>
-      <p>The complete driver API — every spec field, every helper, every edge case — lives in DRIVER_API.md in the repo.</p>
-      <a href="https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md" class="cta-primary" target="_blank" rel="noopener">Open DRIVER_API.md &rarr;</a>
+      <h3>The full reference</h3>
+      <p>Every spec field and edge case is in DRIVER_API.md, in the repository.</p>
+      <a href="https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md" class="cta-primary" target="_blank" rel="noopener">Open DRIVER_API.md &rarr;</a> <a href="../learn/motion.html" class="cta-secondary">Step 6: motion</a>
     </div>
-
   </main>
 
   <footer class="site-footer">
