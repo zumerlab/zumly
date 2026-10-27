@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v1.1.0](https://github.com/zumerlab/zumly/compare/v1.0.0...v1.1.0)
+
+> 27 October 2026
+
+**Features**
+
+- flatten shows heavy views behind as a SnapDOM photo [`82f5042`](https://github.com/zumerlab/zumly/commit/82f50426073edfdfbc54dad2a4cd2df16809adf0)
+
+**Fixes**
+
+- flatten keeps the photo current, so a zoom never opens on old content [`30a7eea`](https://github.com/zumerlab/zumly/commit/30a7eeae1fe347b63c4914f081edba2f103f29bd)
+
+**Docs**
+
+- heavy views guide and demo with SnapDOM's stream [`1e3e898`](https://github.com/zumerlab/zumly/commit/1e3e8981d7707592d598276b9cc765ea14e49456)
+- heavy views guide with measured numbers and a blurred demo [`3cdd6b6`](https://github.com/zumerlab/zumly/commit/3cdd6b65bcf9eeed40d39666ae432e5609a428a1)
+- send Orbit 1.x readers to the migration guide [`1854d40`](https://github.com/zumerlab/zumly/commit/1854d40cdea6bef61242a9e22f04428a97652abf)
+- flatten is not part of 1.0.0 [`5e8378d`](https://github.com/zumerlab/zumly/commit/5e8378d5b85a9df25f0687e0947828301d191e7a)
+
+**Tests**
+
+- run only __tests__, not the copies under .claude/ [`59d81e4`](https://github.com/zumerlab/zumly/commit/59d81e4872a2b64be8562ed07277fbb013c6ca8b)
+
+**Chores**
+
+- require snapdom-plugins 4.4.0 for flatten [`ad2b2f6`](https://github.com/zumerlab/zumly/commit/ad2b2f6eea747bbb5aa8ac94de333c1cf7869a88)
+
+
+
 #### [v1.0.0](https://github.com/zumerlab/zumly/compare/v0.97.0...v1.0.0)
 
 > 27 October 2026
