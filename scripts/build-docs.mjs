@@ -83,7 +83,7 @@ function footer (to) {
       </div>
       <div class="footer-bottom">
         <img src="${to('fish-160.png')}" alt="" width="26" height="26">
-        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License</span>
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License · <a href="/privacy.html">Privacy</a><span data-cookie-settings hidden> · <a href="#">Cookies</a></span></span>
         <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
       </div>
     </div>
