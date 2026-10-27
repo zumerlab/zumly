@@ -45,8 +45,8 @@ Save this as `index.html` and open it in a browser. Click "O" to zoom into the w
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hello Zumly</title>
-  <link rel="stylesheet" href="https://unpkg.com/zumly@1.0.0/dist/zumly.css">
-  <script src="https://unpkg.com/zumly@1.0.0/dist/zumly.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
   <style>
     body { margin: 0; font: 20px system-ui, sans-serif; }
     /* The canvas fills its nearest positioned ancestor: give it a size. */

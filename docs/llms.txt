@@ -28,8 +28,8 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 ## Quick start
 
 ```html
-<link rel="stylesheet" href="https://unpkg.com/zumly@1.0.0/dist/zumly.css">
-<script src="https://unpkg.com/zumly@1.0.0/dist/zumly.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+<script src="https://unpkg.com/zumly/dist/zumly.js"></script>
 <div style="position: relative; height: 100vh"><!-- the canvas fills this -->
   <div class="zumly-canvas" id="app"></div>
 </div>
