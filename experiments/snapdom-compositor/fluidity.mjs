@@ -49,6 +49,7 @@ const out = arg('--out', null)
 const retries = +arg('--retries', 2)
 const levels = +arg('--levels', 6) // levels - 1 zoom-ins, then as many zoom-outs
 const settle = +arg('--settle', 1200) // ms at each level before the next zoom
+const dpr = +arg('--dpr', 1) // 2 for a Retina screen
 
 const MODES = {
   baseline: 'mode=baseline',
@@ -60,7 +61,8 @@ const MODES = {
   'flat-idle': 'mode=flat&source=once', // no stream: one capture at idle while the view is current
   'flat-idle-yield': 'mode=flat&source=once&fast=0', // the same, with SnapDOM's fast: false
   'flat-yield': 'mode=flat&fast=0', // stream, with SnapDOM's fast: false
-  core: 'mode=core', // the engine's flatten option
+  core: 'mode=core', // the engine's flatten option, with stream
+  'core-nostream': 'mode=core-nostream', // the engine's flatten option, one photo
 }
 const CONDS = {
   static: '',
@@ -175,7 +177,7 @@ function summarise (steps, rests) {
 }
 
 async function measure (run, cond, scene, modeName) {
-  const page = await browser.newPage({ viewport: { width: 1000, height: 700 } })
+  const page = await browser.newPage({ viewport: { width: 1000, height: 700 }, deviceScaleFactor: dpr })
   try {
     page.on('pageerror', e => console.error(`[${scene}:${modeName}] pageerror`, e.message))
     page.on('response', r => { if (r.status() >= 400 && !r.url().endsWith('favicon.ico')) console.error(`[${scene}:${modeName}] ${r.status()} ${r.url()}`) })

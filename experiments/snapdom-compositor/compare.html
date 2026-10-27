@@ -44,17 +44,20 @@ const VARIANTS = {
   snapdom: { label: 'SnapDOM', options: { source: 'once' } },
   stream: { label: 'SnapDOM + stream', options: { source: 'stream', stream } },
   slow: { label: 'SnapDOM fast: false', options: { source: 'once', capture: { fast: false } } },
-  core: { label: 'flatten (motor)', core: true },
+  core: { label: 'flatten (motor)', core: { stream } },
+  corenostream: { label: 'flatten sin stream', core: {} },
 }
 
 const q = new URLSearchParams(location.search)
 const scene = SCENES[q.get('scene')] ? q.get('scene') : 'cards'
 const variant = VARIANTS[q.get('v')] ? q.get('v') : 'normal'
 const live = q.get('live') !== '0'
+// spin=0: live data and clock, but no spinning rings.
+const spin = live && q.get('spin') !== '0'
 
 // Every change reloads the page, so each variant starts from a clean instance.
 const go = (changes) => {
-  const next = new URLSearchParams({ scene, v: variant, live: live ? '1' : '0', ...changes })
+  const next = new URLSearchParams({ scene, v: variant, live: live ? '1' : '0', spin: spin ? '1' : '0', ...changes })
   location.search = next.toString()
 }
 const button = (parent, text, pressed, onClick) => {
@@ -73,10 +76,10 @@ liveButton.addEventListener('click', () => go({ live: live ? '0' : '1' }))
 const app = new Zumly({
   mount: '#app',
   initialView: 'l0',
-  views: buildViews({ scene, levels: 6, live, animated: live }),
+  views: buildViews({ scene, levels: 6, live, animated: spin }),
   transitions: { duration: '700ms', ease: 'ease-in-out', effects: ['blur(3px)', 'blur(8px) saturate(0)'] },
   inputs: { wheel: false },
-  ...(VARIANTS[variant].core ? { flatten: { snapdom } } : {}),
+  ...(VARIANTS[variant].core ? { flatten: { snapdom, ...VARIANTS[variant].core } } : {}),
 })
 let plugin = null
 if (VARIANTS[variant].options) {
@@ -85,6 +88,7 @@ if (VARIANTS[variant].options) {
   })
 }
 await app.init()
+window.app = app
 
 // Live content: a clock in the current view, spinners and rings (scenes.js), and values that
 // change every second in every view, as a dashboard fed by live data.

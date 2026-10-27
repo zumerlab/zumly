@@ -370,3 +370,34 @@ Trampas: Martin usa la Mac durante las corridas (las mediciones con y sin activi
 pantalla se apaga a los 2 minutos (`caffeinate -d`); con la UI quieta no hay cuadros que contar, así
 que "hueco sin cuadros" no es "tirón". Las hojas de contactos (`results/fluidity/film/`) no están en git:
 se regeneran con `node experiments/snapdom-compositor/filmstrip.mjs`.
+
+### Corrección: la foto tiene que estar al día (27/10/2026, tarde)
+
+Martin probó las demos a mano y solo le anduvo bien "SnapDOM + stream". Con una foto por visita, el
+zoom arrancaba desde una foto vieja: en una prueba con un contador grande en la vista, el número
+desaparecía en el primer cuadro del zoom porque había entrado después de la foto. Ninguna métrica de
+cuadros lo veía; se ve a ojo. Las mediciones también eran con dpr 1, y su pantalla es Retina (dpr 2).
+
+`src/flatten.js` pasó a:
+
+- Con `stream` (`@zumer/snapdom-plugins/stream`): la vista actual se sigue con el stream, a 10 cuadros
+  por segundo como máximo, y al empezar el zoom se copia el último. El zoom arranca con lo que hay en
+  pantalla (el contador: 15 antes del clic, 15 durante el zoom). Si el stream usa más de la mitad del
+  hilo en 2 s, o un cuadro completo tarda más de 250 ms, se apaga y esa vista se mueve como es.
+- `stream(el, { animations: false })`, nuevo en el plugin (sesión snapdom-ec): sin eso, un spinner
+  transparente en cada vista hacía de cada cuadro uno completo (110-160 ms con dpr 2) y el stream se
+  apagaba siempre. Con la opción: parches de ~12 ms y un cuadro completo por segundo, ~20 % del hilo.
+- Sin `stream`: una foto que no coincide con la vista no se usa nunca; se saca otra cuando la vista
+  queda quieta 300 ms. Las vistas con datos en vivo no se aplanan.
+
+Con dpr 2, en vivo, 3 zooms de ida y vuelta (`results/fluidity/stream-dpr2.json`):
+
+| escena | sin plugin | `animateEffects: false` | flatten con stream | flatten sin stream |
+|---|---|---|---|---|
+| cards | 7,2 % · 3 de 6 | 5,2 % · 3 de 6 | 0,6 % · 0 | 8,4 % · 3 de 6 |
+| blur | 54,8 % · 5 de 6 | 51,5 % · 5 de 6 | 6,1 % · 3 de 6 | 52,4 % · 5 de 6 |
+| blur en reposo | 49 % | 49 % | 13 % | 49 % |
+| orbit | 0 % | 0 % | 0 % | 0 % |
+
+`blur` queda peor que con la foto vieja (0 %): el contenido correcto cuesta un cuadro completo del
+stream por segundo, por los datos en tarjetas con gradiente (sin fondo sólido no hay parche).
