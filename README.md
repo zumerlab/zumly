@@ -23,11 +23,13 @@ Zumly is not an infinite pan-and-zoom canvas. Movement happens in discrete steps
 
 ## Why Zumly
 
-- The next screen grows out of what you clicked, and shrinks back into it.
-- The screens you came from stay behind, dimmed. Click one to go back.
-- Back button, sideways moves and browser history at every level.
-- Pinch, swipe or trackpad: the zoom-out follows your fingers.
-- Plain HTML, or React, Vue, Svelte and Angular. No dependencies.
+- **Zoom from the element.** The next screen grows out of what you clicked and shrinks back into it, so you always know where you came from.
+- **Context stays.** The screens you came from wait behind the current one, dimmed. Click one, scroll, swipe or press ← to go back.
+- **Depth and siblings.** A back button at every level (it can show the parent's name or jump several levels), arrows and swipe between siblings, and browser history with the router.
+- **Gestures.** Pinch, swipe or the trackpad drive the zoom-out as you move. Let go past the middle and it finishes; otherwise it goes back.
+- **Any animation engine.** CSS by default, or Web Animations, GSAP, Anime.js, Motion or a driver of your own. The same ease gives the same curve on all of them.
+- **Your views, your framework.** HTML strings, URLs, functions, or React, Vue, Svelte and Angular components. No dependencies.
+- **Accessible.** Keyboard, focus and screen-reader labels work out of the box.
 
 ## Install
 
