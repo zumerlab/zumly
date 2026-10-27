@@ -5,13 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Zumly · Heavy views</title>
   <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
-  <script src="https://unpkg.com/@zumer/snapdom/dist/snapdom.js"></script>
-  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
   <style>
     body { margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #e8eefc; background: #070b16; }
     .stage { position: relative; height: 100vh; background: radial-gradient(circle at 30% 20%, #23305e, #070b16 70%); }
     .board { width: 100%; height: 100%; padding: 56px 24px 24px; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; align-content: start; overflow: hidden; }
-    .clock { position: absolute; left: 24px; top: 16px; font: 600 15px ui-monospace, monospace; }
+    /* A solid chip: SnapDOM's stream repaints it alone when the time changes. */
+    .clock { position: absolute; left: 24px; top: 14px; padding: 2px 8px; border-radius: 6px; background: #0e1530; font: 600 15px ui-monospace, monospace; }
     .tile { position: relative; height: 96px; border-radius: 14px; padding: 10px; box-sizing: border-box; background: hsl(var(--h) 70% 60% / .16); border: 1px solid hsl(var(--h) 80% 75% / .35); backdrop-filter: blur(8px) saturate(1.4); box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
     .tile.zoom-me { cursor: zoom-in; border-color: hsl(var(--h) 90% 75%); }
     .tile b { display: block; font-size: 12px; opacity: .85; }
@@ -27,7 +26,11 @@
   <div class="stage">
     <div class="canvas zumly-canvas"></div>
   </div>
-  <script>
+  <script type="module">
+    import Zumly from 'https://unpkg.com/zumly/dist/zumly.mjs'
+    import { snapdom } from 'https://esm.sh/@zumer/snapdom'
+    import { stream } from 'https://esm.sh/@zumer/snapdom-plugins/stream'
+
     // ?flatten=0 runs the same board without it, for comparison.
     const flatten = new URLSearchParams(location.search).get('flatten') !== '0'
     const hues = [200, 280, 150, 30, 330, 180, 100, 240]
@@ -61,8 +64,7 @@
       views: { board: board(), detail },
       // Blur and dim the board behind: the costly part, on thousands of nodes and glass.
       transitions: { effects: ['blur(3px) brightness(.7)', 'blur(8px) brightness(.5)'] },
-      // true reads the global snapdom from its script tag.
-      flatten
+      flatten: flatten && { snapdom, stream }
     })
     app.init()
 

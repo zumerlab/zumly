@@ -185,11 +185,11 @@ new Zumly({
   },
 
   // ─── Heavy views ─────────────────────────
-  flatten: {                  // true = global snapdom; default false
+  flatten: {                  // true = global snapdom (no stream); default false
     snapdom,                  // import { snapdom } from '@zumer/snapdom'
+    stream,                   // import { stream } from '@zumer/snapdom-plugins/stream': keeps the photo current
     minNodes: 800,            // Lighter views are photographed only if they use backdrop-filter
     scale: 1,                 // Resolution of the photo (1-4)
-    refresh: false,           // false: photo on arrival, renewed after changes by hand; ms: also follow live data
   },
 
   // ─── Navigation labels (aria-label) ──────
@@ -281,15 +281,14 @@ With `follow: true`, the trackpad (two-finger scroll), a swipe left and a pinch 
 
 #### `flatten`
 
-Views behind are shown as a SnapDOM photo while they sit there, so a zoom moves pictures instead of DOM. It pays off with heavy views (thousands of nodes, `backdrop-filter`): in Chrome, a frosted-glass board went from about half its frames dropped to none. Light views gain nothing and are left alone.
+Views behind are shown as a SnapDOM photo while they sit there, so a zoom moves pictures instead of DOM. It pays off with heavy views (thousands of nodes, `backdrop-filter`): in Chrome, a frosted-glass board went from about half its frames dropped to none. Light views gain nothing and are left alone. SnapDOM (`@zumer/snapdom`) and its plugins (`@zumer/snapdom-plugins`) are optional peer dependencies, passed in.
 
-- The photo of the current view is taken at idle, after input has been quiet for 300 ms, with SnapDOM `fast: false` (it pauses every frame, so taps still answer). Never during a transition or a gesture. A view gets a fresh photo on each visit.
-- On zoom-in, the view that moves behind gets class `z-flat`: its children stay laid out but `visibility: hidden`, and a `<canvas class="z-flat-layer">` with the photo covers its border box. The view element still moves, takes the `effects` filter by CSS and answers sibling hit-tests, so geometry and every driver are unchanged. On a zoom-out (and during a followed zoom-out gesture) the view that shrinks away stays live: shrinking is cheap. The views coming back stay photos until the motion ends.
-- Back in front, the real content returns and the photo crossfades out (160 ms).
-- No photo yet (the user left at once): that zoom moves the real view. A photo that does not fit after a resize is dropped.
-- Eligible: `data-flatten="true"`, or at least `minNodes` elements, or `backdrop-filter` inside. Never: `data-flatten="false"`, or an iframe inside.
-- Changes by hand (a mutation within 1 s of a pointer or key press inside the view, not on a trigger) mark the photo outdated: the view moves as itself until a new photo is taken. With `refresh: <ms>`, other changes (live data) are photographed again too, at most that often and with at most a tenth of the main thread.
-- Without SnapDOM, Zumly warns once and views stay live. `destroy()` removes photos, observers, listeners and pending captures.
+- With `stream`: while a view is current, SnapDOM's stream keeps its photo current, repainting only what changed (at most 10 times a second, `fast: false`, outlines left out, animations not followed). When the zoom starts, the last frame is copied into a canvas of its own. If the stream would use more than half the main thread over 2 s, or one full repaint takes more than 250 ms, it stops and that view moves as itself for this visit. Full repaints come from changes in boxes with no solid background, or over other content.
+- Without `stream`: one photo per visit, taken at idle once input and the view have been quiet for 300 ms. A view that changed since its photo is never shown as that photo: it moves as itself until a new one is taken. A view that changes during three photos in a row is left live for the visit.
+- Never during a transition or a gesture; no photo yet means the real view moves. A view gets a fresh photo on each visit.
+- On zoom-in, the view that moves behind gets class `z-flat`: its children stay laid out but `visibility: hidden`, and a `<canvas class="z-flat-layer">` with the photo covers its border box. The view element still moves, takes the `effects` filter by CSS and answers sibling hit-tests, so geometry and every driver are unchanged. On a zoom-out (and during a followed zoom-out gesture) the view that shrinks away stays live. The views coming back stay photos until the motion ends, then the real view crossfades in (160 ms).
+- Eligible: `data-flatten="true"`, or at least `minNodes` elements, or `backdrop-filter` inside. Never: `data-flatten="false"`, or an iframe inside. A photo that does not fit after a resize is dropped.
+- Without SnapDOM, Zumly warns once and views stay live. `destroy()` stops streams and removes photos, observers, listeners and pending captures.
 
 #### `labels`
 

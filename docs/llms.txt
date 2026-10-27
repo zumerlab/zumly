@@ -23,7 +23,7 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 - **Events**: `viewChanged` fires after every navigation with `{ type, viewName, from, zoomLevel, node }`
 - **Back button** (`depthNav`): styles `'button'`, `'title'` (title of the view above) or `'rings'` (a ring per level, bands to jump several). Views name themselves with `title` or `data-title`
 - **Gestures**: `gestures: { follow: true }` makes trackpad, swipe and pinch (`inputs.pinch`) drive the zoom-out with their progress (`zoomOutProgress` event); `zoomOut(2)` / `zoomOut({ to })` climb several levels in one transition
-- **Flatten**: `flatten: { snapdom }` shows views behind as a SnapDOM photo (taken at idle, never mid-transition), for smooth zooms with heavy views; light views and `data-flatten="false"` stay live. SnapDOM is passed in or read from its global; Zumly does not depend on it
+- **Flatten**: `flatten: { snapdom, stream }` shows views behind as a SnapDOM photo, for smooth zooms with heavy views. With SnapDOM's `stream` plugin the photo follows the view, so a zoom starts from what is on screen; a view whose photo would cost too much to keep current, light views and `data-flatten="false"` stay live. SnapDOM and its plugins are optional peer dependencies
 - **Diagnostics**: the console explains typos in view names and options, and a canvas without size
 
 ## Quick start

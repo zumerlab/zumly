@@ -43,7 +43,7 @@
     <header class="hero">
       <span class="hero-eyebrow">Guide</span>
       <h1 class="hero-title">Heavy views</h1>
-      <p class="hero-sub">A view with thousands of nodes, or with frosted glass, is costly to scale and blur on every frame. <code>flatten</code> takes a photo of each view while you are in it, with SnapDOM, and moves the photo while the view sits behind. Zoom into a bright tile with it on, then off.</p>
+      <p class="hero-sub">A view with thousands of nodes, or with frosted glass, is costly to scale and blur on every frame. <code>flatten</code> keeps a photo of the view you are in, with SnapDOM, and moves the photo while the view sits behind. Zoom into a bright tile with it on, then off.</p>
     </header>
 
     <div class="demo">
@@ -53,25 +53,23 @@
 
     <section>
       <h2>Turn it on</h2>
-      <p>Install SnapDOM next to Zumly and hand it over:</p>
-      <pre><code>npm install zumly @zumer/snapdom</code></pre>
+      <p>Install SnapDOM and its plugins next to Zumly, and hand over <code>snapdom</code> and <code>stream</code>:</p>
+      <pre><code>npm install zumly @zumer/snapdom @zumer/snapdom-plugins</code></pre>
       <pre><code>import Zumly from 'zumly'
 import { snapdom } from '@zumer/snapdom'
+import { stream } from '@zumer/snapdom-plugins/stream'
 
-new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom } })</code></pre>
-      <p>With script tags, load SnapDOM before Zumly and pass <code>flatten: true</code>, which reads the global <code>snapdom</code>:</p>
-      <pre><code>&lt;script src="https://unpkg.com/@zumer/snapdom/dist/snapdom.js"&gt;&lt;/script&gt;
-&lt;script src="https://unpkg.com/zumly/dist/zumly.js"&gt;&lt;/script&gt;</code></pre>
-      <p>SnapDOM is an optional peer dependency: <code>npm install zumly</code> alone does not bring it. If it is missing, Zumly says so once in the console and the views stay as they are.</p>
+new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, stream } })</code></pre>
+      <p>Both are optional peer dependencies: <code>npm install zumly</code> alone does not bring them. Without a bundler, import them from a CDN, as the example does. If SnapDOM is missing, Zumly says so once in the console and the views stay as they are.</p>
     </section>
 
     <section>
       <h2>What happens</h2>
       <ul>
-        <li>You arrive at a view and stop for a moment: Zumly takes its photo, a little at a time, so taps and drags still answer.</li>
-        <li>You zoom into something: the view you leave shows the photo. Its content is still there and laid out, only hidden, so the blur and dimming, clicks on siblings and every driver work as before.</li>
+        <li>While you are in a view, its photo follows it: the stream repaints only what changed, at most ten times a second.</li>
+        <li>You zoom into something: the view you leave shows the photo, as it was at that moment. Its content is still there and laid out, only hidden, so the blur and dimming, clicks on siblings and every driver work as before.</li>
         <li>You come back: the real view returns, crossfading from the photo.</li>
-        <li>You leave before the photo is ready: that zoom moves the real view. Nothing waits for a photo.</li>
+        <li>A photo is never taken during a transition. If there is none yet, the zoom moves the real view. Nothing waits for a photo.</li>
       </ul>
     </section>
 
@@ -96,9 +94,9 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom } }
         <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td><code>snapdom</code></td><td>the global <code>snapdom</code></td><td>The <code>snapdom</code> function from <code>@zumer/snapdom</code>.</td></tr>
+          <tr><td><code>stream</code></td><td>none</td><td>The <code>stream</code> function from <code>@zumer/snapdom-plugins/stream</code>. It keeps the photo current; without it, only views that hold still are flattened.</td></tr>
           <tr><td><code>minNodes</code></td><td><code>800</code></td><td>Views with fewer elements are photographed only if they use <code>backdrop-filter</code>.</td></tr>
           <tr><td><code>scale</code></td><td><code>1</code></td><td>Resolution of the photo. The blur behind hides its softness; without effects, <code>2</code> keeps text behind sharp, for four times the memory.</td></tr>
-          <tr><td><code>refresh</code></td><td><code>false</code></td><td>With <code>false</code>, the photo is the view as you found it, plus what you change by hand. A number of milliseconds also follows changes nobody made by hand (live data), taking a new photo at most that often.</td></tr>
         </tbody>
       </table></div>
     </section>
@@ -106,11 +104,12 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom } }
     <section>
       <h2>Good to know</h2>
       <ul>
-        <li>The view behind stands still. A clock or a chart that updates stops while the view is behind, and is current again when you come back. Set <code>refresh</code> if the photo should follow it.</li>
-        <li>Change something by hand, a toggle or a slider, and leave at once: that view moves as itself until its new photo is ready, so its old state never flashes.</li>
+        <li>A zoom never starts from old content. When keeping a photo current would cost more than half the main thread, that view simply moves as itself. What makes it costly: a value that changes often inside a box with no solid background, or over other content (a badge on top of cards). Give such a value a solid background and it costs a few milliseconds.</li>
+        <li>Animations are not followed: a spinner shows the angle it had when its area was last repainted, and a CSS transition shows its end only after the next repaint there. Behind a blur, nobody notices.</li>
+        <li>Without <code>stream</code> there is one photo, taken again once the view stops changing. A view that changed since its photo moves as itself, so views with live data are not flattened.</li>
+        <li>A view behind stands still while it is there. When you come back, the real view crossfades in, with whatever changed meanwhile.</li>
         <li>A zoom-in starts a frame or two later: hiding the content of the view that grows takes a moment, about 25 ms on a laptop and 65 ms on a phone-class processor. The motion that follows is the smooth part.</li>
         <li>Each view behind keeps its photo in a canvas: width × height × 4 bytes, times the pixel ratio squared.</li>
-        <li>On a slow tablet a photo takes up to a second. Most of it runs in small pieces between frames, but a tap that lands on the longest piece waits for it: about a tenth of a second, a third with frosted glass. Zumly starts a photo only after input has been quiet for a moment.</li>
       </ul>
     </section>
 
