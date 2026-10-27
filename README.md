@@ -348,6 +348,20 @@ new Zumly({ /* … */ transitions: { driver: gsapDriver(gsap) } })
 
 Every driver but `none` slides between siblings, with the same motion as `css` and `waapi`.
 
+### Heavy views
+
+A view with thousands of nodes, or with frosted glass (`backdrop-filter`), is costly to scale and blur on every frame. `flatten` takes a photo of each view with [SnapDOM](https://github.com/zumerlab/snapdom) while you are in it, and moves the photo while the view sits behind:
+
+```js
+import { snapdom } from '@zumer/snapdom'
+
+new Zumly({ /* … */ flatten: { snapdom } })
+```
+
+SnapDOM is an optional peer dependency: install it yourself (`npm install @zumer/snapdom`) when you use `flatten`. With script tags, load `https://unpkg.com/@zumer/snapdom/dist/snapdom.js` before Zumly and pass `flatten: true`.
+
+The photo is taken at idle, never during a transition; until it is ready, the view moves as itself. Light views are left alone (fewer than `minNodes` elements, 800, and no `backdrop-filter`), and `data-flatten="false"` keeps a view live behind. While a view is behind, it stands still. Try `animateEffects: false` first: it costs nothing and is often enough. The [heavy views guide](https://zumerlab.com/zumly/guides/heavy-views.html) has a live comparison and every option.
+
 ## With Orbit
 
 [Orbit](https://zumerlab.com/orbit/) places elements around a center. Its arcs, rings and satellites work inside Zumly views without glue code: put a `.bigbang` in a view, and make satellites (or their capsules) triggers.
@@ -411,6 +425,7 @@ Triggers are keyboard reachable. Background views are `inert` and hidden from as
 | `componentContext` | `new Map()` | Shared `context` for function and object views. |
 | `deferred` | `false` | Insert view content after the zoom. |
 | `debug` | `false` | Log navigation steps. |
+| `flatten` | `false` | Show views behind as a SnapDOM photo: `{ snapdom, minNodes, scale, refresh }`, or `true` for the global `snapdom`. See [Heavy views](#heavy-views). |
 
 Full types are in [types/zumly.d.ts](types/zumly.d.ts). `destroy()` removes listeners, navigation UI and the views it put in the canvas, so a new instance can start there at once (React StrictMode, hot reload). Anything else in the canvas stays yours.
 

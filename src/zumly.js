@@ -22,6 +22,7 @@ import { getDriver, parseDurationMs } from './drivers/index.js'
 import { removeViewFromCanvas } from './drivers/driver-helpers.js'
 import { DepthNav } from './depth-nav.js'
 import { applyResizeCorrection } from './resize-correction.js'
+import { createFlattener } from './flatten.js'
 import { hideViewContent, showViewContent, restoreViewContent } from './view-visibility.js'
 import { disposeView, activateView } from './view-lifecycle.js'
 import { ViewAccessibility, isNativeControl, isEditable } from './view-accessibility.js'
@@ -391,6 +392,7 @@ export class Zumly {
       applyResizeCorrection(this, this._lastCanvasWidth, this._lastCanvasHeight, newW, newH)
       this._lastCanvasWidth = newW
       this._lastCanvasHeight = newH
+      this._flattener?.resized()
     }, this._RESIZE_DEBOUNCE_MS)
   }
 
@@ -403,6 +405,7 @@ export class Zumly {
         const newH = this.canvas.offsetHeight
         if (newW !== this._lastCanvasWidth || newH !== this._lastCanvasHeight) {
           applyResizeCorrection(this, this._lastCanvasWidth, this._lastCanvasHeight, newW, newH)
+          this._flattener?.resized()
         }
         this._lastCanvasWidth = newW
         this._lastCanvasHeight = newH
@@ -788,7 +791,11 @@ export class Zumly {
         // Run synchronous drivers' completion synchronously as well; callers
         // using the none driver can still inspect its completed DOM immediately.
         try {
-          Promise.resolve(onComplete()).then(resolve, error => {
+          Promise.resolve(onComplete()).then(() => {
+            // Views now sit where they stay: the ones behind become photos (flatten).
+            this._flattener?.settle()
+            resolve()
+          }, error => {
             this.notify(`transition completion failed: ${error.message}`, 'error')
             resolve()
           })
@@ -805,6 +812,7 @@ export class Zumly {
       // Long or staggered transitions must not trip the safety reset mid-animation.
       const stagger = transitionSpec.currentStage?.stagger || 0
       this._setBlockEvents(parseDurationMs(transitionSpec.duration) + stagger * 2)
+      this._flattener?.before(transitionSpec)
       this._pendingTransitionComplete = complete
       try {
         driver.runTransition(transitionSpec, complete)
@@ -1084,6 +1092,10 @@ export class Zumly {
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     this._recordCanvasSize()
     this._accessibility.sync(this.canvas)
+    if (this.flatten) {
+      this._flattener = createFlattener(this, this.flatten)
+      this._flattener?.settle()
+    }
 
     // Install plugins
     this._initialized = true
@@ -1102,6 +1114,8 @@ export class Zumly {
     if (this._destroyed) return
     this._destroyed = true
     this._emit('destroy')
+    this._flattener?.destroy()
+    this._flattener = null
     this._cancelNavigation()
     this._stopScrubAnimations()
     if (this._followFrame != null) {
@@ -2265,6 +2279,7 @@ export class Zumly {
 
     this.blockEvents = true
     this.prefetcher?.pause()
+    this._flattener?.beginGesture()
     const from = this.getCurrentViewName()
     const to = returning?.views[INDEX_CURRENT]?.viewName ?? null
     this._scrub = { source, layers, progress: 0, from, to, delta: 0 }
@@ -2324,6 +2339,7 @@ export class Zumly {
         await navigation
       } else {
         this._stopScrubAnimations()
+        this._flattener?.settle()
       }
       this._depthNav?.setProgress(null)
       this._emit('zoomOutProgress', { phase: 'end', progress: commit ? 1 : 0, viewName: scrub.to, from: scrub.from, source: scrub.source })

@@ -13,13 +13,14 @@ import { ViewResolver } from './view-resolver.js'
 import { disposeView } from './view-lifecycle.js'
 import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSyntax, isValidCssEasing } from './diagnostics.js'
 
-const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures']
+const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures', 'flatten']
 const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'parallax', 'hideTrigger']
 const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings', 'swipe']
 const DEPTH_NAV_KEYS = ['position', 'style']
 const DEPTH_NAV_STYLES = ['button', 'title', 'rings']
 const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch', 'pinch']
 const GESTURE_KEYS = ['follow', 'threshold']
+const FLATTEN_KEYS = ['snapdom', 'minNodes', 'scale', 'refresh']
 const LABEL_KEYS = ['back', 'prev', 'next', 'goTo']
 /** Accessible names of the navigation controls. {title} and {name} name the target view. */
 const DEFAULT_LABELS = { back: 'Back to {title}', prev: 'Previous sibling view', next: 'Next sibling view', goTo: 'Go to {title}' }
@@ -220,6 +221,7 @@ export function checkParameters (parameters, instance) {
   if (parameters.inputs && typeof parameters.inputs === 'object') warnUnknownKeys(parameters.inputs, INPUT_KEYS, 'inputs.')
   if (parameters.labels && typeof parameters.labels === 'object') warnUnknownKeys(parameters.labels, LABEL_KEYS, 'labels.')
   if (parameters.gestures && typeof parameters.gestures === 'object') warnUnknownKeys(parameters.gestures, GESTURE_KEYS, 'gestures.')
+  if (parameters.flatten && typeof parameters.flatten === 'object') warnUnknownKeys(parameters.flatten, FLATTEN_KEYS, 'flatten.')
 
   // Optional
   instance.preload = Array.isArray(parameters.preload) ? parameters.preload : []
@@ -451,6 +453,33 @@ export function checkParameters (parameters, instance) {
     }
   } else if (geIn !== undefined && geIn !== false) {
     notification(false, '\'gestures\' must be true, false or { follow, threshold }. Ignoring.', 'warn')
+  }
+
+  // Flatten: views behind are shown as a SnapDOM photo (src/flatten.js). true reads the
+  // global snapdom; the instance checks that SnapDOM is there when it starts.
+  const flIn = parameters.flatten
+  instance.flatten = false
+  if (flIn === true || (flIn && typeof flIn === 'object')) {
+    const o = flIn === true ? {} : flIn
+    instance.flatten = { snapdom: null, minNodes: 800, scale: 1, refresh: false }
+    if (o.snapdom !== undefined) {
+      if (typeof o.snapdom === 'function') instance.flatten.snapdom = o.snapdom
+      else notification(false, '\'flatten.snapdom\' must be the snapdom function (import { snapdom } from \'@zumer/snapdom\'). Trying the global snapdom.', 'warn')
+    }
+    if (o.minNodes !== undefined) {
+      if (Number.isInteger(o.minNodes) && o.minNodes >= 0) instance.flatten.minNodes = o.minNodes
+      else notification(false, '\'flatten.minNodes\' must be a whole number of 0 or more. Falling back to 800.', 'warn')
+    }
+    if (o.scale !== undefined) {
+      if (typeof o.scale === 'number' && o.scale > 0 && o.scale <= 4) instance.flatten.scale = o.scale
+      else notification(false, '\'flatten.scale\' must be a number above 0 and up to 4. Falling back to 1.', 'warn')
+    }
+    if (o.refresh !== undefined) {
+      if (o.refresh === false || (typeof o.refresh === 'number' && o.refresh >= 0)) instance.flatten.refresh = o.refresh
+      else notification(false, '\'flatten.refresh\' must be a number of milliseconds or false. Falling back to false.', 'warn')
+    }
+  } else if (flIn !== undefined && flIn !== false) {
+    notification(false, '\'flatten\' must be true, false or { snapdom, minNodes, scale, refresh }. Ignoring.', 'warn')
   }
 }
 

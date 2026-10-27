@@ -28,6 +28,7 @@ Four changes can break existing code:
 - Keep each level's lateral history when zooming deeper and back out, so `back()` matches the router's browser back.
 - Keep the background `effects` on the view that becomes the parent after a zoom-out, including per-trigger overrides (it used to lose its filter).
 - Add `transitions.animateEffects`: `false` applies background filters at once instead of animating them, which makes zooms much smoother with heavy views.
+- Add `flatten`: views behind are shown as a SnapDOM photo while they sit there, so zooms with heavy views (thousands of nodes, `backdrop-filter`) stay smooth. The photo is taken at idle while the user is in the view, never during a transition; until it is ready, the view moves as itself. Light views are left alone, and `data-flatten="true"` or `"false"` decides per view. SnapDOM is an optional peer dependency, passed in (`flatten: { snapdom }`) or read from its script tag.
 - Ignore hash entries the router did not write.
 - Do not zoom out on swipes that start on text fields, sliders, horizontal scrollers or `[data-no-swipe]`.
 - Scale the navigation safety reset with long or staggered transitions.

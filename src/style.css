@@ -58,6 +58,23 @@
   user-select: none;
 }
 
+/* flatten: a view behind shows a photo of its content. The content keeps its layout
+   (geometry and sibling hit-tests read it) but is not painted; descendants inherit.
+   Not opacity: under opacity 0, Chrome still renders every backdrop-filter. The photo
+   carries the view's background too; its border and shadow stay real. */
+.z-view.z-flat {
+  background: transparent !important;
+}
+
+.z-view.z-flat > :not(.z-flat-layer) {
+  visibility: hidden !important;
+}
+
+.z-flat-layer {
+  position: absolute;
+  pointer-events: none;
+}
+
 .zoom-current-view,
 .zoom-current-view-reverse,
 .zoom-previous-view,
