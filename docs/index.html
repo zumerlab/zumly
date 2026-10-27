@@ -56,6 +56,7 @@
     // Every view lives in its own file; this page only wires them together.
     var views = {
       home: 'views/home.html',
+      why: 'views/why.html',
       learn: 'views/learn.html',
       // Each card is a thumbnail of the showcase's first view, so the zoom into it is seamless
       showcases: function () {
@@ -93,6 +94,7 @@
       }
     }
 
+    views.showcases.title = 'Showcases'   // names the sibling dot before the view is shown
     ;['assembly', 'house', 'mission'].forEach(function (name) { Object.assign(views, window.ZumlyShowcases[name].views) })
 
     var app = new Z({
@@ -107,7 +109,7 @@
         effects: ['brightness(0.5) saturate(0.8)', 'brightness(0.3) saturate(0.6)']
       },
       depthNav: { style: 'title' },
-      lateralNav: { position: 'top-center', swipe: true, siblings: { home: ['learn', 'showcases', 'api'] } },
+      lateralNav: { position: 'top-center', swipe: true, siblings: { home: ['why', 'learn', 'showcases', 'api'] } },
       gestures: { follow: true },
       // Sections scroll, so the wheel scrolls them instead of zooming out
       inputs: { wheel: false }

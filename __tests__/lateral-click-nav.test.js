@@ -202,6 +202,15 @@ describe('lateral click navigation', () => {
       expect(labels()).toEqual(['Go to Room A', 'Go to Room B', 'Go to Room C'])
     })
 
+    it('name a preloaded URL view by the data-title of its file', async () => {
+      const fetchMock = vi.spyOn(window, 'fetch').mockImplementation(async () => new Response('<div class="z-view" data-title="Room C"></div>'))
+      const app = createApp({ views: { home: homeView, detailA: titled('A'), detailB: titled('B'), detailC: '/rooms/c.html' }, preload: ['detailC'] })
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      expect(labels()).toEqual(['Go to Room A', 'Go to Room B', 'Go to Room C'])
+      fetchMock.mockRestore()
+    })
+
     it('keep the title of a function view once it has been shown', async () => {
       const room = name => () => titled(name)
       const app = createApp({ views: { home: homeView, detailA: room('A'), detailB: room('B'), detailC: room('C') } })

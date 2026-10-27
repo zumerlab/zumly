@@ -222,6 +222,9 @@ section > table { display: block; overflow-x: auto; }
 }
 
 /* ━━━ Final CTA ━━━ */
+/* Why Zumly: a short list, in the demo and on Learn */
+.why-list { max-width: 560px; margin: 0 auto; padding-left: 1.2em; display: grid; gap: 10px; font-size: 1.05rem; color: var(--text-mid); text-align: left; }
+
 /* File name above a code block */
 .code-file { margin: 18px 0 -8px; font: 600 0.78rem var(--mono); color: var(--text-dim); }
 

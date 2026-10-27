@@ -75,6 +75,15 @@ export class ViewCache {
     return true
   }
 
+  /**
+   * The cached node itself, for reading only: no clone, no LRU refresh.
+   * @param {string} key
+   * @returns {HTMLElement|null}
+   */
+  peek (key) {
+    return this.has(key) ? this.#store.get(key).node : null
+  }
+
   invalidate (key) {
     this.#store.delete(key)
   }

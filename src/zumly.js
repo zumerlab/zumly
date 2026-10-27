@@ -863,7 +863,7 @@ export class Zumly {
       const title = this._viewNodeAt(depth)?.dataset?.title
       if (title) return title
     }
-    return this._titles.get(viewName) ?? definitionTitle(this.views?.[viewName]) ?? viewName
+    return this._titles.get(viewName) ?? definitionTitle(this.views?.[viewName]) ?? this.prefetcher?.cachedTitle(viewName) ?? viewName
   }
 
   /**

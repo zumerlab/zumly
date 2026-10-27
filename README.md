@@ -21,6 +21,14 @@ Zumly is a JavaScript library for **hierarchical zoom navigation**. Your interfa
 
 Zumly is not an infinite pan-and-zoom canvas. Movement happens in discrete steps, through elements you mark as triggers. You write the HTML and CSS, Zumly computes and animates the transforms. It works with plain HTML, React, Vue, Svelte and Angular, and pairs with [Orbit](https://github.com/zumerlab/orbit) for radial layouts.
 
+## Why Zumly
+
+- The next screen grows out of what you clicked, and shrinks back into it.
+- The screens you came from stay behind, dimmed. Click one to go back.
+- Back button, sideways moves and browser history at every level.
+- Pinch, swipe or trackpad: the zoom-out follows your fingers.
+- Plain HTML, or React, Vue, Svelte and Angular. No dependencies.
+
 ## Install
 
 ```sh
@@ -36,7 +44,7 @@ For a plain HTML page, load the files from a CDN as in the next example.
 
 ## A first app
 
-Save this as `index.html` and open it in a browser. Click "O" to zoom into the world, then click outside it, press the back button, or scroll down to zoom out.
+Save this as `index.html` and open it in a browser. Click the Earth, the O of WORLD, to zoom into it. To come back, click outside it, press the back button at the bottom left, or scroll down.
 
 ```html
 <!doctype html>
@@ -53,8 +61,10 @@ Save this as `index.html` and open it in a browser. Click "O" to zoom into the w
     .stage { position: relative; height: 100vh; }
     .z-view { display: grid; place-items: center; }
     .hello { width: 100%; height: 100%; }
-    .world { width: 320px; height: 320px; border-radius: 50%; background: #3da9fc; color: white; }
-    .zoom-me { cursor: zoom-in; font-weight: bold; }
+    /* The O and the view it opens are both the Earth, so one grows into the other */
+    .earth { border-radius: 50%; background: #000 url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/500px-The_Earth_seen_from_Apollo_17.jpg) center / 108%; }
+    .zoom-me { display: inline-block; width: 0.9em; height: 0.9em; vertical-align: -0.12em; cursor: zoom-in; }
+    .world { width: 320px; height: 320px; color: white; font-weight: 600; text-shadow: 0 1px 8px #000; }
   </style>
 </head>
 <body>
@@ -67,9 +77,9 @@ Save this as `index.html` and open it in a browser. Click "O" to zoom into the w
       initialView: 'hello',
       views: {
         hello: `<div class="z-view hello">
-                  <p>H E L L O &nbsp; W <span class="zoom-me" data-to="world">O</span> R L D</p>
+                  <p>H E L L O &nbsp; W <span class="zoom-me earth" data-to="world" aria-label="O"></span> R L D</p>
                 </div>`,
-        world: `<div class="z-view world">Hi from inside the O</div>`
+        world: `<div class="z-view world earth">Hi from inside the O</div>`
       }
     })
     app.init()

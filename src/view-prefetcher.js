@@ -132,6 +132,16 @@ export class ViewPrefetcher {
   }
 
   /**
+   * The data-title of a view already in the cache (a URL or HTML template),
+   * so navigation labels can name it before it is shown.
+   * @param {string} source - View name
+   * @returns {string|undefined}
+   */
+  cachedTitle (source) {
+    return this.#cache.peek(source)?.getAttribute?.('data-title') || undefined
+  }
+
+  /**
    * Prefetch a view in background (call from mouseover, focusin, or scan).
    * Hover/focus requests start immediately unless paused for navigation;
    * cached/in-flight work is reused without allocating a consumer clone.

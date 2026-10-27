@@ -65,11 +65,6 @@
     <section id="what">
       <h2>What Zumly is</h2>
       <p>Zumly is a JavaScript library for <strong>zoom navigation</strong>, also called a zooming user interface (ZUI). Your interface is a set of screens called views. Clicking an element zooms into it, and the next view grows out of that element. Zooming out goes back the same way.</p>
-      <ul>
-        <li><strong>The trigger becomes the destination.</strong> You never wonder where a screen came from: it grew out of what you clicked.</li>
-        <li><strong>Context stays visible.</strong> The view you came from stays behind the current one, dimmed, so you know where you are.</li>
-        <li><strong>Zooming out is going back.</strong> Click outside, scroll, swipe or press the back button.</li>
-      </ul>
       <p>It is not an infinite pan-and-zoom canvas like a map or a whiteboard. Movement happens in steps, through the elements you mark as triggers, and each view loads only when it is needed. You write the HTML and CSS; Zumly computes and animates the transforms.</p>
       <div class="table-wrap"><table>
         <thead><tr><th></th><th>Zumly</th><th>Pan-and-zoom canvas</th></tr></thead>
@@ -80,6 +75,17 @@
         </tbody>
       </table></div>
       <p>It is a poor fit for long reading flows and plain forms, where there is nothing to zoom into.</p>
+    </section>
+
+    <section>
+      <h2>Why Zumly</h2>
+      <ul class="why-list">
+        <li>The next screen grows out of what you clicked, and shrinks back into it.</li>
+        <li>The screens you came from stay behind, dimmed. Click one to go back.</li>
+        <li>Back button, sideways moves and browser history at every level.</li>
+        <li>Pinch, swipe or trackpad: the zoom-out follows your fingers.</li>
+        <li>Plain HTML, or React, Vue, Svelte and Angular. No dependencies.</li>
+      </ul>
     </section>
 
     <section id="guides">
