@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Orbit</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+  <link rel="stylesheet" href="https://unpkg.com/@zumer/orbit/dist/orbit.min.css">
+  <link rel="stylesheet" href="../../css/example.css">
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+  <script src="https://unpkg.com/@zumer/orbit/dist/orbit.min.js"></script>
+  <style>
+    /* A dial is a square view; its .bigbang takes the view's width. */
+    .dial, .detail { display: block; border-radius: 50%; background: #04101d; }
+    .dial { width: min(86vmin, 620px); aspect-ratio: 1; }
+    /* The first view fills the canvas and centers its dial. */
+    .home { width: 100%; height: 100%; display: grid; place-items: center; }
+    .dial .capsule { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; text-align: center; font-size: 13px; line-height: 1.2; }
+    .dial .zoom-me { background: #0d2238; border: 1px solid #ffffff1f; cursor: zoom-in; }
+    .dial .zoom-me:hover { border-color: #3da9fc; }
+    .dial .face { font-size: 18px; font-weight: 600; }
+    .dial .face small { display: block; font-size: 12px; font-weight: 400; color: #9fb6d4; }
+    .dial o-arc { --o-fill: #ffffff1f; }
+    .dial o-progress, .detail o-progress { --o-fill: #3da9fc; --o-back-fill: #ffffff1f; --o-stroke: none; }
+    .detail { width: min(76vmin, 520px); aspect-ratio: 1; }
+    .detail .capsule { display: grid; justify-items: center; gap: 10px; text-align: center; }
+    .detail .face { font-size: 40px; font-weight: 700; }
+    .detail small { color: #9fb6d4; }
+    .detail input { width: 70%; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    // App state lives outside the views. Views paint from it.
+    const home = {
+      kitchen: { name: 'Kitchen', devices: { lights: 60, oven: 0, fridge: 100 } },
+      living: { name: 'Living', devices: { lights: 30, tv: 0 } },
+      bedroom: { name: 'Bedroom', devices: { lights: 10, heater: 45 } },
+      garage: { name: 'Garage', devices: { door: 0, lights: 0 } }
+    }
+    const average = room => Math.round(Object.values(room.devices).reduce((a, b) => a + b, 0) / Object.keys(room.devices).length)
+
+    // The content of a dial: a ring of decoration, a ring of trigger satellites and a face.
+    function dial ({ title, sub, items, gauge }) {
+      return `<div class="bigbang"><div class="gravity-spot">
+        <div class="orbit-12" style="--o-size-ratio:.4">${items.map(() => '<o-arc></o-arc>').join('')}</div>
+        ${gauge === undefined ? '' : `<div class="orbit-10" style="--o-size-ratio:1.2"><o-progress value="${gauge}" shape="rounded" aria-label="${title} load"></o-progress></div>`}
+        <div class="orbit-7" style="--o-size-ratio:2.6">
+          ${items.map(item => `<div class="satellite"><div class="capsule zoom-me" ${item.attrs}>${item.label}</div></div>`).join('')}
+        </div>
+        <div class="orbit-0" style="--o-size-ratio:4.5"><div class="satellite at-center"><div class="capsule face">${title}<small>${sub}</small></div></div></div>
+      </div></div>`
+    }
+
+    // Each room and each device gets its own view, generated from the data.
+    const roomView = id => ({ target, onActivate }) => {
+      const room = home[id]
+      target.className = 'z-view dial' // target is the view; paint() fills its content
+      target.dataset.title = room.name
+      const paint = () => {
+        target.innerHTML = dial({
+          title: room.name,
+          sub: `${average(room)}% on`,
+          gauge: average(room),
+          items: Object.entries(room.devices).map(([device, value]) => ({ label: `${device}<br>${value}%`, attrs: `data-to="${id}-${device}"` }))
+        })
+      }
+      paint()
+      // Views behind are not rendered again: repaint when the user comes back.
+      onActivate(paint)
+    }
+
+    const deviceView = (id, device) => ({ target }) => {
+      const devices = home[id].devices
+      target.className = 'z-view detail'
+      target.dataset.title = device
+      target.innerHTML = `<div class="bigbang"><div class="gravity-spot">
+        <div class="orbit-10" style="--o-size-ratio:1.6"><o-progress value="${devices[device]}" shape="rounded"></o-progress></div>
+        <div class="orbit-0" style="--o-size-ratio:7"><div class="satellite at-center"><div class="capsule">
+          <span class="face">${devices[device]}%</span>
+          <input type="range" min="0" max="100" value="${devices[device]}" aria-label="${device} level">
+          <small>${home[id].name} · ${device}</small>
+        </div></div></div>
+      </div></div>`
+      const progress = target.querySelector('o-progress')
+      const face = target.querySelector('.face')
+      target.querySelector('input').addEventListener('input', event => {
+        devices[device] = Number(event.target.value)
+        progress.setAttribute('value', event.target.value) // Orbit redraws on attribute change
+        face.textContent = `${event.target.value}%`
+      })
+    }
+
+    const views = {
+      house: `<div class="z-view home" data-title="Home"><div class="dial">${dial({
+        title: 'Home',
+        sub: '4 rooms',
+        items: Object.entries(home).map(([id, room]) => ({ label: room.name, attrs: `data-to="${id}"` }))
+      })}</div></div>`
+    }
+    for (const [id, room] of Object.entries(home)) {
+      views[id] = roomView(id)
+      for (const device of Object.keys(room.devices)) views[`${id}-${device}`] = deviceView(id, device)
+    }
+
+    new Zumly({
+      mount: '.canvas',
+      initialView: 'house',
+      views,
+      transitions: {
+        duration: 800,
+        ease: 'cubic-bezier(.2,.8,.2,1)',
+        effects: ['blur(2px) brightness(.5)', 'blur(6px) brightness(.3)'],
+        // The satellite you open crossfades into the new dial instead of showing behind it.
+        hideTrigger: 'fade'
+      }
+    }).init()
+  </script>
+</body>
+</html>

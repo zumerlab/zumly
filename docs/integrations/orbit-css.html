@@ -15,13 +15,13 @@
   <meta name="description" content="Use Orbit's radial layouts inside Zumly views: satellites as zoom triggers, rings of siblings, gauges that repaint on return, and Orbit depth layers inside a view." />
   <meta name="keywords" content="zumly orbit css, orbit css zoom, radial layout zoom, polar ui, zui radial layout, zumly orbit integration, orbit css zooming user interface" />
 
-  <link rel="canonical" href="https://zumerlab.github.io/zumly/integrations/orbit-css.html" />
+  <link rel="canonical" href="https://zumerlab.com/zumly/integrations/orbit-css.html" />
 
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Zumly with Orbit — radial layouts that zoom into focus" />
   <meta property="og:description" content="Use Orbit's radial layouts inside Zumly views: satellites as zoom triggers, rings of siblings, gauges that repaint on return, and Orbit depth layers inside a view." />
-  <meta property="og:url" content="https://zumerlab.github.io/zumly/integrations/orbit-css.html" />
-  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta property="og:url" content="https://zumerlab.com/zumly/integrations/orbit-css.html" />
+  <meta property="og:image" content="https://zumerlab.com/zumly/zumly-logo.png" />
   <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
@@ -46,8 +46,8 @@
     "description": "Use Orbit's radial layouts inside Zumly views: satellites as zoom triggers, rings of siblings, gauges that repaint on return, and Orbit depth layers inside a view.",
     "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://zumerlab.com" },
     "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://zumerlab.com" },
-    "url": "https://zumerlab.github.io/zumly/integrations/orbit-css.html",
-    "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
+    "url": "https://zumerlab.com/zumly/integrations/orbit-css.html",
+    "image": "https://zumerlab.com/zumly/zumly-logo.png",
     "about": [
       { "@type": "SoftwareApplication", "name": "Zumly", "applicationCategory": "DeveloperApplication", "operatingSystem": "Web" },
       { "@type": "SoftwareApplication", "name": "Orbit CSS" }
@@ -89,9 +89,15 @@
       </p>
       <div class="cta-row">
         <a href="#first-dial" class="cta-primary">Build a dial &rarr;</a>
-        <a href="https://github.com/zumerlab/orbit" class="cta-secondary" target="_blank" rel="noopener">Orbit on GitHub</a>
+        <a href="https://zumerlab.com/orbit/" class="cta-secondary" target="_blank" rel="noopener">Orbit docs</a>
       </div>
     </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example · Orbit</span><button type="button" data-reload="demo">Restart</button><a href="examples/orbit.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="demo" src="examples/orbit.html" title="Zumly with Orbit: live example" loading="lazy"></iframe>
+    </div>
+    <p class="demo-hint">Rooms are satellites, and each one opens its own dial. Open a device, move the slider and come back: the room's gauge repaints.</p>
 
     <section>
       <h2>How they divide the work</h2>
@@ -123,12 +129,12 @@ import '@zumer/orbit/style'
 import '@zumer/orbit'</pre>
       <p>Or from a CDN:</p>
       <pre>&lt;link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css"&gt;
-&lt;link rel="stylesheet" href="https://unpkg.com/@zumer/orbit@2.0.0/dist/orbit.min.css"&gt;
+&lt;link rel="stylesheet" href="https://unpkg.com/@zumer/orbit/dist/orbit.min.css"&gt;
 &lt;script src="https://unpkg.com/zumly/dist/zumly.js"&gt;&lt;/script&gt;
-&lt;script defer src="https://unpkg.com/@zumer/orbit@2.0.0/dist/orbit.min.js"&gt;&lt;/script&gt;</pre>
+&lt;script defer src="https://unpkg.com/@zumer/orbit/dist/orbit.min.js"&gt;&lt;/script&gt;</pre>
       <p>
         This guide uses Orbit 2, where a layout takes its size from its <code>.bigbang</code> box. With
-        Orbit 1.x, set the size on the <code>.gravity-spot</code> instead:
+        <a href="https://zumerlab.com/orbit-docs/">Orbit 1.x</a>, set the size on the <code>.gravity-spot</code> instead:
         <code>--o-force: 600px</code>.
       </p>
     </section>
@@ -139,8 +145,8 @@ import '@zumer/orbit'</pre>
         Put a <code>.bigbang</code> inside a view and give the view a size. The layout fills the
         view. Make each satellite's capsule a trigger:
       </p>
-      <pre>const dial = (title, items) =&gt; `
-  &lt;div class="z-view dial"&gt;
+      <pre>const dial = (title, items, className = 'z-view dial') =&gt; `
+  &lt;div class="${className}"&gt;
     &lt;div class="bigbang"&gt;
       &lt;div class="gravity-spot"&gt;
         &lt;div class="orbit-10" style="--o-size-ratio: 1.5"&gt;
@@ -163,7 +169,8 @@ const app = new Zumly({
   mount: '.canvas',
   initialView: 'home',
   views: {
-    home: dial('Home', ['kitchen', 'living', 'garage']),
+    // The first view fills the canvas and centers its dial
+    home: `&lt;div class="z-view home"&gt;${dial('Home', ['kitchen', 'living', 'garage'], 'dial')}&lt;/div&gt;`,
     kitchen: dial('Kitchen', ['oven', 'lights']),
     living: dial('Living', ['tv', 'lights']),
     garage: dial('Garage', ['door']),
@@ -172,7 +179,8 @@ const app = new Zumly({
   transitions: { duration: '700ms', ease: 'cubic-bezier(.2,.8,.2,1)' }
 })
 app.init()</pre>
-      <pre>.dial { width: min(80vmin, 600px); aspect-ratio: 1; }
+      <pre>.home { width: 100%; height: 100%; display: grid; place-items: center; }
+.dial { width: min(80vmin, 600px); aspect-ratio: 1; }
 .dial .capsule { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; }</pre>
       <p>
         Zooming in scales the dial until the capsule you clicked covers the next dial, so each
@@ -180,7 +188,7 @@ app.init()</pre>
         the sibling bar, a click on a neighbor that is still visible, and <code>goTo(name, { mode: 'lateral' })</code>
         move around the ring without going back up.
       </p>
-      <p><a href="https://github.com/zumerlab/zumly/blob/main/demos/orbit-dial.html">demos/orbit-dial.html</a> is this example, complete.</p>
+      <p>The live example at the top of this page is this dial, complete: <a href="examples/orbit.html" target="_blank" rel="noopener">open it on its own</a> to read the source.</p>
     </section>
 
     <section>
@@ -288,8 +296,8 @@ const views = {
 
     <div class="final-cta">
       <h3>See it in action</h3>
-      <p>The complete dial example, with dials that open dials, is in the repository.</p>
-      <a href="https://github.com/zumerlab/zumly/blob/main/demos/orbit-dial.html" class="cta-primary" target="_blank" rel="noopener">See the full example &#8599;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
+      <p>The complete dial example, with dials that open dials.</p>
+      <a href="examples/orbit.html" class="cta-primary" target="_blank" rel="noopener">Open this example &#8599;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
     </div>
 
   </main>

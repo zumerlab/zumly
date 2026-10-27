@@ -1,9 +1,9 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://zumerlab.github.io/zumly/sitemap.xml
+Sitemap: https://zumerlab.com/zumly/sitemap.xml
 
 # LLM-friendly documentation
 # See https://llmstxt.org/
-# llms.txt: https://zumerlab.github.io/zumly/llms.txt
-# llms-full.txt: https://zumerlab.github.io/zumly/llms-full.txt
+# llms.txt: https://zumerlab.com/zumly/llms.txt
+# llms-full.txt: https://zumerlab.com/zumly/llms-full.txt

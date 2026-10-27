@@ -48,16 +48,16 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 
 ## Links
 
-- Live demo: https://zumerlab.github.io/zumly/
+- Live demo: https://zumerlab.com/zumly/
 - GitHub: https://github.com/zumerlab/zumly
 - npm: https://www.npmjs.com/package/zumly
-- Full LLM reference: https://zumerlab.github.io/zumly/llms-full.txt
-- Learn in six steps (each with a runnable single-file example): https://zumerlab.github.io/zumly/learn/
-- API reference: https://zumerlab.github.io/zumly/api.html
+- Full LLM reference: https://zumerlab.com/zumly/llms-full.txt
+- Learn in six steps (each with a runnable single-file example): https://zumerlab.com/zumly/learn/
+- API reference: https://zumerlab.com/zumly/api.html
 - Driver API: https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md
 - TypeScript types: https://github.com/zumerlab/zumly/blob/main/types/zumly.d.ts
 
 ## Ecosystem
 
-- [Orbit](https://github.com/zumerlab/orbit) — Radial layouts; satellites work as Zumly triggers. Guide: https://zumerlab.github.io/zumly/integrations/orbit-css.html
+- [Orbit](https://zumerlab.com/orbit/) — Radial layouts; satellites work as Zumly triggers. Guide: https://zumerlab.com/zumly/integrations/orbit-css.html
 - [SnapDOM](https://github.com/zumerlab/snapdom) — Fast DOM-to-image capture library

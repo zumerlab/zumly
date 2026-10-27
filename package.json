@@ -1,11 +1,11 @@
 {
   "name": "zumly",
-  "version": "0.97.0",
+  "version": "1.0.0",
   "description": "Javascript library for building zooming user interfaces",
   "type": "module",
   "author": "Juan Martin Muda - Zumerlab",
   "license": "MIT",
-  "homepage": "https://zumerlab.github.io/zumly/",
+  "homepage": "https://zumerlab.com/zumly/",
   "repository": {
     "type": "git",
     "url": "https://github.com/zumerlab/zumly.git"
@@ -73,7 +73,7 @@
     "node": ">=18"
   },
   "devDependencies": {
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.27.4",
     "@vitest/browser": "^3.1.2",
     "@vitest/coverage-v8": "^3.1.2",
     "playwright": "^1.52.0",

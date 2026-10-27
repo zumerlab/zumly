@@ -11,15 +11,15 @@
 <p align="center"><strong>Focus-driven navigation. Zoom into what matters.</strong></p>
 
 <p align="center">
-  <a href="https://zumerlab.github.io/zumly/"><strong>Live demo</strong></a> ·
-  <a href="https://zumerlab.github.io/zumly/learn/"><strong>Learn in six steps</strong></a> ·
+  <a href="https://zumerlab.com/zumly/"><strong>Live demo</strong></a> ·
+  <a href="https://zumerlab.com/zumly/learn/"><strong>Learn in six steps</strong></a> ·
   <a href="demos/">Demos</a> ·
   <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg" alt="npm version" align="center"></a>
 </p>
 
 Zumly is a JavaScript library for **hierarchical zoom navigation**. Your interface is a set of screens called **views**. Clicking an element in one view zooms into it, and the next view grows out of that element. Zooming out returns along the same path. Moving between sibling views at the same level slides sideways.
 
-Zumly is not an infinite pan-and-zoom canvas. Movement happens in discrete steps, through elements you mark as triggers. You write the HTML and CSS, Zumly computes and animates the transforms. It works with plain HTML, React, Vue, Svelte and Angular, and pairs with [Orbit](https://github.com/zumerlab/orbit) for radial layouts.
+Zumly is not an infinite pan-and-zoom canvas. Movement happens in discrete steps, through elements you mark as triggers. You write the HTML and CSS, Zumly computes and animates the transforms. It works with plain HTML, React, Vue, Svelte and Angular, and pairs with [Orbit](https://zumerlab.com/orbit/) for radial layouts.
 
 ## Why Zumly
 
@@ -189,7 +189,7 @@ views: {
 }
 ```
 
-The same pattern works with Vue (`createApp(...).mount(target)` / `unmount()`), Svelte (`new Component({ target })` / `$destroy()` or `mount` / `unmount`) and Angular (`createComponent` / `destroy()`). `mount` also accepts an element, such as a React ref. Guides: [React](https://zumerlab.github.io/zumly/integrations/react.html) · [Vue](https://zumerlab.github.io/zumly/integrations/vue.html) · [Svelte](https://zumerlab.github.io/zumly/integrations/svelte.html) · [Angular](https://zumerlab.github.io/zumly/integrations/angular.html).
+The same pattern works with Vue (`createApp(...).mount(target)` / `unmount()`), Svelte (`new Component({ target })` / `$destroy()` or `mount` / `unmount`) and Angular (`createComponent` / `destroy()`). `mount` also accepts an element, such as a React ref. Guides: [React](https://zumerlab.com/zumly/integrations/react.html) · [Vue](https://zumerlab.com/zumly/integrations/vue.html) · [Svelte](https://zumerlab.com/zumly/integrations/svelte.html) · [Angular](https://zumerlab.com/zumly/integrations/angular.html).
 
 ## Navigating
 
@@ -350,7 +350,7 @@ Every driver but `none` slides between siblings, with the same motion as `css` a
 
 ## With Orbit
 
-[Orbit](https://github.com/zumerlab/orbit) places elements around a center. Its arcs, rings and satellites work inside Zumly views without glue code: put a `.bigbang` in a view, and make satellites (or their capsules) triggers.
+[Orbit](https://zumerlab.com/orbit/) places elements around a center. Its arcs, rings and satellites work inside Zumly views without glue code: put a `.bigbang` in a view, and make satellites (or their capsules) triggers.
 
 ```html
 <div class="z-view dial">
@@ -367,7 +367,7 @@ Every driver but `none` slides between siblings, with the same motion as `css` a
 </div>
 ```
 
-The satellites become siblings, so the sibling bar moves around the ring. The [Orbit integration guide](https://zumerlab.github.io/zumly/integrations/orbit-css.html) covers sizing, state, depth layers and touch, and [demos/orbit-dial.html](demos/orbit-dial.html) is a working example.
+The satellites become siblings, so the sibling bar moves around the ring. The [Orbit integration guide](https://zumerlab.com/zumly/integrations/orbit-css.html) covers sizing, state, depth layers and touch, and has [a live example](https://zumerlab.com/zumly/integrations/examples/orbit.html).
 
 ## Router
 

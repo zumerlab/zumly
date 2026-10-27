@@ -4,7 +4,6 @@ notes/
 coverage/
 npm-debug.log
 yarn-error.log
-package-lock.json
 .DS_Store
 *.tgz
 __screenshots__/

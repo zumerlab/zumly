@@ -5,14 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Zumly + Orbit · Dials</title>
   <link rel="stylesheet" href="../dist/zumly.css">
-  <link rel="stylesheet" href="https://unpkg.com/@zumer/orbit@2.0.0/dist/orbit.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/@zumer/orbit/dist/orbit.min.css">
   <link rel="stylesheet" href="demo.css">
   <script src="../dist/zumly.js"></script>
-  <script src="https://unpkg.com/@zumer/orbit@2.0.0/dist/orbit.min.js"></script>
+  <script src="https://unpkg.com/@zumer/orbit/dist/orbit.min.js"></script>
   <style>
     /* A dial is a square view; its .bigbang takes the view's width. */
     .dial, .detail { border-radius: 50%; background: var(--bg); }
     .dial { width: min(78vmin, 620px); aspect-ratio: 1; }
+    /* The first view fills the canvas and centers its dial. */
+    .home { width: 100%; height: 100%; display: grid; place-items: center; }
     .dial .capsule { width: 100%; height: 100%; border-radius: 50%; display: grid; place-items: center; text-align: center; font-size: 13px; line-height: 1.2; }
     .dial .zoom-me { background: var(--panel); border: 1px solid var(--line); }
     .dial .zoom-me:hover { border-color: var(--accent); }
@@ -94,11 +96,11 @@
     }
 
     const views = {
-      house: `<div class="z-view dial">${dial({
+      house: `<div class="z-view home"><div class="dial">${dial({
         title: 'Home',
         sub: '4 rooms',
         items: Object.entries(home).map(([id, room]) => ({ label: room.name, attrs: `data-to="${id}"` }))
-      })}</div>`
+      })}</div></div>`
     }
     for (const [id, room] of Object.entries(home)) {
       views[id] = roomView(id)

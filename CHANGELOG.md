@@ -2,7 +2,18 @@
 
 All notable changes to this project will be documented in this file. 
 
-#### Unreleased
+#### [v1.0.0](https://github.com/zumerlab/zumly/compare/v0.97.0...v1.0.0)
+
+> 27 October 2026
+
+Zumly reaches 1.0. It cleans up after itself, explains mistakes in the console, and lets one view back many siblings through the trigger's data.
+
+Four changes can break existing code:
+
+- `lateralNav.mode` defaults to `'always'`: the sibling bar shows whenever there are siblings. Set `mode: 'auto'` for the old behaviour.
+- `destroy()` removes the views it put in the canvas. Keep a copy before calling it if you need them.
+- A view opened with data carries it in the hash: `#/house/room?id=kitchen`. Views opened without data keep the same hash.
+- Lateral moves pass the trigger's data to the view as `props`, as zooming in already did.
 
 - `destroy()` removes the views it put in the canvas (kept-alive siblings and views still loading too) and the `zumly-canvas` class if it added it, so a new instance can start there right away: React StrictMode and hot reload no longer stack two sets of views. Content you put in the canvas stays. The guides no longer empty the canvas themselves. If your code relied on the views staying after `destroy()`, keep a copy before calling it.
 - GSAP, Anime.js and Motion slide between siblings like `css` and `waapi`: same transforms, duration, easing and fade, instant with reduced motion, and on time in a hidden tab.

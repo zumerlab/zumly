@@ -2,11 +2,11 @@
 
 > JavaScript library for hierarchical zoom navigation (ZUI). Navigate in Z (depth) through discrete views in the XY plane with spatial transitions.
 
-Version: 0.92.5
+Version: 1.0.0
 License: MIT
 Author: Juan Martin Muda — Zumerlab
 Repository: https://github.com/zumerlab/zumly
-Live demo: https://zumerlab.github.io/zumly/ · Learn in six steps: https://zumerlab.github.io/zumly/learn/ · API reference: https://zumerlab.github.io/zumly/api.html
+Live demo: https://zumerlab.com/zumly/ · Learn in six steps: https://zumerlab.com/zumly/learn/ · API reference: https://zumerlab.com/zumly/api.html
 npm: https://www.npmjs.com/package/zumly
 
 ---
@@ -1177,7 +1177,7 @@ Zumly reports mistakes in the console (warnings and errors are always shown; `de
 
 ### Orbit CSS
 
-[https://github.com/zumerlab/orbit](https://github.com/zumerlab/orbit)
+Docs: https://zumerlab.com/orbit/ · Repository: https://github.com/zumerlab/orbit
 
 Radial layout system (`@zumer/orbit`): `.bigbang > .gravity-spot > .orbit-N > .satellite > .capsule`, plus `<o-arc>` and `<o-progress>`. Works inside Zumly views without glue: Orbit redraws on insert/resize, through zoom, lateral and keepAlive.
 
@@ -1187,7 +1187,7 @@ Radial layout system (`@zumer/orbit`): `.bigbang > .gravity-spot > .orbit-N > .s
 - Repaint gauges in `onActivate`, or update `<o-progress value>` attributes (Orbit redraws).
 - `hideTrigger: 'fade'` crossfades the satellite into the new dial; give dial views a background.
 - Add `data-no-swipe` to knobs/rings the user drags.
-- Guide: https://zumerlab.github.io/zumly/integrations/orbit-css.html · demo: demos/orbit-dial.html
+- Guide: https://zumerlab.com/zumly/integrations/orbit-css.html · live example: https://zumerlab.com/zumly/integrations/examples/orbit.html
 
 ### SnapDOM
 
