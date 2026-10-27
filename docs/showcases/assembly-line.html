@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag () { dataLayer.push(arguments) } gtag('js', new Date()); gtag('config', 'G-TCJ276G8QK')</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assembly line — a Zumly showcase</title>
+  <meta name="description" content="A Zumly showcase: twelve stations of an assembly line. Zoom into a station in trouble, move to the next with the arrows, and work through an issue." />
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/showcases/assembly-line.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Assembly line — a Zumly showcase" />
+  <meta property="og:description" content="A Zumly showcase: twelve stations of an assembly line. Zoom into a station in trouble, move to the next with the arrows, and work through an issue." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/showcases/assembly-line.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
+  <link rel="stylesheet" href="../css/showcases.css" />
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    .stage { position: fixed; inset: 0; }
+    .back-to-site { position: fixed; z-index: 50; bottom: 20px; right: 16px; font: 600 12px Inter, system-ui, sans-serif; color: #fff; text-decoration: none; padding: 6px 12px; border-radius: 99px; background: rgba(10, 14, 24, 0.55); backdrop-filter: blur(8px); }
+  </style>
+</head>
+<body>
+  <div class="stage"><div class="canvas zumly-canvas"></div></div>
+  <a class="back-to-site" href="../">Zumly &#8599;</a>
+  <noscript><p>A Zumly showcase: twelve stations of an assembly line. Zoom into a station in trouble, move to the next with the arrows, and work through an issue. This showcase needs JavaScript. <a href="../learn/">Learn Zumly</a>.</p></noscript>
+
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+  <script src="../js/showcases.js"></script>
+  <script>
+    var sc = window.ZumlyShowcases
+    var app = new Zumly(Object.assign({
+      mount: '.canvas',
+      initialView: sc.assembly.root,
+      views: sc.assembly.views,
+      depthNav: sc.depthNav.assembly
+    }, sc.options))
+    app.use(Zumly.Router)
+    app.init()
+  </script>
+</body>
+</html>

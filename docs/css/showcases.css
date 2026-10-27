@@ -1,0 +1,102 @@
+/* The showcases (js/showcases.js), in the demo and on their own pages.
+   Root views use container units, so a card thumbnail is the same view drawn small.
+   Every trigger has the shape of the view it opens. */
+
+.sx { box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: var(--sx-text); background: var(--sx-bg); }
+.sx *, .sx *::before { box-sizing: border-box; }
+.sx h1, .sx h2, .sx p { margin: 0; color: inherit; }
+.sx .zoom-me { cursor: zoom-in; }
+
+.sx-root { width: 100%; height: 100%; container-type: size; display: flex; flex-direction: column; gap: 3cqmin; padding: 4cqmin 5cqmin; }
+.sx-root h1 { font-size: 4.2cqmin; font-weight: 800; letter-spacing: -0.02em; }
+.sx-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2cqmin; flex-wrap: wrap; }
+.sx-head p { color: var(--sx-dim); font-size: 2cqmin; margin-top: 0.4cqmin; }
+.sx-kpis { display: flex; gap: 1.2cqmin; flex-wrap: wrap; }
+.sx-kpis span { font-size: 1.8cqmin; padding: 0.9cqmin 1.6cqmin; border-radius: 99px; background: var(--sx-card); color: var(--sx-dim); }
+.sx-kpis b { color: var(--sx-text); margin-right: 0.4em; }
+.sx-kpis .is-alert b { color: var(--sx-alert); }
+.sx-hint { margin-top: auto; font-size: 1.8cqmin; color: var(--sx-dim); }
+
+/* Panels: a fixed shape, their own container */
+/* A container's own padding cannot use its container units: --w (its width) sizes them */
+.sx-panel { width: var(--w); container-type: size; padding: calc(var(--w) * 0.05); display: flex; flex-direction: column; gap: 4cqw; border-radius: calc(var(--w) * 0.03); box-shadow: 0 30px 80px #0006; }
+.sx-panel h2 { font-size: 5.5cqw; font-weight: 800; letter-spacing: -0.02em; }
+.sx-panel .sx-head p { font-size: 2.6cqw; }
+
+/* ── Assembly line ── */
+.sx-assembly { --sx-bg: #0f1216; --sx-card: #1a1f26; --sx-text: #eef1f5; --sx-dim: #8a96a6; --sx-alert: #ffb020; --sx-fail: #ff5a4f; --sx-ok: #3ccf8e; }
+.sx-stations { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6cqmin; align-content: center; }
+.sx-station { aspect-ratio: 4 / 3; border-radius: 1.6cqmin; background: var(--sx-card); padding: 1.6cqmin; display: flex; flex-direction: column; justify-content: space-between; border: 0.25cqmin solid transparent; }
+.sx-station small { font-size: 1.6cqmin; color: var(--sx-dim); }
+.sx-station b { font-size: 2.4cqmin; }
+.sx-station i { font-style: normal; font-size: 1.6cqmin; color: var(--sx-ok); }
+.sx-station.is-warn { border-color: var(--sx-alert); } .sx-station.is-warn i { color: var(--sx-alert); }
+.sx-station.is-fail { border-color: var(--sx-fail); background: color-mix(in srgb, var(--sx-fail) 14%, var(--sx-card)); } .sx-station.is-fail i { color: var(--sx-fail); }
+.sx-assembly.sx-panel { --w: min(88vw, 112vh); aspect-ratio: 4 / 3; border: calc(var(--w) * 0.003) solid var(--sx-alert); }
+.sx-assembly.sx-panel.is-fail { border-color: var(--sx-fail); }
+.sx-pill { font-size: 2.4cqw; padding: 1cqw 2cqw; border-radius: 99px; background: var(--sx-card); }
+.sx-split { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4cqw; min-height: 0; }
+.sx-split > div > p { font-size: 2.4cqw; color: var(--sx-dim); margin-bottom: 2cqw; }
+.sx-bars { height: 70%; display: flex; align-items: flex-end; gap: 1.4cqw; }
+.sx-bars i { flex: 1; height: var(--v); border-radius: 0.8cqw 0.8cqw 0 0; background: linear-gradient(var(--sx-alert), color-mix(in srgb, var(--sx-alert) 30%, transparent)); }
+.is-fail .sx-bars i { background: linear-gradient(var(--sx-fail), color-mix(in srgb, var(--sx-fail) 30%, transparent)); }
+.sx-issues { display: flex; flex-direction: column; gap: 2cqw; }
+.sx-issue { aspect-ratio: 16 / 10; width: 80%; border-radius: 2cqw; background: var(--sx-card); padding: 2.4cqw; display: flex; flex-direction: column; gap: 1cqw; }
+.sx-issue b { font-size: 2.8cqw; } .sx-issue span { font-size: 2.2cqw; color: var(--sx-dim); }
+.sx-issue-view { --w: min(80vw, 128vh); width: var(--w); aspect-ratio: 16 / 10; container-type: size; padding: calc(var(--w) * 0.05) calc(var(--w) * 0.06); display: flex; flex-direction: column; gap: 2.4cqw; border-radius: calc(var(--w) * 0.03); }
+.sx-issue-view h2 { font-size: 5cqw; } .sx-issue-view > p { font-size: 2.6cqw; color: var(--sx-dim); }
+.sx-kicker { font-size: 2.2cqw !important; color: var(--sx-alert) !important; font-weight: 600; }
+.sx-steps { list-style: none; margin: 1cqw 0 0; padding: 0; display: grid; gap: 1.6cqw; }
+.sx-steps label { display: flex; align-items: center; gap: 2cqw; font-size: 3cqw; padding: 2cqw 2.4cqw; border-radius: 1.6cqw; background: var(--sx-card); cursor: pointer; }
+.sx-steps input { width: 3cqw; height: 3cqw; accent-color: var(--sx-ok); }
+.sx-steps label:has(:checked) { color: var(--sx-dim); text-decoration: line-through; }
+
+/* ── Smart home ── */
+.sx-home { --sx-bg: #f5efe7; --sx-card: #ffffff; --sx-text: #2a2119; --sx-dim: #8b7b6b; --sx-alert: #e8743b; --sx-on: #ffb547; }
+.sx-rooms { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.4cqmin; align-content: center; }
+.sx-room { aspect-ratio: 1; border-radius: 3cqmin; background: var(--sx-card); padding: 2.6cqmin; display: flex; flex-direction: column; box-shadow: 0 1cqmin 3cqmin #6b4a2a14; }
+.sx-room b { font-size: 2.6cqmin; } .sx-room span { font-size: 6cqmin; font-weight: 300; margin-top: auto; } .sx-room i { font-style: normal; font-size: 1.7cqmin; color: var(--sx-dim); }
+.sx-square { --w: min(78vw, 78vh); aspect-ratio: 1; }
+.sx-home.sx-panel { box-shadow: 0 30px 80px #6b4a2a33; }
+.sx-lights { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4cqw; align-content: start; }
+.sx-light { position: relative; aspect-ratio: 1; border-radius: 5cqw; background: #ebe1d4; }
+.sx-light.is-on { background: color-mix(in srgb, var(--sx-on) 30%, #fff); }
+.sx-light-open { position: absolute; inset: 0; border-radius: inherit; padding: 5cqw; display: flex; flex-direction: column; justify-content: flex-end; }
+.sx-light-open b { font-size: 4.4cqw; } .sx-light-open span { font-size: 3.4cqw; color: var(--sx-dim); }
+.sx-switch { position: absolute; z-index: 1; top: 4cqw; right: 4cqw; width: 11cqw; height: 6.4cqw; border-radius: 99px; border: 0; background: #d9cdbf; cursor: pointer; }
+.sx-switch::after { content: ''; position: absolute; top: 0.8cqw; left: 0.8cqw; width: 4.8cqw; height: 4.8cqw; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+.sx-light.is-on .sx-switch { background: var(--sx-on); } .sx-light.is-on .sx-switch::after { transform: translateX(4.6cqw); }
+.sx-small { --w: min(46vw, 46vh); padding: calc(var(--w) * 0.09); gap: 3cqw; background: color-mix(in srgb, var(--sx-on) 30%, #fff); }
+.sx-small h2 { font-size: 9cqw; } .sx-small > p { font-size: 5cqw; color: var(--sx-dim); }
+.sx-small output { font-size: 22cqw; font-weight: 200; margin-top: auto; }
+.sx-small input { width: 100%; accent-color: var(--sx-alert); }
+
+/* ── Mission control ── */
+.sx-mission { --sx-bg: #050816; --sx-card: #111a33; --sx-text: #e6f0ff; --sx-dim: #7f90b5; --sx-alert: #ffb84d; --sx-fail: #ff5d73; --sx-ok: #4de3c1; }
+.sx-root.sx-mission { background: radial-gradient(circle at 50% 58%, #142449, #050816 60%); }
+.sx-orbit { position: relative; flex: 1; display: grid; place-items: center; }
+.sx-orbit::before { content: ''; position: absolute; width: 56cqmin; aspect-ratio: 1; border-radius: 50%; border: 0.2cqmin dashed #7f90b555; }
+.sx-planet { width: 18cqmin; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font-size: 1.8cqmin; color: #cfe3ff; background: radial-gradient(circle at 35% 30%, #5aa9ff, #0d3a7a); box-shadow: 0 0 6cqmin #2b6fff55; }
+.sx-sat { position: absolute; width: 9cqmin; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: var(--sx-card); border: 0.3cqmin solid var(--sx-ok); transform: rotate(var(--a)) translateX(28cqmin) rotate(calc(-1 * var(--a))); }
+.sx-sat span { font-size: 1.3cqmin; font-weight: 700; letter-spacing: 0.04em; }
+.sx-sat.is-warn { border-color: var(--sx-alert); } .sx-sat.is-fail { border-color: var(--sx-fail); box-shadow: 0 0 3cqmin var(--sx-fail); }
+.sx-disc { --w: min(76vw, 76vh); width: var(--w); aspect-ratio: 1; border-radius: 50%; container-type: size; display: grid; place-content: center; justify-items: center; gap: 3cqw; text-align: center; background: radial-gradient(circle at 50% 35%, #1a2a52, #070c1f 75%); border: calc(var(--w) * 0.006) solid var(--sx-ok); }
+.sx-disc.is-warn { border-color: var(--sx-alert); } .sx-disc.is-fail { border-color: var(--sx-fail); }
+.sx-disc h2 { font-size: 9cqw; font-weight: 800; letter-spacing: 0.02em; }
+.sx-disc .sx-kicker { color: var(--sx-dim) !important; font-size: 3.4cqw !important; }
+.sx-systems { display: flex; gap: 4cqw; }
+.sx-sys { width: 20cqw; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; text-align: center; background: conic-gradient(var(--c) calc(var(--v) * 1%), #ffffff14 0); --c: var(--sx-ok); position: relative; }
+.sx-sys::before { content: ''; position: absolute; inset: 1.6cqw; border-radius: 50%; background: var(--sx-card); }
+.sx-sys > * { position: relative; } .sx-sys b { font-size: 5cqw; } .sx-sys span { font-size: 2.6cqw; color: var(--sx-dim); }
+.sx-sys.is-warn, .sx-gauge-view.is-warn { --c: var(--sx-alert); } .sx-sys.is-fail, .sx-gauge-view.is-fail { --c: var(--sx-fail); }
+.sx-gauge-view { --c: var(--sx-ok); }
+.sx-gauge { width: 56cqw; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; text-align: center; background: conic-gradient(var(--c) calc(var(--v) * 1%), #ffffff14 0); position: relative; }
+.sx-gauge::before { content: ''; position: absolute; inset: 4cqw; border-radius: 50%; background: #070c1f; }
+.sx-gauge > * { position: relative; } .sx-gauge b { font-size: 14cqw; font-weight: 300; } .sx-gauge span { font-size: 4cqw; color: var(--sx-dim); }
+.sx-gauge-view > p { font-size: 3.4cqw; color: var(--sx-dim); max-width: 60cqw; }
+
+/* A portrait view (a phone) gets fewer columns; thumbnails are landscape and keep four */
+@container (orientation: portrait) {
+  .sx-stations { grid-template-columns: repeat(3, 1fr); }
+  .sx-rooms { grid-template-columns: repeat(2, 1fr); }
+}

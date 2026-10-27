@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
   <link rel="stylesheet" href="css/site.css" />
   <link rel="stylesheet" href="css/spa.css" />
+  <link rel="stylesheet" href="css/showcases.css" />
 </head>
 
 <body>
@@ -45,6 +46,7 @@
 
   <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
   <script src="js/site.js"></script>
+  <script src="js/showcases.js"></script>
   <script>
   ;(function () {
     'use strict'
@@ -55,10 +57,19 @@
     var views = {
       home: 'views/home.html',
       learn: 'views/learn.html',
-      showcases: 'views/showcases.html',
-      mercedes: 'views/mercedes.html',
-      'home-assistant': 'views/home-assistant.html',
-      'mission-control': 'views/mission-control.html',
+      // Each card is a thumbnail of the showcase's first view, so the zoom into it is seamless
+      showcases: function () {
+        var cards = ['assembly', 'house', 'mission'].map(function (name) {
+          var sc = window.ZumlyShowcases[name]
+          return '<div class="sc-card">' +
+            '<div class="sc-preview zoom-me" data-to="' + sc.root + '" aria-label="Open ' + sc.title + '"><div class="sc-mini">' + sc.preview() + '</div></div>' +
+            '<div class="sc-label"><span class="sc-tag">' + sc.tag + '</span><h4>' + sc.title + '</h4><p>' + sc.blurb + '</p>' +
+            '<a href="' + sc.page + '" target="_blank" rel="noopener">Open full screen &#8599;</a></div></div>'
+        }).join('')
+        return '<div class="z-view v v-section" data-title="Showcases"><div class="v-inner">' +
+          '<h2 class="v-title">Showcases</h2><p class="v-sub">Small apps built with Zumly. Zoom into a card: the app grows out of its own thumbnail.</p>' +
+          '<div class="sc-grid">' + cards + '</div></div></div>'
+      },
       // The API reference is a standalone page (api.html); the demo shows its <main>
       api: {
         title: 'API',
@@ -82,6 +93,8 @@
       }
     }
 
+    ;['assembly', 'house', 'mission'].forEach(function (name) { Object.assign(views, window.ZumlyShowcases[name].views) })
+
     var app = new Z({
       mount: '#app',
       initialView: 'home',
@@ -90,7 +103,8 @@
       transitions: {
         duration: '800ms',
         ease: 'cubic-bezier(.4,0,.2,1)',
-        effects: ['blur(4px) brightness(0.55)', 'blur(10px) brightness(0.3)']
+        // Dim the views behind, without blur: blurring large moving layers drops frames
+        effects: ['brightness(0.5) saturate(0.8)', 'brightness(0.3) saturate(0.6)']
       },
       depthNav: { style: 'title' },
       lateralNav: { position: 'top-center', swipe: true, siblings: { home: ['learn', 'showcases', 'api'] } },
@@ -100,71 +114,6 @@
     })
 
     app.use(Z.Router)
-
-    // Keep preview documents quiet and run full demos only while their view is
-    // active. Pausing preserves DOM, form values, animation phase, and clocks.
-    var showcaseTransition = false
-    var showcaseRecoveryTimer = null
-    function syncShowcaseActivity () {
-      var current = app.canvas.querySelector(':scope > .is-current-view')
-      var activeFrame = null
-      app.canvas.querySelectorAll('iframe').forEach(function (frame) {
-        var active = !showcaseTransition && !document.hidden &&
-          !frame.closest('.sc-preview') && frame.closest('.z-view') === current
-        if (active) activeFrame = frame
-        frame.contentWindow?.postMessage({ type: 'zumly:showcase-activity', active: active }, window.location.origin)
-      })
-      var depthNav = app.canvas.querySelector('.z-depth-nav')
-      if (depthNav) depthNav.style.display = activeFrame && Number(activeFrame.dataset.showcaseDepth) > 0 ? 'none' : ''
-    }
-    function pauseShowcases () {
-      showcaseTransition = true
-      syncShowcaseActivity()
-    }
-    function recoverShowcases () {
-      showcaseRecoveryTimer = null
-      // A failed fetch/mount has no after* hook. Check only the engine's busy
-      // flag while a navigation is pending, without observing or measuring DOM.
-      if (!app.blockEvents) resumeShowcases()
-      else showcaseRecoveryTimer = setTimeout(recoverShowcases, 100)
-    }
-    function pauseForNavigation () {
-      pauseShowcases()
-      clearTimeout(showcaseRecoveryTimer)
-      showcaseRecoveryTimer = setTimeout(recoverShowcases, 100)
-    }
-    function resumeShowcases () {
-      clearTimeout(showcaseRecoveryTimer)
-      showcaseRecoveryTimer = null
-      showcaseTransition = false
-      syncShowcaseActivity()
-    }
-    ;['beforeZoomIn', 'beforeZoomOut', 'beforeLateral'].forEach(function (event) { app.on(event, pauseForNavigation) })
-    ;['afterZoomIn', 'afterZoomOut', 'afterLateral'].forEach(function (event) { app.on(event, resumeShowcases) })
-    app.on('viewMounted', syncShowcaseActivity)
-    document.addEventListener('visibilitychange', syncShowcaseActivity)
-
-    function onShowcaseMessage (event) {
-      if (event.origin !== window.location.origin || !event.data) return
-      var frame = Array.from(app.canvas.querySelectorAll('iframe')).find(function (candidate) {
-        return candidate.contentWindow === event.source
-      })
-      if (!frame) return
-      if (event.data.type === 'zumly:depth' && Number.isFinite(event.data.depth)) {
-        frame.dataset.showcaseDepth = String(event.data.depth)
-      } else if (event.data.type !== 'zumly:showcase-ready') {
-        return
-      }
-      syncShowcaseActivity()
-    }
-    window.addEventListener('message', onShowcaseMessage)
-    app.on('destroy', function () {
-      clearTimeout(showcaseRecoveryTimer)
-      showcaseRecoveryTimer = null
-      pauseShowcases()
-      document.removeEventListener('visibilitychange', syncShowcaseActivity)
-      window.removeEventListener('message', onShowcaseMessage)
-    })
 
     // Copy buttons in fetched views
     app.canvas.addEventListener('click', function (e) {
@@ -177,7 +126,6 @@
     })
 
     app.init().then(function () {
-      syncShowcaseActivity()
       // GitHub stars (shields.io JSON avoids GitHub API rate limits)
       fetch('https://img.shields.io/github/stars/zumerlab/zumly.json')
         .then(function (r) { return r.json() })

@@ -96,7 +96,7 @@ app.init()</code></pre>
     <section>
       <h2>Transitions</h2>
       <ul>
-        <li><code>duration</code> and <code>ease</code> set the timing; <code>effects</code> are CSS filters for the two views behind the current one.</li>
+        <li><code>duration</code> and <code>ease</code> set the timing; <code>effects</code> are CSS filters for the two views behind the current one. <code>blur()</code> is the expensive one: on large, busy views it drops frames while they move, so prefer <code>brightness()</code> and <code>saturate()</code> there (the showcases do), or set <code>animateEffects: false</code>.</li>
         <li><code>hideTrigger: 'fade'</code> crossfades the trigger into the new view.</li>
         <li>Any trigger can override them: <code>data-with-duration</code>, <code>data-with-ease</code>, <code>data-with-effects</code>.</li>
         <li>With <code>prefers-reduced-motion</code>, transitions are instant.</li>
