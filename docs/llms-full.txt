@@ -159,7 +159,7 @@ new Zumly({
 
   // ─── Lateral navigation UI ───────────────
   lateralNav: {               // true = default, false = disabled, or object:
-    mode: 'auto',             // 'auto' = only when view doesn't cover full canvas, 'always'
+    mode: 'always',           // 'always' = whenever siblings exist, 'auto' = only when view doesn't cover full canvas
     arrows: true,             // Show prev/next arrow buttons
     dots: true,               // Show dot indicators
     keepAlive: false,         // true = keep lateral views in DOM (hidden), 'visible' = keep visible
@@ -256,7 +256,7 @@ Declared sibling order for lateral navigation. Takes precedence over inferring o
 Depth navigation is the back button. It only appears when depth > 0 (i.e., you've zoomed in at least once). If the current view already contains a `.z-depth-nav` (e.g., from a nested Zumly instance, or a back button of your own), the built-in one is suppressed.
 
 Styles:
-- `'button'` (default): a `‹` chevron in a circle.
+- `'button'` (default): a dot in its ring (the sibling bar keeps the chevrons).
 - `'title'`: a dot in its ring plus the title of the view above.
 - `'rings'`: a dot inside one ring per level above (up to 6; innermost = right above). A tap zooms out one level; hover, a long press or ArrowUp opens a band per level (`.z-depth-fan` > `.z-depth-band`) to jump several levels in one transition. Rings and bands carry `z-depth-ring--up-N` / `z-depth-band--up-N` (1 = right above), `--depth-N` (0 = root) and `data-view`, so CSS can mark a level: `.z-depth-ring[data-view="security"] { stroke: tomato }`. With `gestures.follow`, `--z-grow` (0-1) and `.is-past-threshold` on `.z-depth-nav` let the dot grow into its ring.
 
@@ -1287,7 +1287,7 @@ const app = new Zumly({
   },
   depthNav: { position: 'bottom-left' },
   lateralNav: {
-    mode: 'auto',
+    mode: 'always',
     arrows: true,
     dots: true,
     keepAlive: false,

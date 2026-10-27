@@ -39,7 +39,7 @@ describe('depthNav styles', () => {
     await app.init()
     await down(app, 'sys')
     expect(nav(app).classList.contains('z-depth-nav--button')).toBe(true)
-    expect(nav(app).querySelector('.z-nav-back').textContent).toBe('‹')
+    expect(nav(app).querySelector('.z-nav-back .z-nav-icon .z-depth-ring')).not.toBeNull()
     app.destroy()
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const odd = createApp({ depthNav: { style: 'blob' } })

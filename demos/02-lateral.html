@@ -67,7 +67,7 @@
         initialView: 'home',
         views,
         transitions: { duration: '700ms', ease: 'cubic-bezier(.2,.8,.2,1)', effects: ['brightness(.6)', 'brightness(.35)'] },
-        lateralNav: { mode: 'always', keepAlive: document.getElementById('keep').checked }
+        lateralNav: { keepAlive: document.getElementById('keep').checked }
       })
       app.on('viewChanged', ({ type, from, viewName, zoomLevel }) => {
         log.textContent = `${type}: ${from ?? '—'} → ${viewName} · level ${zoomLevel} · canGoBack: ${app.canGoBack()}`

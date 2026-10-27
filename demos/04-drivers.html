@@ -57,8 +57,7 @@
         mount: '.canvas',
         initialView: 'home',
         views,
-        transitions: { driver: pick('driver'), ease: pick('ease'), duration: 900, stagger: Number(pick('stagger')), effects: ['brightness(.6)', 'brightness(.35)'] },
-        lateralNav: { mode: 'always' }
+        transitions: { driver: pick('driver'), ease: pick('ease'), duration: 900, stagger: Number(pick('stagger')), effects: ['brightness(.6)', 'brightness(.35)'] }
       })
       document.getElementById('log').textContent = `driver: ${pick('driver')} · ease: ${app.ease}`
       app.init()

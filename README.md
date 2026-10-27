@@ -219,13 +219,13 @@ Triggers that are not buttons or links get `role="button"` and `tabindex="0"`.
 
 ### Siblings
 
-The siblings of the current view are the other triggers in its parent. The sibling bar (`lateralNav`) shows arrows and dots for them, and the slide direction follows where the triggers are. To set the order yourself, declare it:
+The siblings of the current view are the other triggers in its parent. The sibling bar (`lateralNav`) shows arrows and dots for them, and the slide direction follows where the triggers are. A trigger with `data-sibling="false"` (a settings button, say) stays out of the group. To set the order yourself, declare it:
 
 ```js
 lateralNav: { siblings: { home: ['today', 'tomorrow', 'week'] } }
 ```
 
-By default the bar appears only when the current view does not cover the canvas (`mode: 'auto'`), so a full-screen view keeps the screen to itself. `mode: 'always'` shows it whenever there are siblings. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level. `swipe: true` lets a horizontal swipe move between siblings (left: next, right: previous); where a view has no siblings, a swipe left still zooms out.
+The bar appears whenever there are siblings. `mode: 'auto'` hides it on views that cover the canvas. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level. `swipe: true` lets a horizontal swipe move between siblings (left: next, right: previous); where a view has no siblings, a swipe left still zooms out.
 
 The bar, the back button and its bands share a translucent material that reads on dark and light views. To restyle them, set these on the canvas (or on `.z-lateral-nav` / `.z-depth-nav` for just one): `--z-nav-bg`, `--z-nav-color` (glyphs, rings, arrows and dots), `--z-nav-active` (current dot), `--z-nav-border`, `--z-nav-shadow`, `--z-nav-blur` (its `backdrop-filter`) and `--z-nav-hover` (hover overlay).
 
@@ -237,7 +237,7 @@ The bar, the back button and its bands share a translucent material that reads o
 
 `depthNav` places the back button (`position: 'bottom-left'` or `'top-left'`) and picks its `style`:
 
-- `'button'` (default): a chevron.
+- `'button'` (default): a dot in its ring, the zoom-out mark. Chevrons belong to the sibling bar.
 - `'title'`: a dot in its ring and the title of the view above.
 - `'rings'`: a dot inside one ring per level above. A tap goes up one level; hovering, a long press or an arrow key opens a band per level, so you can jump several at once.
 
@@ -383,7 +383,7 @@ Triggers are keyboard reachable. Background views are `inert` and hidden from as
 | `initialView` | — | **Required.** Name of the first view. |
 | `views` | — | **Required.** Map of names to view sources. |
 | `transitions` | see above | Duration, easing, effects, `animateEffects`, driver. |
-| `lateralNav` | `{ mode: 'auto' }` | Sibling bar: `mode`, `arrows`, `dots`, `position` (`'bottom-center'`, `'top-center'`), `keepAlive`, `siblings`. `false` hides it. |
+| `lateralNav` | `{ mode: 'always' }` | Sibling bar: `mode`, `arrows`, `dots`, `position` (`'bottom-center'`, `'top-center'`), `keepAlive`, `siblings`. `false` hides it. |
 | `depthNav` | `{ position: 'bottom-left' }` | Back button; `position` is `'bottom-left'` or `'top-left'`. `false` hides it. It always zooms out. |
 | `inputs` | all `true` | `click`, `keyboard`, `wheel`, `touch`. `false` turns all off. |
 | `preload` | `[]` | Views to resolve during `init()`. |

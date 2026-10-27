@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file.
 - Rewrite the README around the model, add `demos/` and rewrite the Orbit integration guide with Orbit's real API.
 - **Breaking:** `lateralNav.mode` defaults to `'always'`: the sibling bar shows whenever there are siblings, also on views that cover the canvas. `mode: 'auto'` keeps the old behaviour.
 - Leave a trigger out of the sibling group with `data-sibling="false"` (a settings button in the parent, say).
+- The default back button (`depthNav.style: 'button'`) shows a dot in its ring instead of a `‹`, so it no longer looks like the sibling bar's "previous" arrow.
 - Name sibling dots by the `data-title` of string views that were never shown, and keep the title of any view once it has been shown.
 
 #### [v0.97.0](https://github.com/zumerlab/zumly/compare/v0.92.6...v0.97.0)

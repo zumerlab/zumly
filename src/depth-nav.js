@@ -1,6 +1,6 @@
 /**
  * Built-in depth navigation: the back button, in three styles.
- * - 'button': a chevron in a circle.
+ * - 'button': a dot in its ring, the zoom-out mark (chevrons belong to the sibling bar).
  * - 'title': a dot in its ring plus the name of the view above.
  * - 'rings': a dot inside one ring per level above. Hover, a long press or
  *   an arrow key opens a band per level to jump to.
@@ -21,6 +21,16 @@ function svg (tag, attributes) {
   const element = document.createElementNS(SVG, tag)
   for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value)
   return element
+}
+
+/** A dot in its ring: the mark of 'button' and 'title'. */
+function ringIcon () {
+  const icon = svg('svg', { class: 'z-nav-icon', viewBox: '0 0 20 20', 'aria-hidden': 'true' })
+  icon.append(
+    svg('circle', { class: 'z-depth-ring', cx: 10, cy: 10, r: 8 }),
+    svg('circle', { class: 'z-depth-dot', cx: 10, cy: 10, r: DOT_R })
+  )
+  return icon
 }
 
 function levelClasses (base, level) {
@@ -126,18 +136,13 @@ export class DepthNav {
     this.button = button
     this.element.appendChild(button)
     if (style === 'button') {
-      button.innerHTML = '&#8249;'
+      button.appendChild(ringIcon())
       return
     }
     if (style === 'title') {
-      const icon = svg('svg', { class: 'z-nav-icon', viewBox: '0 0 20 20', 'aria-hidden': 'true' })
-      icon.append(
-        svg('circle', { class: 'z-depth-ring', cx: 10, cy: 10, r: 8 }),
-        svg('circle', { class: 'z-depth-dot', cx: 10, cy: 10, r: DOT_R })
-      )
       this.titleText = document.createElement('span')
       this.titleText.className = 'z-nav-title'
-      button.append(icon, this.titleText)
+      button.append(ringIcon(), this.titleText)
       return
     }
     // rings

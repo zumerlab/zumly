@@ -38,8 +38,7 @@
         'living-detail': '<div class="z-view card box"><h2>Living details</h2></div>',
         'garage-detail': '<div class="z-view card box"><h2>Garage details</h2></div>'
       },
-      transitions: { duration: '700ms', ease: 'cubic-bezier(.2,.8,.2,1)', effects: ['brightness(.6)', 'brightness(.35)'] },
-      lateralNav: { mode: 'always' }
+      transitions: { duration: '700ms', ease: 'cubic-bezier(.2,.8,.2,1)', effects: ['brightness(.6)', 'brightness(.35)'] }
     })
     app.use(Zumly.Router)
     const show = () => { document.getElementById('hash').textContent = location.hash }

@@ -122,8 +122,8 @@ export interface TransitionOptions {
 
 /** Lateral navigation UI configuration. */
 export interface LateralNavOptions {
-  /** Display mode. 'auto' = only when view doesn't cover full canvas. 'always' = whenever siblings exist. Default: 'auto'. */
-  mode?: 'auto' | 'always'
+  /** Display mode. 'always' = whenever siblings exist. 'auto' = only when the view doesn't cover the full canvas. Default: 'always'. */
+  mode?: 'always' | 'auto'
   /** Show prev/next arrow buttons. Default: true. */
   arrows?: boolean
   /** Show dot indicators. Default: true. */
@@ -149,7 +149,7 @@ export interface DepthNavOptions {
   /** Position of the back button. Default: 'bottom-left'. */
   position?: 'bottom-left' | 'top-left'
   /**
-   * 'button' (default): a chevron. 'title': a dot in its ring and the title of
+   * 'button' (default): a dot in its ring. 'title': a dot in its ring and the title of
    * the view above. 'rings': a ring per level above around a dot; hover, a long
    * press or an arrow key opens a band per level to jump to. Rings and bands
    * carry z-depth-ring--up-N / --depth-N classes and data-view for styling.
