@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Svelte</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+  <link rel="stylesheet" href="../../css/example.css">
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+  <script type="importmap">{ "imports": { "svelte": "https://esm.sh/svelte@5.16.0", "svelte/": "https://esm.sh/svelte@5.16.0/" } }</script>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+
+  <!-- In an app these are List.svelte and Planet.svelte. Here they compile in the browser. -->
+  <script type="text/svelte" id="List">
+    <script>
+      let { planets, version } = $props()
+      let likes = $state(0)
+    <\/script>
+    <h1>Planets</h1>
+    <div class="row">
+      {#each planets as p (p.id)}
+        <div class="zoom-me planet {p.id}" data-to={p.id}>{p.name}</div>
+      {/each}
+    </div>
+    <button onclick={() => likes++}>♥ {likes}</button>
+    <p class="hint">Like a few times, open a planet and come back: the list stays mounted, so Svelte keeps the count.</p>
+    <span class="tag">rendered by Svelte {version}</span>
+  </script>
+  <script type="text/svelte" id="Planet">
+    <script>
+      let { planet } = $props()
+    <\/script>
+    <h2>{planet.name}</h2><p>{planet.fact}</p><span class="tag">Svelte component</span>
+  </script>
+
+  <script type="module">
+    import { mount, unmount } from 'svelte'
+    import { compile, VERSION } from 'svelte/compiler'
+
+    // Compile a component from the page: the job your bundler's Svelte plugin does
+    const component = async name => {
+      const source = document.getElementById(name).textContent.replaceAll('<\\/script>', '</' + 'script>')
+      const { js } = compile(source, { name, generate: 'client' })
+      const url = URL.createObjectURL(new Blob([js.code], { type: 'text/javascript' }))
+      return (await import(url)).default
+    }
+    const [List, Planet] = await Promise.all([component('List'), component('Planet')])
+
+    const planets = [
+      { id: 'mercury', name: 'Mercury', fact: 'A year lasts 88 days.' },
+      { id: 'venus', name: 'Venus', fact: 'Hotter than Mercury, though farther from the Sun.' },
+      { id: 'earth', name: 'Earth', fact: 'The only one with oceans on the surface.' },
+      { id: 'mars', name: 'Mars', fact: 'Home of the tallest volcano we know.' }
+    ]
+
+    // Each view mounts its own component, unmounted when Zumly discards the view
+    const mountView = (className, title, Component, props) => ({ target, onCleanup }) => {
+      target.className = 'z-view ' + className
+      target.dataset.title = title
+      const view = mount(Component, { target, props })
+      onCleanup(() => unmount(view))
+    }
+
+    const views = { list: mountView('list', 'Planets', List, { planets, version: VERSION }) }
+    for (const planet of planets) {
+      views[planet.id] = mountView('planet-view ' + planet.id, planet.name, Planet, { planet })
+    }
+
+    new Zumly({ mount: '.canvas', initialView: 'list', views, lateralNav: { swipe: true } }).init()
+  </script>
+</body>
+</html>

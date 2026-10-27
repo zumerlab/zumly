@@ -332,6 +332,12 @@ section > table { display: block; overflow-x: auto; }
 .footer-bottom { display: flex; align-items: center; gap: 10px; padding-top: 18px; border-top: 1px solid var(--line); }
 .footer-bottom img { width: 26px; height: 26px; }
 .footer-bottom a { color: var(--text-mid); }
+.footer-bottom .footer-sponsor { margin-left: auto; color: #e0447a; font-weight: 600; }
+
+/* Sponsor link: the one warm color on the site */
+.nav-sponsor { margin-left: 4px; padding: 6px 12px; border-radius: 99px; font-size: 0.84rem; font-weight: 600; color: #e0447a; border: 1px solid color-mix(in srgb, #e0447a 40%, transparent); }
+.nav-sponsor:hover { background: color-mix(in srgb, #e0447a 12%, transparent); }
+.nav-sponsor span, .home-sponsor span { color: #e0447a; }
 
 @media (max-width: 720px) {
   .footer-grid { grid-template-columns: 1fr 1fr; }
@@ -342,6 +348,7 @@ section > table { display: block; overflow-x: auto; }
   .nav-brand span { display: none; }
   .nav-link { padding: 6px 8px; font-size: 0.84rem; }
   .nav-link.nav-gh { display: none; }
+  .nav-sponsor { padding: 5px 9px; }
   .hero { margin-bottom: 32px; }
   .hero-sub { font-size: 1.02rem; }
   pre { font-size: 0.76rem; padding: 14px; margin-left: -4px; margin-right: -4px; }

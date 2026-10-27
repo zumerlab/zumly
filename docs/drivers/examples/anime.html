@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Anime.js driver</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+  <link rel="stylesheet" href="../../css/example.css">
+  <script src="https://cdn.jsdelivr.net/npm/animejs@4.4.1/dist/bundles/anime.umd.min.js"></script>
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const planets = [
+      ['mercury', 'Mercury', 'A year lasts 88 days.'],
+      ['venus', 'Venus', 'Hotter than Mercury, though farther from the Sun.'],
+      ['earth', 'Earth', 'The only one with oceans on the surface.'],
+      ['mars', 'Mars', 'Home of the tallest volcano we know.']
+    ]
+    const views = {
+      list: `<div class="z-view list" data-title="Planets">
+               <h1>Planets</h1>
+               <div class="row">${planets.map(([id, name]) => `<div class="zoom-me planet ${id}" data-to="${id}">${name}</div>`).join('')}</div>
+               <p class="hint">Open a planet and come back. The zoom runs on Anime.js, with an Anime.js ease: elastic.</p>
+               <span class="tag">driver: 'anime' · ease: 'outElastic(1, .6)'</span>
+             </div>`
+    }
+    for (const [id, name, fact] of planets) {
+      views[id] = `<div class="z-view planet-view ${id}" data-title="${name}"><h2>${name}</h2><p>${fact}</p></div>`
+    }
+
+    new Zumly({
+      mount: '.canvas',
+      initialView: 'list',
+      views,
+      transitions: { driver: 'anime', duration: '900ms', ease: 'outElastic(1, .6)', stagger: 60 },
+      lateralNav: { swipe: true }
+    }).init()
+  </script>
+</body>
+</html>

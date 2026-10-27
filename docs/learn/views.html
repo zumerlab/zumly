@@ -35,6 +35,7 @@
       <a class="nav-link" href="../api.html">API</a>
       <a class="nav-link" href="../">Demo</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
     </div>
   </nav>
@@ -50,11 +51,12 @@
       <div class="demo-bar"><span>Live example</span><button type="button" data-reload="demo">Restart</button><a href="examples/views.html" target="_blank" rel="noopener">Open &#8599;</a></div>
       <iframe id="demo" src="examples/views.html" title="Where views come from: live example" loading="lazy"></iframe>
     </div>
-    <p class="demo-hint">Add a fish to the basket. The shop repaints when you come back to it. "Opening hours" comes from another file.</p>
+    <p class="demo-hint">Each tile says where its view comes from, and each view shows it again at the top. Both fish open the same function with different props; Opening hours is fetched from another file. Add a fish: the shop repaints when you come back.</p>
 
     <section>
       <h2>The code</h2>
       <pre data-example="views#script"><code>const basket = []
+const fishes = { Clownfish: 'clownfish', 'Blue tang': 'tang' }
 
 const app = new Zumly({
   mount: '.canvas',
@@ -67,33 +69,39 @@ const app = new Zumly({
         target.innerHTML = `
           &lt;h1&gt;Fish shop&lt;/h1&gt;
           &lt;p&gt;Basket: ${basket.join(', ') || 'empty'}&lt;/p&gt;
-          &lt;div class="zoom-me item" data-to="fish" data-name="Clownfish"&gt;Clownfish&lt;/div&gt;
-          &lt;div class="zoom-me item" data-to="fish" data-name="Blue tang"&gt;Blue tang&lt;/div&gt;
-          &lt;div class="zoom-me item" data-to="hours"&gt;Opening hours&lt;/div&gt;`
+          &lt;div class="row"&gt;
+            &lt;div class="zoom-me tile clownfish" data-to="fish" data-name="Clownfish"&gt;Clownfish&lt;small&gt;function + props&lt;/small&gt;&lt;/div&gt;
+            &lt;div class="zoom-me tile tang" data-to="fish" data-name="Blue tang"&gt;Blue tang&lt;small&gt;function + props&lt;/small&gt;&lt;/div&gt;
+            &lt;div class="zoom-me tile hours" data-to="hours"&gt;Opening hours&lt;small&gt;URL&lt;/small&gt;&lt;/div&gt;
+          &lt;/div&gt;`
       }
       paint()
       onActivate(paint)
     },
-    // The trigger's data-* attributes arrive as props
+    // One function for both fish: the trigger's data-* arrive as props
     fish: ({ target, props }) =&gt; {
-      target.className = 'z-view card'
+      target.className = `z-view card ${fishes[props.name]}`
       target.dataset.title = props.name
-      target.innerHTML = `&lt;h2&gt;${props.name}&lt;/h2&gt;&lt;button&gt;Add to basket&lt;/button&gt;`
+      target.innerHTML = `
+        &lt;span class="source"&gt;fish({ props: { name: '${props.name}' } })&lt;/span&gt;
+        &lt;h2&gt;${props.name}&lt;/h2&gt;
+        &lt;button&gt;Add to basket&lt;/button&gt;`
       target.querySelector('button').onclick = () =&gt; {
         basket.push(props.name)
         app.zoomOut()
       }
     },
-    // A URL: fetched when needed, then cached
+    // A URL: fetched the first time, then cached
     hours: 'hours.html'
   },
   lateralNav: false
 })
 app.init()</code></pre>
       <p class="code-label">hours.html</p>
-      <pre data-example="hours"><code>&lt;div class="z-view card" data-title="Opening hours"&gt;
+      <pre data-example="hours"><code>&lt;div class="z-view card hours" data-title="Opening hours"&gt;
+  &lt;span class="source"&gt;fetched from hours.html&lt;/span&gt;
   &lt;h2&gt;Opening hours&lt;/h2&gt;
-  &lt;p&gt;Every day, 9 to 18.&lt;br&gt;This view came from &lt;code&gt;hours.html&lt;/code&gt;.&lt;/p&gt;
+  &lt;p&gt;Every day, 9 to 18.&lt;/p&gt;
 &lt;/div&gt;</code></pre>
     </section>
 
@@ -179,7 +187,8 @@ app.init()</code></pre>
       </div>
       <div class="footer-bottom">
         <img src="../fish-160.png" alt="" width="26" height="26">
-        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License</span>
+        <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
       </div>
     </div>
   </footer>

@@ -44,8 +44,8 @@
     "@type": "TechArticle",
     "headline": "Write a Zumly transition driver — Custom zoom animations",
     "description": "Build your own Zumly transition driver. The full spec object, the runTransition contract, the helpers, and a minimal complete example you can copy.",
-    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
-    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://zumerlab.com" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://zumerlab.com" },
     "url": "https://zumerlab.github.io/zumly/drivers/custom.html",
     "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
     "about": [
@@ -71,6 +71,7 @@
       <a class="nav-link" href="../api.html">API</a>
       <a class="nav-link" href="../">Demo</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
     </div>
   </nav>
@@ -81,6 +82,12 @@
       <h1 class="hero-title">Write your own driver</h1>
       <p class="hero-sub">A driver is one function: <code>(spec, onComplete)</code>. Zumly works out where every view starts and ends; your function moves them there and says when it is done.</p>
     </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example · crossfade driver</span><button type="button" data-reload="demo">Restart</button><a href="examples/custom.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="demo" src="examples/custom.html" title="A custom driver: live example" loading="lazy"></iframe>
+    </div>
+    <p class="demo-hint">Open a planet and come back. Nothing scales: this driver puts every view in its final place and crossfades. Its code is below.</p>
 
     <section>
       <h2>Do you need one?</h2>
@@ -212,75 +219,50 @@ if (lastView) applyZoomOutLastState(lastView, currentStage.views[2].backwardStat
 
     <section>
       <h2>A complete driver: crossfade</h2>
-      <p>About fifty lines, an opacity crossfade instead of a zoom. Copy it and replace the animation.</p>
-      <pre>import {
-  parseDurationMs,
-  showViews,
-  applyZoomInEndState,
-  applyZoomOutPreviousState,
-  applyZoomOutLastState,
-  removeViewFromCanvas,
-  runLateralInstant,
-  createFinishGuard,
-  SAFETY_BUFFER_MS,
-} from 'zumly/driver-helpers'
+      <p>The driver of the live example above: every view jumps to its final place, and the new one fades in (or the old one fades out). Copy it and replace the animation.</p>
+      <pre><code>import {
+  parseDurationMs, showViews, applyZoomInEndState, applyZoomOutPreviousState, applyZoomOutLastState,
+  removeViewFromCanvas, runLateralInstant, createFinishGuard, SAFETY_BUFFER_MS
+} from &#x27;zumly/driver-helpers&#x27;
 
-export function runTransition(spec, onComplete) {
+// A crossfade instead of a zoom: views jump to their final place, opacity does the rest
+export function crossfade (spec, onComplete) {
   const { type, currentView, previousView, lastView, currentStage, duration, canvas } = spec
-
-  if (type === 'lateral') {
-    runLateralInstant(spec, onComplete)
-    return
-  }
-
+  if (type === &#x27;lateral&#x27;) return runLateralInstant(spec, onComplete)
   const ms = parseDurationMs(duration)
   showViews(currentView, previousView, lastView)
 
-  if (type === 'zoomIn') {
-    currentView.style.opacity = '0'
-    currentView.style.transition = `opacity ${ms}ms ease`
-    previousView.style.transition = `opacity ${ms}ms ease`
-
-    requestAnimationFrame(() =&gt; {
-      currentView.style.opacity = '1'
-      previousView.style.opacity = '0.3'
-    })
-
+  if (type === &#x27;zoomIn&#x27;) {
+    for (const view of [currentView, previousView, lastView]) if (view) applyZoomInEndState(view, currentStage)
+    currentView.style.opacity = &#x27;0&#x27;
     const { finish } = createFinishGuard(() =&gt; {
-      currentView.style.transition = ''
-      previousView.style.transition = ''
-      previousView.style.opacity = ''
-      applyZoomInEndState(currentView, currentStage)
-      applyZoomInEndState(previousView, currentStage)
-      if (lastView) applyZoomInEndState(lastView, currentStage)
+      currentView.style.transition = currentView.style.opacity = &#x27;&#x27;
       onComplete()
     }, ms + SAFETY_BUFFER_MS)
-
-    currentView.addEventListener('transitionend', finish, { once: true })
+    requestAnimationFrame(() =&gt; {
+      currentView.style.transition = `opacity ${ms}ms ease`
+      currentView.style.opacity = &#x27;1&#x27;
+      currentView.addEventListener(&#x27;transitionend&#x27;, finish, { once: true })
+    })
     return
   }
 
-  if (type === 'zoomOut') {
-    currentView.style.transition = `opacity ${ms}ms ease`
-    requestAnimationFrame(() =&gt; {
-      currentView.style.opacity = '0'
-      previousView.style.opacity = '1'
-    })
-
+  if (type === &#x27;zoomOut&#x27;) {
+    applyZoomOutPreviousState(previousView, currentStage.views[1].backwardState)
+    if (lastView) applyZoomOutLastState(lastView, currentStage.views[2].backwardState)
     const { finish } = createFinishGuard(() =&gt; {
-      currentView.style.transition = ''
       removeViewFromCanvas(currentView, canvas)
-      applyZoomOutPreviousState(previousView, currentStage.views[1].backwardState)
-      if (lastView) applyZoomOutLastState(lastView, currentStage.views[2].backwardState)
       onComplete()
     }, ms + SAFETY_BUFFER_MS)
-
-    currentView.addEventListener('transitionend', finish, { once: true })
+    requestAnimationFrame(() =&gt; {
+      currentView.style.transition = `opacity ${ms}ms ease`
+      currentView.style.opacity = &#x27;0&#x27;
+      currentView.addEventListener(&#x27;transitionend&#x27;, finish, { once: true })
+    })
     return
   }
-
   onComplete()
-}</pre>
+}</code></pre>
     </section>
 
     <section>
@@ -327,7 +309,7 @@ expect(app.getCurrentViewName()).toBe('home')</pre>
     <div class="final-cta">
       <h3>The full reference</h3>
       <p>Every spec field and edge case is in DRIVER_API.md, in the repository.</p>
-      <a href="https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md" class="cta-primary" target="_blank" rel="noopener">Open DRIVER_API.md &rarr;</a> <a href="../learn/motion.html" class="cta-secondary">Step 6: motion</a>
+      <a href="https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md" class="cta-primary" target="_blank" rel="noopener">Open DRIVER_API.md &rarr;</a> <a href="examples/custom.html" class="cta-secondary" target="_blank" rel="noopener">Open this example &#8599;</a>
     </div>
   </main>
 
@@ -378,7 +360,8 @@ expect(app.getCurrentViewName()).toBe('home')</pre>
       </div>
       <div class="footer-bottom">
         <img src="../fish-160.png" alt="" width="26" height="26">
-        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License</span>
+        <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
       </div>
     </div>
   </footer>

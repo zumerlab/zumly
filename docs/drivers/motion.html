@@ -44,8 +44,8 @@
     "@type": "TechArticle",
     "headline": "Zumly Motion driver — Spring-curve zoom transitions with Motion.dev",
     "description": "Drive Zumly's zoom transitions through Motion (motion.dev). Spring eases, hardware-accelerated keyframes, and matrix-faithful intermediate frames.",
-    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
-    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://zumerlab.com" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://zumerlab.com" },
     "url": "https://zumerlab.github.io/zumly/drivers/motion.html",
     "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
     "about": [
@@ -72,6 +72,7 @@
       <a class="nav-link" href="../api.html">API</a>
       <a class="nav-link" href="../">Demo</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
     </div>
   </nav>
@@ -82,6 +83,12 @@
       <h1 class="hero-title">Zumly with Motion</h1>
       <p class="hero-sub">A driver decides how views move; Zumly decides where. This one runs the zooms on Motion: same views, same timing, Motion draws the frames.</p>
     </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example · Motion</span><button type="button" data-reload="demo">Restart</button><a href="examples/motion.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="demo" src="examples/motion.html" title="Zumly with Motion: live example" loading="lazy"></iframe>
+    </div>
+    <p class="demo-hint">Open a planet and come back. The ease is Motion's own, so the zoom moves differently from the default driver.</p>
 
     <section>
       <h2>Do you need it?</h2>
@@ -170,7 +177,7 @@ transitions: {
     <div class="final-cta">
       <h3>Next</h3>
       <p>Timing, effects and gestures in <a href="../learn/motion.html">step 6</a>. The other drivers: <a href="gsap.html">GSAP</a> · <a href="anime.html">Anime.js</a> · <a href="custom.html">your own</a>.</p>
-      <a href="../" class="cta-primary">Open the live demo &rarr;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
+      <a href="examples/motion.html" class="cta-primary" target="_blank" rel="noopener">Open this example &#8599;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
     </div>
   </main>
 
@@ -221,7 +228,8 @@ transitions: {
       </div>
       <div class="footer-bottom">
         <img src="../fish-160.png" alt="" width="26" height="26">
-        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License</span>
+        <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
       </div>
     </div>
   </footer>

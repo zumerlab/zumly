@@ -33,6 +33,7 @@ function nav (to, section) {
       <a class="nav-link" href="${to('api.html')}"${cur('api')}>API</a>
       <a class="nav-link" href="${to('')}">Demo</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
     </div>
   </nav>`
@@ -82,7 +83,8 @@ function footer (to) {
       </div>
       <div class="footer-bottom">
         <img src="${to('fish-160.png')}" alt="" width="26" height="26">
-        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License</span>
+        <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
       </div>
     </div>
   </footer>`

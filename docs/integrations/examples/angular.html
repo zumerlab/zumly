@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Angular</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+  <link rel="stylesheet" href="../../css/example.css">
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <!-- One copy of each Angular package; "*" leaves their imports to this map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "@angular/core": "https://esm.sh/*@angular/core@19.0.5",
+        "@angular/core/": "https://esm.sh/*@angular/core@19.0.5/",
+        "@angular/common": "https://esm.sh/*@angular/common@19.0.5",
+        "@angular/common/": "https://esm.sh/*@angular/common@19.0.5/",
+        "@angular/compiler": "https://esm.sh/*@angular/compiler@19.0.5",
+        "@angular/platform-browser": "https://esm.sh/*@angular/platform-browser@19.0.5",
+        "rxjs": "https://esm.sh/*rxjs@7.8.1",
+        "rxjs/": "https://esm.sh/*rxjs@7.8.1/",
+        "tslib": "https://esm.sh/tslib@2.8.1"
+      }
+    }
+  </script>
+  <script type="module">
+    import '@angular/compiler'   // compiles the templates in the browser (an app compiles ahead of time)
+    import { Component, VERSION, createComponent, provideExperimentalZonelessChangeDetection, signal } from '@angular/core'
+    import { createApplication } from '@angular/platform-browser'
+
+    const planets = [
+      { id: 'mercury', name: 'Mercury', fact: 'A year lasts 88 days.' },
+      { id: 'venus', name: 'Venus', fact: 'Hotter than Mercury, though farther from the Sun.' },
+      { id: 'earth', name: 'Earth', fact: 'The only one with oceans on the surface.' },
+      { id: 'mars', name: 'Mars', fact: 'Home of the tallest volcano we know.' }
+    ]
+
+    // Decorators as functions, since this page has no TypeScript
+    const ListComponent = Component({
+      selector: 'app-list',
+      template: `
+        <h1>Planets</h1>
+        <div class="row">
+          @for (p of planets; track p.id) {
+            <div class="zoom-me planet {{ p.id }}" [attr.data-to]="p.id">{{ p.name }}</div>
+          }
+        </div>
+        <button (click)="likes.set(likes() + 1)">♥ {{ likes() }}</button>
+        <p class="hint">Like a few times, open a planet and come back: the list stays mounted, so Angular keeps the count.</p>
+        <span class="tag">rendered by Angular {{ version }}</span>`
+    })(class { planets = planets; likes = signal(0); version = VERSION.full })
+
+    const PlanetComponent = Component({
+      selector: 'app-planet',
+      inputs: ['planet'],
+      template: `<h2>{{ planet.name }}</h2><p>{{ planet.fact }}</p><span class="tag">Angular component</span>`
+    })(class {})
+
+    // One application hosts every view; each view creates its component on target
+    const ng = await createApplication({ providers: [provideExperimentalZonelessChangeDetection()] })
+    const mountView = (className, title, component, inputs = {}) => ({ target, onCleanup }) => {
+      target.className = 'z-view ' + className
+      target.dataset.title = title
+      const ref = createComponent(component, { environmentInjector: ng.injector, hostElement: target })
+      for (const [name, value] of Object.entries(inputs)) ref.setInput(name, value)
+      ng.attachView(ref.hostView)
+      ref.changeDetectorRef.detectChanges()
+      onCleanup(() => ref.destroy())
+    }
+
+    const views = { list: mountView('list', 'Planets', ListComponent) }
+    for (const planet of planets) {
+      views[planet.id] = mountView('planet-view ' + planet.id, planet.name, PlanetComponent, { planet })
+    }
+
+    new Zumly({ mount: '.canvas', initialView: 'list', views, lateralNav: { swipe: true } }).init()
+  </script>
+</body>
+</html>

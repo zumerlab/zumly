@@ -44,8 +44,8 @@
     "@type": "TechArticle",
     "headline": "Zumly with Vue — Zoom navigation for Vue 3 apps",
     "description": "Add zoom-based navigation to any Vue 3 application with Zumly. Framework-agnostic ZUI engine that mounts Vue components into zoomable views.",
-    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
-    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://github.com/zumerlab" },
+    "author": { "@type": "Organization", "name": "Zumerlab", "url": "https://zumerlab.com" },
+    "publisher": { "@type": "Organization", "name": "Zumerlab", "url": "https://zumerlab.com" },
     "url": "https://zumerlab.github.io/zumly/integrations/vue.html",
     "image": "https://zumerlab.github.io/zumly/zumly-logo.png",
     "about": [
@@ -72,6 +72,7 @@
       <a class="nav-link" href="../api.html">API</a>
       <a class="nav-link" href="../">Demo</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
     </div>
   </nav>
@@ -82,6 +83,12 @@
       <h1 class="hero-title">Zumly with Vue</h1>
       <p class="hero-sub">A view can be a Vue component. Zumly hands you an empty element; you mount an app in it and unmount it when the view goes away.</p>
     </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example · Vue</span><button type="button" data-reload="demo">Restart</button><a href="examples/vue.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="demo" src="examples/vue.html" title="Zumly with Vue: live example" loading="lazy"></iframe>
+    </div>
+    <p class="demo-hint">Each planet and the list are Vue components in their own views. Like a few times, open a planet, then come back: the count is still there.</p>
 
     <section>
       <h2>The pattern</h2>
@@ -221,7 +228,7 @@ const detail: ViewFunction = ({ target, props, onCleanup }) =&gt; {
     <div class="final-cta">
       <h3>Next</h3>
       <p>Where views come from, in <a href="../learn/views.html">step 4</a>. The same pattern for <a href="react.html">React</a> · <a href="svelte.html">Svelte</a> · <a href="angular.html">Angular</a>, and for radial layouts with <a href="orbit-css.html">Orbit</a>.</p>
-      <a href="../" class="cta-primary">Open the live demo &rarr;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
+      <a href="examples/vue.html" class="cta-primary" target="_blank" rel="noopener">Open this example &#8599;</a> <a href="../learn/" class="cta-secondary">Learn in six steps</a>
     </div>
   </main>
 
@@ -272,7 +279,8 @@ const detail: ViewFunction = ({ target, props, onCleanup }) =&gt; {
       </div>
       <div class="footer-bottom">
         <img src="../fish-160.png" alt="" width="26" height="26">
-        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License</span>
+        <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
       </div>
     </div>
   </footer>
