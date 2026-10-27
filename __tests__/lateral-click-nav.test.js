@@ -10,14 +10,14 @@ import { Zumly } from '../src/zumly.js'
 import { checkParameters } from '../src/utils.js'
 
 describe('lateralNav option parsing', () => {
-  it('defaults to { mode: auto, arrows: true, dots: true, keepAlive: false, position: bottom-center } when not provided', () => {
+  it('defaults to { mode: always, arrows: true, dots: true, keepAlive: false, position: bottom-center } when not provided', () => {
     const instance = {}
     checkParameters({
       mount: '.canvas',
       initialView: 'home',
       views: { home: '<div class="z-view"></div>' },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false, position: 'bottom-center', siblings: null, swipe: false })
+    expect(instance.lateralNav).toEqual({ mode: 'always', arrows: true, dots: true, keepAlive: false, position: 'bottom-center', siblings: null, swipe: false })
   })
 
   it('can be disabled with false', () => {
@@ -39,7 +39,7 @@ describe('lateralNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       lateralNav: { arrows: false },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: false, dots: true, keepAlive: false, position: 'bottom-center', siblings: null, swipe: false })
+    expect(instance.lateralNav).toEqual({ mode: 'always', arrows: false, dots: true, keepAlive: false, position: 'bottom-center', siblings: null, swipe: false })
   })
 
   it('accepts partial object { dots: false }', () => {
@@ -50,7 +50,7 @@ describe('lateralNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       lateralNav: { dots: false },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: false, keepAlive: false, position: 'bottom-center', siblings: null, swipe: false })
+    expect(instance.lateralNav).toEqual({ mode: 'always', arrows: true, dots: false, keepAlive: false, position: 'bottom-center', siblings: null, swipe: false })
   })
 
   it('accepts full object { arrows: true, dots: true }', () => {
@@ -61,18 +61,18 @@ describe('lateralNav option parsing', () => {
       views: { home: '<div class="z-view"></div>' },
       lateralNav: { arrows: true, dots: true },
     }, instance)
-    expect(instance.lateralNav).toEqual({ mode: 'auto', arrows: true, dots: true, keepAlive: false, position: 'bottom-center', siblings: null, swipe: false })
+    expect(instance.lateralNav).toEqual({ mode: 'always', arrows: true, dots: true, keepAlive: false, position: 'bottom-center', siblings: null, swipe: false })
   })
 
-  it('accepts mode: always', () => {
+  it('accepts mode: auto', () => {
     const instance = {}
     checkParameters({
       mount: '.canvas',
       initialView: 'home',
       views: { home: '<div class="z-view"></div>' },
-      lateralNav: { mode: 'always' },
+      lateralNav: { mode: 'auto' },
     }, instance)
-    expect(instance.lateralNav.mode).toBe('always')
+    expect(instance.lateralNav.mode).toBe('auto')
   })
 
   it('accepts keepAlive: visible', () => {
@@ -176,6 +176,39 @@ describe('lateral click navigation', () => {
       const { siblings, currentIndex } = app._getSiblings()
       expect(siblings).toEqual(['detailA', 'detailB', 'detailC'])
       expect(currentIndex).toBe(1)
+    })
+
+    it('leaves out triggers marked data-sibling="false"', async () => {
+      const app = createApp({
+        views: {
+          home: homeView.replace('</div>', '<span class="zoom-me" data-to="settings" data-sibling="false">S</span></div>'),
+          detailA: detailAView, detailB: detailBView, detailC: detailCView, settings: '<div class="z-view"></div>'
+        }
+      })
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      expect(app._getSiblings().siblings).toEqual(['detailA', 'detailB', 'detailC'])
+    })
+  })
+
+  describe('sibling dot labels', () => {
+    const titled = name => `<div class="z-view" data-title="Room ${name}"></div>`
+    const labels = () => [...document.querySelectorAll('.z-nav-lat-dot')].map(dot => dot.getAttribute('aria-label'))
+
+    it('name siblings that were never shown by the data-title of their HTML', async () => {
+      const app = createApp({ views: { home: homeView, detailA: titled('A'), detailB: titled('B'), detailC: titled('C') } })
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      expect(labels()).toEqual(['Go to Room A', 'Go to Room B', 'Go to Room C'])
+    })
+
+    it('keep the title of a function view once it has been shown', async () => {
+      const room = name => () => titled(name)
+      const app = createApp({ views: { home: homeView, detailA: room('A'), detailB: room('B'), detailC: room('C') } })
+      await app.init()
+      await app.goTo('detailA', { mode: 'depth' })
+      await app.goTo('detailB', { mode: 'lateral' })
+      expect(labels()).toEqual(['Go to Room A', 'Go to Room B', 'Go to detailC'])
     })
   })
 

@@ -37,12 +37,20 @@ function isRawViewSource (source) {
 }
 
 /**
- * The `title` a view definition declares (`{ render, title }`, or a function
- * view with a `title` property), if any.
+ * The `title` a view definition declares (`{ render, title }`, a function
+ * view with a `title` property, or the root data-title of an HTML string), if any.
  * @param {*} definition - Value from the views map
  * @returns {string|undefined}
  */
 export function definitionTitle (definition) {
+  // An HTML string view: the data-title on its root element
+  if (typeof definition === 'string') {
+    const match = /^\s*<[^>]*?\sdata-title="([^"]*)"/.exec(definition)
+    if (!match) return undefined
+    const decode = document.createElement('textarea')
+    decode.innerHTML = match[1]
+    return decode.value || undefined
+  }
   if (!definition || (typeof definition !== 'object' && typeof definition !== 'function')) return undefined
   return typeof definition.title === 'string' && definition.title ? definition.title : undefined
 }
@@ -305,9 +313,9 @@ export function checkParameters (parameters, instance) {
 
   // Lateral navigation UI: auto-generated arrows and dots when siblings exist.
   // true = default (mode: 'auto'), false = disabled,
-  // or object: { mode: 'auto'|'always', arrows: true, dots: true }
-  // mode: 'auto' — only show lateral nav when current view doesn't cover the full canvas.
-  // mode: 'always' — always show lateral nav when siblings exist.
+  // or object: { mode: 'always'|'auto', arrows: true, dots: true }
+  // mode: 'always' (default) — show lateral nav whenever siblings exist.
+  // mode: 'auto' — only show it when the current view doesn't cover the full canvas.
   const lnIn = parameters.lateralNav
   if (lnIn === false) {
     instance.lateralNav = false
@@ -315,7 +323,7 @@ export function checkParameters (parameters, instance) {
     const modeIn = typeof lnIn.mode === 'string' ? lnIn.mode.toLowerCase() : null
     const modeOk = modeIn === 'auto' || modeIn === 'always'
     if (modeIn && !modeOk) {
-      notification(false, '\'lateralNav.mode\' must be "auto" or "always". Falling back to "auto".', 'warn')
+      notification(false, '\'lateralNav.mode\' must be "always" or "auto". Falling back to "always".', 'warn')
     }
     // siblings: declared lateral order — first-class replacement for inferring
     // sibling order/direction from trigger positions in the parent view.
@@ -341,7 +349,7 @@ export function checkParameters (parameters, instance) {
       notification(false, '\'lateralNav.siblings\' must be an array of view names or a { parentView: [...] } map. Ignoring.', 'warn')
     }
     instance.lateralNav = {
-      mode: modeOk ? modeIn : 'auto',
+      mode: modeOk ? modeIn : 'always',
       arrows: typeof lnIn.arrows === 'boolean' ? lnIn.arrows : true,
       dots: typeof lnIn.dots === 'boolean' ? lnIn.dots : true,
       keepAlive: (lnIn.keepAlive === true || lnIn.keepAlive === 'visible') ? lnIn.keepAlive : false,
@@ -350,7 +358,7 @@ export function checkParameters (parameters, instance) {
       swipe: lnIn.swipe === true
     }
   } else {
-    instance.lateralNav = { mode: 'auto', arrows: true, dots: true, keepAlive: false, siblings: null, swipe: false }
+    instance.lateralNav = { mode: 'always', arrows: true, dots: true, keepAlive: false, siblings: null, swipe: false }
   }
 
   // Depth navigation UI: zoom-out back button.

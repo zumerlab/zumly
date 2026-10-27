@@ -83,6 +83,8 @@ export class Zumly {
     this.touching = false
     /** Lateral history: view names at current depth. back() pops before zoomOut. */
     this.lateralHistory = []
+    /** Titles of views already shown, so sibling labels can name views that are not in the stack. */
+    this._titles = new Map()
     /** Canvas size tracking for resize correction. */
     this._lastCanvasWidth = 0
     this._lastCanvasHeight = 0
@@ -861,7 +863,7 @@ export class Zumly {
       const title = this._viewNodeAt(depth)?.dataset?.title
       if (title) return title
     }
-    return definitionTitle(this.views?.[viewName]) ?? viewName
+    return this._titles.get(viewName) ?? definitionTitle(this.views?.[viewName]) ?? viewName
   }
 
   /**
@@ -2332,7 +2334,7 @@ export class Zumly {
     const currentView = this.canvas.querySelector('.is-current-view')
     const currentName = currentView?.dataset?.viewName
     if (!currentName) return null
-    const triggers = previousView.querySelectorAll('.zoom-me[data-to]')
+    const triggers = previousView.querySelectorAll('.zoom-me[data-to]:not([data-sibling="false"])')
     for (const trigger of triggers) {
       if (trigger.dataset.to === currentName) continue
       const rect = trigger.getBoundingClientRect()
@@ -2361,7 +2363,8 @@ export class Zumly {
     }
     const previousView = this.canvas.querySelector('.is-previous-view')
     if (!previousView) return { siblings: [], currentIndex: -1 }
-    const triggers = previousView.querySelectorAll('.zoom-me[data-to]')
+    // data-sibling="false" keeps a trigger (a settings button, say) out of the group
+    const triggers = previousView.querySelectorAll('.zoom-me[data-to]:not([data-sibling="false"])')
     const siblings = []
     for (const t of triggers) {
       if (t.dataset.to) siblings.push(t.dataset.to)
@@ -2410,6 +2413,7 @@ export class Zumly {
     if (this._destroyed) return
     const depth = this.storedViews.length - 1
     const currentView = this.canvas.querySelector(':scope > .z-view.is-current-view')
+    if (currentView?.dataset.title) this._titles.set(currentView.dataset.viewName, currentView.dataset.title)
     const showDepth = !!this.depthNav && depth >= 1 && !currentView?.querySelector('.z-depth-nav')
     let lateralData = this.lateralNav ? this._getSiblings() : null
     if (lateralData?.siblings.length < 2) lateralData = null
@@ -2566,6 +2570,9 @@ export class Zumly {
         if (index >= 0 && index < active.siblings.length && index !== active.currentIndex) this._doLateral(active.siblings[index])
       })
       this._lateralNavState = state
+    } else {
+      // A sibling shown since the bar was built may have brought its title
+      state.dotButtons.forEach((dot, index) => this._setLabel(dot, this.labels.goTo, siblings[index]))
     }
     if (state.currentIndex !== currentIndex) {
       const previous = state.dotButtons[state.currentIndex]
