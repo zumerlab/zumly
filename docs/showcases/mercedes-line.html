@@ -40,6 +40,7 @@
     }
     </script>
     <script src="../js/showcase-activity.js"></script>
+    <script src="../js/showcase-try.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
     <style>
       :root {
@@ -534,7 +535,7 @@
         const hit = (k, x, y, w, h) => {
           if (highlights[k] === 'ok') return ''
           return `<foreignObject x="${x}" y="${y}" width="${w}" height="${h}">
-            <div xmlns="http://www.w3.org/1999/xhtml" class="zoom-me svg-hit" data-to="issue_${truckId}_${k}" style="width:100%;height:100%;cursor:zoom-in"></div>
+            <div xmlns="http://www.w3.org/1999/xhtml" class="zoom-me svg-hit" data-to="issue_${truckId}_${k}" data-sibling="false" style="width:100%;height:100%;cursor:zoom-in"></div>
           </foreignObject>`
         }
 
@@ -756,7 +757,7 @@
       const okCount = trucks.filter(t => t.status === 'ok').length
 
       views.line = `
-        <div class="z-view v">
+        <div class="z-view v" data-title="Production line">
           <div class="hdr">
             <div class="logo">MB</div>
             <h1>Production Line <small>Mercedes-Benz Trucks</small></h1>
@@ -794,7 +795,7 @@
         const badgeText = t.status === 'fail' ? 'Failure' : t.status === 'warn' ? 'Warning' : 'Maintenance'
 
         views[`unit_${t.id}`] = `
-          <div class="z-view v">
+          <div class="z-view v" data-title="${t.id}">
             <div class="bc">Line <span>&rsaquo;</span> ${t.id}</div>
             <div class="hdr">
               <h1>${t.id} <small>${t.pos}</small></h1>
@@ -828,7 +829,7 @@
           const bc2 = iss.severity === 'fail' ? 'badge-r' : 'badge-y'
 
           views[`issue_${t.id}_${iss.key}`] = `
-            <div class="z-view v">
+            <div class="z-view v" data-title="${iss.title}">
               <div class="bc">Line <span>&rsaquo;</span> ${t.id} <span>&rsaquo;</span> ${iss.key}</div>
               <div class="hdr">
                 <h1>${iss.title}</h1>
@@ -890,12 +891,21 @@
           effects: ['blur(2px) brightness(0.7)', 'blur(5px) brightness(0.4)'],
           hideTrigger: 'fade',
         },
-        depthNav: { position: 'bottom-left' },
-        inputs: { wheel: false },
+        depthNav: { style: 'title' },
+        // The trucks that need attention are siblings: arrows, dots or a swipe
+        lateralNav: { swipe: true },
+        gestures: { follow: true },
+        inputs: { wheel: false, pinch: true },
         debug: false,
       })
 
       app.init()
+      showcaseTry([
+        'Click a highlighted truck: its detail grows out of it.',
+        'Arrows, dots or a swipe: the next truck that needs attention, without going back.',
+        'Click a part of the truck or an issue: a third level.',
+        'The button at the bottom left names where you go back to.'
+      ])
 
       // Notify parent of depth changes for seamless nav
       function notifyDepth () {

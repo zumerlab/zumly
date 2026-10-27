@@ -41,6 +41,7 @@
     }
     </script>
     <script src="../js/showcase-activity.js"></script>
+    <script src="../js/showcase-try.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
     <link rel="stylesheet" href="https://unpkg.com/@zumer/orbit@latest/dist/orbit.css" />
     <style>
@@ -71,61 +72,6 @@
       .mount { position: absolute; inset: 0; overflow: hidden; }
       .canvas { width: 100%; height: 100%; }
 
-      /* Active navigation inputs (Zumly) — does not capture pointer events */
-      .showcase-preview .ha-input-hint { display: none; }
-      .ha-input-hint {
-        position: absolute;
-        z-index: 30;
-        right: 10px;
-        bottom: 10px;
-        left: auto;
-        max-width: min(420px, calc(100vw - 56px));
-        pointer-events: none;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 6px 9px;
-        font-size: 0.78rem;
-        color: var(--ha-muted);
-        line-height: 1.35;
-        text-align: right;
-      }
-      .ha-input-hint-label {
-        width: 100%;
-        text-align: right;
-        font-size: 0.68rem;
-        font-weight: 600;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: rgba(210, 214, 223, 0.55);
-      }
-      .ha-input-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 3px 9px;
-        border-radius: 5px;
-        border: 1px solid var(--ha-border);
-        background: rgba(15, 17, 23, 0.75);
-        color: var(--ha-text);
-        white-space: nowrap;
-      }
-      .ha-input-pill kbd {
-        font-family: ui-monospace, monospace;
-        font-size: 0.7rem;
-        padding: 1px 4px;
-        border-radius: 3px;
-        background: var(--ha-surface);
-        border: 1px solid var(--ha-border);
-        color: var(--ha-cyan);
-      }
-      .ha-input-hint-note {
-        width: 100%;
-        text-align: right;
-        font-size: 0.68rem;
-        opacity: 0.8;
-      }
 
       /* ── Base view ──────────────────────────────────────── */
       .v {
@@ -815,32 +761,12 @@
         .ha-detail-root { padding: 10px 8px; }
         .ha-detail-sheet.cam-detail,
         .ha-detail-sheet.detail-view { padding: 10px; }
-        .ha-input-hint {
-          right: 6px;
-          bottom: 6px;
-          max-width: calc(100vw - 48px);
-          font-size: 0.7rem;
-          gap: 5px 7px;
-        }
-        .ha-input-hint-label { font-size: 0.62rem; }
-        .ha-input-hint-note { font-size: 0.62rem; }
-        .ha-input-pill { padding: 3px 7px; }
-        .ha-input-pill kbd { font-size: 0.64rem; }
       }
     </style>
 </head>
 <body>
     <div class="mount">
       <div class="canvas zumly-canvas"></div>
-      <div class="ha-input-hint" role="note" aria-label="Demo navigation inputs">
-        <span class="ha-input-hint-label">Active inputs</span>
-        <span class="ha-input-pill" title="Click a zoom target (magnifying-glass cursor)">Click</span>
-        <span class="ha-input-pill" title="Scroll down: go back one level">Wheel ↓</span>
-        <span class="ha-input-pill" title="Left or Down arrow: go back one level"><kbd>←</kbd><kbd>↓</kbd></span>
-        <span class="ha-input-pill" title="Tap a target, or swipe left to go back">Touch</span>
-        <span class="ha-input-pill" title="Browser Back button or Alt+← (⌘+[ on macOS): one level back; URL hash stays in sync">Browser back</span>
-        <span class="ha-input-hint-note">Also: on-page back control (bottom left)</span>
-      </div>
     </div>
 
     <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
@@ -909,7 +835,7 @@
 
       // Level 1: Home Assistant dashboard (based on d3.html Orbit layout)
       views.dashboard = `
-        <div class="z-view v">
+        <div class="z-view v" data-title="Home">
           <div class="bigbang">
             <div class="gravity-spot">
               <div class="orbit-0">
@@ -1014,7 +940,7 @@
 
       // Level 2: Cameras view — 4 cameras in Orbit CSS layout
       views.cameras = `
-        <div class="z-view cam-view">
+        <div class="z-view cam-view" data-title="Cameras">
           <div class="bigbang">
             <div class="gravity-spot" style="--o-force: 360px">
               <!-- Center title -->
@@ -1064,7 +990,7 @@
         })
 
         views[`cam_${cam.id}`] = `
-          <div class="z-view ha-detail-root">
+          <div class="z-view ha-detail-root" data-title="${cam.name}">
             <div class="ha-detail-dim" aria-hidden="true"></div>
             <div class="ha-detail-sheet cam-detail">
             <div class="cam-header">
@@ -1155,7 +1081,7 @@
       }
 
       views.devices = `
-        <div class="z-view section-view cam-view">
+        <div class="z-view section-view cam-view" data-title="Devices">
           <div class="bigbang">
             <div class="gravity-spot" style="--o-force: 380px">
               <div class="orbit-0">
@@ -1208,7 +1134,7 @@
         if (dev.lastTriggered) extraStats.push({ l: 'Last Triggered', v: dev.lastTriggered, c: '' })
 
         views[`dev_${dev.id}`] = `
-          <div class="z-view ha-detail-root">
+          <div class="z-view ha-detail-root" data-title="${dev.name}">
             <div class="ha-detail-dim" aria-hidden="true"></div>
             <div class="ha-detail-sheet detail-view">
             <div class="detail-header">
@@ -1259,7 +1185,7 @@
       ]
 
       views.alarm = `
-        <div class="z-view ha-detail-root">
+        <div class="z-view ha-detail-root" data-title="Alarm">
           <div class="ha-detail-dim" aria-hidden="true"></div>
           <div class="ha-detail-sheet detail-view ha-alarm-sheet">
           <div class="detail-header">
@@ -1312,7 +1238,7 @@
       // ══════════════════════════════════════════════════════
 
       views.rooms = `
-        <div class="z-view section-view cam-view">
+        <div class="z-view section-view cam-view" data-title="Rooms">
           <div class="bigbang">
             <div class="gravity-spot" style="--o-force: 340px">
               <div class="orbit-0">
@@ -1351,7 +1277,7 @@
       rooms.forEach(r => {
         const roomDevices = devices.filter(d => d.room === r.name)
         views[`room_${r.id}`] = `
-          <div class="z-view ha-detail-root">
+          <div class="z-view ha-detail-root" data-title="${r.name}">
             <div class="ha-detail-dim" aria-hidden="true"></div>
             <div class="ha-detail-sheet detail-view">
             <div class="detail-header">
@@ -1399,7 +1325,7 @@
       // ══════════════════════════════════════════════════════
 
       views.scenes = `
-        <div class="z-view section-view cam-view">
+        <div class="z-view section-view cam-view" data-title="Scenes">
           <div class="bigbang">
             <div class="gravity-spot" style="--o-force: 360px">
               <div class="orbit-0">
@@ -1438,7 +1364,7 @@
       scenes.forEach(s => {
         const affectedDevices = devices.slice(0, s.devices)
         views[`scene_${s.id}`] = `
-          <div class="z-view ha-detail-root">
+          <div class="z-view ha-detail-root" data-title="${s.name}">
             <div class="ha-detail-dim" aria-hidden="true"></div>
             <div class="ha-detail-sheet detail-view">
             <div class="detail-header">
@@ -1485,13 +1411,23 @@
           effects: ['blur(4px) brightness(0.5)', 'blur(8px) brightness(0.3)'],
           hideTrigger: 'fade',
         },
-        depthNav: { position: 'bottom-left' },
+        depthNav: { style: 'title' },
+        lateralNav: { swipe: true },
+        // Pinch, swipe or the trackpad: the zoom-out follows your fingers
+        gestures: { follow: true },
+        inputs: { pinch: true },
         debug: false,
       })
 
       app.use(ZumlyLib.Router)
 
       app.init()
+      showcaseTry([
+        'Pick a section on the dial, then a camera, room or device.',
+        'Arrows or a swipe move between sections, or between the rooms of a section.',
+        'Scroll back on a trackpad or pinch: the view shrinks into the dial as you move.',
+        'The browser back button works too: the router keeps the URL in sync.'
+      ])
 
       // Notify parent of depth changes for seamless nav
       function notifyDepth () {

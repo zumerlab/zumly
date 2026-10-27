@@ -41,6 +41,7 @@
     }
     </script>
     <script src="../js/showcase-activity.js"></script>
+    <script src="../js/showcase-try.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
     <link rel="stylesheet" href="https://unpkg.com/@zumer/orbit@latest/dist/orbit.css" />
     <script src="https://unpkg.com/@zumer/orbit@latest/dist/orbit.js"></script>
@@ -730,7 +731,7 @@
         function satNode (id, status, label, type, counterCls) {
           return `<div class="satellite">
             <div class="capsule ${counterCls}">
-              <div class="sat-node ${status} zoom-me" data-to="sat_${id}">
+              <div class="sat-node ${status} zoom-me" data-to="sat_${id}" data-sibling="false">
                 <span class="sat-label">${label}</span>
                 <span class="sat-type">${type}</span>
               </div>
@@ -849,7 +850,7 @@
 
       // Level 1: Mission Control Overview
       views.control = `
-        <div class="z-view v">
+        <div class="z-view v" data-title="Mission control">
           <div class="hdr">
             <div class="nasa-mark">MC</div>
             <h1>Mission Control <small>Constellation Operations</small></h1>
@@ -898,7 +899,7 @@
         }).join('\n')
 
         views[`sat_${sat.id}`] = `
-          <div class="z-view v">
+          <div class="z-view v" data-title="${sat.id}">
             <div class="bc">Mission Control <span>&rsaquo;</span> ${sat.id}</div>
             <div class="hdr">
               <h1>${sat.id} <small>${sat.type}</small></h1>
@@ -948,7 +949,7 @@
           }).join('')
 
           views[`issue_${sat.id}_${key}`] = `
-            <div class="z-view v">
+            <div class="z-view v" data-title="${key.toUpperCase()} · ${sat.id}">
               <div class="bc">MC <span>&rsaquo;</span> ${sat.id} <span>&rsaquo;</span> ${key.toUpperCase()}</div>
               <div class="hdr">
                 <h1>${key.toUpperCase()} <small>${sat.id}</small></h1>
@@ -1042,12 +1043,21 @@
           effects: ['blur(2px) brightness(0.6)', 'blur(6px) brightness(0.3)'],
           hideTrigger: 'fade',
         },
-        depthNav: { position: 'bottom-left' },
-        inputs: { wheel: false },
+        // A ring per level above; hover or long-press it to jump back several
+        depthNav: { style: 'rings' },
+        lateralNav: { swipe: true },
+        gestures: { follow: true },
+        inputs: { wheel: false, pinch: true },
         debug: false,
       })
 
       app.init().then(syncMET)
+      showcaseTry([
+        'Click a satellite, then a failing subsystem: three levels deep.',
+        'Hover the rings at the bottom left, or long-press them, to jump back several levels at once.',
+        'Arrows or a swipe move between satellites.',
+        'On a touch screen, pinch to zoom out: the view follows your fingers.'
+      ])
       ShowcaseActivity.subscribe(syncMET)
       app.on('beforeZoomIn', stopMET)
       app.on('beforeZoomOut', stopMET)
