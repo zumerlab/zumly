@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Zumly con y sin SnapDOM</title>
+<link rel="stylesheet" href="/src/style.css">
+<link rel="stylesheet" href="/orbit/dist/orbit.css">
+<script src="/orbit/dist/orbit.js"></script>
+<script type="importmap">{ "imports": { "@zumer/snapdom": "/snapdom/dist/snapdom.mjs" } }</script>
+<style>
+  html, body { margin: 0; background: #0b1020; color: #ccd; font: 14px system-ui, sans-serif; }
+  #bar { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; padding: 12px 16px; background: #121a33; border-bottom: 1px solid #263055; }
+  .group { display: flex; gap: 4px; align-items: center; }
+  .group > span { color: #8a94b8; margin-right: 4px; }
+  #bar button { font: inherit; color: #dde; background: #1c2647; border: 1px solid #2d3a68; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  #bar button[aria-pressed="true"] { background: #3a5bd9; border-color: #3a5bd9; color: #fff; }
+  #bar button:disabled { opacity: .5; cursor: default; }
+  #run { background: #1f7a4d !important; border-color: #1f7a4d !important; color: #fff !important; }
+  #status { color: #9fb0e0; min-width: 260px; }
+  #stage { padding: 16px; }
+  #app { position: relative; width: 1000px; height: 700px; background: radial-gradient(circle at 50% 40%, #1b2850, #070a14); }
+  @keyframes spin { to { rotate: 1turn } }
+</style>
+</head>
+<body>
+<div id="bar">
+  <div class="group" id="scenes"><span>Escena</span></div>
+  <div class="group" id="variants"><span>Variante</span></div>
+  <div class="group"><button id="live" aria-pressed="true">En vivo</button></div>
+  <div class="group"><button id="run">▶ 3 zooms</button></div>
+  <div id="status"></div>
+</div>
+<div id="stage"><div id="app" class="zumly-canvas"></div></div>
+<script type="module">
+import { Zumly } from '/src/entry-esm.js'
+import { snapdom } from '@zumer/snapdom'
+import { stream } from '/snapdom/packages/plugins/stream/src/stream.js'
+import { compositor } from './compositor.js'
+import { buildViews } from './scenes.js'
+
+const SCENES = { cards: 'cards (~3000 nodos)', blur: 'blur (backdrop-filter)', orbit: 'orbit (liviana)' }
+const VARIANTS = {
+  normal: { label: 'Zumly normal' },
+  snapdom: { label: 'SnapDOM', options: { source: 'once' } },
+  stream: { label: 'SnapDOM + stream', options: { source: 'stream', stream } },
+  slow: { label: 'SnapDOM fast: false', options: { source: 'once', capture: { fast: false } } },
+  core: { label: 'flatten (motor)', core: true },
+}
+
+const q = new URLSearchParams(location.search)
+const scene = SCENES[q.get('scene')] ? q.get('scene') : 'cards'
+const variant = VARIANTS[q.get('v')] ? q.get('v') : 'normal'
+const live = q.get('live') !== '0'
+
+// Every change reloads the page, so each variant starts from a clean instance.
+const go = (changes) => {
+  const next = new URLSearchParams({ scene, v: variant, live: live ? '1' : '0', ...changes })
+  location.search = next.toString()
+}
+const button = (parent, text, pressed, onClick) => {
+  const b = document.createElement('button')
+  b.textContent = text
+  b.setAttribute('aria-pressed', String(pressed))
+  b.addEventListener('click', onClick)
+  document.getElementById(parent).append(b)
+}
+for (const [key, text] of Object.entries(SCENES)) button('scenes', text, key === scene, () => go({ scene: key }))
+for (const [key, { label }] of Object.entries(VARIANTS)) button('variants', label, key === variant, () => go({ v: key }))
+const liveButton = document.getElementById('live')
+liveButton.setAttribute('aria-pressed', String(live))
+liveButton.addEventListener('click', () => go({ live: live ? '0' : '1' }))
+
+const app = new Zumly({
+  mount: '#app',
+  initialView: 'l0',
+  views: buildViews({ scene, levels: 6, live, animated: live }),
+  transitions: { duration: '700ms', ease: 'ease-in-out', effects: ['blur(3px)', 'blur(8px) saturate(0)'] },
+  inputs: { wheel: false },
+  ...(VARIANTS[variant].core ? { flatten: { snapdom } } : {}),
+})
+let plugin = null
+if (VARIANTS[variant].options) {
+  app.use((instance) => {
+    plugin = compositor(instance, { snapdom, depth: false, flatten: true, ...VARIANTS[variant].options })
+  })
+}
+await app.init()
+
+// Live content: a clock in the current view, spinners and rings (scenes.js), and values that
+// change every second in every view, as a dashboard fed by live data.
+if (live) {
+  const t0 = performance.now()
+  setInterval(() => {
+    const s = ((performance.now() - t0) / 1000).toFixed(1)
+    document.querySelectorAll('.is-current-view .live-clock').forEach(el => { el.textContent = s })
+  }, 100)
+  let tick = 0
+  setInterval(() => {
+    tick++
+    for (const view of document.querySelectorAll('#app .z-view')) {
+      view.querySelectorAll('o-arc').forEach((arc, i) => { if (i % 4 === tick % 4) arc.setAttribute('value', 8 + ((i * 7 + tick * 5) % 20)) })
+      view.querySelectorAll('span').forEach((s, i) => { if (i < 24) s.textContent = '#' + ((i * 13 + tick * 7) % 100) })
+    }
+  }, 1000)
+}
+
+const status = document.getElementById('status')
+setInterval(() => {
+  if (VARIANTS[variant].core) {
+    const current = document.querySelector('#app .is-current-view')
+    const flat = document.querySelectorAll('#app .z-view.z-flat').length
+    status.textContent = `Vistas de atrás como foto: ${flat}` + (app._flattener?.photos.has(current) ? ' · foto de esta vista lista' : '')
+    return
+  }
+  if (!plugin) { status.textContent = 'Sin SnapDOM'; return }
+  const { pending, captureMs } = plugin.stats
+  const last = captureMs.at(-1)
+  status.textContent = pending ? 'Sacando la foto de esta vista…'
+    : last != null ? `Foto lista · la última tardó ${Math.round(last)} ms` : 'Todavía sin foto'
+}, 150)
+
+// Three zoom-ins and three zoom-outs, with a pause at each level like someone looking around.
+const wait = (ms) => new Promise(r => setTimeout(r, ms))
+const run = document.getElementById('run')
+run.addEventListener('click', async () => {
+  run.disabled = true
+  try {
+    while (app.zoomLevel() > 1) { await app.zoomOut(); await wait(300) }
+    for (let i = 0; i < 3; i++) { await wait(1500); await app.zoomIn(document.querySelector('.is-current-view .zoom-me')) }
+    for (let i = 0; i < 3; i++) { await wait(1500); await app.zoomOut() }
+  } finally { run.disabled = false }
+})
+</script>
+</body>
+</html>

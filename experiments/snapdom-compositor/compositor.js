@@ -85,7 +85,7 @@ export function compositor (app, options = {}) {
 
   const dpr = globalThis.devicePixelRatio || 1
   const opts = { outerTransforms: false, outerShadows: false, fast: 'auto', scale, ...captureOptions }
-  const stats = { captures: 0, captureMs: [], streamFrames: 0, streamFull: 0, streamMs: 0, fallbacks: 0, backdropComposes: 0, composeMs: [] }
+  const stats = { captures: 0, pending: 0, captureMs: [], streamFrames: 0, streamFull: 0, streamMs: 0, fallbacks: 0, backdropComposes: 0, composeMs: [] }
   app.compositorStats = stats
 
   if (!document.getElementById('z-compositor-css')) {
@@ -111,8 +111,12 @@ export function compositor (app, options = {}) {
     // background view (scaled 4x, 16x, ...) would come out 4x, 16x larger. Scale it back.
     const m = new DOMMatrix(getComputedStyle(view).transform)
     const s = Math.hypot(m.a, m.b) || 1
-    const res = await snapdom(view, { ...opts, ...extra, scale: opts.scale / s })
-    const bmp = await res.toCanvas()
+    stats.pending++
+    let res, bmp
+    try {
+      res = await snapdom(view, { ...opts, ...extra, scale: opts.scale / s })
+      bmp = await res.toCanvas()
+    } finally { stats.pending-- }
     stats.captures++
     stats.captureMs.push(performance.now() - t0)
     const { vbW = view.offsetWidth * s, vbH = view.offsetHeight * s, contentX = 0, contentY = 0 } = res.meta || {}
@@ -141,6 +145,15 @@ export function compositor (app, options = {}) {
         stats.captures++
         stats.captureMs.push(performance.now() - t0)
         if (live?.view === view) bitmaps.set(view, { canvas: s.canvas, x: 0, y: 0, w: view.offsetWidth, h: view.offsetHeight, filtered: false })
+      })
+    } else if (source === 'once') {
+      // One capture at idle per visit, never refreshed: a live view freezes as it was then.
+      live = { view }
+      bitmaps.delete(view)
+      idle(async () => {
+        if (live?.view !== view) return
+        const bmp = await captureView(view)
+        if (live?.view === view) bitmaps.set(view, bmp)
       })
     } else {
       const refresh = () => idle(async () => {

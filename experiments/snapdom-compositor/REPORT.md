@@ -327,3 +327,46 @@ node experiments/snapdom-compositor/summarize.mjs /tmp/r.json
 La página `bench.html` también se abre a mano: `?scene=cards|blur|orbit&mode=baseline|flat|depth|both`
 `&source=stream|snapshot&live=1&animated=1&effects=0&outline=1`. Requiere que `snapdom/` y `orbit/`
 estén como repos hermanos de `zumly/` (el servidor de `bench.mjs` los sirve en `/snapdom/` y `/orbit/`).
+
+## Fluidez medida (27/10/2026)
+
+Martin pidió medir lo que se ve, no la media de rAF. `fluidity.mjs` corre `bench.html` en Chromium con
+ventana y cuenta, por vsync, si el cuadro se presentó o se descartó (`PipelineReporter` del trace, lo
+mismo que DevTools llama "dropped frames"). Un tirón es una racha de 3 o más cuadros descartados.
+`filmstrip.mjs` arma una hoja de contactos con los screenshots del trace (un cuadro presentado por
+columna), y `compare.html` (servido por `serve.mjs`) deja mirar cada variante a ojo.
+
+Escenas en vivo (`live=1&animated=1&data=1`: reloj, spinners o anillos girando, valores que cambian
+cada segundo en todas las vistas), 3 zooms de ida y 3 de vuelta. Cuadros perdidos · zooms con tirón:
+
+| escena | sin plugin | `animateEffects: false` | `flatten` (motor) |
+|---|---|---|---|
+| cards | 6,8 % · 1 de 6 | 5,2 % · 4 de 6 | 1,3 % · 0 |
+| blur | 51,5 % · 4 de 6 | 48,1 % · 5 de 6 | 0 % · 0 |
+| blur en reposo | 48 % | 48 % | 0 % |
+| orbit | 0,6 % · 0 | 0 % · 0 | no se aplana |
+| blur, CPU 4× | 46,5 % · 5 de 6 | 43,2 % · 5 de 6 | 0,6 % · 0 |
+
+(`results/fluidity/table-cpu1.json` y `table-cpu4.json`.)
+
+Lo que salió en el camino y quedó en el diseño de `src/flatten.js`:
+
+- Sin stream: con animaciones sobre algo transparente, el stream cuesta un 22 % de cuadros en reposo.
+  Una foto por vista, tomada en reposo, deja el reposo en 0 %.
+- SnapDOM con `fast: false` y `excludeStyleProps` como función. Con la memoización activa, cualquier
+  cambio en la página durante una captura en tramos la rehace en una sola tarea (300-390 ms con CPU 4×);
+  sin memoización se queda con lo que leyó. Un plugin `afterClone` apaga el diff aunque sea `pure`.
+- `visibility` para ocultar el contenido: con `opacity: 0`, Chrome sigue pintando los `backdrop-filter`
+  (blur: 0,7 % → 29 % de cuadros perdidos con CPU 4×).
+- La vista que se achica en un zoom-out no se aplana: achicar es barato, y ocultar su contenido sumaba
+  30-160 ms al arranque.
+- Cuesta: el zoom-in arranca ~25 ms más tarde (65 ms con CPU 4×), y al llegar a una vista la foto ocupa
+  el hilo unos 50-65 ms (330 ms con CPU 4× y vidrio).
+- SnapDOM: los hermanos que se reanudaban juntos no volvían a mirar el tramo (arreglado en la rama
+  `perf/slicer-resume-and-abort`); quedan sin tramos la preparación, la emulación de `backdrop-filter`
+  y el serializado.
+
+Trampas: Martin usa la Mac durante las corridas (las mediciones con y sin actividad coinciden); la
+pantalla se apaga a los 2 minutos (`caffeinate -d`); con la UI quieta no hay cuadros que contar, así
+que "hueco sin cuadros" no es "tirón". Las hojas de contactos (`results/fluidity/film/`) no están en git:
+se regeneran con `node experiments/snapdom-compositor/filmstrip.mjs`.

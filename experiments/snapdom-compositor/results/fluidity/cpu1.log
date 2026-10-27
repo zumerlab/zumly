@@ -1,0 +1,156 @@
+~  static  cards  baseline     drop  56.1%  hitches 10/10  gap med 192.7 worst 300  missing/t 18.1  tailDrop 34  lat 81    | in 56.3% out 56% | raf 30
+~  static  cards  noanim       drop  27.1%  hitches 10/10  gap med 116.7 worst 200  missing/t 27.7  tailDrop 1  lat 80    | in 33.9% out 20.5% | raf 20.4
+~  static  cards  dim          drop  21.5%  hitches 10/10  gap med 116.8 worst 150  missing/t 20.9  tailDrop 0  lat 65    | in 26.7% out 16.5% | raf 19.4
+~  static  cards  flat         drop  10.2%  hitches 10/10  gap med 78.9 worst 116.7  missing/t 38  tailDrop 0  lat 68    | in 7.6% out 12.6% | raf 18.2
+~  static  cards  flat-once    drop  19.2%  hitches 10/10  gap med 100 worst 150  missing/t 33.3  tailDrop 78  lat 64    | in 26.8% out 12.1% | raf 24.4
+~  static  blur   baseline     drop  77.1%  hitches 10/10  gap med 266.7 worst 383.3  missing/t 9.7  tailDrop 149  lat 54    | in 70.8% out 83.7% | raf 65.5
+~  static  blur   noanim       drop  61.8%  hitches 9/10  gap med 149.1 worst 265.7  missing/t 11.7  tailDrop 42  lat 48    | in 65.1% out 58.4% | raf 37.5
+~  static  blur   dim          drop  63.5%  hitches 10/10  gap med 116.7 worst 299  missing/t 13.6  tailDrop 40  lat 47    | in 62% out 65% | raf 32.5
+~  static  blur   flat         drop  10.6%  hitches 7/10  gap med 66.7 worst 367.5  missing/t 37.9  tailDrop 0  lat 15    | in 16.3% out 5% | raf 22.7
+~  static  blur   flat-once    drop  29.9%  hitches 10/10  gap med 116.7 worst 134  missing/t 29.8  tailDrop 50  lat 48    | in 54.6% out 3.4% | raf 34
+~  static  orbit  baseline     drop   9.4%  hitches 10/10  gap med 66.7 worst 83.9  missing/t 39.6  tailDrop 0  lat 98    | in 10.2% out 8.7% | raf 17.9
+~  static  orbit  noanim       drop  11.2%  hitches 10/10  gap med 87.7 worst 126  missing/t 26.7  tailDrop 2  lat 99    | in 11.6% out 10.8% | raf 17.8
+~  static  orbit  dim          drop   8.5%  hitches 8/10  gap med 68.7 worst 83.7  missing/t 22.5  tailDrop 1  lat 97    | in 9.9% out 7.2% | raf 17.8
+~  static  orbit  flat         drop  11.9%  hitches 10/10  gap med 90.6 worst 117.6  missing/t 38.7  tailDrop 1  lat 98    | in 11.6% out 12.2% | raf 19.5
+~  static  orbit  flat-once    drop    11%  hitches 10/10  gap med 88.6 worst 133.3  missing/t 39.6  tailDrop 21  lat 96    | in 10.2% out 11.9% | raf 19.1
+~  live    cards  baseline     drop   7.4%  hitches 4/10  gap med 50 worst 83.3  missing/t 37.9  tailDrop 35  lat 17  | rest drop 0% worst gap 17.7  | in 5.8% out 8.9% | raf 18.8
+~  live    cards  noanim       drop   4.3%  hitches 3/10  gap med 50 worst 66.7  missing/t 33.5  tailDrop 34  lat 14  | rest drop 0% worst gap 17.7  | in 4.9% out 3.7% | raf 18.7
+~  live    cards  dim          drop   4.3%  hitches 3/10  gap med 50 worst 83.3  missing/t 32.7  tailDrop 19  lat 16  | rest drop 0% worst gap 17.7  | in 5.8% out 3% | raf 18.2
+~  live    cards  flat         drop   0.2%  hitches 0/10  gap med 17.7 worst 33.3  missing/t 40.3  tailDrop 0  lat 16  | rest drop 0% worst gap 17.7  | in 0% out 0.4% | raf 21.3
+~  live    cards  flat-once    drop   3.3%  hitches 3/10  gap med 50 worst 66.7  missing/t 38  tailDrop 8  lat 16  | rest drop 0% worst gap 17.7  | in 5.3% out 1.5% | raf 18.1
+~  live    blur   baseline     drop  58.9%  hitches 9/10  gap med 133.3 worst 333.3  missing/t 15.2  tailDrop 112  lat 23  | rest drop 50.7% worst gap 51  | in 52.7% out 65.6% | raf 32.8
+~  live    blur   noanim       drop  52.9%  hitches 9/10  gap med 99.6 worst 117.3  missing/t 15.2  tailDrop 100  lat 22  | rest drop 49.3% worst gap 51  | in 50.4% out 55.3% | raf 33.2
+~  live    blur   dim          drop  49.5%  hitches 10/10  gap med 99.4 worst 116.7  missing/t 15.9  tailDrop 99  lat 20  | rest drop 44.4% worst gap 50  | in 45.6% out 53.2% | raf 32
+~  live    blur   flat         drop  26.5%  hitches 10/10  gap med 84.3 worst 893.6  missing/t 28  tailDrop 33  lat 13  | rest drop 14.6% worst gap 83.3  | in 38.8% out 15.1% | raf 45.7
+~  live    blur   flat-once    drop  13.8%  hitches 2/10  gap med 50 worst 50.9  missing/t 35.3  tailDrop 54  lat 16  | rest drop 0% worst gap 17.7  | in 29.3% out 0% | raf 22.1
+~  live    orbit  baseline     drop   1.5%  hitches 0/10  gap med 17.7 worst 50  missing/t 42.4  tailDrop 0  lat 31  | rest drop 0% worst gap 17.7  | in 0% out 3% | raf 18
+~  live    orbit  noanim       drop   0.2%  hitches 0/10  gap med 17.7 worst 34.2  missing/t 33.7  tailDrop 0  lat 30  | rest drop 0% worst gap 17.7  | in 0% out 0.4% | raf 18.1
+~  live    orbit  dim          drop     0%  hitches 0/10  gap med 17.7 worst 17.7  missing/t 32.6  tailDrop 0  lat 30  | rest drop 0% worst gap 17.7  | in 0% out 0% | raf 18.1
+~  live    orbit  flat         drop     0%  hitches 0/10  gap med 17.6 worst 17.6  missing/t 39.3  tailDrop 0  lat 17  | rest drop 0% worst gap 17.7  | in 0% out 0% | raf 25
+~  live    orbit  flat-once    drop     0%  hitches 0/10  gap med 17.6 worst 17.6  missing/t 41.5  tailDrop 0  lat 16  | rest drop 0% worst gap 17.7  | in 0% out 0% | raf 19.4
+~  static  cards  noanim       drop  25.1%  hitches 10/10  gap med 132.5 worst 233.3  missing/t 22.8  tailDrop 0  lat 80    | in 32.9% out 17% | raf 20
+~  static  cards  dim          drop  22.5%  hitches 10/10  gap med 116.7 worst 150  missing/t 20.9  tailDrop 0  lat 69    | in 26.1% out 18.9% | raf 19.5
+~  static  cards  flat         drop    10%  hitches 10/10  gap med 83.3 worst 116.7  missing/t 38.1  tailDrop 0  lat 63    | in 10.8% out 9.2% | raf 18.1
+~  static  cards  flat-once    drop  20.9%  hitches 10/10  gap med 116.6 worst 150.9  missing/t 32.5  tailDrop 64  lat 63    | in 28.8% out 13.4% | raf 23.3
+~  static  cards  baseline     drop  43.3%  hitches 10/10  gap med 133.3 worst 216.7  missing/t 22.1  tailDrop 38  lat 64    | in 48.8% out 37.7% | raf 25.6
+~  static  blur   noanim       drop  51.8%  hitches 10/10  gap med 133.3 worst 183.3  missing/t 13.4  tailDrop 7  lat 47    | in 55.1% out 48.5% | raf 25.9
+~  static  blur   dim          drop  45.5%  hitches 9/10  gap med 116.6 worst 133.3  missing/t 18.4  tailDrop 8  lat 48    | in 42.2% out 48.9% | raf 23.8
+~  static  blur   flat         drop   6.6%  hitches 7/10  gap med 100 worst 100.9  missing/t 37.8  tailDrop 0  lat 38    | in 7.8% out 5.4% | raf 18.7
+~  static  blur   flat-once    drop  25.3%  hitches 10/10  gap med 100 worst 150  missing/t 31.4  tailDrop 70  lat 48    | in 45% out 4.3% | raf 24.8
+~  static  blur   baseline     drop  69.5%  hitches 10/10  gap med 233.3 worst 267.5  missing/t 11  tailDrop 119  lat 46    | in 66.9% out 72% | raf 47.1
+~  static  orbit  noanim       drop  11.8%  hitches 10/10  gap med 83.3 worst 133.3  missing/t 34.7  tailDrop 2  lat 98    | in 12.8% out 10.7% | raf 18.2
+~  static  orbit  dim          drop  12.9%  hitches 9/10  gap med 77.1 worst 93.1  missing/t 22.4  tailDrop 2  lat 98    | in 14.1% out 11.6% | raf 18.2
+~  static  orbit  flat         drop  13.5%  hitches 10/10  gap med 83.3 worst 89  missing/t 39.5  tailDrop 0  lat 98    | in 13.1% out 13.9% | raf 19.9
+~  static  orbit  flat-once    drop    11%  hitches 10/10  gap med 89 worst 100  missing/t 39.4  tailDrop 24  lat 98    | in 9.4% out 12.5% | raf 19.2
+~  static  orbit  baseline     drop  10.2%  hitches 9/10  gap med 71.7 worst 83.3  missing/t 38  tailDrop 0  lat 97    | in 10.7% out 9.8% | raf 18
+~  live    cards  noanim       drop   5.1%  hitches 3/10  gap med 50 worst 133.3  missing/t 31.9  tailDrop 32  lat 16  | rest drop 0% worst gap 17.7  | in 7% out 3.3% | raf 18.8
+~  live    cards  dim          drop   4.9%  hitches 5/10  gap med 65.7 worst 66.7  missing/t 33.8  tailDrop 21  lat 21  | rest drop 0% worst gap 17.7  | in 5.8% out 4.1% | raf 18.5
+   live    cards  flat         drop   0.6%  hitches 0/10  gap med 17.7 worst 50  missing/t 41.4  tailDrop 2  lat 13  | rest drop 0% worst gap 17.7  | in 0% out 1.1% | raf 21.1
+   live    cards  flat-once    drop   3.3%  hitches 4/10  gap med 49 worst 83.3  missing/t 40.1  tailDrop 15  lat 23  | rest drop 0% worst gap 17.7  | in 6.6% out 0.4% | raf 18.5
+   live    cards  baseline     drop     8%  hitches 6/10  gap med 66.7 worst 83.3  missing/t 37.9  tailDrop 35  lat 15  | rest drop 0% worst gap 17.7  | in 6.5% out 9.3% | raf 19.1
+   live    blur   noanim       drop  53.8%  hitches 10/10  gap med 100 worst 133.3  missing/t 15.5  tailDrop 107  lat 18  | rest drop 50.8% worst gap 50  | in 51.7% out 55.9% | raf 34.2
+   live    blur   dim          drop  51.1%  hitches 9/10  gap med 100 worst 133.3  missing/t 14.9  tailDrop 105  lat 20  | rest drop 47.2% worst gap 50.9  | in 47.5% out 54.5% | raf 33.5
+   live    blur   flat         drop  15.6%  hitches 10/10  gap med 100 worst 233.3  missing/t 32.4  tailDrop 27  lat 18  | rest drop 22% worst gap 100  | in 17.3% out 14% | raf 27.2
+   live    blur   flat-once    drop  14.3%  hitches 2/10  gap med 49.1 worst 67.5  missing/t 33.6  tailDrop 55  lat 16  | rest drop 0% worst gap 17.7  | in 30.6% out 0% | raf 22.4
+   live    blur   baseline     drop  58.7%  hitches 9/10  gap med 114.7 worst 266.7  missing/t 15.1  tailDrop 122  lat 23  | rest drop 51.7% worst gap 51.7  | in 54% out 63.8% | raf 34.2
+   live    orbit  noanim       drop     0%  hitches 0/10  gap med 18.6 worst 33.4  missing/t 35  tailDrop 0  lat 31  | rest drop 0% worst gap 18.7  | in 0% out 0% | raf 18.1
+   live    orbit  dim          drop     0%  hitches 0/10  gap med 18.6 worst 18.7  missing/t 34.4  tailDrop 0  lat 30  | rest drop 0% worst gap 18.7  | in 0% out 0% | raf 18
+   live    orbit  flat         drop     0%  hitches 0/10  gap med 18.6 worst 18.7  missing/t 39.3  tailDrop 0  lat 17  | rest drop 0% worst gap 18.6  | in 0% out 0% | raf 24.5
+   live    orbit  flat-once    drop     0%  hitches 0/10  gap med 18.6 worst 18.6  missing/t 40.8  tailDrop 0  lat 30  | rest drop 0% worst gap 18.6  | in 0% out 0% | raf 19.5
+~  live    orbit  baseline     drop   1.5%  hitches 1/10  gap med 17.7 worst 50.2  missing/t 41.1  tailDrop 0  lat 31  | rest drop 0% worst gap 17.7  | in 0% out 3% | raf 17.9
+-- redoing 48 disturbed or failed runs
+~  static  cards  baseline     drop  41.9%  hitches 10/10  gap med 150 worst 216.7  missing/t 22.8  tailDrop 55  lat 65    | in 54.4% out 29.8% | raf 26.1
+~  static  cards  noanim       drop  25.1%  hitches 10/10  gap med 150.6 worst 184.1  missing/t 23.1  tailDrop 0  lat 80    | in 31.5% out 18.6% | raf 19.9
+~  static  cards  dim          drop  20.5%  hitches 10/10  gap med 116.7 worst 133.3  missing/t 29.1  tailDrop 0  lat 80    | in 23.6% out 17.5% | raf 19.2
+~  static  cards  flat         drop  11.8%  hitches 9/10  gap med 79.3 worst 133.6  missing/t 36.4  tailDrop 0  lat 15    | in 10.5% out 13.1% | raf 18.4
+~  static  cards  flat-once    drop  21.3%  hitches 10/10  gap med 116.7 worst 150  missing/t 31.8  tailDrop 70  lat 66    | in 29.1% out 13.8% | raf 24.6
+~  static  blur   baseline     drop  68.2%  hitches 10/10  gap med 200 worst 566.7  missing/t 10.3  tailDrop 109  lat 48    | in 59.3% out 75.5% | raf 39.3
+~  static  blur   noanim       drop  53.5%  hitches 10/10  gap med 117.1 worst 183.3  missing/t 14  tailDrop 11  lat 48    | in 54.7% out 52.3% | raf 26.2
+~  static  blur   dim          drop  45.8%  hitches 10/10  gap med 116.7 worst 133.3  missing/t 18.6  tailDrop 13  lat 47    | in 44.2% out 47.6% | raf 24.2
+~  static  blur   flat         drop   5.8%  hitches 7/10  gap med 99.2 worst 116.7  missing/t 38.2  tailDrop 0  lat 16    | in 7% out 4.6% | raf 18.6
+~  static  blur   flat-once    drop  22.4%  hitches 10/10  gap med 100 worst 133.7  missing/t 31.6  tailDrop 72  lat 48    | in 40.2% out 4.2% | raf 23.8
+~  static  orbit  baseline     drop  11.6%  hitches 10/10  gap med 73.4 worst 83.3  missing/t 38.3  tailDrop 1  lat 97    | in 13.2% out 10.1% | raf 18
+~  static  orbit  noanim       drop    12%  hitches 10/10  gap med 79.2 worst 117.5  missing/t 30.4  tailDrop 0  lat 97    | in 12.4% out 11.5% | raf 18
+~  static  orbit  dim          drop  12.7%  hitches 9/10  gap med 76 worst 82.3  missing/t 30.4  tailDrop 1  lat 98    | in 13.9% out 11.6% | raf 18.2
+~  static  orbit  flat         drop    13%  hitches 10/10  gap med 83.3 worst 100  missing/t 37.9  tailDrop 0  lat 99    | in 12.7% out 13.2% | raf 19.6
+   static  orbit  flat-once    drop  12.8%  hitches 10/10  gap med 80.5 worst 117  missing/t 38.5  tailDrop 23  lat 98    | in 12.4% out 13.2% | raf 19.2
+~  live    cards  baseline     drop   7.6%  hitches 6/10  gap med 66.7 worst 116.7  missing/t 37.2  tailDrop 39  lat 20  | rest drop 0% worst gap 17.7  | in 6.6% out 8.6% | raf 19
+~  live    cards  noanim       drop   4.9%  hitches 3/10  gap med 50 worst 83.3  missing/t 31.9  tailDrop 34  lat 21  | rest drop 0% worst gap 17.7  | in 5.7% out 4.1% | raf 18.9
+~  live    cards  dim          drop     5%  hitches 4/10  gap med 50 worst 83.3  missing/t 32  tailDrop 19  lat 15  | rest drop 0% worst gap 17.7  | in 6.9% out 3.3% | raf 18.5
+~  live    cards  flat         drop   0.8%  hitches 0/10  gap med 17.7 worst 33.4  missing/t 42.4  tailDrop 0  lat 18  | rest drop 0% worst gap 17.7  | in 0.8% out 0.7% | raf 20.6
+~  live    cards  flat-once    drop   3.3%  hitches 3/10  gap med 50 worst 83.3  missing/t 40.5  tailDrop 9  lat 13  | rest drop 0% worst gap 17.7  | in 5.8% out 1.1% | raf 18.2
+~  live    blur   baseline     drop    60%  hitches 10/10  gap med 116.7 worst 250  missing/t 15.4  tailDrop 105  lat 21  | rest drop 50.4% worst gap 51  | in 54.3% out 66.1% | raf 33.8
+~  live    blur   noanim       drop  53.7%  hitches 9/10  gap med 100 worst 166.7  missing/t 15.6  tailDrop 111  lat 25  | rest drop 50.5% worst gap 51  | in 50.8% out 56.5% | raf 34.8
+~  live    blur   dim          drop  50.2%  hitches 9/10  gap med 100 worst 216.7  missing/t 16.6  tailDrop 104  lat 24  | rest drop 46% worst gap 50  | in 44.6% out 55.4% | raf 32
+~  live    blur   flat         drop  20.3%  hitches 10/10  gap med 100 worst 317.6  missing/t 31.3  tailDrop 25  lat 18  | rest drop 21.7% worst gap 100.2  | in 26.4% out 14.8% | raf 29.7
+~  live    blur   flat-once    drop  13.3%  hitches 2/10  gap med 50 worst 66.7  missing/t 36.3  tailDrop 54  lat 16  | rest drop 0% worst gap 17.7  | in 28.3% out 0% | raf 22
+~  live    orbit  baseline     drop   1.9%  hitches 1/10  gap med 17.6 worst 50.1  missing/t 41.5  tailDrop 0  lat 32  | rest drop 0% worst gap 17.7  | in 0% out 3.7% | raf 17.9
+~  live    orbit  noanim       drop     0%  hitches 0/10  gap med 17.6 worst 33.3  missing/t 37.6  tailDrop 0  lat 31  | rest drop 0% worst gap 17.6  | in 0% out 0% | raf 18
+~  live    orbit  dim          drop     0%  hitches 0/10  gap med 17.6 worst 33.3  missing/t 31.2  tailDrop 0  lat 30  | rest drop 0% worst gap 17.7  | in 0% out 0% | raf 18
+~  live    orbit  flat         drop     0%  hitches 0/10  gap med 17.6 worst 17.7  missing/t 40  tailDrop 0  lat 21  | rest drop 0% worst gap 17.7  | in 0% out 0% | raf 23.4
+~  live    orbit  flat-once    drop     0%  hitches 0/10  gap med 17.7 worst 17.7  missing/t 39.6  tailDrop 0  lat 46  | rest drop 0% worst gap 17.7  | in 0% out 0% | raf 29.6
+~  static  cards  noanim       drop  25.4%  hitches 10/10  gap med 116.7 worst 183.3  missing/t 26.4  tailDrop 9  lat 80    | in 31.5% out 19.6% | raf 20.3
+~  static  cards  dim          drop  21.3%  hitches 10/10  gap med 117.2 worst 133.3  missing/t 27  tailDrop 0  lat 80    | in 23.7% out 18.9% | raf 19.3
+~  static  cards  flat         drop  10.4%  hitches 10/10  gap med 66.7 worst 133.3  missing/t 37.6  tailDrop 0  lat 69    | in 8.7% out 12% | raf 18.2
+~  static  cards  flat-once    drop  23.3%  hitches 10/10  gap med 116.7 worst 150.9  missing/t 31.9  tailDrop 61  lat 73    | in 32.6% out 14.5% | raf 24.3
+~  static  cards  baseline     drop  51.7%  hitches 10/10  gap med 166.7 worst 250  missing/t 19.1  tailDrop 56  lat 65    | in 51.1% out 52.2% | raf 28.5
+~  static  blur   noanim       drop  52.7%  hitches 10/10  gap med 121.8 worst 200  missing/t 12.4  tailDrop 8  lat 47    | in 54.9% out 50.4% | raf 26.1
+~  static  blur   dim          drop  44.2%  hitches 9/10  gap med 116.4 worst 133.3  missing/t 15.4  tailDrop 3  lat 47    | in 44.3% out 44% | raf 23.3
+~  static  blur   flat         drop   8.8%  hitches 8/10  gap med 100 worst 166.7  missing/t 36.4  tailDrop 0  lat 15    | in 12.2% out 5.4% | raf 18.9
+~  static  blur   flat-once    drop  22.4%  hitches 10/10  gap med 100 worst 116.7  missing/t 31.9  tailDrop 67  lat 48    | in 40.5% out 3.8% | raf 23.7
+~  static  blur   baseline     drop  69.1%  hitches 10/10  gap med 216.7 worst 266.7  missing/t 11.3  tailDrop 92  lat 46    | in 65.5% out 73% | raf 44.3
+~  static  orbit  noanim       drop  11.8%  hitches 10/10  gap med 83.3 worst 133.3  missing/t 34.2  tailDrop 0  lat 98    | in 12.9% out 10.8% | raf 18.1
+~  static  orbit  dim          drop  11.5%  hitches 9/10  gap med 71.3 worst 83.3  missing/t 33.1  tailDrop 0  lat 98    | in 12% out 10.9% | raf 18.1
+~  static  orbit  flat         drop    13%  hitches 10/10  gap med 81.3 worst 88.4  missing/t 39.3  tailDrop 1  lat 101    | in 12.2% out 13.8% | raf 19.8
+~  static  orbit  flat-once    drop  11.6%  hitches 10/10  gap med 80.5 worst 116.7  missing/t 39.7  tailDrop 24  lat 98    | in 10.7% out 12.5% | raf 19.3
+~  static  orbit  baseline     drop   9.9%  hitches 9/10  gap med 67.4 worst 83.3  missing/t 38.5  tailDrop 0  lat 97    | in 9.3% out 10.4% | raf 18
+~  live    cards  noanim       drop   5.1%  hitches 5/10  gap med 66.7 worst 83.3  missing/t 31.9  tailDrop 32  lat 15  | rest drop 0% worst gap 17.7  | in 6.1% out 4.1% | raf 18.9
+   live    cards  dim          drop   5.5%  hitches 5/10  gap med 66.7 worst 100  missing/t 29.4  tailDrop 18  lat 23  | rest drop 0% worst gap 17.7  | in 7.4% out 3.7% | raf 18.5
+~  live    orbit  baseline     drop   1.5%  hitches 3/10  gap med 17.7 worst 51  missing/t 41.1  tailDrop 0  lat 32  | rest drop 0% worst gap 17.7  | in 0% out 3% | raf 17.9
+-- redoing 46 disturbed or failed runs
+~  static  cards  baseline     drop  51.1%  hitches 10/10  gap med 200 worst 333.3  missing/t 18.4  tailDrop 37  lat 65    | in 53.4% out 49% | raf 27.3
+~  static  cards  noanim       drop  25.4%  hitches 10/10  gap med 133.3 worst 216.7  missing/t 22.8  tailDrop 4  lat 80    | in 31.8% out 19% | raf 20.1
+~  static  cards  dim          drop  24.9%  hitches 10/10  gap med 134.3 worst 183.3  missing/t 20.1  tailDrop 0  lat 80    | in 29.4% out 20.6% | raf 19.9
+~  static  cards  flat         drop  12.2%  hitches 10/10  gap med 80.1 worst 133.3  missing/t 36.1  tailDrop 0  lat 68    | in 11.2% out 13.1% | raf 18.4
+~  static  cards  flat-once    drop  18.9%  hitches 10/10  gap med 83.3 worst 133.4  missing/t 31.2  tailDrop 84  lat 71    | in 26.4% out 12.1% | raf 24.7
+~  static  blur   baseline     drop  69.8%  hitches 10/10  gap med 233.3 worst 516.7  missing/t 11.6  tailDrop 105  lat 47    | in 64.4% out 75.3% | raf 45.5
+~  static  blur   noanim       drop  51.2%  hitches 10/10  gap med 116.7 worst 183.3  missing/t 12.6  tailDrop 11  lat 48    | in 53.5% out 48.9% | raf 26.3
+~  static  blur   dim          drop  42.7%  hitches 10/10  gap med 100 worst 150  missing/t 16.1  tailDrop 0  lat 48    | in 41.9% out 43.5% | raf 22.7
+~  static  blur   flat         drop     6%  hitches 6/10  gap med 83.3 worst 116.7  missing/t 38.5  tailDrop 0  lat 15    | in 6.1% out 5.9% | raf 18.5
+~  static  blur   flat-once    drop  20.8%  hitches 10/10  gap med 100 worst 116.7  missing/t 32.7  tailDrop 64  lat 47    | in 38.1% out 3.4% | raf 23.6
+~  static  orbit  baseline     drop  10.6%  hitches 9/10  gap med 72 worst 84.2  missing/t 38.7  tailDrop 0  lat 97    | in 11.4% out 9.8% | raf 17.9
+~  static  orbit  noanim       drop  11.9%  hitches 10/10  gap med 119.8 worst 133.3  missing/t 25.4  tailDrop 1  lat 100    | in 12.4% out 11.4% | raf 17.8
+~  static  orbit  dim          drop   9.3%  hitches 9/10  gap med 70.7 worst 87.2  missing/t 3.2  tailDrop 2  lat 97    | in 8.9% out 9.8% | raf 18
+~  static  orbit  flat         drop  11.6%  hitches 10/10  gap med 75.1 worst 103.2  missing/t 39.4  tailDrop 1  lat 98    | in 10.1% out 13.1% | raf 19.6
+~  live    cards  baseline     drop   8.9%  hitches 5/10  gap med 66.7 worst 83.3  missing/t 37  tailDrop 46  lat 17  | rest drop 0% worst gap 17.7  | in 8.2% out 9.6% | raf 19.5
+~  live    cards  noanim       drop   5.1%  hitches 4/10  gap med 50 worst 83.3  missing/t 29.8  tailDrop 32  lat 16  | rest drop 0% worst gap 17.6  | in 6.6% out 3.8% | raf 18.9
+~  live    cards  dim          drop   4.7%  hitches 4/10  gap med 50 worst 83.3  missing/t 32.7  tailDrop 18  lat 22  | rest drop 0% worst gap 17.7  | in 6.2% out 3.3% | raf 18.3
+~  live    cards  flat         drop     1%  hitches 0/10  gap med 17.7 worst 50  missing/t 41  tailDrop 0  lat 12  | rest drop 0% worst gap 17.7  | in 0.4% out 1.5% | raf 21.2
+~  live    cards  flat-once    drop   2.7%  hitches 3/10  gap med 50 worst 83.3  missing/t 41  tailDrop 9  lat 15  | rest drop 0% worst gap 17.7  | in 5.3% out 0.4% | raf 18
+~  live    blur   baseline     drop  57.8%  hitches 9/10  gap med 116.7 worst 200  missing/t 15.9  tailDrop 112  lat 26  | rest drop 50.1% worst gap 50.3  | in 53.6% out 62.4% | raf 32.8
+~  live    blur   noanim       drop  52.8%  hitches 9/10  gap med 83.3 worst 116.7  missing/t 14.6  tailDrop 108  lat 24  | rest drop 50.9% worst gap 55.4  | in 50.6% out 55% | raf 33.8
+~  live    blur   dim          drop  46.3%  hitches 10/10  gap med 99.4 worst 183.3  missing/t 16  tailDrop 99  lat 21  | rest drop 44.6% worst gap 34.3  | in 42.3% out 50.2% | raf 30.7
+~  live    blur   flat         drop    15%  hitches 10/10  gap med 83.3 worst 250  missing/t 32.5  tailDrop 28  lat 16  | rest drop 22.1% worst gap 83.3  | in 17.7% out 12.6% | raf 26.7
+~  live    blur   flat-once    drop    13%  hitches 2/10  gap med 50 worst 66.7  missing/t 36.3  tailDrop 53  lat 16  | rest drop 0% worst gap 17.7  | in 27.8% out 0% | raf 21.9
+~  live    orbit  baseline     drop   1.9%  hitches 1/10  gap med 17.6 worst 50.2  missing/t 38.3  tailDrop 0  lat 31  | rest drop 0% worst gap 17.7  | in 0% out 3.7% | raf 17.9
+   live    orbit  noanim       drop     0%  hitches 0/10  gap med 17.7 worst 33.8  missing/t 37.1  tailDrop 0  lat 30  | rest drop 0% worst gap 17.7  | in 0% out 0% | raf 18.1
+   live    orbit  dim          drop     0%  hitches 0/10  gap med 17.5 worst 17.6  missing/t 34.5  tailDrop 0  lat 31  | rest drop 0% worst gap 17.7  | in 0% out 0% | raf 18.1
+   live    orbit  flat         drop     0%  hitches 0/10  gap med 17.6 worst 17.7  missing/t 41.5  tailDrop 0  lat 19  | rest drop 0% worst gap 17.5  | in 0% out 0% | raf 23.9
+~  live    orbit  flat-once    drop     0%  hitches 0/10  gap med 17.5 worst 17.7  missing/t 43.4  tailDrop 0  lat 29  | rest drop 0% worst gap 17.7  | in 0% out 0% | raf 19.7
+~  static  cards  noanim       drop  25.1%  hitches 10/10  gap med 116.7 worst 183.3  missing/t 21.4  tailDrop 1  lat 80    | in 30.5% out 19.7% | raf 20.1
+~  static  cards  dim          drop  22.3%  hitches 10/10  gap med 133.3 worst 150  missing/t 20.5  tailDrop 0  lat 64    | in 26.4% out 18.2% | raf 19.3
+~  static  cards  flat         drop    11%  hitches 9/10  gap med 80.3 worst 133.3  missing/t 35.5  tailDrop 0  lat 49    | in 10.1% out 11.8% | raf 18.2
+   static  cards  flat-once    drop  22.4%  hitches 10/10  gap med 116.7 worst 150  missing/t 29.8  tailDrop 77  lat 67    | in 31.9% out 13.7% | raf 24.9
+   static  cards  baseline     drop    53%  hitches 10/10  gap med 183.3 worst 266.7  missing/t 19.2  tailDrop 21  lat 80    | in 56.3% out 49.6% | raf 26.7
+   static  blur   noanim       drop  51.5%  hitches 9/10  gap med 116.7 worst 183.3  missing/t 12.8  tailDrop 8  lat 48    | in 54.3% out 48.7% | raf 26.1
+   static  blur   dim          drop  45.7%  hitches 10/10  gap med 100 worst 133.3  missing/t 13.1  tailDrop 6  lat 48    | in 45.4% out 46% | raf 23.8
+   static  blur   flat         drop   6.6%  hitches 7/10  gap med 83.3 worst 116.7  missing/t 38  tailDrop 0  lat 43    | in 7.8% out 5.5% | raf 18.7
+   static  blur   flat-once    drop  22.2%  hitches 10/10  gap med 100 worst 166.7  missing/t 29.7  tailDrop 70  lat 48    | in 40.6% out 3.4% | raf 23.9
+   static  blur   baseline     drop  70.3%  hitches 10/10  gap med 216.7 worst 683.3  missing/t 10.9  tailDrop 113  lat 48    | in 67.8% out 72.7% | raf 43
+   static  orbit  noanim       drop  11.3%  hitches 10/10  gap med 79.5 worst 133.3  missing/t 37.3  tailDrop 1  lat 97    | in 11.4% out 11.1% | raf 18
+   static  orbit  dim          drop  11.3%  hitches 9/10  gap med 66.8 worst 79.9  missing/t 34.8  tailDrop 0  lat 97    | in 11.4% out 11.2% | raf 18.1
+   static  orbit  flat         drop  12.9%  hitches 10/10  gap med 83.3 worst 98.2  missing/t 39.4  tailDrop 2  lat 99    | in 12% out 13.8% | raf 19.6
+~  static  orbit  flat-once    drop  11.4%  hitches 10/10  gap med 81.6 worst 133.3  missing/t 39.7  tailDrop 25  lat 98    | in 11% out 11.8% | raf 19.1
+~  static  orbit  baseline     drop   9.4%  hitches 9/10  gap med 67.6 worst 83.3  missing/t 38.1  tailDrop 0  lat 97    | in 10.2% out 8.6% | raf 17.8
+~  live    cards  noanim       drop   5.3%  hitches 6/10  gap med 66.7 worst 83.3  missing/t 33.2  tailDrop 34  lat 16  | rest drop 0% worst gap 17.7  | in 6.9% out 3.7% | raf 18.9
+! live orbit baseline: page.evaluate: Target page, context or browser has been closed

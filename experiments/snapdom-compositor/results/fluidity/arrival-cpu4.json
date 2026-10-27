@@ -1,0 +1,8135 @@
+[
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "cards",
+    "mode": "baseline",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 5.6,
+      "stutters": 8,
+      "gapMedian": 50.7,
+      "gapWorst": 67.2,
+      "missingPerT": 36.7,
+      "tailDropped": 29,
+      "latency": 22,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 0,
+      "arrivalLongestWorst": 0
+    },
+    "ins": {
+      "droppedPct": 4.3,
+      "stutters": 4,
+      "gapMedian": 50.3,
+      "gapWorst": 67.2,
+      "missingPerT": 40.6,
+      "tailDropped": 21,
+      "latency": 81
+    },
+    "outs": {
+      "droppedPct": 7,
+      "stutters": 4,
+      "gapMedian": 50.7,
+      "gapWorst": 66.4,
+      "missingPerT": 32.8,
+      "tailDropped": 8,
+      "latency": 15
+    },
+    "rafMean": 21,
+    "heapMB": 4.4,
+    "plugin": null,
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 54,
+        "dropped": 2,
+        "missing": 25,
+        "maxGapMs": 50.2,
+        "tailDropped": 2,
+        "tailMaxGapMs": 50.3,
+        "latencyMs": 22
+      },
+      {
+        "kind": "in",
+        "presented": 54,
+        "dropped": 2,
+        "missing": 46,
+        "maxGapMs": 50.3,
+        "tailDropped": 4,
+        "tailMaxGapMs": 83.2,
+        "latencyMs": 80
+      },
+      {
+        "kind": "in",
+        "presented": 51,
+        "dropped": 3,
+        "missing": 43,
+        "maxGapMs": 67.2,
+        "tailDropped": 5,
+        "tailMaxGapMs": 100.5,
+        "latencyMs": 83
+      },
+      {
+        "kind": "in",
+        "presented": 54,
+        "dropped": 2,
+        "missing": 45,
+        "maxGapMs": 49.3,
+        "tailDropped": 5,
+        "tailMaxGapMs": 100.6,
+        "latencyMs": 82
+      },
+      {
+        "kind": "in",
+        "presented": 53,
+        "dropped": 3,
+        "missing": 44,
+        "maxGapMs": 66.7,
+        "tailDropped": 5,
+        "tailMaxGapMs": 99.2,
+        "latencyMs": 81
+      },
+      {
+        "kind": "out",
+        "presented": 51,
+        "dropped": 4,
+        "missing": 34,
+        "maxGapMs": 50.7,
+        "tailDropped": 1,
+        "tailMaxGapMs": 30.3,
+        "latencyMs": 15
+      },
+      {
+        "kind": "out",
+        "presented": 50,
+        "dropped": 4,
+        "missing": 34,
+        "maxGapMs": 50.6,
+        "tailDropped": 1,
+        "tailMaxGapMs": 33.3,
+        "latencyMs": 14
+      },
+      {
+        "kind": "out",
+        "presented": 49,
+        "dropped": 5,
+        "missing": 34,
+        "maxGapMs": 66.4,
+        "tailDropped": 1,
+        "tailMaxGapMs": 33.8,
+        "latencyMs": 13
+      },
+      {
+        "kind": "out",
+        "presented": 50,
+        "dropped": 4,
+        "missing": 37,
+        "maxGapMs": 50.7,
+        "tailDropped": 4,
+        "tailMaxGapMs": 66,
+        "latencyMs": 15
+      },
+      {
+        "kind": "out",
+        "presented": 52,
+        "dropped": 2,
+        "missing": 25,
+        "maxGapMs": 33.6,
+        "tailDropped": 1,
+        "tailMaxGapMs": 32.8,
+        "latencyMs": 15
+      }
+    ],
+    "rests": [
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1372,
+        "latency": 7,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 167,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 84,
+            "over34": 2
+          }
+        },
+        "frames": 66,
+        "firstFrame": 4.6,
+        "mean": 20.72,
+        "p95": 50.2,
+        "max": 167.4,
+        "over20": 4,
+        "over34": 4,
+        "longTasks": 2,
+        "longTaskMs": 257,
+        "domNodes": 2055,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1430,
+        "latency": 77,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 201,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 50,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 84,
+            "over34": 2
+          }
+        },
+        "frames": 65,
+        "firstFrame": 13,
+        "mean": 21.8,
+        "p95": 50.3,
+        "max": 200.5,
+        "over20": 4,
+        "over34": 4,
+        "longTasks": 3,
+        "longTaskMs": 321,
+        "domNodes": 3080,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1399,
+        "latency": 79,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 199,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 67,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 101,
+            "over34": 2
+          }
+        },
+        "frames": 61,
+        "firstFrame": 16.2,
+        "mean": 22.67,
+        "p95": 67.2,
+        "max": 199.3,
+        "over20": 4,
+        "over34": 4,
+        "longTasks": 3,
+        "longTaskMs": 322,
+        "domNodes": 3080,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1433,
+        "latency": 79,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 199,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 49,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 101,
+            "over34": 2
+          }
+        },
+        "frames": 63,
+        "firstFrame": 15.3,
+        "mean": 22.49,
+        "p95": 49.3,
+        "max": 199.3,
+        "over20": 5,
+        "over34": 5,
+        "longTasks": 3,
+        "longTaskMs": 326,
+        "domNodes": 3080,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1431,
+        "latency": 78,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 217,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 99,
+            "over34": 2
+          }
+        },
+        "frames": 62,
+        "firstFrame": 14.5,
+        "mean": 22.85,
+        "p95": 66.7,
+        "max": 216.6,
+        "over20": 4,
+        "over34": 4,
+        "longTasks": 3,
+        "longTaskMs": 329,
+        "domNodes": 3079,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1282,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 200,
+            "over34": 2
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 33,
+            "over34": 0
+          }
+        },
+        "frames": 62,
+        "firstFrame": 14.8,
+        "mean": 20.43,
+        "p95": 32.8,
+        "max": 200,
+        "over20": 4,
+        "over34": 2,
+        "longTasks": 1,
+        "longTaskMs": 202,
+        "domNodes": 3080,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1282,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 201,
+            "over34": 2
+          },
+          "end": {
+            "worst": 34,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 33,
+            "over34": 0
+          }
+        },
+        "frames": 62,
+        "firstFrame": 14.4,
+        "mean": 20.44,
+        "p95": 33.4,
+        "max": 200.8,
+        "over20": 4,
+        "over34": 2,
+        "longTasks": 1,
+        "longTaskMs": 202,
+        "domNodes": 3080,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1280,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 200,
+            "over34": 2
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 34,
+            "over34": 0
+          }
+        },
+        "frames": 61,
+        "firstFrame": 13.5,
+        "mean": 20.76,
+        "p95": 32.7,
+        "max": 200.3,
+        "over20": 4,
+        "over34": 2,
+        "longTasks": 1,
+        "longTaskMs": 212,
+        "domNodes": 3080,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1283,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 118,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 51,
+            "over34": 1
+          },
+          "end": {
+            "worst": 34,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 66,
+            "over34": 1
+          }
+        },
+        "frames": 64,
+        "firstFrame": 15.2,
+        "mean": 19.8,
+        "p95": 33.8,
+        "max": 117.6,
+        "over20": 5,
+        "over34": 3,
+        "longTasks": 1,
+        "longTaskMs": 119,
+        "domNodes": 2055,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1267,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 84,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 34,
+            "over34": 0
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 33,
+            "over34": 0
+          }
+        },
+        "frames": 68,
+        "firstFrame": 15.4,
+        "mean": 18.4,
+        "p95": 32.7,
+        "max": 83.7,
+        "over20": 5,
+        "over34": 1,
+        "longTasks": 1,
+        "longTaskMs": 83,
+        "domNodes": 1025,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.66,
+        "p95": 17.5,
+        "max": 17.5,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.4,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "cards",
+    "mode": "flat",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 39.7,
+      "tailDropped": 3,
+      "latency": 18,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 334,
+      "arrivalLongestWorst": 365
+    },
+    "ins": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.7,
+      "gapWorst": 17.7,
+      "missingPerT": 40.6,
+      "tailDropped": 0,
+      "latency": 89
+    },
+    "outs": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.6,
+      "missingPerT": 38.8,
+      "tailDropped": 3,
+      "latency": 12
+    },
+    "rafMean": 50.5,
+    "heapMB": 75.9,
+    "plugin": {
+      "captures": 11,
+      "captureMsMedian": 649.3,
+      "captureMsMax": "909",
+      "composeMsMedian": null,
+      "fallbacks": 0,
+      "streamFrames": 50,
+      "streamFull": 39,
+      "streamMs": 28053
+    },
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 56,
+        "dropped": 0,
+        "missing": 16,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 11
+      },
+      {
+        "kind": "in",
+        "presented": 58,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 85
+      },
+      {
+        "kind": "in",
+        "presented": 56,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 101
+      },
+      {
+        "kind": "in",
+        "presented": 59,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 94
+      },
+      {
+        "kind": "in",
+        "presented": 58,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 89
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 39,
+        "maxGapMs": 17.6,
+        "tailDropped": 1,
+        "tailMaxGapMs": 49,
+        "latencyMs": 13
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 44,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 33.3,
+        "latencyMs": 18
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 40,
+        "maxGapMs": 17.6,
+        "tailDropped": 2,
+        "tailMaxGapMs": 50,
+        "latencyMs": 4
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 12
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 25,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 12
+      }
+    ],
+    "rests": [
+      {
+        "presented": 132,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 126,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 131,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 121,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 133,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1627,
+        "latency": 8,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 183,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 283,
+            "over34": 5
+          }
+        },
+        "frames": 52,
+        "firstFrame": -21.6,
+        "mean": 31.41,
+        "p95": 117.4,
+        "max": 283.4,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 874,
+        "domNodes": 2056,
+        "canvasMB": 1.1,
+        "arrivalLongest": 346,
+        "arrivalLongTaskMs": 1884
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1775,
+        "latency": 81,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 367,
+            "over34": 2
+          },
+          "end": {
+            "worst": 500,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 267,
+            "over34": 5
+          }
+        },
+        "frames": 18,
+        "firstFrame": -97.3,
+        "mean": 102.77,
+        "p95": 500.1,
+        "max": 500.1,
+        "over20": 9,
+        "over34": 8,
+        "longTasks": 9,
+        "longTaskMs": 1558,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 266,
+        "arrivalLongTaskMs": 1746
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1712,
+        "latency": 85,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 367,
+            "over34": 2
+          },
+          "end": {
+            "worst": 483,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 284,
+            "over34": 5
+          }
+        },
+        "frames": 18,
+        "firstFrame": -97.9,
+        "mean": 100,
+        "p95": 483.2,
+        "max": 483.2,
+        "over20": 8,
+        "over34": 8,
+        "longTasks": 9,
+        "longTaskMs": 1536,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 328,
+        "arrivalLongTaskMs": 1808
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1834,
+        "latency": 83,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 467,
+            "over34": 2
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 350,
+            "over34": 5
+          }
+        },
+        "frames": 24,
+        "firstFrame": -106.9,
+        "mean": 80.58,
+        "p95": 383.6,
+        "max": 466.7,
+        "over20": 10,
+        "over34": 7,
+        "longTasks": 8,
+        "longTaskMs": 1499,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 342,
+        "arrivalLongTaskMs": 1813
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1719,
+        "latency": 82,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 283,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 267,
+            "over34": 5
+          }
+        },
+        "frames": 51,
+        "firstFrame": -11.8,
+        "mean": 33.65,
+        "p95": 134,
+        "max": 282.9,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 7,
+        "longTaskMs": 949,
+        "domNodes": 3081,
+        "canvasMB": 2.2,
+        "arrivalLongest": 365,
+        "arrivalLongTaskMs": 1862
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1560,
+        "latency": 3,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 216,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 267,
+            "over34": 5
+          }
+        },
+        "frames": 49,
+        "firstFrame": -19.4,
+        "mean": 31.97,
+        "p95": 100.1,
+        "max": 266.6,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 841,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 261,
+        "arrivalLongTaskMs": 1746
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1568,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 200,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 266,
+            "over34": 5
+          }
+        },
+        "frames": 49,
+        "firstFrame": -15.2,
+        "mean": 31.96,
+        "p95": 117.5,
+        "max": 265.8,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 840,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 290,
+        "arrivalLongTaskMs": 1747
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1694,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 199,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 350,
+            "over34": 5
+          }
+        },
+        "frames": 50,
+        "firstFrame": -11.5,
+        "mean": 33.65,
+        "p95": 116.2,
+        "max": 350.2,
+        "over20": 7,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 934,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 339,
+        "arrivalLongTaskMs": 1804
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1604,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 133,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 266,
+            "over34": 5
+          }
+        },
+        "frames": 52,
+        "firstFrame": -19.6,
+        "mean": 30.75,
+        "p95": 133.4,
+        "max": 265.9,
+        "over20": 7,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 808,
+        "domNodes": 2056,
+        "canvasMB": 1.1,
+        "arrivalLongest": 330,
+        "arrivalLongTaskMs": 1825
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1569,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 100,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 267,
+            "over34": 5
+          }
+        },
+        "frames": 55,
+        "firstFrame": -20.5,
+        "mean": 28.48,
+        "p95": 115.9,
+        "max": 267.4,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 746,
+        "domNodes": 1025,
+        "canvasMB": 0,
+        "arrivalLongest": 334,
+        "arrivalLongTaskMs": 1786
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 16,
+        "firstFrame": 0,
+        "mean": 125.04,
+        "p95": 367.2,
+        "max": 367.2,
+        "over20": 12,
+        "over34": 12,
+        "longTasks": 14,
+        "longTaskMs": 2026,
+        "streamFrames": 4,
+        "streamFull": 4,
+        "streamMs": 2607,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 16,
+        "firstFrame": 0,
+        "mean": 118.7,
+        "p95": 283.3,
+        "max": 283.3,
+        "over20": 14,
+        "over34": 12,
+        "longTasks": 14,
+        "longTaskMs": 1926,
+        "streamFrames": 4,
+        "streamFull": 4,
+        "streamMs": 2486,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 17,
+        "firstFrame": 0,
+        "mean": 117.65,
+        "p95": 267,
+        "max": 267,
+        "over20": 14,
+        "over34": 13,
+        "longTasks": 14,
+        "longTaskMs": 1908,
+        "streamFrames": 4,
+        "streamFull": 4,
+        "streamMs": 2478,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 15,
+        "firstFrame": 0,
+        "mean": 113.33,
+        "p95": 333.3,
+        "max": 333.3,
+        "over20": 11,
+        "over34": 11,
+        "longTasks": 12,
+        "longTaskMs": 1840,
+        "streamFrames": 3,
+        "streamFull": 3,
+        "streamMs": 1934,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 16,
+        "firstFrame": 0,
+        "mean": 120.87,
+        "p95": 433.9,
+        "max": 433.9,
+        "over20": 12,
+        "over34": 11,
+        "longTasks": 12,
+        "longTaskMs": 1945,
+        "streamFrames": 3,
+        "streamFull": 3,
+        "streamMs": 2209,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "cards",
+    "mode": "flat-once",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 2,
+      "stutters": 1,
+      "gapMedian": 49.4,
+      "gapWorst": 65.7,
+      "missingPerT": 39,
+      "tailDropped": 12,
+      "latency": 17,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 121,
+      "arrivalLongestWorst": 161
+    },
+    "ins": {
+      "droppedPct": 4,
+      "stutters": 1,
+      "gapMedian": 49.8,
+      "gapWorst": 65.7,
+      "missingPerT": 40.4,
+      "tailDropped": 6,
+      "latency": 89
+    },
+    "outs": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.6,
+      "missingPerT": 37.6,
+      "tailDropped": 6,
+      "latency": 14
+    },
+    "rafMean": 24.7,
+    "heapMB": 27.3,
+    "plugin": {
+      "captures": 5,
+      "captureMsMedian": 612.3,
+      "captureMsMax": "699",
+      "composeMsMedian": null,
+      "fallbacks": 10,
+      "streamFrames": 0,
+      "streamFull": 0,
+      "streamMs": 0
+    },
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 54,
+        "dropped": 2,
+        "missing": 25,
+        "maxGapMs": 49.4,
+        "tailDropped": 1,
+        "tailMaxGapMs": 32.8,
+        "latencyMs": 17
+      },
+      {
+        "kind": "in",
+        "presented": 52,
+        "dropped": 3,
+        "missing": 44,
+        "maxGapMs": 65.7,
+        "tailDropped": 2,
+        "tailMaxGapMs": 49.9,
+        "latencyMs": 94
+      },
+      {
+        "kind": "in",
+        "presented": 53,
+        "dropped": 2,
+        "missing": 44,
+        "maxGapMs": 49.8,
+        "tailDropped": 1,
+        "tailMaxGapMs": 50,
+        "latencyMs": 85
+      },
+      {
+        "kind": "in",
+        "presented": 53,
+        "dropped": 2,
+        "missing": 45,
+        "maxGapMs": 49.6,
+        "tailDropped": 1,
+        "tailMaxGapMs": 50,
+        "latencyMs": 97
+      },
+      {
+        "kind": "in",
+        "presented": 52,
+        "dropped": 2,
+        "missing": 44,
+        "maxGapMs": 50,
+        "tailDropped": 1,
+        "tailMaxGapMs": 49.9,
+        "latencyMs": 89
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 40,
+        "maxGapMs": 17.6,
+        "tailDropped": 2,
+        "tailMaxGapMs": 50,
+        "latencyMs": 8
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 42,
+        "maxGapMs": 17.6,
+        "tailDropped": 2,
+        "tailMaxGapMs": 49,
+        "latencyMs": 12
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 36,
+        "maxGapMs": 17.6,
+        "tailDropped": 2,
+        "tailMaxGapMs": 50,
+        "latencyMs": 14
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 45,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 14
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 25,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.4,
+        "latencyMs": 15
+      }
+    ],
+    "rests": [
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1504,
+        "latency": 7,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 167,
+            "over34": 2
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 150,
+            "over34": 4
+          }
+        },
+        "frames": 50,
+        "firstFrame": 0.3,
+        "mean": 29.67,
+        "p95": 149.9,
+        "max": 166.8,
+        "over20": 8,
+        "over34": 6,
+        "longTasks": 5,
+        "longTaskMs": 702,
+        "domNodes": 2055,
+        "canvasMB": 0,
+        "arrivalLongest": 161,
+        "arrivalLongTaskMs": 687
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1508,
+        "latency": 83,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 217,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 66,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 150,
+            "over34": 5
+          }
+        },
+        "frames": 49,
+        "firstFrame": 12.1,
+        "mean": 29.92,
+        "p95": 133.6,
+        "max": 216.7,
+        "over20": 7,
+        "over34": 7,
+        "longTasks": 6,
+        "longTaskMs": 736,
+        "domNodes": 3081,
+        "canvasMB": 1.1,
+        "arrivalLongest": 138,
+        "arrivalLongTaskMs": 628
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1453,
+        "latency": 81,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 233,
+            "over34": 2
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 134,
+            "over34": 4
+          }
+        },
+        "frames": 48,
+        "firstFrame": 1.8,
+        "mean": 29.52,
+        "p95": 116.7,
+        "max": 233.3,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 699,
+        "domNodes": 3081,
+        "canvasMB": 1.1,
+        "arrivalLongest": 134,
+        "arrivalLongTaskMs": 577
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1473,
+        "latency": 82,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 216,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 50,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 118,
+            "over34": 4
+          }
+        },
+        "frames": 50,
+        "firstFrame": 14.4,
+        "mean": 28.67,
+        "p95": 116.6,
+        "max": 216.1,
+        "over20": 7,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 684,
+        "domNodes": 3081,
+        "canvasMB": 1.1,
+        "arrivalLongest": 123,
+        "arrivalLongTaskMs": 580
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1497,
+        "latency": 81,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 217,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 50,
+            "over34": 1
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 117,
+            "over34": 5
+          }
+        },
+        "frames": 50,
+        "firstFrame": 6,
+        "mean": 28.68,
+        "p95": 116.7,
+        "max": 216.5,
+        "over20": 8,
+        "over34": 7,
+        "longTasks": 6,
+        "longTaskMs": 661,
+        "domNodes": 3080,
+        "canvasMB": 1.1,
+        "arrivalLongest": 121,
+        "arrivalLongTaskMs": 541
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1342,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 184,
+            "over34": 1
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 83,
+            "over34": 2
+          }
+        },
+        "frames": 64,
+        "firstFrame": 8.2,
+        "mean": 20.84,
+        "p95": 32.5,
+        "max": 183.7,
+        "over20": 4,
+        "over34": 3,
+        "longTasks": 2,
+        "longTaskMs": 280,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1346,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 183,
+            "over34": 1
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 83,
+            "over34": 2
+          }
+        },
+        "frames": 64,
+        "firstFrame": 12.8,
+        "mean": 20.83,
+        "p95": 33.3,
+        "max": 183.2,
+        "over20": 4,
+        "over34": 3,
+        "longTasks": 2,
+        "longTaskMs": 286,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1349,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 183,
+            "over34": 2
+          },
+          "end": {
+            "worst": 34,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 99,
+            "over34": 2
+          }
+        },
+        "frames": 60,
+        "firstFrame": 14.6,
+        "mean": 22.23,
+        "p95": 50.4,
+        "max": 183.1,
+        "over20": 6,
+        "over34": 5,
+        "longTasks": 2,
+        "longTaskMs": 288,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1348,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 101,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 67,
+            "over34": 1
+          }
+        },
+        "frames": 71,
+        "firstFrame": 13.9,
+        "mean": 18.78,
+        "p95": 32.5,
+        "max": 100.7,
+        "over20": 4,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 196,
+        "domNodes": 2056,
+        "canvasMB": 1.1,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1349,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 67,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 67,
+            "over34": 1
+          }
+        },
+        "frames": 75,
+        "firstFrame": 16,
+        "mean": 17.77,
+        "p95": 17.5,
+        "max": 66.6,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 164,
+        "domNodes": 1025,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.66,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.66,
+        "p95": 17.5,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.5,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "cards",
+    "mode": "flat-idle",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 40.2,
+      "tailDropped": 1,
+      "latency": 12,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 285,
+      "arrivalLongestWorst": 355
+    },
+    "ins": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 42.2,
+      "tailDropped": 0,
+      "latency": 90
+    },
+    "outs": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 38.2,
+      "tailDropped": 1,
+      "latency": 5
+    },
+    "rafMean": 31.7,
+    "heapMB": 23.5,
+    "plugin": {
+      "captures": 11,
+      "captureMsMedian": 675.7,
+      "captureMsMax": "911",
+      "composeMsMedian": null,
+      "fallbacks": 0,
+      "streamFrames": 0,
+      "streamFull": 0,
+      "streamMs": 0
+    },
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 56,
+        "dropped": 0,
+        "missing": 25,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 8
+      },
+      {
+        "kind": "in",
+        "presented": 59,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 90
+      },
+      {
+        "kind": "in",
+        "presented": 57,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.5,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 90
+      },
+      {
+        "kind": "in",
+        "presented": 57,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 98
+      },
+      {
+        "kind": "in",
+        "presented": 58,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.4,
+        "latencyMs": 89
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 38,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 33.3,
+        "latencyMs": 12
+      },
+      {
+        "kind": "out",
+        "presented": 55,
+        "dropped": 0,
+        "missing": 43,
+        "maxGapMs": 17.5,
+        "tailDropped": 1,
+        "tailMaxGapMs": 49.6,
+        "latencyMs": 2
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 42,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 50,
+        "latencyMs": 11
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 43,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 5
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 25,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 5
+      }
+    ],
+    "rests": [
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 121,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1665,
+        "latency": 7,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 150,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 301,
+            "over34": 5
+          }
+        },
+        "frames": 53,
+        "firstFrame": 8.3,
+        "mean": 31.13,
+        "p95": 132.5,
+        "max": 300.8,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 898,
+        "domNodes": 2056,
+        "canvasMB": 1.1,
+        "arrivalLongest": 285,
+        "arrivalLongTaskMs": 644
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1814,
+        "latency": 79,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 284,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 267,
+            "over34": 5
+          }
+        },
+        "frames": 53,
+        "firstFrame": 6.1,
+        "mean": 33.66,
+        "p95": 150.3,
+        "max": 284.2,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 7,
+        "longTaskMs": 1046,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 266,
+        "arrivalLongTaskMs": 651
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1755,
+        "latency": 84,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 267,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 284,
+            "over34": 5
+          }
+        },
+        "frames": 52,
+        "firstFrame": 6.9,
+        "mean": 33.33,
+        "p95": 133,
+        "max": 284.2,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 7,
+        "longTaskMs": 1010,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 271,
+        "arrivalLongTaskMs": 630
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1757,
+        "latency": 84,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 250,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 283,
+            "over34": 5
+          }
+        },
+        "frames": 52,
+        "firstFrame": 15.1,
+        "mean": 33,
+        "p95": 116.7,
+        "max": 282.5,
+        "over20": 7,
+        "over34": 6,
+        "longTasks": 7,
+        "longTaskMs": 997,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 289,
+        "arrivalLongTaskMs": 625
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1759,
+        "latency": 82,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 267,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 301,
+            "over34": 5
+          }
+        },
+        "frames": 52,
+        "firstFrame": 6,
+        "mean": 33.33,
+        "p95": 117.1,
+        "max": 300.8,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 7,
+        "longTaskMs": 1008,
+        "domNodes": 3081,
+        "canvasMB": 2.2,
+        "arrivalLongest": 294,
+        "arrivalLongTaskMs": 639
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1692,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 183,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 350,
+            "over34": 5
+          }
+        },
+        "frames": 50,
+        "firstFrame": 11.6,
+        "mean": 32.98,
+        "p95": 100.1,
+        "max": 349.8,
+        "over20": 7,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 945,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 355,
+        "arrivalLongTaskMs": 668
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1574,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 183,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 267,
+            "over34": 5
+          }
+        },
+        "frames": 50,
+        "firstFrame": 1.8,
+        "mean": 31,
+        "p95": 100.8,
+        "max": 267.2,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 848,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 265,
+        "arrivalLongTaskMs": 575
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1637,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 183,
+            "over34": 1
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 316,
+            "over34": 5
+          }
+        },
+        "frames": 49,
+        "firstFrame": 10.6,
+        "mean": 32.63,
+        "p95": 115.9,
+        "max": 316.3,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 915,
+        "domNodes": 3082,
+        "canvasMB": 2.2,
+        "arrivalLongest": 311,
+        "arrivalLongTaskMs": 639
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1551,
+        "latency": 0,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 101,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 267,
+            "over34": 5
+          }
+        },
+        "frames": 54,
+        "firstFrame": 5.2,
+        "mean": 28.4,
+        "p95": 100,
+        "max": 267.1,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 761,
+        "domNodes": 2056,
+        "canvasMB": 1.1,
+        "arrivalLongest": 261,
+        "arrivalLongTaskMs": 568
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1540,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 67,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 250,
+            "over34": 5
+          }
+        },
+        "frames": 56,
+        "firstFrame": 4.6,
+        "mean": 27.08,
+        "p95": 100,
+        "max": 250,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 720,
+        "domNodes": 1025,
+        "canvasMB": 0,
+        "arrivalLongest": 251,
+        "arrivalLongTaskMs": 558
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.5,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 120,
+        "firstFrame": 0,
+        "mean": 16.66,
+        "p95": 17.5,
+        "max": 17.6,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "blur",
+    "mode": "baseline",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 54.8,
+      "stutters": 10,
+      "gapMedian": 116.7,
+      "gapWorst": 366.7,
+      "missingPerT": 15.5,
+      "tailDropped": 99,
+      "latency": 26,
+      "restDroppedPct": 47.2,
+      "restGapWorst": 50.8,
+      "arrivalLongestMedian": 0,
+      "arrivalLongestWorst": 0
+    },
+    "ins": {
+      "droppedPct": 50,
+      "stutters": 5,
+      "gapMedian": 84.1,
+      "gapWorst": 99.7,
+      "missingPerT": 20.8,
+      "tailDropped": 75,
+      "latency": 72
+    },
+    "outs": {
+      "droppedPct": 60.3,
+      "stutters": 5,
+      "gapMedian": 183,
+      "gapWorst": 366.7,
+      "missingPerT": 10.2,
+      "tailDropped": 24,
+      "latency": 20
+    },
+    "rafMean": 33.8,
+    "heapMB": 3.4,
+    "plugin": null,
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 39,
+        "dropped": 12,
+        "missing": 21,
+        "maxGapMs": 50.5,
+        "tailDropped": 8,
+        "tailMaxGapMs": 82.5,
+        "latencyMs": 7
+      },
+      {
+        "kind": "in",
+        "presented": 22,
+        "dropped": 31,
+        "missing": 19,
+        "maxGapMs": 84.2,
+        "tailDropped": 17,
+        "tailMaxGapMs": 166.6,
+        "latencyMs": 56
+      },
+      {
+        "kind": "in",
+        "presented": 24,
+        "dropped": 29,
+        "missing": 22,
+        "maxGapMs": 84.1,
+        "tailDropped": 17,
+        "tailMaxGapMs": 133.6,
+        "latencyMs": 73
+      },
+      {
+        "kind": "in",
+        "presented": 23,
+        "dropped": 29,
+        "missing": 21,
+        "maxGapMs": 83.3,
+        "tailDropped": 17,
+        "tailMaxGapMs": 150.1,
+        "latencyMs": 72
+      },
+      {
+        "kind": "in",
+        "presented": 23,
+        "dropped": 30,
+        "missing": 21,
+        "maxGapMs": 99.7,
+        "tailDropped": 16,
+        "tailMaxGapMs": 99.6,
+        "latencyMs": 72
+      },
+      {
+        "kind": "out",
+        "presented": 12,
+        "dropped": 23,
+        "missing": 7,
+        "maxGapMs": 366.7,
+        "tailDropped": 10,
+        "tailMaxGapMs": 67,
+        "latencyMs": 17
+      },
+      {
+        "kind": "out",
+        "presented": 18,
+        "dropped": 32,
+        "missing": 10,
+        "maxGapMs": 183,
+        "tailDropped": 4,
+        "tailMaxGapMs": 50.9,
+        "latencyMs": 7
+      },
+      {
+        "kind": "out",
+        "presented": 15,
+        "dropped": 32,
+        "missing": 10,
+        "maxGapMs": 182.5,
+        "tailDropped": 3,
+        "tailMaxGapMs": 33.4,
+        "latencyMs": 20
+      },
+      {
+        "kind": "out",
+        "presented": 13,
+        "dropped": 31,
+        "missing": 10,
+        "maxGapMs": 233.8,
+        "tailDropped": 5,
+        "tailMaxGapMs": 49.6,
+        "latencyMs": 26
+      },
+      {
+        "kind": "out",
+        "presented": 33,
+        "dropped": 20,
+        "missing": 14,
+        "maxGapMs": 116.7,
+        "tailDropped": 2,
+        "tailMaxGapMs": 34.1,
+        "latencyMs": 23
+      }
+    ],
+    "rests": [
+      {
+        "presented": 87,
+        "dropped": 33,
+        "missing": 0,
+        "maxGapMs": 34.3
+      },
+      {
+        "presented": 58,
+        "dropped": 62,
+        "missing": 0,
+        "maxGapMs": 50.7
+      },
+      {
+        "presented": 57,
+        "dropped": 63,
+        "missing": 0,
+        "maxGapMs": 50.6
+      },
+      {
+        "presented": 57,
+        "dropped": 63,
+        "missing": 0,
+        "maxGapMs": 50.4
+      },
+      {
+        "presented": 58,
+        "dropped": 62,
+        "missing": 0,
+        "maxGapMs": 50.8
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1249,
+        "latency": 6,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 82,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 34,
+            "over34": 0
+          },
+          "end": {
+            "worst": 51,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 83,
+            "over34": 3
+          }
+        },
+        "frames": 49,
+        "firstFrame": 7.6,
+        "mean": 25.17,
+        "p95": 66.6,
+        "max": 82.5,
+        "over20": 17,
+        "over34": 5,
+        "longTasks": 2,
+        "longTaskMs": 148,
+        "domNodes": 1071,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1332,
+        "latency": 43,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 133,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 83,
+            "over34": 6
+          },
+          "end": {
+            "worst": 84,
+            "over34": 4
+          },
+          "tail": {
+            "worst": 167,
+            "over34": 3
+          }
+        },
+        "frames": 25,
+        "firstFrame": -9.7,
+        "mean": 53.29,
+        "p95": 132.6,
+        "max": 166.6,
+        "over20": 22,
+        "over34": 14,
+        "longTasks": 2,
+        "longTaskMs": 139,
+        "domNodes": 1604,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1366,
+        "latency": 45,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 132,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 67,
+            "over34": 5
+          },
+          "end": {
+            "worst": 50,
+            "over34": 4
+          },
+          "tail": {
+            "worst": 134,
+            "over34": 5
+          }
+        },
+        "frames": 32,
+        "firstFrame": 6.4,
+        "mean": 42.18,
+        "p95": 132.4,
+        "max": 133.6,
+        "over20": 22,
+        "over34": 15,
+        "longTasks": 2,
+        "longTaskMs": 143,
+        "domNodes": 1604,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1415,
+        "latency": 44,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 133,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 83,
+            "over34": 5
+          },
+          "end": {
+            "worst": 67,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 150,
+            "over34": 5
+          }
+        },
+        "frames": 31,
+        "firstFrame": 4.7,
+        "mean": 45.16,
+        "p95": 133.4,
+        "max": 150.1,
+        "over20": 20,
+        "over34": 13,
+        "longTasks": 2,
+        "longTaskMs": 139,
+        "domNodes": 1604,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1386,
+        "latency": 44,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 134,
+            "over34": 2
+          },
+          "mid": {
+            "worst": 51,
+            "over34": 5
+          },
+          "end": {
+            "worst": 67,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 100,
+            "over34": 5
+          }
+        },
+        "frames": 32,
+        "firstFrame": 4.5,
+        "mean": 42.71,
+        "p95": 99.6,
+        "max": 134.1,
+        "over20": 22,
+        "over34": 14,
+        "longTasks": 2,
+        "longTaskMs": 139,
+        "domNodes": 1603,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1276,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 133,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 51,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 67,
+            "over34": 2
+          }
+        },
+        "frames": 55,
+        "firstFrame": 16.8,
+        "mean": 22.73,
+        "p95": 50.8,
+        "max": 133.3,
+        "over20": 11,
+        "over34": 4,
+        "longTasks": 1,
+        "longTaskMs": 111,
+        "domNodes": 1604,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1271,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 134,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 134,
+            "over34": 6
+          },
+          "end": {
+            "worst": 66,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 51,
+            "over34": 1
+          }
+        },
+        "frames": 41,
+        "firstFrame": 7.5,
+        "mean": 30.49,
+        "p95": 65.8,
+        "max": 134.2,
+        "over20": 15,
+        "over34": 9,
+        "longTasks": 1,
+        "longTaskMs": 112,
+        "domNodes": 1604,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1261,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 117,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 133,
+            "over34": 5
+          },
+          "end": {
+            "worst": 34,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 33,
+            "over34": 0
+          }
+        },
+        "frames": 45,
+        "firstFrame": 20.1,
+        "mean": 27.4,
+        "p95": 66.7,
+        "max": 133.3,
+        "over20": 14,
+        "over34": 7,
+        "longTasks": 1,
+        "longTaskMs": 111,
+        "domNodes": 1604,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1269,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 83,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 118,
+            "over34": 6
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 50,
+            "over34": 1
+          }
+        },
+        "frames": 48,
+        "firstFrame": -7.5,
+        "mean": 26.39,
+        "p95": 67.2,
+        "max": 117.6,
+        "over20": 13,
+        "over34": 8,
+        "longTasks": 1,
+        "longTaskMs": 67,
+        "domNodes": 1071,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1274,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 50,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 67,
+            "over34": 2
+          },
+          "end": {
+            "worst": 68,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 34,
+            "over34": 1
+          }
+        },
+        "frames": 58,
+        "firstFrame": -9.9,
+        "mean": 22.13,
+        "p95": 49.5,
+        "max": 67.5,
+        "over20": 15,
+        "over34": 5,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "domNodes": 533,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 86,
+        "firstFrame": 0,
+        "mean": 23.07,
+        "p95": 34.1,
+        "max": 34.4,
+        "over20": 33,
+        "over34": 6,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 57,
+        "firstFrame": 0,
+        "mean": 34.52,
+        "p95": 50.1,
+        "max": 50.6,
+        "over20": 56,
+        "over34": 14,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 56,
+        "firstFrame": 0,
+        "mean": 34.82,
+        "p95": 49.6,
+        "max": 50.6,
+        "over20": 55,
+        "over34": 14,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 56,
+        "firstFrame": 0,
+        "mean": 35.12,
+        "p95": 50,
+        "max": 50.5,
+        "over20": 56,
+        "over34": 15,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 57,
+        "firstFrame": 0,
+        "mean": 34.81,
+        "p95": 50,
+        "max": 50.9,
+        "over20": 57,
+        "over34": 12,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "blur",
+    "mode": "flat",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 3.8,
+      "stutters": 6,
+      "gapMedian": 54.6,
+      "gapWorst": 84.2,
+      "missingPerT": 36.8,
+      "tailDropped": 1,
+      "latency": 18,
+      "restDroppedPct": 6.1,
+      "restGapWorst": 67.6,
+      "arrivalLongestMedian": 577,
+      "arrivalLongestWorst": 765
+    },
+    "ins": {
+      "droppedPct": 1.1,
+      "stutters": 1,
+      "gapMedian": 17.7,
+      "gapWorst": 67.5,
+      "missingPerT": 44.8,
+      "tailDropped": 0,
+      "latency": 49
+    },
+    "outs": {
+      "droppedPct": 6.5,
+      "stutters": 5,
+      "gapMedian": 83.3,
+      "gapWorst": 84.2,
+      "missingPerT": 28.8,
+      "tailDropped": 1,
+      "latency": 10
+    },
+    "rafMean": 80.3,
+    "heapMB": 95.3,
+    "plugin": {
+      "captures": 11,
+      "captureMsMedian": 894,
+      "captureMsMax": "1070",
+      "composeMsMedian": null,
+      "fallbacks": 0,
+      "streamFrames": 44,
+      "streamFull": 33,
+      "streamMs": 31992
+    },
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 48,
+        "dropped": 3,
+        "missing": 25,
+        "maxGapMs": 67.5,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 9
+      },
+      {
+        "kind": "in",
+        "presented": 64,
+        "dropped": 0,
+        "missing": 53,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 49
+      },
+      {
+        "kind": "in",
+        "presented": 58,
+        "dropped": 0,
+        "missing": 51,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 60
+      },
+      {
+        "kind": "in",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 58
+      },
+      {
+        "kind": "in",
+        "presented": 55,
+        "dropped": 0,
+        "missing": 48,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 47
+      },
+      {
+        "kind": "out",
+        "presented": 52,
+        "dropped": 2,
+        "missing": 9,
+        "maxGapMs": 50.4,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 18
+      },
+      {
+        "kind": "out",
+        "presented": 51,
+        "dropped": 4,
+        "missing": 40,
+        "maxGapMs": 83.3,
+        "tailDropped": 0,
+        "tailMaxGapMs": 32.4,
+        "latencyMs": 2
+      },
+      {
+        "kind": "out",
+        "presented": 50,
+        "dropped": 4,
+        "missing": 34,
+        "maxGapMs": 84.2,
+        "tailDropped": 0,
+        "tailMaxGapMs": 33.8,
+        "latencyMs": 10
+      },
+      {
+        "kind": "out",
+        "presented": 50,
+        "dropped": 4,
+        "missing": 39,
+        "maxGapMs": 83.3,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 13
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 4,
+        "missing": 22,
+        "maxGapMs": 54.6,
+        "tailDropped": 1,
+        "tailMaxGapMs": 29.3,
+        "latencyMs": 10
+      }
+    ],
+    "rests": [
+      {
+        "presented": 118,
+        "dropped": 9,
+        "missing": 0,
+        "maxGapMs": 66.2
+      },
+      {
+        "presented": 115,
+        "dropped": 7,
+        "missing": 0,
+        "maxGapMs": 66.7
+      },
+      {
+        "presented": 122,
+        "dropped": 8,
+        "missing": 0,
+        "maxGapMs": 67.6
+      },
+      {
+        "presented": 113,
+        "dropped": 6,
+        "missing": 0,
+        "maxGapMs": 67.5
+      },
+      {
+        "presented": 118,
+        "dropped": 8,
+        "missing": 0,
+        "maxGapMs": 66.7
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1670,
+        "latency": 8,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 150,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 68,
+            "over34": 2
+          },
+          "end": {
+            "worst": 50,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 549,
+            "over34": 4
+          }
+        },
+        "frames": 44,
+        "firstFrame": -57.7,
+        "mean": 37.88,
+        "p95": 82.4,
+        "max": 549,
+        "over20": 8,
+        "over34": 8,
+        "longTasks": 6,
+        "longTaskMs": 888,
+        "domNodes": 1072,
+        "canvasMB": 1.1,
+        "arrivalLongest": 560,
+        "arrivalLongTaskMs": 2085
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 2099,
+        "latency": 47,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 218,
+            "over34": 2
+          },
+          "end": {
+            "worst": 717,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 584,
+            "over34": 5
+          }
+        },
+        "frames": 12,
+        "firstFrame": -1.5,
+        "mean": 162.58,
+        "p95": 717,
+        "max": 717,
+        "over20": 9,
+        "over34": 9,
+        "longTasks": 7,
+        "longTaskMs": 1685,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 679,
+        "arrivalLongTaskMs": 2390
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1847,
+        "latency": 46,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 216,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 0,
+            "over34": 0
+          },
+          "end": {
+            "worst": 682,
+            "over34": 3
+          },
+          "tail": {
+            "worst": 550,
+            "over34": 4
+          }
+        },
+        "frames": 11,
+        "firstFrame": -56.3,
+        "mean": 166.6,
+        "p95": 682.4,
+        "max": 682.4,
+        "over20": 8,
+        "over34": 8,
+        "longTasks": 6,
+        "longTaskMs": 1498,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 563,
+        "arrivalLongTaskMs": 2054
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1390,
+        "latency": 48,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 166,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 0,
+            "over34": 0
+          },
+          "end": {
+            "worst": 634,
+            "over34": 3
+          },
+          "tail": {
+            "worst": 67,
+            "over34": 2
+          }
+        },
+        "frames": 23,
+        "firstFrame": -7.9,
+        "mean": 58.65,
+        "p95": 166.2,
+        "max": 633.8,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 5,
+        "longTaskMs": 913,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 517,
+        "arrivalLongTaskMs": 1346
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1887,
+        "latency": 46,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 168,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 0,
+            "over34": 0
+          },
+          "end": {
+            "worst": 666,
+            "over34": 3
+          },
+          "tail": {
+            "worst": 600,
+            "over34": 3
+          }
+        },
+        "frames": 11,
+        "firstFrame": -20.1,
+        "mean": 162.12,
+        "p95": 665.6,
+        "max": 665.6,
+        "over20": 8,
+        "over34": 7,
+        "longTasks": 6,
+        "longTaskMs": 1531,
+        "domNodes": 1605,
+        "canvasMB": 2.2,
+        "arrivalLongest": 626,
+        "arrivalLongTaskMs": 2213
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1398,
+        "latency": 3,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 167,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 517,
+            "over34": 1
+          },
+          "end": {
+            "worst": 67,
+            "over34": 3
+          },
+          "tail": {
+            "worst": 68,
+            "over34": 2
+          }
+        },
+        "frames": 29,
+        "firstFrame": -15.6,
+        "mean": 47.16,
+        "p95": 166.9,
+        "max": 516.6,
+        "over20": 8,
+        "over34": 7,
+        "longTasks": 5,
+        "longTaskMs": 847,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 538,
+        "arrivalLongTaskMs": 1357
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1707,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 233,
+            "over34": 2
+          },
+          "end": {
+            "worst": 50,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 549,
+            "over34": 4
+          }
+        },
+        "frames": 45,
+        "firstFrame": -63.4,
+        "mean": 38.14,
+        "p95": 83.4,
+        "max": 549.4,
+        "over20": 7,
+        "over34": 7,
+        "longTasks": 3,
+        "longTaskMs": 788,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 571,
+        "arrivalLongTaskMs": 1971
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1850,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 234,
+            "over34": 2
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 616,
+            "over34": 5
+          }
+        },
+        "frames": 45,
+        "firstFrame": -56.8,
+        "mean": 39.26,
+        "p95": 84.2,
+        "max": 616.3,
+        "over20": 7,
+        "over34": 7,
+        "longTasks": 3,
+        "longTaskMs": 847,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 652,
+        "arrivalLongTaskMs": 2313
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1892,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 133,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 100,
+            "over34": 2
+          },
+          "end": {
+            "worst": 34,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 650,
+            "over34": 4
+          }
+        },
+        "frames": 46,
+        "firstFrame": -69.2,
+        "mean": 41.3,
+        "p95": 100.1,
+        "max": 649.7,
+        "over20": 9,
+        "over34": 8,
+        "longTasks": 5,
+        "longTaskMs": 962,
+        "domNodes": 1072,
+        "canvasMB": 1.1,
+        "arrivalLongest": 765,
+        "arrivalLongTaskMs": 2033
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1450,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 83,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 583,
+            "over34": 2
+          },
+          "end": {
+            "worst": 99,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 84,
+            "over34": 2
+          }
+        },
+        "frames": 28,
+        "firstFrame": 9.8,
+        "mean": 49.41,
+        "p95": 99.4,
+        "max": 582.6,
+        "over20": 7,
+        "over34": 7,
+        "longTasks": 3,
+        "longTaskMs": 749,
+        "domNodes": 533,
+        "canvasMB": 0,
+        "arrivalLongest": 577,
+        "arrivalLongTaskMs": 1390
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 11,
+        "firstFrame": 0,
+        "mean": 181.82,
+        "p95": 616.6,
+        "max": 616.6,
+        "over20": 10,
+        "over34": 10,
+        "longTasks": 6,
+        "longTaskMs": 1490,
+        "streamFrames": 3,
+        "streamFull": 3,
+        "streamMs": 2791,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 12,
+        "firstFrame": 0,
+        "mean": 166.58,
+        "p95": 550,
+        "max": 550,
+        "over20": 12,
+        "over34": 12,
+        "longTasks": 8,
+        "longTaskMs": 1481,
+        "streamFrames": 3,
+        "streamFull": 3,
+        "streamMs": 2750,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 13,
+        "firstFrame": 0,
+        "mean": 161.54,
+        "p95": 582.4,
+        "max": 582.4,
+        "over20": 13,
+        "over34": 13,
+        "longTasks": 7,
+        "longTaskMs": 1500,
+        "streamFrames": 3,
+        "streamFull": 3,
+        "streamMs": 2682,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 14,
+        "firstFrame": 0,
+        "mean": 141.67,
+        "p95": 583.4,
+        "max": 583.4,
+        "over20": 13,
+        "over34": 11,
+        "longTasks": 8,
+        "longTaskMs": 1487,
+        "streamFrames": 3,
+        "streamFull": 3,
+        "streamMs": 2533,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 13,
+        "firstFrame": 0,
+        "mean": 164.05,
+        "p95": 616.7,
+        "max": 616.7,
+        "over20": 12,
+        "over34": 12,
+        "longTasks": 7,
+        "longTaskMs": 1587,
+        "streamFrames": 3,
+        "streamFull": 3,
+        "streamMs": 2892,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "blur",
+    "mode": "flat-once",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 12.4,
+      "stutters": 0,
+      "gapMedian": 34.2,
+      "gapWorst": 50,
+      "missingPerT": 37.7,
+      "tailDropped": 30,
+      "latency": 15,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 392,
+      "arrivalLongestWorst": 423
+    },
+    "ins": {
+      "droppedPct": 25.3,
+      "stutters": 0,
+      "gapMedian": 50,
+      "gapWorst": 50,
+      "missingPerT": 32.6,
+      "tailDropped": 30,
+      "latency": 54
+    },
+    "outs": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.7,
+      "gapWorst": 17.7,
+      "missingPerT": 42.8,
+      "tailDropped": 0,
+      "latency": 13
+    },
+    "rafMean": 29.2,
+    "heapMB": 12.5,
+    "plugin": {
+      "captures": 5,
+      "captureMsMedian": 1009.2,
+      "captureMsMax": "1069",
+      "composeMsMedian": null,
+      "fallbacks": 10,
+      "streamFrames": 0,
+      "streamFull": 0,
+      "streamMs": 0
+    },
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 39,
+        "dropped": 12,
+        "missing": 21,
+        "maxGapMs": 34.2,
+        "tailDropped": 8,
+        "tailMaxGapMs": 83.3,
+        "latencyMs": 12
+      },
+      {
+        "kind": "in",
+        "presented": 39,
+        "dropped": 13,
+        "missing": 35,
+        "maxGapMs": 50,
+        "tailDropped": 6,
+        "tailMaxGapMs": 83.4,
+        "latencyMs": 55
+      },
+      {
+        "kind": "in",
+        "presented": 37,
+        "dropped": 16,
+        "missing": 32,
+        "maxGapMs": 50,
+        "tailDropped": 6,
+        "tailMaxGapMs": 83.1,
+        "latencyMs": 60
+      },
+      {
+        "kind": "in",
+        "presented": 40,
+        "dropped": 13,
+        "missing": 40,
+        "maxGapMs": 50,
+        "tailDropped": 5,
+        "tailMaxGapMs": 82.4,
+        "latencyMs": 54
+      },
+      {
+        "kind": "in",
+        "presented": 40,
+        "dropped": 12,
+        "missing": 35,
+        "maxGapMs": 49.7,
+        "tailDropped": 5,
+        "tailMaxGapMs": 83.3,
+        "latencyMs": 47
+      },
+      {
+        "kind": "out",
+        "presented": 55,
+        "dropped": 0,
+        "missing": 44,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 2
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 15
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 48,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 12
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 49,
+        "maxGapMs": 17.4,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 13
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 26,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 14
+      }
+    ],
+    "rests": [
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 120,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1939,
+        "latency": 7,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 84,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 34,
+            "over34": 1
+          },
+          "end": {
+            "worst": 34,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 449,
+            "over34": 7
+          }
+        },
+        "frames": 41,
+        "firstFrame": 11.8,
+        "mean": 43.08,
+        "p95": 100.4,
+        "max": 449,
+        "over20": 19,
+        "over34": 11,
+        "longTasks": 7,
+        "longTaskMs": 973,
+        "domNodes": 1072,
+        "canvasMB": 1.1,
+        "arrivalLongest": 423,
+        "arrivalLongTaskMs": 927
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1826,
+        "latency": 45,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 118,
+            "over34": 2
+          },
+          "mid": {
+            "worst": 34,
+            "over34": 2
+          },
+          "end": {
+            "worst": 50,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 416,
+            "over34": 6
+          }
+        },
+        "frames": 42,
+        "firstFrame": 4,
+        "mean": 42.06,
+        "p95": 116.5,
+        "max": 416,
+        "over20": 19,
+        "over34": 11,
+        "longTasks": 7,
+        "longTaskMs": 893,
+        "domNodes": 1605,
+        "canvasMB": 1.1,
+        "arrivalLongest": 397,
+        "arrivalLongTaskMs": 807
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1472,
+        "latency": 55,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 116,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 50,
+            "over34": 1
+          },
+          "end": {
+            "worst": 34,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 117,
+            "over34": 5
+          }
+        },
+        "frames": 40,
+        "firstFrame": 10.4,
+        "mean": 33.75,
+        "p95": 116.4,
+        "max": 116.7,
+        "over20": 22,
+        "over34": 8,
+        "longTasks": 6,
+        "longTaskMs": 502,
+        "domNodes": 1605,
+        "canvasMB": 1.1,
+        "arrivalLongest": 401,
+        "arrivalLongTaskMs": 938
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1956,
+        "latency": 50,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 133,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 50,
+            "over34": 1
+          },
+          "end": {
+            "worst": 50,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 450,
+            "over34": 6
+          }
+        },
+        "frames": 41,
+        "firstFrame": 4.1,
+        "mean": 44.29,
+        "p95": 133.3,
+        "max": 449.8,
+        "over20": 16,
+        "over34": 9,
+        "longTasks": 8,
+        "longTaskMs": 1030,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 421,
+        "arrivalLongTaskMs": 896
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1793,
+        "latency": 46,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 117,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 50,
+            "over34": 2
+          },
+          "end": {
+            "worst": 34,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 418,
+            "over34": 5
+          }
+        },
+        "frames": 42,
+        "firstFrame": 12.9,
+        "mean": 40.89,
+        "p95": 117.3,
+        "max": 417.6,
+        "over20": 16,
+        "over34": 9,
+        "longTasks": 7,
+        "longTaskMs": 879,
+        "domNodes": 1604,
+        "canvasMB": 1.1,
+        "arrivalLongest": 392,
+        "arrivalLongTaskMs": 802
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1318,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 99,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 18,
+            "over34": 0
+          }
+        },
+        "frames": 74,
+        "firstFrame": 2.2,
+        "mean": 17.78,
+        "p95": 17.6,
+        "max": 98.9,
+        "over20": 2,
+        "over34": 1,
+        "longTasks": 2,
+        "longTaskMs": 155,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1298,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 100,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 34,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 18,
+            "over34": 0
+          }
+        },
+        "frames": 72,
+        "firstFrame": 14.6,
+        "mean": 17.82,
+        "p95": 17.5,
+        "max": 99.6,
+        "over20": 2,
+        "over34": 1,
+        "longTasks": 1,
+        "longTaskMs": 105,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1313,
+        "latency": 0,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 99,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 50,
+            "over34": 1
+          }
+        },
+        "frames": 72,
+        "firstFrame": 12.3,
+        "mean": 18.06,
+        "p95": 17.7,
+        "max": 99.1,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 156,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1313,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 50,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 17,
+            "over34": 0
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 18,
+            "over34": 0
+          }
+        },
+        "frames": 76,
+        "firstFrame": 13.6,
+        "mean": 17.09,
+        "p95": 17.5,
+        "max": 50,
+        "over20": 2,
+        "over34": 1,
+        "longTasks": 1,
+        "longTaskMs": 62,
+        "domNodes": 1072,
+        "canvasMB": 1.1,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1297,
+        "latency": 0,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 33,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 18,
+            "over34": 0
+          }
+        },
+        "frames": 76,
+        "firstFrame": 14.4,
+        "mean": 16.88,
+        "p95": 17.6,
+        "max": 33.3,
+        "over20": 2,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "domNodes": 533,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.66,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.66,
+        "p95": 17.5,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.66,
+        "p95": 17.5,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.7,
+        "max": 17.8,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "blur",
+    "mode": "flat-idle",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 41.7,
+      "tailDropped": 0,
+      "latency": 18,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 540,
+      "arrivalLongestWorst": 585
+    },
+    "ins": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 41.6,
+      "tailDropped": 0,
+      "latency": 53
+    },
+    "outs": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 41.8,
+      "tailDropped": 0,
+      "latency": 8
+    },
+    "rafMean": 30.8,
+    "heapMB": 16.4,
+    "plugin": {
+      "captures": 11,
+      "captureMsMedian": 889.5,
+      "captureMsMax": "1050",
+      "composeMsMedian": null,
+      "fallbacks": 0,
+      "streamFrames": 0,
+      "streamFull": 0,
+      "streamMs": 0
+    },
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 52,
+        "dropped": 0,
+        "missing": 25,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 11
+      },
+      {
+        "kind": "in",
+        "presented": 52,
+        "dropped": 0,
+        "missing": 45,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 48
+      },
+      {
+        "kind": "in",
+        "presented": 51,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 58
+      },
+      {
+        "kind": "in",
+        "presented": 52,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 53
+      },
+      {
+        "kind": "in",
+        "presented": 53,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 54
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 40,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 18
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 48,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 8
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 18
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 51,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 3
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 0,
+        "missing": 24,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 5
+      }
+    ],
+    "rests": [
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1761,
+        "latency": 9,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 83,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 50,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 600,
+            "over34": 4
+          }
+        },
+        "frames": 52,
+        "firstFrame": 11.3,
+        "mean": 32.35,
+        "p95": 66.9,
+        "max": 599.7,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 951,
+        "domNodes": 1072,
+        "canvasMB": 1.1,
+        "arrivalLongest": 585,
+        "arrivalLongTaskMs": 804
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1771,
+        "latency": 45,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 133,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 51,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 549,
+            "over34": 4
+          }
+        },
+        "frames": 51,
+        "firstFrame": 14,
+        "mean": 32.68,
+        "p95": 83.7,
+        "max": 549.2,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 911,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 540,
+        "arrivalLongTaskMs": 753
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1820,
+        "latency": 47,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 133,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 51,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 549,
+            "over34": 4
+          }
+        },
+        "frames": 52,
+        "firstFrame": 8.6,
+        "mean": 32.03,
+        "p95": 66.8,
+        "max": 549.4,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 5,
+        "longTaskMs": 846,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 544,
+        "arrivalLongTaskMs": 689
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1831,
+        "latency": 46,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 133,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 49,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 567,
+            "over34": 4
+          }
+        },
+        "frames": 52,
+        "firstFrame": 3.4,
+        "mean": 32.37,
+        "p95": 66.7,
+        "max": 567.4,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 5,
+        "longTaskMs": 852,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 549,
+        "arrivalLongTaskMs": 696
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1785,
+        "latency": 47,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 150,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 50,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 566,
+            "over34": 4
+          }
+        },
+        "frames": 52,
+        "firstFrame": 4.4,
+        "mean": 32.99,
+        "p95": 83.4,
+        "max": 565.8,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 929,
+        "domNodes": 1605,
+        "canvasMB": 2.2,
+        "arrivalLongest": 557,
+        "arrivalLongTaskMs": 768
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1776,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 101,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 533,
+            "over34": 4
+          }
+        },
+        "frames": 55,
+        "firstFrame": 0.9,
+        "mean": 29.99,
+        "p95": 66.7,
+        "max": 533.4,
+        "over20": 6,
+        "over34": 5,
+        "longTasks": 4,
+        "longTaskMs": 778,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 532,
+        "arrivalLongTaskMs": 675
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1689,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 100,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 34,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 533,
+            "over34": 4
+          }
+        },
+        "frames": 55,
+        "firstFrame": 7.7,
+        "mean": 29.7,
+        "p95": 66,
+        "max": 533.4,
+        "over20": 6,
+        "over34": 5,
+        "longTasks": 3,
+        "longTaskMs": 710,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 518,
+        "arrivalLongTaskMs": 608
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1730,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 101,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 532,
+            "over34": 4
+          }
+        },
+        "frames": 55,
+        "firstFrame": 0.3,
+        "mean": 29.69,
+        "p95": 66.6,
+        "max": 532.3,
+        "over20": 6,
+        "over34": 5,
+        "longTasks": 4,
+        "longTaskMs": 756,
+        "domNodes": 1606,
+        "canvasMB": 2.2,
+        "arrivalLongest": 515,
+        "arrivalLongTaskMs": 653
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1748,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 51,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 532,
+            "over34": 5
+          }
+        },
+        "frames": 57,
+        "firstFrame": 2.9,
+        "mean": 28.65,
+        "p95": 50.9,
+        "max": 532.4,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 3,
+        "longTaskMs": 663,
+        "domNodes": 1072,
+        "canvasMB": 1.1,
+        "arrivalLongest": 513,
+        "arrivalLongTaskMs": 603
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1660,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 32,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 33,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 516,
+            "over34": 4
+          }
+        },
+        "frames": 58,
+        "firstFrame": 5.4,
+        "mean": 27.57,
+        "p95": 51.1,
+        "max": 515.7,
+        "over20": 6,
+        "over34": 4,
+        "longTasks": 2,
+        "longTaskMs": 597,
+        "domNodes": 533,
+        "canvasMB": 0,
+        "arrivalLongest": 509,
+        "arrivalLongTaskMs": 597
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.5,
+        "max": 17.6,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.6,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 119,
+        "firstFrame": 0,
+        "mean": 16.67,
+        "p95": 17.5,
+        "max": 17.7,
+        "over20": 0,
+        "over34": 0,
+        "longTasks": 0,
+        "longTaskMs": 0,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "orbit",
+    "mode": "baseline",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 1.5,
+      "stutters": 1,
+      "gapMedian": 17.7,
+      "gapWorst": 66.6,
+      "missingPerT": 36.9,
+      "tailDropped": 0,
+      "latency": 34,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 87,
+      "arrivalLongestWorst": 150
+    },
+    "ins": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 42.2,
+      "tailDropped": 0,
+      "latency": 81
+    },
+    "outs": {
+      "droppedPct": 3.2,
+      "stutters": 1,
+      "gapMedian": 49.7,
+      "gapWorst": 66.6,
+      "missingPerT": 31.6,
+      "tailDropped": 0,
+      "latency": 31
+    },
+    "rafMean": 26.6,
+    "heapMB": 3.4,
+    "plugin": null,
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 61,
+        "dropped": 0,
+        "missing": 26,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 28
+      },
+      {
+        "kind": "in",
+        "presented": 62,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 64
+      },
+      {
+        "kind": "in",
+        "presented": 61,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 82
+      },
+      {
+        "kind": "in",
+        "presented": 63,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 81
+      },
+      {
+        "kind": "in",
+        "presented": 60,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 84
+      },
+      {
+        "kind": "out",
+        "presented": 53,
+        "dropped": 2,
+        "missing": 30,
+        "maxGapMs": 50,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 31
+      },
+      {
+        "kind": "out",
+        "presented": 52,
+        "dropped": 3,
+        "missing": 33,
+        "maxGapMs": 66.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 33
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 2,
+        "missing": 32,
+        "maxGapMs": 49.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 34
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 2,
+        "missing": 40,
+        "maxGapMs": 34.3,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 16
+      },
+      {
+        "kind": "out",
+        "presented": 55,
+        "dropped": 0,
+        "missing": 23,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 15
+      }
+    ],
+    "rests": [
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1446,
+        "latency": 15,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 250,
+            "over34": 2
+          },
+          "end": {
+            "worst": 99,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 167,
+            "over34": 1
+          }
+        },
+        "frames": 54,
+        "firstFrame": 12.2,
+        "mean": 26.54,
+        "p95": 99,
+        "max": 249.9,
+        "over20": 5,
+        "over34": 5,
+        "longTasks": 4,
+        "longTaskMs": 603,
+        "domNodes": 543,
+        "canvasMB": 0,
+        "arrivalLongest": 88,
+        "arrivalLongTaskMs": 88
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1498,
+        "latency": 62,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 316,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 183,
+            "over34": 2
+          }
+        },
+        "frames": 50,
+        "firstFrame": 14.9,
+        "mean": 29.65,
+        "p95": 117.5,
+        "max": 316.3,
+        "over20": 6,
+        "over34": 4,
+        "longTasks": 5,
+        "longTaskMs": 728,
+        "domNodes": 812,
+        "canvasMB": 0,
+        "arrivalLongest": 83,
+        "arrivalLongTaskMs": 164
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1533,
+        "latency": 72,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 317,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 183,
+            "over34": 2
+          }
+        },
+        "frames": 56,
+        "firstFrame": 15.6,
+        "mean": 27.07,
+        "p95": 83.4,
+        "max": 316.7,
+        "over20": 5,
+        "over34": 4,
+        "longTasks": 5,
+        "longTaskMs": 702,
+        "domNodes": 812,
+        "canvasMB": 0,
+        "arrivalLongest": 79,
+        "arrivalLongTaskMs": 156
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1533,
+        "latency": 72,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 316,
+            "over34": 3
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 200,
+            "over34": 1
+          }
+        },
+        "frames": 58,
+        "firstFrame": 15.6,
+        "mean": 26.15,
+        "p95": 82.5,
+        "max": 315.9,
+        "over20": 4,
+        "over34": 4,
+        "longTasks": 4,
+        "longTaskMs": 649,
+        "domNodes": 812,
+        "canvasMB": 0,
+        "arrivalLongest": 80,
+        "arrivalLongTaskMs": 158
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1485,
+        "latency": 71,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 318,
+            "over34": 1
+          },
+          "end": {
+            "worst": 83,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 199,
+            "over34": 1
+          }
+        },
+        "frames": 56,
+        "firstFrame": 0.1,
+        "mean": 26.51,
+        "p95": 82.8,
+        "max": 317.7,
+        "over20": 4,
+        "over34": 3,
+        "longTasks": 4,
+        "longTaskMs": 623,
+        "domNodes": 811,
+        "canvasMB": 0,
+        "arrivalLongest": 87,
+        "arrivalLongTaskMs": 87
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1348,
+        "latency": 18,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 267,
+            "over34": 2
+          },
+          "end": {
+            "worst": 67,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 184,
+            "over34": 2
+          }
+        },
+        "frames": 44,
+        "firstFrame": 15,
+        "mean": 30.3,
+        "p95": 117.2,
+        "max": 266.6,
+        "over20": 6,
+        "over34": 5,
+        "longTasks": 6,
+        "longTaskMs": 699,
+        "domNodes": 812,
+        "canvasMB": 0,
+        "arrivalLongest": 150,
+        "arrivalLongTaskMs": 269
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1349,
+        "latency": 17,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 250,
+            "over34": 1
+          },
+          "end": {
+            "worst": 100,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 184,
+            "over34": 1
+          }
+        },
+        "frames": 48,
+        "firstFrame": 16.1,
+        "mean": 27.76,
+        "p95": 99.8,
+        "max": 250,
+        "over20": 5,
+        "over34": 4,
+        "longTasks": 5,
+        "longTaskMs": 617,
+        "domNodes": 812,
+        "canvasMB": 0,
+        "arrivalLongest": 147,
+        "arrivalLongTaskMs": 207
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1350,
+        "latency": 18,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 266,
+            "over34": 3
+          },
+          "end": {
+            "worst": 67,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 201,
+            "over34": 2
+          }
+        },
+        "frames": 43,
+        "firstFrame": 0.6,
+        "mean": 31.38,
+        "p95": 116.7,
+        "max": 265.7,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 693,
+        "domNodes": 812,
+        "canvasMB": 0,
+        "arrivalLongest": 150,
+        "arrivalLongTaskMs": 277
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1350,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 168,
+            "over34": 2
+          },
+          "end": {
+            "worst": 66,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 99,
+            "over34": 1
+          }
+        },
+        "frames": 61,
+        "firstFrame": 15.7,
+        "mean": 21.87,
+        "p95": 65.8,
+        "max": 167.5,
+        "over20": 4,
+        "over34": 4,
+        "longTasks": 5,
+        "longTaskMs": 424,
+        "domNodes": 543,
+        "canvasMB": 0,
+        "arrivalLongest": 71,
+        "arrivalLongTaskMs": 71
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1315,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 83,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 50,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 18,
+            "over34": 0
+          }
+        },
+        "frames": 70,
+        "firstFrame": 14.7,
+        "mean": 18.57,
+        "p95": 33.3,
+        "max": 83.4,
+        "over20": 4,
+        "over34": 3,
+        "longTasks": 2,
+        "longTaskMs": 150,
+        "domNodes": 269,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 114,
+        "firstFrame": 0,
+        "mean": 17.4,
+        "p95": 17.5,
+        "max": 66.7,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 140,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 113,
+        "firstFrame": 0,
+        "mean": 17.55,
+        "p95": 17.6,
+        "max": 83.3,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 144,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 114,
+        "firstFrame": 0,
+        "mean": 17.4,
+        "p95": 17.6,
+        "max": 66.6,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 139,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 113,
+        "firstFrame": 0,
+        "mean": 17.55,
+        "p95": 17.6,
+        "max": 82.6,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 138,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 111,
+        "firstFrame": 0,
+        "mean": 17.87,
+        "p95": 17.6,
+        "max": 83.2,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 164,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "orbit",
+    "mode": "flat",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 0.2,
+      "stutters": 0,
+      "gapMedian": 17.7,
+      "gapWorst": 50,
+      "missingPerT": 53.1,
+      "tailDropped": 0,
+      "latency": 32,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 883,
+      "arrivalLongestWorst": 911
+    },
+    "ins": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.7,
+      "gapWorst": 17.7,
+      "missingPerT": 67.8,
+      "tailDropped": 0,
+      "latency": 76
+    },
+    "outs": {
+      "droppedPct": 0.6,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 50,
+      "missingPerT": 38.4,
+      "tailDropped": 0,
+      "latency": 21
+    },
+    "rafMean": 71.4,
+    "heapMB": 123.9,
+    "plugin": {
+      "captures": 11,
+      "captureMsMedian": 1612.7,
+      "captureMsMax": "1758",
+      "composeMsMedian": null,
+      "fallbacks": 8,
+      "streamFrames": 22,
+      "streamFull": 11,
+      "streamMs": 21177
+    },
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 63,
+        "dropped": 0,
+        "missing": 25,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 28
+      },
+      {
+        "kind": "in",
+        "presented": 103,
+        "dropped": 0,
+        "missing": 84,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 75
+      },
+      {
+        "kind": "in",
+        "presented": 92,
+        "dropped": 0,
+        "missing": 71,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 76
+      },
+      {
+        "kind": "in",
+        "presented": 97,
+        "dropped": 0,
+        "missing": 81,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 82
+      },
+      {
+        "kind": "in",
+        "presented": 93,
+        "dropped": 0,
+        "missing": 78,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 91
+      },
+      {
+        "kind": "out",
+        "presented": 94,
+        "dropped": 0,
+        "missing": 59,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 28
+      },
+      {
+        "kind": "out",
+        "presented": 55,
+        "dropped": 0,
+        "missing": 36,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 32
+      },
+      {
+        "kind": "out",
+        "presented": 55,
+        "dropped": 0,
+        "missing": 36,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 21
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 2,
+        "missing": 45,
+        "maxGapMs": 50,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 14
+      },
+      {
+        "kind": "out",
+        "presented": 94,
+        "dropped": 0,
+        "missing": 16,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 6
+      }
+    ],
+    "rests": [
+      {
+        "presented": 122,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 128,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 127,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 122,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 128,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1584,
+        "latency": 15,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 299,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 167,
+            "over34": 5
+          }
+        },
+        "frames": 47,
+        "firstFrame": 11.7,
+        "mean": 32.61,
+        "p95": 100.6,
+        "max": 299.1,
+        "over20": 10,
+        "over34": 7,
+        "longTasks": 8,
+        "longTaskMs": 840,
+        "domNodes": 543,
+        "canvasMB": 0,
+        "arrivalLongest": 901,
+        "arrivalLongTaskMs": 1291
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 2290,
+        "latency": 64,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 418,
+            "over34": 2
+          },
+          "end": {
+            "worst": 983,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 251,
+            "over34": 3
+          }
+        },
+        "frames": 20,
+        "firstFrame": -26,
+        "mean": 111.66,
+        "p95": 983.2,
+        "max": 983.2,
+        "over20": 13,
+        "over34": 6,
+        "longTasks": 9,
+        "longTaskMs": 1887,
+        "domNodes": 813,
+        "canvasMB": 1.1,
+        "arrivalLongest": 911,
+        "arrivalLongTaskMs": 1513
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 2028,
+        "latency": 73,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 416,
+            "over34": 2
+          },
+          "end": {
+            "worst": 934,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 250,
+            "over34": 2
+          }
+        },
+        "frames": 20,
+        "firstFrame": -6.4,
+        "mean": 101.63,
+        "p95": 934,
+        "max": 934,
+        "over20": 7,
+        "over34": 5,
+        "longTasks": 6,
+        "longTaskMs": 1664,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 876,
+        "arrivalLongTaskMs": 1250
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 2320,
+        "latency": 73,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 417,
+            "over34": 2
+          },
+          "end": {
+            "worst": 967,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 250,
+            "over34": 3
+          }
+        },
+        "frames": 23,
+        "firstFrame": -84.6,
+        "mean": 101.41,
+        "p95": 416.6,
+        "max": 966.9,
+        "over20": 11,
+        "over34": 6,
+        "longTasks": 9,
+        "longTaskMs": 1917,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 890,
+        "arrivalLongTaskMs": 1268
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 2113,
+        "latency": 75,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 368,
+            "over34": 3
+          },
+          "end": {
+            "worst": 916,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 218,
+            "over34": 3
+          }
+        },
+        "frames": 20,
+        "firstFrame": -26,
+        "mean": 103.33,
+        "p95": 915.8,
+        "max": 915.8,
+        "over20": 9,
+        "over34": 7,
+        "longTasks": 7,
+        "longTaskMs": 1723,
+        "domNodes": 813,
+        "canvasMB": 2.2,
+        "arrivalLongest": 883,
+        "arrivalLongTaskMs": 1360
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 2116,
+        "latency": 19,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 334,
+            "over34": 2
+          },
+          "end": {
+            "worst": 917,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 417,
+            "over34": 2
+          }
+        },
+        "frames": 24,
+        "firstFrame": -38.7,
+        "mean": 89.6,
+        "p95": 417,
+        "max": 916.5,
+        "over20": 7,
+        "over34": 5,
+        "longTasks": 5,
+        "longTaskMs": 1661,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 877,
+        "arrivalLongTaskMs": 1368
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1486,
+        "latency": 18,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 316,
+            "over34": 2
+          },
+          "end": {
+            "worst": 67,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 233,
+            "over34": 4
+          }
+        },
+        "frames": 33,
+        "firstFrame": 16,
+        "mean": 42.4,
+        "p95": 233.4,
+        "max": 316.2,
+        "over20": 8,
+        "over34": 7,
+        "longTasks": 10,
+        "longTaskMs": 989,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 885,
+        "arrivalLongTaskMs": 1366
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1438,
+        "latency": 18,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 300,
+            "over34": 2
+          },
+          "end": {
+            "worst": 67,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 233,
+            "over34": 3
+          }
+        },
+        "frames": 46,
+        "firstFrame": -12.6,
+        "mean": 31.15,
+        "p95": 100.8,
+        "max": 299.5,
+        "over20": 6,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 739,
+        "domNodes": 813,
+        "canvasMB": 1.1,
+        "arrivalLongest": 872,
+        "arrivalLongTaskMs": 1366
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1405,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 166,
+            "over34": 2
+          },
+          "end": {
+            "worst": 66,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 151,
+            "over34": 4
+          }
+        },
+        "frames": 49,
+        "firstFrame": -2.7,
+        "mean": 28.21,
+        "p95": 82.5,
+        "max": 166,
+        "over20": 10,
+        "over34": 7,
+        "longTasks": 10,
+        "longTaskMs": 725,
+        "domNodes": 543,
+        "canvasMB": 0,
+        "arrivalLongest": 877,
+        "arrivalLongTaskMs": 1250
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 2010,
+        "latency": 0,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 116,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 84,
+            "over34": 3
+          },
+          "end": {
+            "worst": 883,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 83,
+            "over34": 7
+          }
+        },
+        "frames": 28,
+        "firstFrame": -27.6,
+        "mean": 72.02,
+        "p95": 115.7,
+        "max": 883.3,
+        "over20": 18,
+        "over34": 13,
+        "longTasks": 10,
+        "longTaskMs": 1519,
+        "domNodes": 269,
+        "canvasMB": 0,
+        "arrivalLongest": 874,
+        "arrivalLongTaskMs": 1318
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 26,
+        "firstFrame": 0,
+        "mean": 76.25,
+        "p95": 100,
+        "max": 916.6,
+        "over20": 13,
+        "over34": 11,
+        "longTasks": 12,
+        "longTaskMs": 1712,
+        "streamFrames": 1,
+        "streamFull": 1,
+        "streamMs": 1553,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 25,
+        "firstFrame": 0,
+        "mean": 81.33,
+        "p95": 166.7,
+        "max": 899.1,
+        "over20": 15,
+        "over34": 12,
+        "longTasks": 11,
+        "longTaskMs": 1707,
+        "streamFrames": 2,
+        "streamFull": 1,
+        "streamMs": 1574,
+        "captures": 1
+      },
+      {
+        "level": 4,
+        "frames": 24,
+        "firstFrame": 0,
+        "mean": 81.94,
+        "p95": 149.1,
+        "max": 900.7,
+        "over20": 13,
+        "over34": 12,
+        "longTasks": 10,
+        "longTaskMs": 1616,
+        "streamFrames": 2,
+        "streamFull": 1,
+        "streamMs": 1572,
+        "captures": 1
+      },
+      {
+        "level": 5,
+        "frames": 26,
+        "firstFrame": 0,
+        "mean": 76.89,
+        "p95": 166.7,
+        "max": 899.9,
+        "over20": 14,
+        "over34": 11,
+        "longTasks": 11,
+        "longTaskMs": 1670,
+        "streamFrames": 1,
+        "streamFull": 1,
+        "streamMs": 1539,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 24,
+        "firstFrame": 0,
+        "mean": 79.82,
+        "p95": 167.6,
+        "max": 900.1,
+        "over20": 12,
+        "over34": 9,
+        "longTasks": 10,
+        "longTaskMs": 1694,
+        "streamFrames": 2,
+        "streamFull": 1,
+        "streamMs": 1468,
+        "captures": 1
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "orbit",
+    "mode": "flat-once",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 0.2,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 32.8,
+      "missingPerT": 40.4,
+      "tailDropped": 0,
+      "latency": 32,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 419,
+      "arrivalLongestWorst": 450
+    },
+    "ins": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 44.2,
+      "tailDropped": 0,
+      "latency": 79
+    },
+    "outs": {
+      "droppedPct": 0.4,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 32.8,
+      "missingPerT": 36.6,
+      "tailDropped": 0,
+      "latency": 23
+    },
+    "rafMean": 29,
+    "heapMB": 35.9,
+    "plugin": {
+      "captures": 5,
+      "captureMsMedian": 1413.6,
+      "captureMsMax": "1489",
+      "composeMsMedian": null,
+      "fallbacks": 10,
+      "streamFrames": 0,
+      "streamFull": 0,
+      "streamMs": 0
+    },
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 58,
+        "dropped": 0,
+        "missing": 33,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 28
+      },
+      {
+        "kind": "in",
+        "presented": 62,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 79
+      },
+      {
+        "kind": "in",
+        "presented": 64,
+        "dropped": 0,
+        "missing": 49,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 85
+      },
+      {
+        "kind": "in",
+        "presented": 61,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 77
+      },
+      {
+        "kind": "in",
+        "presented": 61,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 84
+      },
+      {
+        "kind": "out",
+        "presented": 55,
+        "dropped": 0,
+        "missing": 38,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 23
+      },
+      {
+        "kind": "out",
+        "presented": 57,
+        "dropped": 0,
+        "missing": 40,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 32
+      },
+      {
+        "kind": "out",
+        "presented": 55,
+        "dropped": 0,
+        "missing": 40,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 32
+      },
+      {
+        "kind": "out",
+        "presented": 55,
+        "dropped": 1,
+        "missing": 41,
+        "maxGapMs": 32.8,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 14
+      },
+      {
+        "kind": "out",
+        "presented": 56,
+        "dropped": 0,
+        "missing": 24,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 15
+      }
+    ],
+    "rests": [
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1647,
+        "latency": 17,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 216,
+            "over34": 1
+          },
+          "end": {
+            "worst": 83,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 150,
+            "over34": 5
+          }
+        },
+        "frames": 48,
+        "firstFrame": 12.4,
+        "mean": 32.97,
+        "p95": 116.5,
+        "max": 215.8,
+        "over20": 10,
+        "over34": 7,
+        "longTasks": 7,
+        "longTaskMs": 861,
+        "domNodes": 543,
+        "canvasMB": 0,
+        "arrivalLongest": 450,
+        "arrivalLongTaskMs": 1250
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1700,
+        "latency": 64,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 318,
+            "over34": 1
+          },
+          "end": {
+            "worst": 84,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 183,
+            "over34": 5
+          }
+        },
+        "frames": 51,
+        "firstFrame": 12.3,
+        "mean": 32.35,
+        "p95": 116.5,
+        "max": 317.5,
+        "over20": 8,
+        "over34": 7,
+        "longTasks": 8,
+        "longTaskMs": 931,
+        "domNodes": 813,
+        "canvasMB": 1.1,
+        "arrivalLongest": 419,
+        "arrivalLongTaskMs": 1058
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1756,
+        "latency": 71,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 333,
+            "over34": 1
+          },
+          "end": {
+            "worst": 83,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 217,
+            "over34": 5
+          }
+        },
+        "frames": 52,
+        "firstFrame": 2.9,
+        "mean": 33.01,
+        "p95": 100.6,
+        "max": 333.4,
+        "over20": 8,
+        "over34": 7,
+        "longTasks": 8,
+        "longTaskMs": 943,
+        "domNodes": 813,
+        "canvasMB": 1.1,
+        "arrivalLongest": 427,
+        "arrivalLongTaskMs": 1071
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1573,
+        "latency": 67,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 317,
+            "over34": 2
+          },
+          "end": {
+            "worst": 17,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 200,
+            "over34": 3
+          }
+        },
+        "frames": 47,
+        "firstFrame": 10.7,
+        "mean": 31.54,
+        "p95": 100.1,
+        "max": 316.7,
+        "over20": 7,
+        "over34": 5,
+        "longTasks": 6,
+        "longTaskMs": 761,
+        "domNodes": 813,
+        "canvasMB": 1.1,
+        "arrivalLongest": 421,
+        "arrivalLongTaskMs": 1127
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1622,
+        "latency": 71,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 333,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 183,
+            "over34": 5
+          }
+        },
+        "frames": 47,
+        "firstFrame": 1.1,
+        "mean": 32.96,
+        "p95": 116.4,
+        "max": 333.2,
+        "over20": 7,
+        "over34": 7,
+        "longTasks": 8,
+        "longTaskMs": 896,
+        "domNodes": 812,
+        "canvasMB": 1.1,
+        "arrivalLongest": 450,
+        "arrivalLongTaskMs": 1161
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1389,
+        "latency": 18,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 284,
+            "over34": 2
+          },
+          "end": {
+            "worst": 68,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 234,
+            "over34": 1
+          }
+        },
+        "frames": 47,
+        "firstFrame": 5.2,
+        "mean": 29.44,
+        "p95": 100.4,
+        "max": 283.7,
+        "over20": 4,
+        "over34": 4,
+        "longTasks": 5,
+        "longTaskMs": 693,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 157,
+        "arrivalLongTaskMs": 295
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1417,
+        "latency": 17,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 268,
+            "over34": 1
+          },
+          "end": {
+            "worst": 67,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 267,
+            "over34": 1
+          }
+        },
+        "frames": 51,
+        "firstFrame": 15.1,
+        "mean": 27.47,
+        "p95": 66.7,
+        "max": 267.6,
+        "over20": 4,
+        "over34": 3,
+        "longTasks": 4,
+        "longTaskMs": 599,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 153,
+        "arrivalLongTaskMs": 217
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1382,
+        "latency": 18,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 250,
+            "over34": 2
+          },
+          "end": {
+            "worst": 50,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 216,
+            "over34": 2
+          }
+        },
+        "frames": 46,
+        "firstFrame": 15.4,
+        "mean": 29.7,
+        "p95": 100.8,
+        "max": 250,
+        "over20": 7,
+        "over34": 6,
+        "longTasks": 6,
+        "longTaskMs": 708,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 142,
+        "arrivalLongTaskMs": 394
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1382,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 151,
+            "over34": 2
+          },
+          "end": {
+            "worst": 51,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 133,
+            "over34": 1
+          }
+        },
+        "frames": 63,
+        "firstFrame": 14,
+        "mean": 21.7,
+        "p95": 50.3,
+        "max": 150.6,
+        "over20": 5,
+        "over34": 4,
+        "longTasks": 5,
+        "longTaskMs": 439,
+        "domNodes": 544,
+        "canvasMB": 1.1,
+        "arrivalLongest": 63,
+        "arrivalLongTaskMs": 63
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1382,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 84,
+            "over34": 2
+          },
+          "mid": {
+            "worst": 18,
+            "over34": 0
+          },
+          "end": {
+            "worst": 51,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 100,
+            "over34": 1
+          }
+        },
+        "frames": 71,
+        "firstFrame": 15,
+        "mean": 19.25,
+        "p95": 34.3,
+        "max": 100.1,
+        "over20": 4,
+        "over34": 4,
+        "longTasks": 3,
+        "longTaskMs": 247,
+        "domNodes": 269,
+        "canvasMB": 0,
+        "arrivalLongest": 0,
+        "arrivalLongTaskMs": 0
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 116,
+        "firstFrame": 0,
+        "mean": 17.1,
+        "p95": 17.6,
+        "max": 49.6,
+        "over20": 2,
+        "over34": 1,
+        "longTasks": 1,
+        "longTaskMs": 64,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 3,
+        "frames": 111,
+        "firstFrame": 0,
+        "mean": 17.87,
+        "p95": 17.6,
+        "max": 83.9,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 171,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 4,
+        "frames": 111,
+        "firstFrame": 0,
+        "mean": 17.87,
+        "p95": 17.6,
+        "max": 84.2,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 170,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 5,
+        "frames": 112,
+        "firstFrame": 0,
+        "mean": 17.71,
+        "p95": 17.6,
+        "max": 83,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 162,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      },
+      {
+        "level": 6,
+        "frames": 112,
+        "firstFrame": 0,
+        "mean": 17.71,
+        "p95": 17.6,
+        "max": 83.1,
+        "over20": 2,
+        "over34": 2,
+        "longTasks": 2,
+        "longTaskMs": 156,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 0
+      }
+    ],
+    "attempt": 0
+  },
+  {
+    "run": 0,
+    "cond": "live",
+    "scene": "orbit",
+    "mode": "flat-idle",
+    "cpu": 4,
+    "disturbed": true,
+    "summary": {
+      "droppedPct": 0.3,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 49.2,
+      "missingPerT": 39.4,
+      "tailDropped": 0,
+      "latency": 34,
+      "restDroppedPct": 0,
+      "restGapWorst": 17.7,
+      "arrivalLongestMedian": 918,
+      "arrivalLongestWorst": 969
+    },
+    "ins": {
+      "droppedPct": 0,
+      "stutters": 0,
+      "gapMedian": 17.6,
+      "gapWorst": 17.7,
+      "missingPerT": 42.6,
+      "tailDropped": 0,
+      "latency": 72
+    },
+    "outs": {
+      "droppedPct": 0.7,
+      "stutters": 0,
+      "gapMedian": 17.7,
+      "gapWorst": 49.2,
+      "missingPerT": 36.2,
+      "tailDropped": 0,
+      "latency": 26
+    },
+    "rafMean": 31.9,
+    "heapMB": 17,
+    "plugin": {
+      "captures": 11,
+      "captureMsMedian": 1812.5,
+      "captureMsMax": "1973",
+      "composeMsMedian": null,
+      "fallbacks": 8,
+      "streamFrames": 0,
+      "streamFull": 0,
+      "streamMs": 0
+    },
+    "steps": [
+      {
+        "kind": "in",
+        "presented": 60,
+        "dropped": 0,
+        "missing": 26,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 15
+      },
+      {
+        "kind": "in",
+        "presented": 63,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 66
+      },
+      {
+        "kind": "in",
+        "presented": 63,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 72
+      },
+      {
+        "kind": "in",
+        "presented": 62,
+        "dropped": 0,
+        "missing": 46,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 92
+      },
+      {
+        "kind": "in",
+        "presented": 62,
+        "dropped": 0,
+        "missing": 47,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 87
+      },
+      {
+        "kind": "out",
+        "presented": 56,
+        "dropped": 0,
+        "missing": 39,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 34
+      },
+      {
+        "kind": "out",
+        "presented": 56,
+        "dropped": 0,
+        "missing": 39,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.7,
+        "latencyMs": 26
+      },
+      {
+        "kind": "out",
+        "presented": 55,
+        "dropped": 0,
+        "missing": 38,
+        "maxGapMs": 17.7,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.5,
+        "latencyMs": 30
+      },
+      {
+        "kind": "out",
+        "presented": 54,
+        "dropped": 2,
+        "missing": 44,
+        "maxGapMs": 49.2,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 16
+      },
+      {
+        "kind": "out",
+        "presented": 56,
+        "dropped": 0,
+        "missing": 21,
+        "maxGapMs": 17.6,
+        "tailDropped": 0,
+        "tailMaxGapMs": 17.6,
+        "latencyMs": 9
+      }
+    ],
+    "rests": [
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.6
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      },
+      {
+        "presented": 120,
+        "dropped": 0,
+        "missing": 0,
+        "maxGapMs": 17.7
+      }
+    ],
+    "pageSteps": [
+      {
+        "kind": "in",
+        "level": 2,
+        "totalMs": 1522,
+        "latency": 15,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 249,
+            "over34": 3
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 151,
+            "over34": 4
+          }
+        },
+        "frames": 49,
+        "firstFrame": -0.3,
+        "mean": 28.89,
+        "p95": 83.2,
+        "max": 249.1,
+        "over20": 9,
+        "over34": 7,
+        "longTasks": 6,
+        "longTaskMs": 698,
+        "domNodes": 543,
+        "canvasMB": 0,
+        "arrivalLongest": 909,
+        "arrivalLongTaskMs": 1306
+      },
+      {
+        "kind": "in",
+        "level": 3,
+        "totalMs": 1652,
+        "latency": 61,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 318,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 200,
+            "over34": 4
+          }
+        },
+        "frames": 50,
+        "firstFrame": 15.4,
+        "mean": 30.69,
+        "p95": 100,
+        "max": 317.6,
+        "over20": 7,
+        "over34": 6,
+        "longTasks": 7,
+        "longTaskMs": 844,
+        "domNodes": 813,
+        "canvasMB": 1.1,
+        "arrivalLongest": 914,
+        "arrivalLongTaskMs": 1304
+      },
+      {
+        "kind": "in",
+        "level": 4,
+        "totalMs": 1581,
+        "latency": 72,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 334,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 200,
+            "over34": 3
+          }
+        },
+        "frames": 48,
+        "firstFrame": 4.8,
+        "mean": 31.27,
+        "p95": 100.8,
+        "max": 334.2,
+        "over20": 7,
+        "over34": 5,
+        "longTasks": 7,
+        "longTaskMs": 876,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 941,
+        "arrivalLongTaskMs": 1365
+      },
+      {
+        "kind": "in",
+        "level": 5,
+        "totalMs": 1650,
+        "latency": 77,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 334,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 199,
+            "over34": 4
+          }
+        },
+        "frames": 48,
+        "firstFrame": 8.3,
+        "mean": 31.94,
+        "p95": 99.9,
+        "max": 333.5,
+        "over20": 8,
+        "over34": 6,
+        "longTasks": 7,
+        "longTaskMs": 874,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 941,
+        "arrivalLongTaskMs": 1346
+      },
+      {
+        "kind": "in",
+        "level": 6,
+        "totalMs": 1651,
+        "latency": 72,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 334,
+            "over34": 2
+          },
+          "end": {
+            "worst": 18,
+            "over34": 0
+          },
+          "tail": {
+            "worst": 216,
+            "over34": 5
+          }
+        },
+        "frames": 48,
+        "firstFrame": 3.4,
+        "mean": 32.3,
+        "p95": 100.7,
+        "max": 333.6,
+        "over20": 8,
+        "over34": 7,
+        "longTasks": 7,
+        "longTaskMs": 865,
+        "domNodes": 813,
+        "canvasMB": 2.2,
+        "arrivalLongest": 969,
+        "arrivalLongTaskMs": 1357
+      },
+      {
+        "kind": "out",
+        "level": 5,
+        "totalMs": 1532,
+        "latency": 19,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 300,
+            "over34": 1
+          },
+          "end": {
+            "worst": 116,
+            "over34": 2
+          },
+          "tail": {
+            "worst": 249,
+            "over34": 3
+          }
+        },
+        "frames": 39,
+        "firstFrame": 0.2,
+        "mean": 36.77,
+        "p95": 249.2,
+        "max": 300.1,
+        "over20": 8,
+        "over34": 6,
+        "longTasks": 8,
+        "longTaskMs": 910,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 937,
+        "arrivalLongTaskMs": 1447
+      },
+      {
+        "kind": "out",
+        "level": 4,
+        "totalMs": 1493,
+        "latency": 19,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 300,
+            "over34": 1
+          },
+          "end": {
+            "worst": 83,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 250,
+            "over34": 3
+          }
+        },
+        "frames": 40,
+        "firstFrame": -6.6,
+        "mean": 35.42,
+        "p95": 250.1,
+        "max": 300,
+        "over20": 10,
+        "over34": 5,
+        "longTasks": 6,
+        "longTaskMs": 777,
+        "domNodes": 814,
+        "canvasMB": 2.2,
+        "arrivalLongest": 913,
+        "arrivalLongTaskMs": 1455
+      },
+      {
+        "kind": "out",
+        "level": 3,
+        "totalMs": 1489,
+        "latency": 18,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 0,
+            "over34": 0
+          },
+          "mid": {
+            "worst": 283,
+            "over34": 3
+          },
+          "end": {
+            "worst": 67,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 233,
+            "over34": 3
+          }
+        },
+        "frames": 37,
+        "firstFrame": -2.4,
+        "mean": 38.72,
+        "p95": 233.3,
+        "max": 283.3,
+        "over20": 10,
+        "over34": 7,
+        "longTasks": 9,
+        "longTaskMs": 946,
+        "domNodes": 813,
+        "canvasMB": 1.1,
+        "arrivalLongest": 895,
+        "arrivalLongTaskMs": 1381
+      },
+      {
+        "kind": "out",
+        "level": 2,
+        "totalMs": 1506,
+        "latency": 2,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 149,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 68,
+            "over34": 1
+          },
+          "end": {
+            "worst": 66,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 150,
+            "over34": 5
+          }
+        },
+        "frames": 50,
+        "firstFrame": -0.5,
+        "mean": 29.33,
+        "p95": 149,
+        "max": 150,
+        "over20": 10,
+        "over34": 8,
+        "longTasks": 10,
+        "longTaskMs": 798,
+        "domNodes": 543,
+        "canvasMB": 0,
+        "arrivalLongest": 918,
+        "arrivalLongTaskMs": 1374
+      },
+      {
+        "kind": "out",
+        "level": 1,
+        "totalMs": 1357,
+        "latency": 1,
+        "phase": {
+          "pre": {
+            "worst": 0,
+            "over34": 0
+          },
+          "start": {
+            "worst": 100,
+            "over34": 1
+          },
+          "mid": {
+            "worst": 50,
+            "over34": 1
+          },
+          "end": {
+            "worst": 67,
+            "over34": 1
+          },
+          "tail": {
+            "worst": 83,
+            "over34": 5
+          }
+        },
+        "frames": 55,
+        "firstFrame": 9.3,
+        "mean": 23.95,
+        "p95": 67.3,
+        "max": 100.1,
+        "over20": 9,
+        "over34": 8,
+        "longTasks": 7,
+        "longTaskMs": 482,
+        "domNodes": 269,
+        "canvasMB": 0,
+        "arrivalLongest": 882,
+        "arrivalLongTaskMs": 1139
+      }
+    ],
+    "pageRests": [
+      {
+        "level": 2,
+        "frames": 108,
+        "firstFrame": 0,
+        "mean": 18.51,
+        "p95": 17.5,
+        "max": 132.6,
+        "over20": 3,
+        "over34": 3,
+        "longTasks": 3,
+        "longTaskMs": 267,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 1
+      },
+      {
+        "level": 3,
+        "frames": 105,
+        "firstFrame": 0,
+        "mean": 19.21,
+        "p95": 17.6,
+        "max": 149.3,
+        "over20": 3,
+        "over34": 3,
+        "longTasks": 3,
+        "longTaskMs": 320,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 1
+      },
+      {
+        "level": 4,
+        "frames": 106,
+        "firstFrame": 0,
+        "mean": 19.02,
+        "p95": 17.6,
+        "max": 116.4,
+        "over20": 3,
+        "over34": 3,
+        "longTasks": 3,
+        "longTaskMs": 297,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 1
+      },
+      {
+        "level": 5,
+        "frames": 103,
+        "firstFrame": 0,
+        "mean": 19.25,
+        "p95": 17.6,
+        "max": 132.4,
+        "over20": 4,
+        "over34": 4,
+        "longTasks": 3,
+        "longTaskMs": 332,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 1
+      },
+      {
+        "level": 6,
+        "frames": 105,
+        "firstFrame": 0,
+        "mean": 19.21,
+        "p95": 17.6,
+        "max": 132.6,
+        "over20": 3,
+        "over34": 3,
+        "longTasks": 3,
+        "longTaskMs": 301,
+        "streamFrames": 0,
+        "streamFull": 0,
+        "streamMs": 0,
+        "captures": 1
+      }
+    ],
+    "attempt": 0
+  }
+]

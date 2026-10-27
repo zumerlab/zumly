@@ -11,3 +11,5 @@ __screenshots__/
 .claude/settings.json
 docs/demos/
 public/
+# Contact sheets from experiments/snapdom-compositor/filmstrip.mjs (regenerated on demand)
+experiments/snapdom-compositor/results/fluidity/film/

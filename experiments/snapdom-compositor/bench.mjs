@@ -6,9 +6,10 @@ import { extname, join, resolve } from 'node:path'
 import { chromium } from 'playwright'
 
 const here = new URL('.', import.meta.url).pathname
+// snapdom/ and orbit/ sit next to zumly/ (or SNAPDOM_DIR / ORBIT_DIR).
 const roots = {
-  '/snapdom/': resolve(here, '../../../../../../snapdom') + '/',
-  '/orbit/': resolve(here, '../../../../../../orbit') + '/',
+  '/snapdom/': (process.env.SNAPDOM_DIR || resolve(here, '../../../snapdom')) + '/',
+  '/orbit/': (process.env.ORBIT_DIR || resolve(here, '../../../orbit')) + '/',
   '/': resolve(here, '../..') + '/',
 }
 const types = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.html': 'text/html', '.css': 'text/css' }

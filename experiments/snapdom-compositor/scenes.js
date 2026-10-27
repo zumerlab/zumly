@@ -19,10 +19,11 @@ function trigger (next, hue, label, outline) {
     font:700 18px/1 system-ui;display:grid;place-items:center">${label}</div>`
 }
 
-function frame (hue, level, body, next, live, outline) {
+function frame (hue, level, body, next, live, outline, animated) {
   return `<div class="z-view" style="width:${VIEW_W}px;height:${VIEW_H}px;border:4px solid hsl(${hue} 80% 55%);border-radius:24px;box-sizing:border-box;overflow:hidden">
     <div style="position:absolute;left:14px;top:10px;font:800 22px system-ui;color:hsl(${hue} 90% 70%)">Level ${level}</div>
     ${live ? `<div class="live-clock" style="position:absolute;right:14px;top:12px;font:600 14px ui-monospace,monospace;color:#fff;background:#000;padding:2px 6px">00:00.0</div>` : ''}
+    ${animated ? `<div class="live-spinner" style="position:absolute;right:24px;bottom:20px;width:36px;height:36px;box-sizing:border-box;border:4px solid hsl(${hue} 90% 65%);border-top-color:transparent;border-radius:50%;animation:spin 1.2s linear infinite"></div>` : ''}
     ${body}
     ${trigger(next, hue, `→ level ${level + 1}`, outline)}
   </div>`
@@ -89,7 +90,7 @@ export function buildViews ({ scene = 'cards', levels = 6, live = false, animate
     const hue = HUES[i % HUES.length]
     const next = i < levels - 1 ? `l${i + 1}` : null
     const body = scene === 'blur' ? blur(hue) : scene === 'orbit' ? orbit(hue, animated) : cards(hue, 340)
-    views[`l${i}`] = frame(hue, i, body, next, live, outline)
+    views[`l${i}`] = frame(hue, i, body, next, live, outline, animated)
   }
   return views
 }

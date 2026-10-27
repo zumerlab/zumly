@@ -1,0 +1,10 @@
+baseline: 112 screenshots, motion 856 ms
+noanim: 115 screenshots, motion 852 ms
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.evaluate: Target page, context or browser has been closed
+    at /Users/martin/GitHub/zumerlab/zumly/experiments/snapdom-compositor/filmstrip.mjs:74:14
+
+Node.js v25.8.1
