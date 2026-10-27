@@ -17,7 +17,7 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 - **View**: A DOM subtree with root class `z-view`. Sources: HTML strings, URLs, async functions, objects with `render()`, web components. Function views get `ctx.target` (the view itself), `props`, `onCleanup`, and `onActivate` (repaint when the view becomes current again)
 - **Trigger**: Element with class `zoom-me` and `data-to="viewName"` that initiates zoom-in
 - **Depth navigation**: Zoom in/out through view hierarchy (Z axis)
-- **Lateral navigation**: Navigate between sibling views at the same depth level. Each level keeps its own lateral history; `back()` undoes lateral moves before zooming out
+- **Lateral navigation**: Navigate between sibling views at the same depth level. Triggers that share a view and differ in their data (`data-to="room" data-id="kitchen"`) are separate siblings. Each level keeps its own lateral history; `back()` undoes lateral moves before zooming out
 - **Driver**: Pluggable animation engine for transitions
 - **Plugin**: Object with `install(instance, options)` or plain function
 - **Events**: `viewChanged` fires after every navigation with `{ type, viewName, from, zoomLevel, node }`

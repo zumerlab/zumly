@@ -238,7 +238,7 @@ Progressive delay in milliseconds between view layers. Current view starts immed
 - `'always'` (default): lateral nav appears whenever sibling views exist at current depth
 - `'auto'`: lateral nav only appears when the current view doesn't cover the full canvas
 
-Siblings are the views of the other `.zoom-me[data-to]` triggers in the parent view, so each depth level has its own group. A trigger with `data-sibling="false"` is left out of the group. Siblings are told apart by view name: several triggers opening the same view with different `data-*` are one view, not siblings.
+Siblings are the views of the other `.zoom-me[data-to]` triggers in the parent view, so each depth level has its own group. A trigger with `data-sibling="false"` is left out of the group. Several triggers opening the same view with different `data-*` (`data-id`, …) are separate siblings, one per trigger (see Lateral Navigation).
 
 #### `lateralNav.keepAlive`
 
@@ -253,6 +253,7 @@ Declared sibling order for lateral navigation. Takes precedence over inferring o
 - Array form (one lateral group): `siblings: ['today', 'tomorrow', 'week']`
 - Map form (keyed by parent view name): `siblings: { home: ['today', 'tomorrow', 'week'] }`
 - An array applies to whichever parent has the current view among its names; with several levels, prefer the map.
+- A sibling that shares its view with others is named with its data: `siblings: ['room?id=kitchen', 'room?id=bedroom']`.
 
 #### `depthNav`
 
@@ -368,7 +369,7 @@ All function and object view sources receive a `ViewContext`:
 ```ts
 interface ViewContext {
   target: HTMLDivElement     // Fresh <div> for mounting framework components
-  trigger?: HTMLElement      // The trigger element (if from a click)
+  trigger?: HTMLElement      // The trigger element (the one clicked, or the sibling's on a lateral move)
   context: Map | Object      // The componentContext from constructor
   props: Record<string, unknown>  // Trigger data attributes or programmatic props
   onCleanup(callback: () => void | Promise<void>): void  // Teardown when this view is discarded
@@ -467,7 +468,7 @@ Initialize: render the initial view, install plugins, and start prefetching. Mus
 
 ### `destroy(): void`
 
-Clean up listeners, timers, navigation UI, view resources registered with onCleanup, and internal state. Idempotent. Releases pending navigation promises and discards late view results. The canvas remains for the consumer; registered framework teardown may remove component DOM.
+Clean up listeners, observers, timers, navigation UI, view resources registered with onCleanup, and internal state, and remove the views the instance put in the canvas (kept-alive siblings and views still loading included). Idempotent. Releases pending navigation promises and discards late view results. The canvas is left as it was before the instance started: content you put there stays, and a new instance can start on it right away (React StrictMode, hot reload).
 
 ### `on(event, fn): this`
 
@@ -501,9 +502,9 @@ Zoom into the view indicated by trigger element (must have `data-to="viewName"`)
 
 Zoom out one level. No-op at root. `zoomOut(2)` climbs two levels; `zoomOut({ to: 'home' })` climbs to the nearest ancestor with that name; the object form also takes `levels`, `duration` and `ease`. Several levels run as ONE transition (the target's child shrinks into its trigger while deeper views ride along) and clamp at the root. An unknown `to` warns and does nothing. The router uses it for multi-level browser back.
 
-### `getViewStack(): Array<{ name, title, depth }>`
+### `getViewStack(): Array<{ name, title, depth, params? }>`
 
-The views from the root (depth 0) to the current one, with their titles.
+The views from the root (depth 0) to the current one, with their titles. `params` is set for a view opened from a trigger with data (`{ id: 'kitchen' }`).
 
 ### `getViewTitle(viewName): string`
 
@@ -573,7 +574,14 @@ At any depth, if the parent view has multiple `.zoom-me` triggers, those targets
 
 Lateral history is tracked per depth level and survives zooming deeper and back out. `back()` pops lateral history before zooming out.
 
-Siblings are identified by view name: triggers to the same view with different `data-*` props are not siblings. For data-driven lists, register one view per item (`views[id] = makeView(id)`).
+A sibling is a view name plus the trigger's data. Triggers to the same view with different `data-*` (other than Zumly's own `data-to`, `data-title`, `data-sibling`, `data-deferred`, `data-hide-trigger` and `data-with-*`) are separate siblings: one dot each, named by the trigger's `data-title`, and the view gets that trigger's data as `props` on every move (click, bar, swipe, `back()`, router):
+
+```html
+<div class="zoom-me" data-to="room" data-id="kitchen" data-title="Kitchen">Kitchen</div>
+<div class="zoom-me" data-to="room" data-id="bedroom" data-title="Bedroom">Bedroom</div>
+```
+
+From code: `goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })`. Plain triggers (only `data-to`) work by name as always, and two triggers to the very same view count as one sibling.
 
 ### Input Handling
 
@@ -615,6 +623,8 @@ function runTransition(spec, onComplete) {
 | `anime` | Anime.js integration. Requires anime.js loaded globally. |
 | `gsap` | GSAP integration. Requires gsap loaded globally. |
 | `motion` | Motion library integration. Requires motion loaded globally. |
+
+Every driver except `none` slides between siblings with the same motion (the library drivers match `css` and `waapi`: same transforms, duration, easing and fade).
 
 ### Custom Driver
 
@@ -907,6 +917,7 @@ Or with script tag:
 #/home              → root view
 #/home/dashboard    → zoomed into dashboard from home
 #/home/settings     → lateral navigation to settings
+#/house/room?id=kitchen → a view opened from a trigger with data-id="kitchen"
 ```
 
 ---
@@ -1146,9 +1157,7 @@ const app = new Zumly({ ... })
 await app.init()
 
 // Later, when unmounting:
-app.destroy()
-// Optionally clear the canvas DOM:
-document.querySelector('#app').innerHTML = ''
+app.destroy()   // also removes its views: the canvas is ready for a new instance
 ```
 
 ---

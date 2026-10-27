@@ -7,7 +7,7 @@
 export interface ViewContext {
   /** A fresh <div> for mounting framework components. */
   target: HTMLDivElement
-  /** The trigger element that initiated the zoom (if from a click). */
+  /** The trigger element that opened the view: the one clicked, or the sibling's trigger on a lateral move. */
   trigger?: HTMLElement
   /** The componentContext from Zumly constructor options. */
   context: Map<string, unknown> | Record<string, unknown>
@@ -135,7 +135,8 @@ export interface LateralNavOptions {
   /**
    * Declared sibling order for lateral navigation. Takes precedence over
    * inferring order/slide direction from trigger positions in the parent view.
-   * Array = one lateral group; map = keyed by parent view name.
+   * Array = one lateral group; map = keyed by parent view name. A sibling
+   * that shares its view with others is named with its data: 'room?id=kitchen'.
    * @example ['today', 'tomorrow', 'week']
    * @example { home: ['today', 'tomorrow', 'week'] }
    */
@@ -187,7 +188,11 @@ export interface GoToOptions {
   duration?: string | number
   /** Override transition easing. */
   ease?: string
-  /** Props to pass to the target view. */
+  /**
+   * Props to pass to the target view. With mode 'lateral', they also pick the
+   * sibling among triggers that share a view: `{ id: 'bedroom' }` for
+   * `data-to="room" data-id="bedroom"`.
+   */
   props?: Record<string, unknown>
 }
 
@@ -223,6 +228,8 @@ export interface StackEntry {
   name: string
   title: string
   depth: number
+  /** The data that sets this view apart from siblings with the same name (`{ id: 'kitchen' }`), if any. */
+  params?: Record<string, string>
 }
 
 /** Options for zoomTo(). */
@@ -351,7 +358,12 @@ export class Zumly {
   /** Initialize the zoom interface: render initial view and bind events. */
   init(): Promise<void>
 
-  /** Clean up: remove listeners, timers, navigation UI, and nullify state. Idempotent. */
+  /**
+   * Clean up: remove listeners, timers, observers, navigation UI and the views
+   * this instance put in the canvas, and nullify state. Content you put in the
+   * canvas stays. A new instance can start on the same canvas right after
+   * (React StrictMode, hot reload). Idempotent.
+   */
   destroy(): void
 
   /**

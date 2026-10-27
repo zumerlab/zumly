@@ -14,7 +14,12 @@
  *
  * Or with <script> tag:
  *   app.use(Zumly.Router)
+ *
+ * A view reached from a trigger with data params carries them in its segment,
+ * so siblings such as data-to="room" data-id="kitchen" stay apart:
+ *   #/house/room?id=kitchen
  */
+import { viewKey, parseViewKey } from '../view-identity.js'
 
 const DEFAULTS = {
   /** Character used to join view path segments in the hash */
@@ -27,13 +32,13 @@ const DEFAULTS = {
  * Build the hash path from the current Zumly navigation stack.
  * @param {object} instance - Zumly instance
  * @param {string} separator
- * @returns {string} e.g. 'home/dashboard/revenue'
+ * @returns {string} e.g. 'home/dashboard/revenue' or 'house/room?id=kitchen'
  */
 function buildPath (instance, separator) {
   const path = []
   for (const snap of instance.storedViews) {
     const current = snap.views && snap.views[0]
-    if (current && current.viewName) path.push(current.viewName)
+    if (current && current.viewName) path.push(viewKey(current.viewName, current.params))
   }
   return path.join(separator)
 }
@@ -123,8 +128,10 @@ export const ZumlyRouter = {
             const lastTarget = target[target.length - 1]
             if (lastTarget !== current[current.length - 1]) {
               const history = instance.lateralHistory || []
-              const nameOf = entry => typeof entry === 'object' ? entry?.name : entry
-              const historyIndex = history.map(nameOf).lastIndexOf(lastTarget)
+              const keyOf = entry => typeof entry === 'object'
+                ? viewKey(entry?.name, entry?.params ?? entry?.entry?.params)
+                : entry
+              const historyIndex = history.map(keyOf).lastIndexOf(lastTarget)
               // Use the engine's back path when possible, preserving keepAlive
               // nodes and consuming every entry in a multi-step history jump.
               if (historyIndex !== -1) {
@@ -152,7 +159,7 @@ export const ZumlyRouter = {
       if (!window.location.hash.slice(1).startsWith(prefix) && window.location.hash !== '') return
       const target = parsePath(prefix, sep)
       if (target.length && (target[0] !== instance.storedViews[0]?.views?.[0]?.viewName ||
-        target.some(name => !Object.prototype.hasOwnProperty.call(instance.views, name)))) return
+        target.some(key => !Object.prototype.hasOwnProperty.call(instance.views, parseViewKey(key).name)))) return
       pendingTarget = target
       void reconcile()
     }

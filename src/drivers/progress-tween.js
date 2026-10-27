@@ -1,6 +1,9 @@
 /**
  * Shared core for drivers that animate a single 0 → 1 progress value with a
  * library (Anime.js, Motion) and paint interpolated matrices for each layer.
+ * Zoom-in, zoom-out and lateral (sibling) moves all go through it; the lateral
+ * slide matches the css and waapi drivers (incoming fades in, outgoing fades
+ * out, the views behind shift with them).
  *
  * Reading the engine's matrices once keeps intermediate frames correct when
  * transform-origin differs between states. Easing is applied per layer, so a
@@ -12,8 +15,8 @@ import {
   applyZoomOutPreviousState,
   applyZoomOutLastState,
   removeViewFromCanvas,
-  runLateralInstant,
   interpolateMatrix,
+  lerp,
   matrixToString,
   parseDurationMs,
   createFinishGuard,
@@ -53,10 +56,52 @@ function matrixPairs (entries, direction) {
 
 function paint (pairs, elapsedMs, durationMs, stagger, curve) {
   for (let i = 0; i < pairs.length; i++) {
-    const { el, from, to } = pairs[i]
+    const { el, from, to, opacity } = pairs[i]
     const local = Math.max(0, elapsedMs - i * stagger)
     const linear = durationMs > 0 ? Math.min(1, local / durationMs) : 1
-    el.style.transform = matrixToString(interpolateMatrix(from, to, curve ? curve(linear) : linear))
+    const t = curve ? curve(linear) : linear
+    el.style.transform = matrixToString(interpolateMatrix(from, to, t))
+    if (opacity) el.style.opacity = String(Math.max(0, Math.min(1, lerp(opacity[0], opacity[1], t))))
+  }
+}
+
+/**
+ * Lateral layers: the incoming view slides in and fades in, the outgoing one
+ * slides out and fades out (not in keepAlive 'visible' mode), and the views
+ * behind shift. Same transforms as the css and waapi drivers.
+ */
+function lateralLayers (spec) {
+  const {
+    currentView: incoming, previousView: outgoing, backView, backViewState, lastView, lastViewState,
+    incomingTransformStart, incomingTransformEnd, outgoingTransform, outgoingTransformEnd, currentStage
+  } = spec
+  const v0 = currentStage.views[0]
+  const incomingEnd = incomingTransformEnd || v0.forwardState.transform
+  const pair = (el, origin, from, to, opacity) => {
+    const target = readTransitionMatrix(el, origin, to)
+    return { el, from: readTransitionMatrix(el, origin, from), to: target, opacity }
+  }
+  const pairs = [pair(incoming, v0.forwardState.origin, incomingTransformStart, incomingEnd, [0, 1])]
+  if (spec.keepAlive !== 'visible') {
+    pairs.push(pair(outgoing, outgoing.style.transformOrigin, outgoingTransform, outgoingTransformEnd, [1, 0]))
+  }
+  if (backView && backViewState) pairs.push(pair(backView, backView.style.transformOrigin, backViewState.transformStart, backViewState.transformEnd))
+  if (lastView && lastViewState) pairs.push(pair(lastView, lastView.style.transformOrigin, lastViewState.transformStart, lastViewState.transformEnd))
+  return { pairs, incomingEnd }
+}
+
+/** Final lateral state, as the waapi driver leaves it. */
+function finishLateral (spec, incomingEnd) {
+  const { currentView: incoming, previousView: outgoing, backView, backViewState, lastView, lastViewState, outgoingTransformEnd, canvas } = spec
+  incoming.style.transform = incomingEnd
+  incoming.style.removeProperty('opacity')
+  if (backView && backViewState) backView.style.transform = backViewState.transformEnd
+  if (lastView && lastViewState) lastView.style.transform = lastViewState.transformEnd
+  if (spec.keepAlive) {
+    outgoing.style.opacity = ''
+    if (spec.keepAlive !== 'visible') outgoing.style.transform = outgoingTransformEnd
+  } else {
+    removeViewFromCanvas(outgoing, canvas)
   }
 }
 
@@ -85,20 +130,26 @@ export function runProgressTransition (spec, onComplete, tween) {
     onComplete()
     return
   }
-  if (type === 'lateral') {
-    runLateralInstant(spec, onComplete)
-    return
-  }
-  if (type !== 'zoomIn' && type !== 'zoomOut') {
+  if (type !== 'zoomIn' && type !== 'zoomOut' && type !== 'lateral') {
     onComplete()
     return
   }
 
   const durationMs = parseDurationMs(duration)
-  const entries = layers(spec)
-  if (type === 'zoomIn') showViews(currentView, previousView, lastView)
-  const pairs = matrixPairs(entries, type === 'zoomIn' ? 'forward' : 'backward')
-  const stagger = currentStage.stagger || 0
+  const entries = type === 'lateral' ? [] : layers(spec)
+  let pairs
+  let incomingEnd
+  if (type === 'lateral') {
+    showViews(currentView)
+    currentView.classList.replace('is-new-current-view', 'is-current-view')
+    currentView.classList.remove('zoom-current-view', 'has-no-events')
+    ;({ pairs, incomingEnd } = lateralLayers(spec))
+  } else {
+    if (type === 'zoomIn') showViews(currentView, previousView, lastView)
+    pairs = matrixPairs(entries, type === 'zoomIn' ? 'forward' : 'backward')
+  }
+  // Lateral layers move together, as with the css and waapi drivers.
+  const stagger = type === 'lateral' ? 0 : currentStage.stagger || 0
   const totalMs = durationMs + stagger * (pairs.length - 1)
   const curve = cssEasing(ease)
   paint(pairs, 0, durationMs, stagger, curve)
@@ -110,7 +161,9 @@ export function runProgressTransition (spec, onComplete, tween) {
   const guard = createFinishGuard(() => {
     finished = true
     try { stop?.() } catch {}
-    if (type === 'zoomIn') {
+    if (type === 'lateral') {
+      finishLateral(spec, incomingEnd)
+    } else if (type === 'zoomIn') {
       for (const { el } of entries) applyZoomInEndState(el, currentStage)
     } else {
       const [, v1, v2] = currentStage.views

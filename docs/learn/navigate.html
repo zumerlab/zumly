@@ -101,7 +101,7 @@ app.init()</code></pre>
         <tbody>
           <tr><td><code>zoomTo(name)</code></td><td>Zoom into a view from the center of the canvas.</td></tr>
           <tr><td><code>zoomIn(trigger)</code></td><td>Zoom in from a trigger element, as a click would.</td></tr>
-          <tr><td><code>goTo(name, { mode: 'lateral' })</code></td><td>Move to a sibling.</td></tr>
+          <tr><td><code>goTo(name, { mode: 'lateral' })</code></td><td>Move to a sibling. Add <code>props</code> to pick one of several that share a view: <code>{ id: 'bedroom' }</code>.</td></tr>
           <tr><td><code>zoomOut()</code>, <code>zoomOut(2)</code>, <code>zoomOut({ to: 'home' })</code></td><td>Zoom out one level, several, or up to an ancestor, in one transition.</td></tr>
           <tr><td><code>back()</code></td><td>Undo the last sideways move, or zoom out.</td></tr>
           <tr><td><code>getCurrentViewName()</code>, <code>getViewStack()</code></td><td>Where the user is, and the views from the root down with their titles.</td></tr>
@@ -117,7 +117,7 @@ await app.back()</code></pre>
       <h2>Events</h2>
       <p><code>viewChanged</code> fires after every navigation, including the first render. There are also <code>beforeZoomIn</code>, <code>afterZoomOut</code>, <code>afterLateral</code> and others; the <a href="../api.html#events">API reference</a> lists them all.</p>
       <h2>Router</h2>
-      <p><code>app.use(Zumly.Router)</code> writes the path to the hash (<code>#/home/settings/profile</code>) and makes the browser back button go back. Opening a deep URL directly is not supported: a zoom needs the trigger it comes from.</p>
+      <p><code>app.use(Zumly.Router)</code> writes the path to the hash (<code>#/home/settings/profile</code>) and makes the browser back button go back. A view opened from a trigger with data keeps it in the path: <code>#/house/room?id=kitchen</code>. Opening a deep URL directly is not supported: a zoom needs the trigger it comes from.</p>
       <div class="tip"><img src="../fish-160.png" alt="" width="44" height="44"><div><p>With a bundler there is no global <code>Zumly</code>: <code>import { ZumlyRouter } from 'zumly'</code> and <code>app.use(ZumlyRouter)</code>.</p></div></div>
     </section>
 

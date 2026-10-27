@@ -67,8 +67,6 @@
       queue = queue.then(async () => {
         const path = app ? app.getViewStack().slice(1).map(view => view.name) : ['twilight', 'squid']
         app?.destroy()
-        // destroy() leaves the views in place: empty the canvas for the new instance
-        document.querySelector('.canvas').replaceChildren()
         app = new Zumly({ mount: '.canvas', initialView: 'ocean', views, ...options })
         await app.init()
         for (const name of path) {

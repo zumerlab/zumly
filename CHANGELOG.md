@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 #### Unreleased
 
+- `destroy()` removes the views it put in the canvas (kept-alive siblings and views still loading too) and the `zumly-canvas` class if it added it, so a new instance can start there right away: React StrictMode and hot reload no longer stack two sets of views. Content you put in the canvas stays. The guides no longer empty the canvas themselves. If your code relied on the views staying after `destroy()`, keep a copy before calling it.
+- GSAP, Anime.js and Motion slide between siblings like `css` and `waapi`: same transforms, duration, easing and fade, instant with reduced motion, and on time in a hidden tab.
+- Triggers that share a view and differ in their data (`data-to="room" data-id="kitchen"`, `data-id="bedroom"`) are separate siblings: a dot each, named by the trigger's `data-title`, with click, the bar, swipe, `back()` and the router keeping them apart. The view gets the trigger's data as `props` on lateral moves too, `goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })` picks one, `lateralNav.siblings` accepts `'room?id=kitchen'` and `getViewStack()` reports `params`.
+- The router writes a view's data into its segment: `#/house/room?id=kitchen`. This also applies to a single trigger with data (`data-id`, …) and to `zoomTo()`/`goTo()` with `props`; views opened without data keep the same hash as before.
+- Two triggers to the very same view count as one sibling, so the bar no longer shows a dot that goes nowhere.
 - Explain mistakes in the console: `initialView` and `data-to` names that are not in `views` (with "Did you mean …?"), unknown option keys, invalid durations and CSS easings, a canvas that stays without size, a mount element without `zumly-canvas`, and a function view that nests another `.z-view` in `ctx.target`.
 - Fail an undefined custom element tag after 10 s instead of locking navigation, and name the view in resolver errors.
 - Keep every root of a multi-root HTML template (wrapped in a `.z-view`) instead of dropping all but the first.

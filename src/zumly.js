@@ -26,6 +26,7 @@ import { hideViewContent, showViewContent, restoreViewContent } from './view-vis
 import { disposeView, activateView } from './view-lifecycle.js'
 import { ViewAccessibility, isNativeControl, isEditable } from './view-accessibility.js'
 import { unknownViewMessage } from './diagnostics.js'
+import { identityParams, viewKey, parseViewKey } from './view-identity.js'
 
 /**
  * Maximum time (ms) that blockEvents can stay true before being force-reset.
@@ -42,6 +43,20 @@ const WHEEL_RELEASE_MS = 140
 const SWIPE_FOLLOW_WIDTH = 0.6
 /** Fraction of the starting finger distance a pinch closes for a full zoom-out. */
 const PINCH_FOLLOW_CLOSE = 0.6
+
+/**
+ * Index of a view identity among sibling entries ({ name, params, key }): the
+ * same key, else the only sibling with that name, else the plain one (no
+ * params) with that name. -1 when none fits.
+ */
+function matchIdentity (entries, identity) {
+  if (!identity) return -1
+  const exact = entries.findIndex(entry => entry.key === identity.key)
+  if (exact !== -1) return exact
+  const named = entries.filter(entry => entry.name === identity.name)
+  const match = named.length === 1 ? named[0] : named.find(entry => !entry.params)
+  return match ? entries.indexOf(match) : -1
+}
 
 function touchDistance (touches) {
   return Math.hypot(touches[0].screenX - touches[1].screenX, touches[0].screenY - touches[1].screenY) || 1
@@ -103,6 +118,10 @@ export class Zumly {
     this._hooks = {}
     /** Registered plugins */
     this._plugins = []
+    /** View nodes this instance put in the canvas; destroy() removes them. */
+    this._ownedViews = new WeakSet()
+    /** Identity key (see view-identity.js) of each view node, for kept-alive siblings. */
+    this._viewKeys = new WeakMap()
 
     // Validate options
     checkParameters(options, this)
@@ -119,6 +138,7 @@ export class Zumly {
     if (!this.canvas.classList.contains('zumly-canvas')) {
       this.notify('the mount element needs the class "zumly-canvas" (and zumly.css loaded). Adding the class.', 'warn')
       this.canvas.classList.add('zumly-canvas')
+      this._addedCanvasClass = true
     }
     /** Built-in driver name, or 'custom' for a driver function. */
     this.transitionDriverName = typeof this.transitionDriver === 'string' ? this.transitionDriver : 'custom'
@@ -154,6 +174,7 @@ export class Zumly {
         this.prefetcher.prefetch(trigger.dataset.to, { trigger, context: this.componentContext, props: { ...trigger.dataset } })
       }
     }
+    this._adoptView = node => this._ownedViews.add(node)
     this._onResize = this._handleResize.bind(this)
     this._resizeDebounceTimer = null
     this._RESIZE_DEBOUNCE_MS = 80
@@ -858,12 +879,44 @@ export class Zumly {
    * @returns {string}
    */
   getViewTitle (viewName) {
+    return this._knownTitle(viewName) ?? viewName
+  }
+
+  /** @private The title of a view if anything names it, else undefined. */
+  _knownTitle (viewName) {
     for (let depth = this.storedViews.length - 1; depth >= 0; depth--) {
       if (this.storedViews[depth].views[INDEX_CURRENT]?.viewName !== viewName) continue
       const title = this._viewNodeAt(depth)?.dataset?.title
       if (title) return title
     }
-    return this._titles.get(viewName) ?? definitionTitle(this.views?.[viewName]) ?? this.prefetcher?.cachedTitle(viewName) ?? viewName
+    return this._titles.get(viewName) ?? definitionTitle(this.views?.[viewName]) ?? this.prefetcher?.cachedTitle(viewName) ?? undefined
+  }
+
+  /**
+   * Title of a sibling for the sibling bar. A parametric sibling
+   * (data-to="room" data-id="kitchen") is named by its trigger's data-title
+   * first, since every room shares the view's own title.
+   * @private
+   */
+  _siblingTitle (entry) {
+    const triggerTitle = entry.trigger?.dataset?.title || undefined
+    if (entry.params) {
+      return triggerTitle ?? this._titles.get(entry.key) ?? definitionTitle(this.views?.[entry.name]) ?? this.prefetcher?.cachedTitle(entry.name) ?? entry.name
+    }
+    return this._knownTitle(entry.name) ?? triggerTitle ?? entry.name
+  }
+
+  /**
+   * The current view's identity: its name, the params that set it apart from
+   * siblings with the same name, and the key made of both.
+   * @private
+   * @returns {{ name: string, params: Record<string, string>|null, key: string }|null}
+   */
+  _currentIdentity () {
+    const entry = this.storedViews[this.storedViews.length - 1]?.views?.[INDEX_CURRENT]
+    if (!entry?.viewName) return null
+    const params = entry.params ?? null
+    return { name: entry.viewName, params, key: viewKey(entry.viewName, params) }
   }
 
   /**
@@ -874,7 +927,8 @@ export class Zumly {
     return this.storedViews.map((stage, depth) => {
       const name = stage.views[INDEX_CURRENT]?.viewName ?? null
       const title = this._viewNodeAt(depth)?.dataset?.title || definitionTitle(this.views?.[name]) || name
-      return { name, title, depth }
+      const params = stage.views[INDEX_CURRENT]?.params
+      return params ? { name, title, depth, params: { ...params } } : { name, title, depth }
     })
   }
 
@@ -896,7 +950,13 @@ export class Zumly {
       const targetViewName = popped && typeof popped === 'object' ? popped.name : popped
       const savedEntry = popped && typeof popped === 'object' ? popped.entry : undefined
       const keepAliveNode = popped && typeof popped === 'object' ? popped.node : undefined
-      return this._doLateral(targetViewName, true, { savedEntry, keepAliveNode, savedStage: popped?.stage })
+      return this._doLateral(targetViewName, true, {
+        savedEntry,
+        keepAliveNode,
+        savedStage: popped?.stage,
+        params: popped?.params ?? savedEntry?.params ?? null,
+        savedProps: popped?.props ?? savedEntry?.props
+      })
     }
     return this.zoomOut()
   }
@@ -997,7 +1057,7 @@ export class Zumly {
         disposeView(node)
         return
       }
-      currentView = await prepareAndInsertView(node, this.initialView, this.canvas, true, this.views, this.componentContext)
+      currentView = await prepareAndInsertView(node, this.initialView, this.canvas, true, this.views, this.componentContext, this._adoptView)
       if (this._destroyed) {
         disposeView(currentView)
         currentView.remove()
@@ -1033,11 +1093,10 @@ export class Zumly {
 
   /**
    * Destroy the instance: remove all event listeners, observers, timers,
-   * and clear internal state. After calling destroy(), the instance is inert
-   * and cannot be reused. Call this when unmounting in a SPA.
-   *
-   * Does NOT remove DOM content from the canvas — the consumer owns the DOM.
-   * If you want a clean slate, clear canvas.innerHTML after destroy().
+   * the views and navigation UI it put in the canvas, and clear internal
+   * state. The canvas is left as it was before the instance started; anything
+   * else in it is yours and stays. After calling destroy(), the instance is
+   * inert and cannot be reused. Call this when unmounting in a SPA.
    */
   destroy () {
     if (this._destroyed) return
@@ -1045,6 +1104,12 @@ export class Zumly {
     this._emit('destroy')
     this._cancelNavigation()
     this._stopScrubAnimations()
+    if (this._followFrame != null) {
+      cancelAnimationFrame(this._followFrame)
+      this._followFrame = null
+    }
+    clearTimeout(this._wheelSettling)
+    this._wheelSettling = null
 
 
     // Clear blockEvents safety timer
@@ -1087,13 +1152,18 @@ export class Zumly {
     this.prefetcher?.destroy()
     this.prefetcher = null
     this.transitionDriver = null
-    // Keep this.canvas reference for the consumer to clean up DOM if needed,
-    // but remove the attributes we added.
+    // Leave the canvas as it was: remove the views this instance inserted
+    // (also one a framework wrapped in its own element) and the attributes
+    // and class it added. Content the host put in the canvas stays.
     if (this.canvas) {
+      for (const child of [...this.canvas.children]) {
+        if (this._ownedViews.has(child) || [...child.children].some(node => this._ownedViews.has(node))) child.remove()
+      }
       for (const [name, value] of this._canvasAttributes || []) {
         if (value === null) this.canvas.removeAttribute(name)
         else this.canvas.setAttribute(name, value)
       }
+      if (this._addedCanvasClass) this.canvas.classList.remove('zumly-canvas')
     }
 
     this.isValid = false
@@ -1156,12 +1226,12 @@ export class Zumly {
         if (title) node.dataset.title = title
         deferredContent = document.createDocumentFragment()
         while (node.firstChild) deferredContent.appendChild(node.firstChild)
-        currentView = await prepareAndInsertView(node, targetViewName, canvas, false, {}, this.componentContext)
+        currentView = await prepareAndInsertView(node, targetViewName, canvas, false, {}, this.componentContext, this._adoptView)
       } else {
         const node = await this.prefetcher.get(targetViewName, context)
         if (this._destroyed) { disposeView(node); return }
         this._scanView(node, context)
-        currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext)
+        currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext, this._adoptView)
       }
     } catch (error) {
       discardPreparedView()
@@ -1393,6 +1463,10 @@ export class Zumly {
       { origin: lastView.style.transformOrigin, duration, ease, transform: transformLastView0 },
       { origin: lastView.style.transformOrigin, duration, ease, transform: transformLastView1 }
     ) : null
+    const params = identityParams(context.props)
+    if (params) currentEntry.params = params
+    currentEntry.props = context.props
+    this._viewKeys.set(currentView, viewKey(targetViewName, params))
     const removedEntry = removeView ? createRemovedViewEntry(removeView) : null
 
     const snapShoot = createZoomSnapshot(
@@ -1470,16 +1544,37 @@ export class Zumly {
   }
 
   /** @private */
-  async _performLateral (targetViewName, isBack = false, options = {}) {
+  async _performLateral (target, isBack = false, options = {}) {
     if (!this.isValid || !this.canvas) return
+    // `target` is a view name, or a sibling key such as 'room?id=kitchen'.
+    const parsed = Object.prototype.hasOwnProperty.call(this.views, target) ? { name: target, params: null } : parseViewKey(target)
+    const targetViewName = parsed.name
     if (!Object.prototype.hasOwnProperty.call(this.views, targetViewName)) {
-      this.notify(`goTo("${targetViewName}", { mode: 'lateral' }): view not found in views. Available: ${Object.keys(this.views).join(', ')}`, 'warn')
+      this.notify(`goTo("${target}", { mode: 'lateral' }): view not found in views. Available: ${Object.keys(this.views).join(', ')}`, 'warn')
       return
     }
+    let params = isBack ? (options.params ?? null)
+      : options.props !== undefined ? identityParams(options.props) : parsed.params
+    let targetKey = viewKey(targetViewName, params)
     const outgoingView = this.canvas.querySelector('.is-current-view')
     if (!outgoingView) return
     const currentName = outgoingView.dataset?.viewName
-    if (currentName === targetViewName) return
+    const current = this._currentIdentity() ?? { name: currentName, params: null, key: currentName }
+
+    const backView = this.canvas.querySelector('.is-previous-view')
+    const lastView = this.canvas.querySelector('.is-last-view')
+    // The triggers in the parent that lead to the current view and to the target.
+    const triggerEntries = backView ? this._siblingEntries(backView.querySelectorAll('.zoom-me[data-to]'), false) : []
+    const fromTrigger = triggerEntries[matchIdentity(triggerEntries, current)]?.trigger
+    const targetTrigger = triggerEntries[matchIdentity(triggerEntries, { name: targetViewName, params, key: targetKey })]?.trigger
+    // A move by name lands on that trigger's sibling, with its params.
+    if (!isBack && options.props === undefined && !params && targetTrigger) {
+      params = identityParams(targetTrigger.dataset)
+      targetKey = viewKey(targetViewName, params)
+    }
+    // goTo('room') on a room with params, and no plain 'room' trigger to go to: stay.
+    if (targetKey === current.key || (!isBack && !params && !targetTrigger && targetViewName === current.name)) return
+
     this._emit('beforeLateral', { viewName: targetViewName, from: currentName, isBack })
     if (this._destroyed) return
 
@@ -1493,6 +1588,8 @@ export class Zumly {
       const topSnapshot = this.storedViews[this.storedViews.length - 1]
       pendingHistoryEntry = {
         name: currentName,
+        params: current.params,
+        props: topSnapshot.views[INDEX_CURRENT]?.props,
         stage: this._copyLateralStage(topSnapshot),
         node: keepAlive ? outgoingView : null
       }
@@ -1502,9 +1599,9 @@ export class Zumly {
     this.tracing('lateral()')
     const duration = normalizeDuration(options.duration, 'goTo() duration', this.duration)
     const ease = normalizeEase(options.ease, this.transitionDriverName, 'goTo() ease', this.ease)
-
-    const backView = this.canvas.querySelector('.is-previous-view')
-    const lastView = this.canvas.querySelector('.is-last-view')
+    // The view gets the same props as when its trigger is clicked.
+    const props = options.props ?? (isBack ? options.savedProps : undefined) ??
+      (targetTrigger ? { ...targetTrigger.dataset } : params ? { ...params } : {})
 
     // keepAlive: try to find an existing hidden DOM node for the target view
     let incomingView = null
@@ -1514,8 +1611,10 @@ export class Zumly {
       if (isBack && options.keepAliveNode) {
         keepAliveNode = options.keepAliveNode
       } else {
-        // Look for a kept-alive node in the canvas by view name
-        keepAliveNode = this.canvas.querySelector(`.is-lateral-hidden[data-view-name="${targetViewName}"]`)
+        // Look for a kept-alive node of the same sibling in the canvas
+        for (const node of this.canvas.querySelectorAll(':scope > .is-lateral-hidden')) {
+          if ((this._viewKeys.get(node) ?? node.dataset.viewName) === targetKey) { keepAliveNode = node; break }
+        }
       }
     }
     if (keepAliveNode) {
@@ -1535,15 +1634,15 @@ export class Zumly {
       // so the entry isn't silently lost.
       const restoreBackEntry = () => {
         if (isBack) {
-          this.lateralHistory.push({ name: targetViewName, entry: options.savedEntry, stage: options.savedStage, node: options.keepAliveNode ?? null })
+          this.lateralHistory.push({ name: targetViewName, params, props: options.savedProps, entry: options.savedEntry, stage: options.savedStage, node: options.keepAliveNode ?? null })
         }
       }
-      const context = this._createViewContext(options.props ?? {})
+      const context = this._createViewContext(props, targetTrigger)
       try {
         const node = await this.prefetcher.get(targetViewName, context)
         if (this._destroyed) { disposeView(node); return }
         this._scanView(node, context)
-        incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext)
+        incomingView = await prepareAndInsertView(node, targetViewName, this.canvas, false, this.views, this.componentContext, this._adoptView)
       } catch (error) {
         this.notify(`lateral navigation aborted: failed to resolve view "${targetViewName}": ${error.message}`, 'error')
         restoreBackEntry()
@@ -1579,18 +1678,11 @@ export class Zumly {
     const canvasRect = measure(this.canvas)
     const canvasScaleX = canvasRect.width / this.canvas.offsetWidth || 1
     const canvasScaleY = canvasRect.height / this.canvas.offsetHeight || 1
-    const triggers = backView ? backView.querySelectorAll('.zoom-me[data-to]') : []
-    let fromTrigger, targetTrigger
-    for (const trigger of triggers) {
-      if (!fromTrigger && trigger.dataset.to === currentName) fromTrigger = trigger
-      if (!targetTrigger && trigger.dataset.to === targetViewName) targetTrigger = trigger
-      if (fromTrigger && targetTrigger) break
-    }
     let slideDeltaX = 0
     let slideDeltaY = 0
     const declared = this._declaredSiblings()
-    const declFrom = declared ? declared.indexOf(currentName) : -1
-    const declTo = declared ? declared.indexOf(targetViewName) : -1
+    const declFrom = declared ? matchIdentity(declared, current) : -1
+    const declTo = declared ? matchIdentity(declared, { name: targetViewName, params, key: targetKey }) : -1
     if (declFrom !== -1 && declTo !== -1) {
       // Declared order wins, including proportional non-adjacent jumps.
       slideDeltaX = (declFrom - declTo) * canvasRect.width * 0.15
@@ -1649,10 +1741,13 @@ export class Zumly {
       slideDeltaX = to.tx - from.tx
       slideDeltaY = to.ty - from.ty
     } else {
-      topSnapshot.views[INDEX_CURRENT] = createViewEntry(targetViewName,
+      const entry = topSnapshot.views[INDEX_CURRENT] = createViewEntry(targetViewName,
         { origin: '0 0', duration, ease, transform: incomingTransformBack },
         { origin: '0 0', duration, ease, transform: incomingTransformEnd })
+      if (params) entry.params = params
+      entry.props = props
     }
+    this._viewKeys.set(incomingView, targetKey)
     this.currentStage = topSnapshot
     if (pendingHistoryEntry) this.lateralHistory.push(pendingHistoryEntry)
 
@@ -1977,9 +2072,9 @@ export class Zumly {
         el.style.transformOrigin = '0 0'
         el.style.transform = poseToTransform(composePoses(delta, pose), '0 0')
       }
-      frame = requestAnimationFrame(follow)
+      frame = this._followFrame = requestAnimationFrame(follow)
     }
-    if (passengers.length) frame = requestAnimationFrame(follow)
+    if (passengers.length) frame = this._followFrame = requestAnimationFrame(follow)
 
     const spec = {
       type: 'zoomOut',
@@ -1993,6 +2088,7 @@ export class Zumly {
     }
     const complete = () => {
       if (frame !== null) cancelAnimationFrame(frame)
+      this._followFrame = null
       for (const el of passengers) removeViewFromCanvas(el, canvas)
       for (const node of dropped) disposeView(node)
       this.blockEvents = false
@@ -2311,7 +2407,7 @@ export class Zumly {
       if (siblingTrigger) {
         this.tracing('onZoom() → lateral')
         event.stopPropagation()
-        this._doLateral(siblingTrigger.dataset.to)
+        this._doLateral(viewKey(siblingTrigger.dataset.to, identityParams(siblingTrigger.dataset)))
         return
       }
       this.tracing('onZoom() → zoomOut')
@@ -2331,12 +2427,13 @@ export class Zumly {
   _findSiblingTriggerAtPoint (x, y) {
     const previousView = this.canvas.querySelector('.is-previous-view')
     if (!previousView) return null
-    const currentView = this.canvas.querySelector('.is-current-view')
-    const currentName = currentView?.dataset?.viewName
-    if (!currentName) return null
+    const current = this._currentIdentity()
+    if (!current) return null
     const triggers = previousView.querySelectorAll('.zoom-me[data-to]:not([data-sibling="false"])')
-    for (const trigger of triggers) {
-      if (trigger.dataset.to === currentName) continue
+    const entries = this._siblingEntries(triggers, false)
+    const currentKey = entries[matchIdentity(entries, current)]?.key ?? current.key
+    for (const { trigger, key } of entries) {
+      if (key === currentKey) continue
       const rect = trigger.getBoundingClientRect()
       if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
         return trigger
@@ -2348,29 +2445,59 @@ export class Zumly {
   // ─── Lateral navigation UI ────────────────────────────────────────
 
   /**
-   * Get the list of sibling view names at the current depth.
+   * Sibling entries for triggers: { name, params, key, trigger }. Triggers
+   * with the same data-to and different data params (data-id, …) are
+   * different siblings; triggers to the very same view count once (dedupe).
+   * @private
+   */
+  _siblingEntries (triggers, dedupe = true) {
+    const entries = []
+    const seen = new Set()
+    for (const trigger of triggers) {
+      const name = trigger.dataset.to
+      if (!name) continue
+      const params = identityParams(trigger.dataset)
+      const key = viewKey(name, params)
+      if (dedupe && seen.has(key)) continue
+      seen.add(key)
+      entries.push({ name, params, key, trigger })
+    }
+    return entries
+  }
+
+  /**
+   * The siblings at the current depth as keys ('detail', 'room?id=kitchen'),
+   * in order, and where the current view is.
    * @returns {{ siblings: string[], currentIndex: number }}
    * @private
    */
   _getSiblings () {
-    const currentView = this.canvas.querySelector('.is-current-view')
-    const currentName = currentView?.dataset?.viewName
+    const { siblings, currentIndex } = this._siblingGroup()
+    return { siblings: siblings.map(entry => entry.key), currentIndex }
+  }
+
+  /**
+   * The siblings at the current depth, in order, and where the current view is.
+   * @returns {{ siblings: Array<{ name: string, params: object|null, key: string, trigger?: HTMLElement }>, currentIndex: number }}
+   * @private
+   */
+  _siblingGroup () {
+    const current = this._currentIdentity()
+    const previousView = this.canvas.querySelector('.is-previous-view')
+    // data-sibling="false" keeps a trigger (a settings button, say) out of the group
+    const triggered = previousView
+      ? this._siblingEntries(previousView.querySelectorAll('.zoom-me[data-to]:not([data-sibling="false"])'))
+      : []
     // Declared siblings (lateralNav.siblings) take precedence over inferring
     // the order from trigger positions in the parent view.
     const declared = this._declaredSiblings()
-    if (declared && declared.indexOf(currentName) !== -1) {
-      return { siblings: declared, currentIndex: declared.indexOf(currentName) }
+    const declaredIndex = declared ? matchIdentity(declared, current) : -1
+    if (declaredIndex !== -1) {
+      for (const entry of declared) entry.trigger = triggered[matchIdentity(triggered, entry)]?.trigger
+      return { siblings: declared, currentIndex: declaredIndex }
     }
-    const previousView = this.canvas.querySelector('.is-previous-view')
     if (!previousView) return { siblings: [], currentIndex: -1 }
-    // data-sibling="false" keeps a trigger (a settings button, say) out of the group
-    const triggers = previousView.querySelectorAll('.zoom-me[data-to]:not([data-sibling="false"])')
-    const siblings = []
-    for (const t of triggers) {
-      if (t.dataset.to) siblings.push(t.dataset.to)
-    }
-    const currentIndex = siblings.indexOf(currentName)
-    return { siblings, currentIndex }
+    return { siblings: triggered, currentIndex: matchIdentity(triggered, current) }
   }
 
   /**
@@ -2388,18 +2515,26 @@ export class Zumly {
    */
   _lateralSwipe () {
     if (!this.lateralNav?.swipe || this.storedViews.length < 2) return null
-    const { siblings, currentIndex } = this._getSiblings()
+    const { siblings, currentIndex } = this._siblingGroup()
     if (siblings.length < 2 || currentIndex === -1) return null
-    return { prev: siblings[currentIndex - 1] ?? null, next: siblings[currentIndex + 1] ?? null }
+    return { prev: siblings[currentIndex - 1]?.key ?? null, next: siblings[currentIndex + 1]?.key ?? null }
   }
 
   _declaredSiblings () {
     const conf = this.lateralNav && typeof this.lateralNav === 'object' ? this.lateralNav.siblings : null
     if (!conf) return null
-    if (Array.isArray(conf)) return conf
-    const parentName = this.canvas.querySelector('.is-previous-view')?.dataset?.viewName
-    if (parentName && Array.isArray(conf[parentName])) return conf[parentName]
-    return null
+    let list = null
+    if (Array.isArray(conf)) list = conf
+    else {
+      const parentName = this.canvas.querySelector('.is-previous-view')?.dataset?.viewName
+      if (parentName && Array.isArray(conf[parentName])) list = conf[parentName]
+    }
+    if (!list) return null
+    // Entries are view names, or sibling keys such as 'room?id=kitchen'.
+    return list.map(item => {
+      const { name, params } = Object.prototype.hasOwnProperty.call(this.views, item) ? { name: item, params: null } : parseViewKey(item)
+      return { name, params, key: viewKey(name, params) }
+    })
   }
 
   // ─── Navigation UI (separate depth + lateral components) ─────────
@@ -2413,9 +2548,9 @@ export class Zumly {
     if (this._destroyed) return
     const depth = this.storedViews.length - 1
     const currentView = this.canvas.querySelector(':scope > .z-view.is-current-view')
-    if (currentView?.dataset.title) this._titles.set(currentView.dataset.viewName, currentView.dataset.title)
+    if (currentView?.dataset.title) this._titles.set(this._currentIdentity()?.key ?? currentView.dataset.viewName, currentView.dataset.title)
     const showDepth = !!this.depthNav && depth >= 1 && !currentView?.querySelector('.z-depth-nav')
-    let lateralData = this.lateralNav ? this._getSiblings() : null
+    let lateralData = this.lateralNav ? this._siblingGroup() : null
     if (lateralData?.siblings.length < 2) lateralData = null
     // Complete geometry reads before either component mutates the canvas.
     if (lateralData && this.lateralNav.mode === 'auto' && depth >= 1 && currentView &&
@@ -2492,9 +2627,9 @@ export class Zumly {
    * aria-label, or remove it when that label is turned off.
    * @private
    */
-  _setLabel (element, label, viewName) {
+  _setLabel (element, label, viewName, title) {
     if (!element) return
-    const view = viewName ? { name: viewName, title: this.getViewTitle(viewName) } : {}
+    const view = viewName ? { name: viewName, title: title ?? this.getViewTitle(viewName) } : {}
     const text = formatLabel(label, view)
     if (text === null) element.removeAttribute('aria-label')
     else if (element.getAttribute('aria-label') !== text) element.setAttribute('aria-label', text)
@@ -2507,7 +2642,7 @@ export class Zumly {
    */
   _updateLateralNav (lateralData) {
     if (lateralData === undefined) {
-      lateralData = this.lateralNav ? this._getSiblings() : null
+      lateralData = this.lateralNav ? this._siblingGroup() : null
       if (lateralData?.siblings.length < 2) lateralData = null
       if (lateralData && this.lateralNav.mode === 'auto' && this.storedViews.length > 1) {
         const cv = this.canvas.querySelector(':scope > .z-view.is-current-view')
@@ -2524,10 +2659,10 @@ export class Zumly {
     const dots = !!this.lateralNav.dots
     let state = this._lateralNavState
     if (!state || state.arrows !== arrows || state.dots !== dots ||
-      state.siblings.length !== siblings.length || state.siblings.some((name, index) => name !== siblings[index])) {
+      state.siblings.length !== siblings.length || state.siblings.some((key, index) => key !== siblings[index].key)) {
       state?.element.remove()
       const nav = document.createElement('div')
-      state = { element: nav, siblings: [...siblings], currentIndex: -1, arrows, dots, dotButtons: [] }
+      state = { element: nav, siblings: siblings.map(entry => entry.key), currentIndex: -1, arrows, dots, dotButtons: [] }
       const arrow = (direction, label, glyph) => {
         const button = document.createElement('button')
         button.className = 'z-nav-arrow z-nav-' + direction
@@ -2543,11 +2678,11 @@ export class Zumly {
       if (dots) {
         const dotsContainer = document.createElement('div')
         dotsContainer.className = 'z-nav-lateral-dots'
-        for (const name of siblings) {
+        for (const entry of siblings) {
           const dot = document.createElement('button')
           dot.className = 'z-nav-dot z-nav-lat-dot'
-          this._setLabel(dot, this.labels.goTo, name)
-          dot.dataset.to = name
+          this._setLabel(dot, this.labels.goTo, entry.name, this._siblingTitle(entry))
+          dot.dataset.to = entry.name
           dot.type = 'button'
           state.dotButtons.push(dot)
           dotsContainer.appendChild(dot)
@@ -2572,7 +2707,7 @@ export class Zumly {
       this._lateralNavState = state
     } else {
       // A sibling shown since the bar was built may have brought its title
-      state.dotButtons.forEach((dot, index) => this._setLabel(dot, this.labels.goTo, siblings[index]))
+      state.dotButtons.forEach((dot, index) => this._setLabel(dot, this.labels.goTo, siblings[index].name, this._siblingTitle(siblings[index])))
     }
     if (state.currentIndex !== currentIndex) {
       const previous = state.dotButtons[state.currentIndex]

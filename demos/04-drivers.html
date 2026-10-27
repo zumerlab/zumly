@@ -52,7 +52,6 @@
     const pick = id => document.getElementById(id).value
     function start () {
       app?.destroy()
-      document.querySelector('.canvas').replaceChildren()
       app = new Zumly({
         mount: '.canvas',
         initialView: 'home',

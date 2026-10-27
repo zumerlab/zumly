@@ -171,7 +171,7 @@ Your driver receives `spec.type` which is one of:
 - `'zoomOut'` — go back
 - `'lateral'` — same-level swap
 
-For lateral, the built-in **`css`** and **`waapi`** drivers run a **slide animation** (the other built-ins are instant). If you author a minimal custom driver and want **no** lateral motion, call the instant helper:
+For lateral, every built-in driver except **`none`** runs the same **slide animation**: the incoming view slides from `incomingTransformStart` to `incomingTransformEnd` and fades in, the outgoing one slides to `outgoingTransformEnd` and fades out (unless `keepAlive` is `'visible'`), and `backView`/`lastView` move from `transformStart` to `transformEnd`. If you author a minimal custom driver and want **no** lateral motion, call the instant helper:
 
 ```js
 import { runLateralInstant } from 'zumly/driver-helpers'

@@ -140,9 +140,8 @@ export default function App () {
   const canvas = useRef(null)
 
   useEffect(() =&gt; {
-    const element = canvas.current
     const app = new Zumly({
-      mount: element,
+      mount: canvas.current,
       initialView: &#x27;list&#x27;,
       views: {
         list: mountView(() =&gt; &lt;List /&gt;),
@@ -150,10 +149,7 @@ export default function App () {
       }
     })
     app.init()
-    return () =&gt; {
-      app.destroy()
-      element.replaceChildren()   // destroy() leaves the views in place
-    }
+    return () =&gt; app.destroy()   // removes its views too
   }, [])
 
   // The canvas fills its nearest positioned ancestor: give that a height
@@ -206,7 +202,7 @@ export default function List () {
     <section>
       <h2>Things to know</h2>
       <ul>
-        <li>In <code>StrictMode</code> React runs the effect twice in development. Empty the canvas after <code>destroy()</code>, as above, or the second instance starts on top of the first one's views.</li>
+        <li>In <code>StrictMode</code> React runs the effect twice in development. <code>destroy()</code> takes the first instance's views with it, so the second one starts on a clean canvas.</li>
         <li>Do not render another <code>z-view</code> inside <code>target</code>: <code>target</code> already is the view. Zumly warns in the console if you do.</li>
         <li>Views are plain DOM, not Shadow DOM: your global styles apply inside them.</li>
         <li>Zumly ships its own types; <code>ViewFunction</code> and <code>ViewContext</code> type the view context.</li>

@@ -143,7 +143,18 @@ app.init()</code></pre>
   keepAlive: true   // siblings you leave stay in the DOM: form fields and scroll survive
 }</code></pre>
       <p>A parent that is not in the map keeps the automatic group.</p>
-      <div class="tip"><img src="../fish-160.png" alt="" width="44" height="44"><div><p>Siblings are told apart by view name. Several triggers that open the <em>same</em> view with different <code>data-*</code> (a <code>room</code> view for every room) count as one view, so they are not siblings. When you need the bar, give each item its own view name; a helper like <code>animal()</code> above keeps that short.</p></div></div>
+    </section>
+
+    <section>
+      <h2>One view, many siblings</h2>
+      <p>Triggers can open the same view and tell it apart with their data. Each one is its own sibling: it gets its own dot, named by its <code>data-title</code>, and the view receives that trigger's data as <code>props</code>, whether you click, use the bar, swipe or go back.</p>
+      <pre><code>&lt;div class="zoom-me" data-to="room" data-id="kitchen" data-title="Kitchen"&gt;Kitchen&lt;/div&gt;
+&lt;div class="zoom-me" data-to="room" data-id="bedroom" data-title="Bedroom"&gt;Bedroom&lt;/div&gt;
+
+views: {
+  room: ({ props }) =&gt; `&lt;div class="z-view"&gt;&lt;h2&gt;${props.title}&lt;/h2&gt;&lt;/div&gt;`
+}</code></pre>
+      <p>From code, pick the sibling by its data: <code>app.goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })</code>. With the router the hash keeps it too: <code>#/house/room?id=kitchen</code>. In a declared order, name it the same way: <code>'room?id=kitchen'</code>.</p>
     </section>
 
     <nav class="pager" aria-label="Steps"><a class="prev" href="depth.html"><small>&larr; Step 2</small>Going deeper</a><a class="next" href="views.html"><small>Step 4 &rarr;</small>Where views come from</a></nav>

@@ -151,10 +151,7 @@ onMounted(() =&gt; {
   app.init()
 })
 
-onBeforeUnmount(() =&gt; {
-  app?.destroy()
-  canvas.value?.replaceChildren()   // destroy() leaves the views in place
-})
+onBeforeUnmount(() =&gt; app?.destroy())   // removes its views too
 &lt;/script&gt;
 
 &lt;template&gt;
@@ -210,7 +207,7 @@ const items = [
     <section>
       <h2>Things to know</h2>
       <ul>
-        <li><code>destroy()</code> leaves the views in the canvas. Empty it, as above, if the component that creates Zumly can mount again (hot reload, a <code>v-if</code>).</li>
+        <li><code>destroy()</code> takes its views with it, so the component that creates Zumly can mount again (hot reload, a <code>v-if</code>) on a clean canvas.</li>
         <li>Do not render another <code>z-view</code> inside <code>target</code>: <code>target</code> already is the view. Zumly warns in the console if you do.</li>
         <li>Views are plain DOM, not Shadow DOM: your global styles apply inside them.</li>
         <li>Zumly ships its own types; <code>ViewFunction</code> and <code>ViewContext</code> type the view context.</li>

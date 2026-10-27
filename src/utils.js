@@ -66,9 +66,10 @@ export function definitionTitle (definition) {
  * @param {boolean} isInit - True for initial view, false for zoom-in
  * @param {object} views - Views map
  * @param {object} componentContext - Passed to object views
+ * @param {(node: HTMLElement) => void} [onInsert] - Called right after the node enters the canvas
  * @returns {Promise<HTMLElement>} The inserted node (with .z-view, dataset, classes applied)
  */
-export async function prepareAndInsertView (node, viewName, canvas, isInit, views, componentContext) {
+export async function prepareAndInsertView (node, viewName, canvas, isInit, views, componentContext, onInsert) {
   if (!node || !node.classList) {
     const wrap = document.createElement('div')
     wrap.classList.add('z-view')
@@ -92,6 +93,7 @@ export async function prepareAndInsertView (node, viewName, canvas, isInit, view
     node.classList.add('is-new-current-view', 'has-no-events', 'hide')
   }
   canvas.append(node)
+  onInsert?.(node)
   try {
     if (views[viewName] && typeof views[viewName] === 'object' && typeof views[viewName].mounted === 'function') {
       await views[viewName].mounted(node)

@@ -183,7 +183,7 @@
             <tr><td><code>keepAlive</code></td><td>boolean | 'visible'</td><td><code>false</code></td><td>Keep views in DOM: false = remove, true = hidden, 'visible' = visible</td></tr>
             <tr><td><code>position</code></td><td>'bottom-center' | 'top-center'</td><td><code>'bottom-center'</code></td><td>Placement of the lateral nav bar</td></tr>
             <tr><td><code>swipe</code></td><td>boolean</td><td><code>false</code></td><td>A horizontal swipe moves between siblings (left: next, right: previous) instead of zooming out. Without siblings, a swipe left still zooms out; <code>[data-no-swipe]</code> is respected</td></tr>
-            <tr><td><code>siblings</code></td><td>string[] | object</td><td><code>—</code></td><td>Declared sibling order; wins over inferring it from trigger positions. Array = one group, or a map keyed by parent view: <code>{ home: ['a','b','c'] }</code></td></tr>
+            <tr><td><code>siblings</code></td><td>string[] | object</td><td><code>—</code></td><td>Declared sibling order; wins over inferring it from trigger positions. Array = one group, or a map keyed by parent view: <code>{ home: ['a','b','c'] }</code>. A sibling that shares its view is named with its data: <code>'room?id=kitchen'</code></td></tr>
           </tbody>
         </table>
       </div>
@@ -328,7 +328,7 @@
           <tbody>
             <tr><td><code>init()</code></td><td>Promise</td><td>Initialize and render the initial view</td></tr>
             <tr><td><code>zoomTo(name, opts?)</code></td><td>Promise</td><td>Programmatic zoom into a named view</td></tr>
-            <tr><td><code>goTo(name, opts?)</code></td><td>Promise</td><td>Navigate: <code>{ mode: 'depth' | 'lateral' }</code></td></tr>
+            <tr><td><code>goTo(name, opts?)</code></td><td>Promise</td><td>Navigate: <code>{ mode: 'depth' | 'lateral' }</code>. With <code>props</code>, a lateral move picks the sibling with that data: <code>goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })</code></td></tr>
             <tr><td><code>back()</code></td><td>Promise</td><td>Undo the last lateral move at this level, or zoom out. Each level keeps its own lateral history, also after zooming in and out again</td></tr>
             <tr><td><code>canGoBack()</code></td><td>boolean</td><td>Whether <code>back()</code> would navigate</td></tr>
             <tr><td><code>zoomIn(el)</code></td><td>Promise</td><td>Zoom into the view indicated by a trigger element</td></tr>
@@ -336,12 +336,12 @@
             <tr><td><code>zoomLevel()</code></td><td>number</td><td>Current zoom depth (1 = root view)</td></tr>
             <tr><td><code>getZoomLevel()</code></td><td>number</td><td>Alias for <code>zoomLevel()</code></td></tr>
             <tr><td><code>getCurrentViewName()</code></td><td>string | null</td><td>Name of the currently active view</td></tr>
-            <tr><td><code>getViewStack()</code></td><td>array</td><td>The views from the root to the current one: <code>[{ name, title, depth }]</code></td></tr>
+            <tr><td><code>getViewStack()</code></td><td>array</td><td>The views from the root to the current one: <code>[{ name, title, depth }]</code>, plus <code>params</code> for a view opened from a trigger with data</td></tr>
             <tr><td><code>getViewTitle(name)</code></td><td>string</td><td>The view's <code>data-title</code>, else the <code>title</code> of its definition, else its name</td></tr>
             <tr><td><code>on(event, fn)</code></td><td>this</td><td>Subscribe to lifecycle event (chainable)</td></tr>
             <tr><td><code>off(event, fn?)</code></td><td>this</td><td>Unsubscribe. Omit fn to remove all for that event</td></tr>
             <tr><td><code>use(plugin, opts?)</code></td><td>this</td><td>Register a plugin (e.g. <code>Zumly.Router</code>); installed during <code>init()</code></td></tr>
-            <tr><td><code>destroy()</code></td><td>void</td><td>Clean up all listeners and state. The views stay in the canvas: empty it before mounting another instance there</td></tr>
+            <tr><td><code>destroy()</code></td><td>void</td><td>Clean up listeners and state, and remove the views and navigation UI the instance put in the canvas. Your own content there stays, and a new instance can start on the same canvas right away</td></tr>
           </tbody>
         </table>
       </div>

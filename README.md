@@ -204,7 +204,7 @@ Users navigate with clicks or taps on triggers, Enter or Space on a focused trig
 | `back()` | Undo the last lateral move at this level, or zoom out. |
 | `canGoBack()` | Whether `back()` would do anything. |
 | `getCurrentViewName()`, `zoomLevel()` | Where the user is. Level 1 is the initial view. |
-| `getViewStack()`, `getViewTitle(name)` | The views from the root down, with their titles. |
+| `getViewStack()`, `getViewTitle(name)` | The views from the root down, with their titles (and `params` for a view opened from a trigger with data). |
 
 Every method returns a promise that settles when the transition ends. A call made while another navigation runs is ignored, so await calls you chain:
 
@@ -236,6 +236,15 @@ The siblings of the current view are the other triggers in its parent. The sibli
 ```js
 lateralNav: { siblings: { home: ['today', 'tomorrow', 'week'] } }
 ```
+
+Triggers can share a view and tell it apart with their data. Each one is its own sibling, its dot is named by its `data-title`, and the view gets the trigger's data as `props`:
+
+```html
+<div class="zoom-me" data-to="room" data-id="kitchen" data-title="Kitchen">Kitchen</div>
+<div class="zoom-me" data-to="room" data-id="bedroom" data-title="Bedroom">Bedroom</div>
+```
+
+From code, name the sibling by its props: `app.goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })`. With the router the hash carries them too: `#/house/room?id=kitchen`.
 
 The bar appears whenever there are siblings. `mode: 'auto'` hides it on views that cover the canvas. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level. `swipe: true` lets a horizontal swipe move between siblings (left: next, right: previous); where a view has no siblings, a swipe left still zooms out.
 
@@ -337,7 +346,7 @@ import { gsapDriver } from 'zumly'      // also animeDriver, motionDriver
 new Zumly({ /* … */ transitions: { driver: gsapDriver(gsap) } })
 ```
 
-Only `css` and `waapi` animate lateral moves; the other drivers make them instantly.
+Every driver but `none` slides between siblings, with the same motion as `css` and `waapi`.
 
 ## With Orbit
 
@@ -367,7 +376,7 @@ app.use(Zumly.Router)              // script tag
 // import { ZumlyRouter } from 'zumly'; app.use(ZumlyRouter)
 ```
 
-The router writes the path to the hash (`#/home/rooms/kitchen`) and makes the browser back button navigate back, laterally or out. Forward and opening a deep URL directly are not supported: a zoom needs the trigger it comes from. Options: `prefix` (default `'/'`) and `separator` (default `'/'`). Hash entries the router did not write are left alone.
+The router writes the path to the hash (`#/home/rooms/kitchen`; a view opened from a trigger with data, such as `data-id`, carries it: `#/house/room?id=kitchen`) and makes the browser back button navigate back, laterally or out. Forward and opening a deep URL directly are not supported: a zoom needs the trigger it comes from. Options: `prefix` (default `'/'`) and `separator` (default `'/'`). Hash entries the router did not write are left alone.
 
 ## Troubleshooting
 
@@ -403,7 +412,7 @@ Triggers are keyboard reachable. Background views are `inert` and hidden from as
 | `deferred` | `false` | Insert view content after the zoom. |
 | `debug` | `false` | Log navigation steps. |
 
-Full types are in [types/zumly.d.ts](types/zumly.d.ts). `destroy()` removes listeners and navigation UI; the DOM inside the canvas stays yours.
+Full types are in [types/zumly.d.ts](types/zumly.d.ts). `destroy()` removes listeners, navigation UI and the views it put in the canvas, so a new instance can start there at once (React StrictMode, hot reload). Anything else in the canvas stays yours.
 
 ## Limitations
 

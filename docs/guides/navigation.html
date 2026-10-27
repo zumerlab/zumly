@@ -97,7 +97,7 @@
           <tr><td><code>siblings</code></td><td><code>{ parent: [names] }</code></td><td>The order per parent view, instead of the order of the triggers.</td></tr>
         </tbody>
       </table></div>
-      <p>To keep a trigger out of the group, mark it <code>data-sibling="false"</code>. <code>lateralNav: false</code> removes the bar; the siblings are still there for <code>goTo(name, { mode: 'lateral' })</code>.</p>
+      <p>Triggers that share a view and differ in their data (<code>data-to="room" data-id="kitchen"</code>) are separate siblings, each with its own dot named by its <code>data-title</code>. To keep a trigger out of the group, mark it <code>data-sibling="false"</code>. <code>lateralNav: false</code> removes the bar; the siblings are still there for <code>goTo(name, { mode: 'lateral' })</code>.</p>
     </section>
 
     <section>

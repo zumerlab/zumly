@@ -61,7 +61,6 @@
     const log = document.getElementById('log')
     function start () {
       app?.destroy()
-      document.querySelector('.canvas').replaceChildren()
       app = new Zumly({
         mount: '.canvas',
         initialView: 'home',
