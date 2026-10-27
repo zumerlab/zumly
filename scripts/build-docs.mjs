@@ -47,6 +47,7 @@ function footer (to) {
           <h4>Learn</h4>
           <ul>
             ${STEPS.map(([file, title]) => li(to(`learn/${file}.html`), title)).join('\n            ')}
+            ${li(to('guides/navigation.html'), 'Navigation controls')}
           </ul>
         </div>
         <div>
@@ -122,7 +123,7 @@ for (const file of walk(DOCS)) {
     return path || './'
   }
   const section = rel.startsWith('learn/') ? 'learn'
-    : rel.startsWith('integrations/') || rel.startsWith('drivers/') ? 'guides'
+    : rel.startsWith('integrations/') || rel.startsWith('drivers/') || rel.startsWith('guides/') ? 'guides'
       : rel === 'api.html' ? 'api' : ''
   const before = readFileSync(file, 'utf8')
   const after = before

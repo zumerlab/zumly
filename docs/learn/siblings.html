@@ -50,49 +50,99 @@
       <div class="demo-bar"><span>Live example</span><button type="button" data-reload="demo">Restart</button><a href="examples/siblings.html" target="_blank" rel="noopener">Open &#8599;</a></div>
       <iframe id="demo" src="examples/siblings.html" title="Siblings: live example" loading="lazy"></iframe>
     </div>
-    <p class="demo-hint">Open a zone, then use the arrows or the dots at the bottom, or swipe left and right.</p>
+    <p class="demo-hint">Open a zone and move between zones with the arrows or the dots. Then open an animal: the bar now moves between the animals of that zone. The round button at the bottom left zooms out one level.</p>
 
     <section>
       <h2>The code</h2>
-      <pre data-example="siblings#script"><code>const zone = (title, depth, text) =&gt; `
-  &lt;div class="z-view card" data-title="${title}"&gt;
-    &lt;h2&gt;${title}&lt;/h2&gt;&lt;small&gt;${depth}&lt;/small&gt;&lt;p&gt;${text}&lt;/p&gt;
+      <pre data-example="siblings#script"><code>// A zone opens on its animals; each animal is a small card
+const zone = (id, title, animals) =&gt; `
+  &lt;div class="z-view zone ${id}" data-title="${title}"&gt;
+    &lt;h2&gt;${title}&lt;/h2&gt;
+    &lt;div class="row"&gt;${animals.map(([to, name]) =&gt;
+      `&lt;div class="zoom-me peek-animal" data-to="${to}"&gt;${name}&lt;/div&gt;`).join('')}&lt;/div&gt;
   &lt;/div&gt;`
+const animal = (name, fact) =&gt; `
+  &lt;div class="z-view animal" data-title="${name}"&gt;&lt;h2&gt;${name}&lt;/h2&gt;&lt;p&gt;${fact}&lt;/p&gt;&lt;/div&gt;`
 
 const app = new Zumly({
   mount: '.canvas',
   initialView: 'ocean',
   views: {
     ocean: `&lt;div class="z-view ocean" data-title="Ocean"&gt;
-              &lt;div class="zoom-me zone" data-to="sunlight"&gt;Sunlight zone&lt;/div&gt;
-              &lt;div class="zoom-me zone" data-to="twilight"&gt;Twilight zone&lt;/div&gt;
-              &lt;div class="zoom-me zone" data-to="midnight"&gt;Midnight zone&lt;/div&gt;
+              &lt;h1&gt;Three zones of the ocean&lt;/h1&gt;
+              &lt;div class="row"&gt;
+                &lt;div class="zoom-me peek-zone sunlight" data-to="sunlight"&gt;Sunlight&lt;/div&gt;
+                &lt;div class="zoom-me peek-zone twilight" data-to="twilight"&gt;Twilight&lt;/div&gt;
+                &lt;div class="zoom-me peek-zone midnight" data-to="midnight"&gt;Midnight&lt;/div&gt;
+              &lt;/div&gt;
+              &lt;!-- Opens a view, but is not one of the zones --&gt;
+              &lt;div class="zoom-me about" data-to="about" data-sibling="false"&gt;About&lt;/div&gt;
             &lt;/div&gt;`,
-    sunlight: zone('Sunlight zone', '0–200 m', 'Light, plants and most of the fish.'),
-    twilight: zone('Twilight zone', '200–1000 m', 'Dim blue light. Many animals glow.'),
-    midnight: zone('Midnight zone', '1000 m and deeper', 'No sunlight. The anglerfish brings its own.')
+    about: `&lt;div class="z-view note" data-title="About"&gt;&lt;p&gt;Zones split the ocean by how much sunlight reaches them.&lt;/p&gt;&lt;/div&gt;`,
+    sunlight: zone('sunlight', 'Sunlight zone', [['turtle', 'Turtle'], ['tuna', 'Tuna']]),
+    twilight: zone('twilight', 'Twilight zone', [['lanternfish', 'Lanternfish'], ['squid', 'Squid']]),
+    midnight: zone('midnight', 'Midnight zone', [['anglerfish', 'Anglerfish'], ['gulper', 'Gulper eel']]),
+    turtle: animal('Turtle', 'Breathes air, dives for hours.'),
+    tuna: animal('Tuna', 'Swims across whole oceans.'),
+    lanternfish: animal('Lanternfish', 'Glows to hide its shadow.'),
+    squid: animal('Squid', 'Rises to the surface at night.'),
+    anglerfish: animal('Anglerfish', 'Brings its own light.'),
+    gulper: animal('Gulper eel', 'A mouth bigger than its body.')
   },
-  // A horizontal swipe moves to the next or previous sibling
+  // A horizontal swipe also moves to the next or previous sibling
   lateralNav: { swipe: true }
 })
 app.init()</code></pre>
     </section>
 
     <section>
-      <h2>How it works</h2>
+      <h2>Who counts as a sibling</h2>
+      <p>The siblings of a view are the views of the other triggers in its parent. Inside <em>Twilight zone</em> they are the three zones, because the ocean has three zone triggers. Inside <em>Squid</em> they are Lanternfish and Squid, because those are the triggers in Twilight zone.</p>
       <ul>
-        <li>Siblings are found for you: they are the views of the other triggers in the parent. The slide direction follows where those triggers sit.</li>
-        <li>The sibling bar appears when the current view does not cover the canvas. <code>lateralNav: { mode: 'always' }</code> shows it on full-screen views too.</li>
-        <li><code>swipe: true</code> makes a horizontal swipe move between siblings. Where there are none, a swipe left still zooms out.</li>
-        <li><code>back()</code> first undoes the sideways moves at this level, then zooms out.</li>
+        <li><strong>Each level has its own group.</strong> Zoom in and the bar shows the siblings of the new level; zoom out and it shows the ones above again. You never configure levels.</li>
+        <li><strong>Order follows the layout.</strong> Siblings come in the order of their triggers, and the slide goes the way they sit: Midnight is to the right of Twilight, so it slides in from the right.</li>
+        <li><strong>Leave a trigger out</strong> with <code>data-sibling="false"</code>. The <em>About</em> button opens a view, but it is not a zone, so it gets no dot.</li>
       </ul>
-      <p>To set the order yourself, or keep siblings alive in the DOM while you move between them:</p>
+    </section>
+
+    <section>
+      <h2>Two controls, two directions</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Control</th><th>Looks like</th><th>Does</th></tr></thead>
+        <tbody>
+          <tr><td>Back button (<code>depthNav</code>)</td><td>A dot in a ring, bottom left</td><td>Zooms out one level</td></tr>
+          <tr><td>Sibling bar (<code>lateralNav</code>)</td><td>Arrows and dots</td><td>Moves sideways, same level</td></tr>
+        </tbody>
+      </table></div>
+      <p>The bar shows whenever the current view has siblings. With <code>swipe: true</code>, a horizontal swipe moves between them too; where there are none, a swipe left still zooms out.</p>
+      <p>Both controls, their options and how to replace them are in <a href="../guides/navigation.html">Navigation controls</a>.</p>
+    </section>
+
+    <section>
+      <h2>Back after moving sideways</h2>
+      <p><code>back()</code>, and the browser back button when you use the router, undo what you did, in order. Each level remembers its own sideways moves:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>You did</th><th><code>back()</code> takes you to</th></tr></thead>
+        <tbody>
+          <tr><td>Twilight → Midnight (sideways)</td><td>Twilight</td></tr>
+          <tr><td>Twilight → Midnight → Anglerfish (in)</td><td>Midnight, then Twilight, then the ocean</td></tr>
+        </tbody>
+      </table></div>
+      <p>The back button, a click on the dimmed parent, the wheel and <kbd>ArrowLeft</kbd> are different: they always zoom out, whatever you did sideways.</p>
+    </section>
+
+    <section>
+      <h2>Setting the order yourself</h2>
+      <p>When the layout does not say the order, or a parent has triggers that belong to different groups, list the siblings per parent view:</p>
       <pre><code>lateralNav: {
-  siblings: { ocean: ['sunlight', 'twilight', 'midnight'] },
-  keepAlive: true,   // form fields and scroll positions survive
-  swipe: true
+  siblings: {
+    ocean: ['sunlight', 'twilight', 'midnight'],
+    twilight: ['lanternfish', 'squid']
+  },
+  keepAlive: true   // siblings you leave stay in the DOM: form fields and scroll survive
 }</code></pre>
-      <div class="tip"><img src="../fish-160.png" alt="" width="44" height="44"><div><p>Siblings are told apart by view name. Several triggers that open the <em>same</em> view with different <code>data-*</code> are one view, not siblings. That pattern is in the next step.</p></div></div>
+      <p>A parent that is not in the map keeps the automatic group.</p>
+      <div class="tip"><img src="../fish-160.png" alt="" width="44" height="44"><div><p>Siblings are told apart by view name. Several triggers that open the <em>same</em> view with different <code>data-*</code> (a <code>room</code> view for every room) count as one view, so they are not siblings. When you need the bar, give each item its own view name; a helper like <code>animal()</code> above keeps that short.</p></div></div>
     </section>
 
     <nav class="pager" aria-label="Steps"><a class="prev" href="depth.html"><small>&larr; Step 2</small>Going deeper</a><a class="next" href="views.html"><small>Step 4 &rarr;</small>Where views come from</a></nav>
@@ -110,6 +160,7 @@ app.init()</code></pre>
             <li><a href="../learn/views.html">Where views come from</a></li>
             <li><a href="../learn/navigate.html">Navigating from code</a></li>
             <li><a href="../learn/motion.html">Motion and gestures</a></li>
+            <li><a href="../guides/navigation.html">Navigation controls</a></li>
           </ul>
         </div>
         <div>

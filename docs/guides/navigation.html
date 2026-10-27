@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-TCJ276G8QK"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag () { dataLayer.push(arguments) } gtag('js', new Date()); gtag('config', 'G-TCJ276G8QK')</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Navigation controls — Zumly guide</title>
+  <meta name="description" content="The back button and the sibling bar Zumly draws for you: every option, live, how they share an edge, how to restyle them and how to build your own." />
+  <link rel="canonical" href="https://zumerlab.github.io/zumly/guides/navigation.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Navigation controls — Zumly guide" />
+  <meta property="og:description" content="The back button and the sibling bar Zumly draws for you: every option, live, how they share an edge, how to restyle them and how to build your own." />
+  <meta property="og:url" content="https://zumerlab.github.io/zumly/guides/navigation.html" />
+  <meta property="og:image" content="https://zumerlab.github.io/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/">Learn</a>
+      <a class="nav-link" href="../learn/#guides" aria-current="page">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="hero-eyebrow">Guide</span>
+      <h1 class="hero-title">Navigation controls</h1>
+      <p class="hero-sub">Zumly draws two controls for you: a back button that zooms out and a sibling bar that moves sideways. Change any option below and the example rebuilds on the view you were on.</p>
+    </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example</span><a href="examples/controls.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="controls-demo" src="examples/controls.html" title="Navigation controls: live example"></iframe>
+    </div>
+
+    <form class="config" id="config" aria-label="Navigation options">
+      <fieldset>
+        <legend>Back button · <code>depthNav</code></legend>
+        <label>style <select name="dStyle"><option>button</option><option selected>title</option><option>rings</option><option value="off">off (false)</option></select></label>
+        <label>position <select name="dPos"><option>bottom-left</option><option>top-left</option></select></label>
+      </fieldset>
+      <fieldset>
+        <legend>Sibling bar · <code>lateralNav</code></legend>
+        <label>position <select name="lPos"><option>bottom-center</option><option>top-center</option></select></label>
+        <label>mode <select name="lMode"><option>always</option><option>auto</option></select></label>
+        <label><input type="checkbox" name="lArrows" checked> arrows</label>
+        <label><input type="checkbox" name="lDots" checked> dots</label>
+        <label><input type="checkbox" name="lSwipe"> swipe</label>
+        <label><input type="checkbox" name="lOff"> off (false)</label>
+      </fieldset>
+    </form>
+    <pre data-plain><code id="config-code"></code></pre>
+
+    <section>
+      <h2>The back button</h2>
+      <p>It appears from the first level down and zooms out one level. A view that brings its own element with class <code>z-depth-nav</code> replaces it.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Option</th><th>Values</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>style</code></td><td><code>'button'</code> (default), <code>'title'</code>, <code>'rings'</code></td><td>A dot in its ring; the same plus the title of the view above; or a ring per level above. With <code>'rings'</code>, hover, a long press or <kbd>ArrowUp</kbd> opens a band per level to jump several at once.</td></tr>
+          <tr><td><code>position</code></td><td><code>'bottom-left'</code> (default), <code>'top-left'</code></td><td>Its corner.</td></tr>
+        </tbody>
+      </table></div>
+      <p><code>depthNav: false</code> removes it. Clicking the dimmed parent, the wheel, a swipe left and <kbd>ArrowLeft</kbd> still zoom out.</p>
+    </section>
+
+    <section>
+      <h2>The sibling bar</h2>
+      <p>It appears when the current view has siblings: the views of the other triggers in its parent. Each level has its own group, so the bar changes as you zoom in and out. <a href="../learn/siblings.html">Step 3</a> explains who counts as a sibling.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Option</th><th>Values</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>position</code></td><td><code>'bottom-center'</code> (default), <code>'top-center'</code></td><td>Its edge.</td></tr>
+          <tr><td><code>mode</code></td><td><code>'always'</code> (default), <code>'auto'</code></td><td><code>'auto'</code> hides the bar on views that cover the whole canvas.</td></tr>
+          <tr><td><code>arrows</code>, <code>dots</code></td><td><code>true</code> (default), <code>false</code></td><td>Which parts to draw.</td></tr>
+          <tr><td><code>swipe</code></td><td><code>false</code> (default), <code>true</code></td><td>A horizontal swipe moves between siblings. Where there are none, a swipe left still zooms out.</td></tr>
+          <tr><td><code>keepAlive</code></td><td><code>false</code> (default), <code>true</code>, <code>'visible'</code></td><td>Siblings you leave stay in the DOM (hidden, or visible behind), so their state survives while you stay at that level.</td></tr>
+          <tr><td><code>siblings</code></td><td><code>{ parent: [names] }</code></td><td>The order per parent view, instead of the order of the triggers.</td></tr>
+        </tbody>
+      </table></div>
+      <p>To keep a trigger out of the group, mark it <code>data-sibling="false"</code>. <code>lateralNav: false</code> removes the bar; the siblings are still there for <code>goTo(name, { mode: 'lateral' })</code>.</p>
+    </section>
+
+    <section>
+      <h2>When they share an edge</h2>
+      <p>Put both at the bottom (or both at the top) and the bar moves aside to leave room for the button. On a narrow screen with no room beside it, the bar goes above the button. Try <em>position</em> in the example on a phone-sized window.</p>
+    </section>
+
+    <section>
+      <h2>Restyle them</h2>
+      <p>Both controls share one frosted look. Set these custom properties on the canvas, or on <code>.z-depth-nav</code> or <code>.z-lateral-nav</code> for just one:</p>
+      <pre><code>.canvas {
+  --z-nav-bg: rgba(255, 255, 255, 0.7);   /* background */
+  --z-nav-color: #0b2a44;                 /* glyphs, rings, arrows, dots */
+  --z-nav-active: #3da9fc;                /* current dot */
+  --z-nav-border: transparent;
+  --z-nav-shadow: none;
+  --z-nav-blur: blur(10px);               /* its backdrop-filter */
+  --z-nav-hover: rgba(0, 0, 0, 0.06);
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Their words</h2>
+      <p>Screen readers read the labels below. <code>{title}</code> is the view's <code>data-title</code>. Each one can be a template, a function <code>({ name, title }) =&gt; string</code>, or <code>false</code>.</p>
+      <pre><code>labels: {
+  back: 'Volver a {title}',
+  prev: 'Anterior',
+  next: 'Siguiente',
+  goTo: 'Ir a {title}'
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Build your own</h2>
+      <p>Turn both off and drive your own buttons with the same methods the built-in controls use:</p>
+      <pre><code>const app = new Zumly({ ..., depthNav: false, lateralNav: false })
+
+app.on('viewChanged', () =&gt; {
+  backButton.hidden = !app.canGoBack()
+  crumbs.textContent = app.getViewStack().map(view =&gt; view.title).join(' › ')
+})
+
+backButton.onclick = () =&gt; app.zoomOut()        // one level up
+homeButton.onclick = () =&gt; app.zoomOut({ to: 'ocean' })   // several levels, one transition
+nextButton.onclick = () =&gt; app.goTo('midnight', { mode: 'lateral' })</code></pre>
+      <p><code>back()</code> is the other choice for a back button: it undoes sideways moves at the current level before zooming out, like the browser back button with the router.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+            <li><a href="../guides/navigation.html">Navigation controls</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frameworks</h4>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Drivers</h4>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Zumly</h4>
+          <ul>
+            <li><a href="../">Live demo</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://github.com/zumerlab">Zumerlab</a> · MIT License</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Turns the form into depthNav / lateralNav options, shows them, and rebuilds the example
+    ;(function () {
+      var form = document.getElementById('config')
+      var code = document.getElementById('config-code')
+      var frame = document.getElementById('controls-demo')
+      function options () {
+        var f = form.elements
+        var depth = f.dStyle.value === 'off' ? false : { style: f.dStyle.value, position: f.dPos.value }
+        var lateral = f.lOff.checked ? false : { position: f.lPos.value, mode: f.lMode.value, arrows: f.lArrows.checked, dots: f.lDots.checked, swipe: f.lSwipe.checked }
+        f.dPos.disabled = !depth
+        ;[f.lPos, f.lMode, f.lArrows, f.lDots, f.lSwipe].forEach(function (input) { input.disabled = !lateral })
+        return { depthNav: depth, lateralNav: lateral }
+      }
+      function show (value) {
+        if (value === false) return 'false'
+        var defaults = { style: 'button', position: /^bottom/, mode: 'always', arrows: true, dots: true, swipe: false }
+        var parts = Object.keys(value).filter(function (key) {
+          var d = defaults[key]
+          return d instanceof RegExp ? !d.test(value[key]) : value[key] !== d
+        }).map(function (key) { return key + ': ' + JSON.stringify(value[key]).replace(/"/g, "'") })
+        return parts.length ? '{ ' + parts.join(', ') + ' }' : 'true'
+      }
+      function apply () {
+        var o = options()
+        code.textContent = 'new Zumly({\n  ...,\n  depthNav: ' + show(o.depthNav) + ',\n  lateralNav: ' + show(o.lateralNav) + '\n})'
+        if (frame.contentWindow && frame.contentWindow.configure) frame.contentWindow.configure(o)
+      }
+      form.addEventListener('change', apply)
+      frame.addEventListener('load', apply)
+      apply()
+    })()
+  </script>
+</body>
+</html>

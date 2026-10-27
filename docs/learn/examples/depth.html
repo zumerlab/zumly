@@ -7,13 +7,20 @@
   <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
   <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
   <style>
-    body { margin: 0; font: 17px/1.4 system-ui, sans-serif; color: #0b2a44; }
+    body { margin: 0; font: 16px/1.4 system-ui, sans-serif; color: #0b2a44; }
     .stage { position: relative; height: 100vh; }
-    .z-view { display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; }
+    .z-view { display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; }
     .ocean { width: 100%; height: 100%; background: linear-gradient(#bfe6ff, #2a7fc4); }
-    .card { width: 280px; height: 220px; border-radius: 24px; background: white; box-shadow: 0 12px 40px #0b2a4433; }
-    h1, h2 { margin: 0; }
-    .zoom-me { cursor: zoom-in; padding: 10px 18px; border-radius: 99px; background: #3da9fc; color: white; font-weight: 600; }
+    /* A level and the trigger that opens it share a shape, so the view grows out of it */
+    .level, .peek { width: 300px; height: 210px; border-radius: 28px; }
+    .peek { width: 150px; height: 105px; border-radius: 14px; cursor: zoom-in; display: grid; place-content: center; font-weight: 600; color: white; }
+    .reef { background: #ff8a65; }
+    .anemone { background: #ba68c8; }
+    .clownfish { background: #ffb300; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 1.3rem; }
+    h2 { font-size: 1.05rem; color: white; }
+    .level p { color: white; }
   </style>
 </head>
 <body>
@@ -27,17 +34,17 @@
       views: {
         ocean: `<div class="z-view ocean" data-title="Ocean">
                   <h1>The ocean</h1>
-                  <div class="zoom-me" data-to="reef">Coral reef</div>
+                  <div class="zoom-me peek reef" data-to="reef">Coral reef</div>
                 </div>`,
-        reef: `<div class="z-view card" data-title="Coral reef">
+        reef: `<div class="z-view level reef" data-title="Coral reef">
                  <h2>Coral reef</h2>
-                 <div class="zoom-me" data-to="anemone">Anemone</div>
+                 <div class="zoom-me peek anemone" data-to="anemone">Anemone</div>
                </div>`,
-        anemone: `<div class="z-view card" data-title="Anemone">
+        anemone: `<div class="z-view level anemone" data-title="Anemone">
                     <h2>Anemone</h2>
-                    <div class="zoom-me" data-to="clownfish">Clownfish</div>
+                    <div class="zoom-me peek clownfish" data-to="clownfish">Clownfish</div>
                   </div>`,
-        clownfish: `<div class="z-view card" data-title="Clownfish">
+        clownfish: `<div class="z-view level clownfish" data-title="Clownfish">
                       <h2>Clownfish</h2>
                       <p>Four levels deep.</p>
                     </div>`

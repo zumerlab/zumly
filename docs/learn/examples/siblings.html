@@ -7,13 +7,24 @@
   <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
   <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
   <style>
-    body { margin: 0; font: 17px/1.4 system-ui, sans-serif; color: #0b2a44; }
+    body { margin: 0; font: 15px/1.4 system-ui, sans-serif; color: white; }
     .stage { position: relative; height: 100vh; }
-    .z-view { display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; }
-    .ocean { width: 100%; height: 100%; background: linear-gradient(#bfe6ff, #0b2a44); }
-    .zone { cursor: zoom-in; width: 220px; padding: 12px; border-radius: 14px; background: #ffffffcc; font-weight: 600; }
-    .card { width: 260px; height: 200px; padding: 16px; box-sizing: border-box; border-radius: 24px; background: white; }
-    h2, p { margin: 0; }
+    .z-view { display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; }
+    .ocean { width: 100%; height: 100%; background: linear-gradient(#bfe6ff, #0b2a44); color: #0b2a44; }
+    .row { display: flex; gap: 12px; }
+    .zone, .peek-zone { width: 320px; height: 220px; border-radius: 24px; }
+    .peek-zone { width: 120px; height: 82px; border-radius: 10px; cursor: zoom-in; display: grid; place-content: center; font-weight: 600; color: white; }
+    .animal, .peek-animal { width: 220px; height: 150px; border-radius: 18px; background: white; color: #0b2a44; }
+    .peek-animal { width: 88px; height: 60px; border-radius: 8px; cursor: zoom-in; display: grid; place-content: center; font-size: 13px; }
+    .animal { padding: 0 16px; box-sizing: border-box; }
+    .sunlight { background: #2f8fd8; }
+    .twilight { background: #24507a; }
+    .midnight { background: #101c33; }
+    .about { position: absolute; top: 16px; right: 16px; padding: 6px 12px; border-radius: 99px; background: #ffffffaa; cursor: zoom-in; }
+    .note { width: 260px; height: 150px; border-radius: 18px; background: white; color: #0b2a44; padding: 16px; box-sizing: border-box; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 1.25rem; }
+    h2 { font-size: 1rem; }
   </style>
 </head>
 <body>
@@ -21,25 +32,42 @@
     <div class="canvas zumly-canvas"></div>
   </div>
   <script>
-    const zone = (title, depth, text) => `
-      <div class="z-view card" data-title="${title}">
-        <h2>${title}</h2><small>${depth}</small><p>${text}</p>
+    // A zone opens on its animals; each animal is a small card
+    const zone = (id, title, animals) => `
+      <div class="z-view zone ${id}" data-title="${title}">
+        <h2>${title}</h2>
+        <div class="row">${animals.map(([to, name]) =>
+          `<div class="zoom-me peek-animal" data-to="${to}">${name}</div>`).join('')}</div>
       </div>`
+    const animal = (name, fact) => `
+      <div class="z-view animal" data-title="${name}"><h2>${name}</h2><p>${fact}</p></div>`
 
     const app = new Zumly({
       mount: '.canvas',
       initialView: 'ocean',
       views: {
         ocean: `<div class="z-view ocean" data-title="Ocean">
-                  <div class="zoom-me zone" data-to="sunlight">Sunlight zone</div>
-                  <div class="zoom-me zone" data-to="twilight">Twilight zone</div>
-                  <div class="zoom-me zone" data-to="midnight">Midnight zone</div>
+                  <h1>Three zones of the ocean</h1>
+                  <div class="row">
+                    <div class="zoom-me peek-zone sunlight" data-to="sunlight">Sunlight</div>
+                    <div class="zoom-me peek-zone twilight" data-to="twilight">Twilight</div>
+                    <div class="zoom-me peek-zone midnight" data-to="midnight">Midnight</div>
+                  </div>
+                  <!-- Opens a view, but is not one of the zones -->
+                  <div class="zoom-me about" data-to="about" data-sibling="false">About</div>
                 </div>`,
-        sunlight: zone('Sunlight zone', '0–200 m', 'Light, plants and most of the fish.'),
-        twilight: zone('Twilight zone', '200–1000 m', 'Dim blue light. Many animals glow.'),
-        midnight: zone('Midnight zone', '1000 m and deeper', 'No sunlight. The anglerfish brings its own.')
+        about: `<div class="z-view note" data-title="About"><p>Zones split the ocean by how much sunlight reaches them.</p></div>`,
+        sunlight: zone('sunlight', 'Sunlight zone', [['turtle', 'Turtle'], ['tuna', 'Tuna']]),
+        twilight: zone('twilight', 'Twilight zone', [['lanternfish', 'Lanternfish'], ['squid', 'Squid']]),
+        midnight: zone('midnight', 'Midnight zone', [['anglerfish', 'Anglerfish'], ['gulper', 'Gulper eel']]),
+        turtle: animal('Turtle', 'Breathes air, dives for hours.'),
+        tuna: animal('Tuna', 'Swims across whole oceans.'),
+        lanternfish: animal('Lanternfish', 'Glows to hide its shadow.'),
+        squid: animal('Squid', 'Rises to the surface at night.'),
+        anglerfish: animal('Anglerfish', 'Brings its own light.'),
+        gulper: animal('Gulper eel', 'A mouth bigger than its body.')
       },
-      // A horizontal swipe moves to the next or previous sibling
+      // A horizontal swipe also moves to the next or previous sibling
       lateralNav: { swipe: true }
     })
     app.init()

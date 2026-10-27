@@ -235,8 +235,10 @@ Progressive delay in milliseconds between view layers. Current view starts immed
 
 #### `lateralNav.mode`
 
-- `'auto'` (default): lateral nav only appears when the current view doesn't cover the full canvas (i.e., trigger was smaller than canvas)
-- `'always'`: lateral nav appears whenever sibling views exist at current depth
+- `'always'` (default): lateral nav appears whenever sibling views exist at current depth
+- `'auto'`: lateral nav only appears when the current view doesn't cover the full canvas
+
+Siblings are the views of the other `.zoom-me[data-to]` triggers in the parent view, so each depth level has its own group. A trigger with `data-sibling="false"` is left out of the group. Siblings are told apart by view name: several triggers opening the same view with different `data-*` are one view, not siblings.
 
 #### `lateralNav.keepAlive`
 
@@ -250,6 +252,7 @@ Declared sibling order for lateral navigation. Takes precedence over inferring o
 
 - Array form (one lateral group): `siblings: ['today', 'tomorrow', 'week']`
 - Map form (keyed by parent view name): `siblings: { home: ['today', 'tomorrow', 'week'] }`
+- An array applies to whichever parent has the current view among its names; with several levels, prefer the map.
 
 #### `depthNav`
 

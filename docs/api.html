@@ -340,7 +340,7 @@
             <tr><td><code>on(event, fn)</code></td><td>this</td><td>Subscribe to lifecycle event (chainable)</td></tr>
             <tr><td><code>off(event, fn?)</code></td><td>this</td><td>Unsubscribe. Omit fn to remove all for that event</td></tr>
             <tr><td><code>use(plugin, opts?)</code></td><td>this</td><td>Register a plugin (e.g. <code>Zumly.Router</code>); installed during <code>init()</code></td></tr>
-            <tr><td><code>destroy()</code></td><td>void</td><td>Clean up all listeners and state</td></tr>
+            <tr><td><code>destroy()</code></td><td>void</td><td>Clean up all listeners and state. The views stay in the canvas: empty it before mounting another instance there</td></tr>
           </tbody>
         </table>
       </div>
@@ -552,6 +552,7 @@ function detail({ props }) {
             <li><a href="learn/views.html">Where views come from</a></li>
             <li><a href="learn/navigate.html">Navigating from code</a></li>
             <li><a href="learn/motion.html">Motion and gestures</a></li>
+            <li><a href="guides/navigation.html">Navigation controls</a></li>
           </ul>
         </div>
         <div>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Navigation controls</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+  <style>
+    body { margin: 0; font: 15px/1.4 system-ui, sans-serif; color: white; }
+    .stage { position: relative; height: 100vh; }
+    .z-view { display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; }
+    .ocean { width: 100%; height: 100%; background: linear-gradient(#bfe6ff, #0b2a44); color: #0b2a44; }
+    .row { display: flex; gap: 12px; }
+    .zone, .peek-zone { width: 320px; height: 220px; border-radius: 24px; }
+    .peek-zone { width: 120px; height: 82px; border-radius: 10px; cursor: zoom-in; display: grid; place-content: center; font-weight: 600; color: white; }
+    .animal, .peek-animal { width: 220px; height: 150px; border-radius: 18px; background: white; color: #0b2a44; }
+    .peek-animal { width: 88px; height: 60px; border-radius: 8px; cursor: zoom-in; display: grid; place-content: center; font-size: 13px; }
+    .animal { padding: 0 16px; box-sizing: border-box; }
+    .sunlight { background: #2f8fd8; }
+    .twilight { background: #24507a; }
+    .midnight { background: #101c33; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 1.25rem; }
+    h2 { font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const zone = (id, title, animals) => `
+      <div class="z-view zone ${id}" data-title="${title}">
+        <h2>${title}</h2>
+        <div class="row">${animals.map(([to, name]) =>
+          `<div class="zoom-me peek-animal" data-to="${to}">${name}</div>`).join('')}</div>
+      </div>`
+    const animal = (name, fact) => `
+      <div class="z-view animal" data-title="${name}"><h2>${name}</h2><p>${fact}</p></div>`
+    const views = {
+      ocean: `<div class="z-view ocean" data-title="Ocean">
+                <h1>Three zones of the ocean</h1>
+                <div class="row">
+                  <div class="zoom-me peek-zone sunlight" data-to="sunlight">Sunlight</div>
+                  <div class="zoom-me peek-zone twilight" data-to="twilight">Twilight</div>
+                  <div class="zoom-me peek-zone midnight" data-to="midnight">Midnight</div>
+                </div>
+              </div>`,
+      sunlight: zone('sunlight', 'Sunlight zone', [['turtle', 'Turtle'], ['tuna', 'Tuna']]),
+      twilight: zone('twilight', 'Twilight zone', [['lanternfish', 'Lanternfish'], ['squid', 'Squid']]),
+      midnight: zone('midnight', 'Midnight zone', [['anglerfish', 'Anglerfish'], ['gulper', 'Gulper eel']]),
+      turtle: animal('Turtle', 'Breathes air, dives for hours.'),
+      tuna: animal('Tuna', 'Swims across whole oceans.'),
+      lanternfish: animal('Lanternfish', 'Glows to hide its shadow.'),
+      squid: animal('Squid', 'Rises to the surface at night.'),
+      anglerfish: animal('Anglerfish', 'Brings its own light.'),
+      gulper: animal('Gulper eel', 'A mouth bigger than its body.')
+    }
+
+    let app = null
+    let queue = Promise.resolve()
+    // The guide page calls configure() with depthNav and lateralNav options.
+    // The app is rebuilt and walks back, instantly, to the view you were on.
+    // Calls run one after another, so quick changes never cut a walk short.
+    window.configure = function (options = {}) {
+      queue = queue.then(async () => {
+        const path = app ? app.getViewStack().slice(1).map(view => view.name) : ['twilight', 'squid']
+        app?.destroy()
+        // destroy() leaves the views in place: empty the canvas for the new instance
+        document.querySelector('.canvas').replaceChildren()
+        app = new Zumly({ mount: '.canvas', initialView: 'ocean', views, ...options })
+        await app.init()
+        for (const name of path) {
+          const trigger = document.querySelector(`.is-current-view .zoom-me[data-to="${name}"]`)
+          if (!trigger) break
+          trigger.dataset.withDuration = '1ms'
+          await app.zoomIn(trigger)
+          delete trigger.dataset.withDuration
+        }
+      })
+      return queue
+    }
+    if (window.parent === window) window.configure()
+  </script>
+</body>
+</html>

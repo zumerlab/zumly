@@ -61,17 +61,17 @@
   views: {
     ocean: `&lt;div class="z-view ocean" data-title="Ocean"&gt;
               &lt;h1&gt;The ocean&lt;/h1&gt;
-              &lt;div class="zoom-me" data-to="reef"&gt;Coral reef&lt;/div&gt;
+              &lt;div class="zoom-me peek reef" data-to="reef"&gt;Coral reef&lt;/div&gt;
             &lt;/div&gt;`,
-    reef: `&lt;div class="z-view card" data-title="Coral reef"&gt;
+    reef: `&lt;div class="z-view level reef" data-title="Coral reef"&gt;
              &lt;h2&gt;Coral reef&lt;/h2&gt;
-             &lt;div class="zoom-me" data-to="anemone"&gt;Anemone&lt;/div&gt;
+             &lt;div class="zoom-me peek anemone" data-to="anemone"&gt;Anemone&lt;/div&gt;
            &lt;/div&gt;`,
-    anemone: `&lt;div class="z-view card" data-title="Anemone"&gt;
+    anemone: `&lt;div class="z-view level anemone" data-title="Anemone"&gt;
                 &lt;h2&gt;Anemone&lt;/h2&gt;
-                &lt;div class="zoom-me" data-to="clownfish"&gt;Clownfish&lt;/div&gt;
+                &lt;div class="zoom-me peek clownfish" data-to="clownfish"&gt;Clownfish&lt;/div&gt;
               &lt;/div&gt;`,
-    clownfish: `&lt;div class="z-view card" data-title="Clownfish"&gt;
+    clownfish: `&lt;div class="z-view level clownfish" data-title="Clownfish"&gt;
                   &lt;h2&gt;Clownfish&lt;/h2&gt;
                   &lt;p&gt;Four levels deep.&lt;/p&gt;
                 &lt;/div&gt;`
@@ -88,6 +88,7 @@ app.init()</code></pre>
         <li>Each level is just another view with its own triggers. Zumly keeps three levels on screen (current, parent and grandparent) and detaches deeper ones until you come back.</li>
         <li><code>data-title</code> gives a view a readable name. The back button, the sibling dots, screen readers and <code>getViewStack()</code> use it. Without one, the view name is used.</li>
         <li>The views behind the current one stay in place, dimmed and inert. Clicking them zooms out.</li>
+        <li>Each trigger here is a small copy of the view it opens: same shape, same color. The new view grows exactly out of it, and the zoom reads as going <em>into</em> the thing you clicked.</li>
       </ul>
     </section>
 
@@ -104,6 +105,7 @@ app.init()</code></pre>
       </table></div>
       <pre><code>depthNav: { style: 'rings', position: 'top-left' }</code></pre>
       <div class="tip"><img src="../fish-160.png" alt="" width="44" height="44"><div><p>Try <code>style: 'rings'</code> in the example: open it in a new tab, save it, and change one word. Four levels deep, you get three rings.</p></div></div>
+      <p>All the options of the back button and the sibling bar, side by side and live, are in <a href="../guides/navigation.html">Navigation controls</a>.</p>
     </section>
 
     <nav class="pager" aria-label="Steps"><a class="prev" href="first-app.html"><small>&larr; Step 1</small>Your first app</a><a class="next" href="siblings.html"><small>Step 3 &rarr;</small>Siblings</a></nav>
@@ -121,6 +123,7 @@ app.init()</code></pre>
             <li><a href="../learn/views.html">Where views come from</a></li>
             <li><a href="../learn/navigate.html">Navigating from code</a></li>
             <li><a href="../learn/motion.html">Motion and gestures</a></li>
+            <li><a href="../guides/navigation.html">Navigation controls</a></li>
           </ul>
         </div>
         <div>
