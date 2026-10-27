@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Analytics, cookie consent and events for zumerlab.com -->
+  <script async src="/zumerlab.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heavy views — Zumly guide</title>
+  <meta name="description" content="Zooms with thousands of nodes or frosted glass can stutter. flatten shows the views behind as a SnapDOM photo, so the zoom moves pictures instead of DOM." />
+  <link rel="canonical" href="https://zumerlab.com/zumly/guides/heavy-views.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Heavy views — Zumly guide" />
+  <meta property="og:description" content="Zooms with thousands of nodes or frosted glass can stutter. flatten shows the views behind as a SnapDOM photo, so the zoom moves pictures instead of DOM." />
+  <meta property="og:url" content="https://zumerlab.com/zumly/guides/heavy-views.html" />
+  <meta property="og:image" content="https://zumerlab.com/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/">Learn</a>
+      <a class="nav-link" href="../learn/#guides" aria-current="page">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="hero-eyebrow">Guide</span>
+      <h1 class="hero-title">Heavy views</h1>
+      <p class="hero-sub">A view with thousands of nodes, or with frosted glass, is costly to scale and blur on every frame. <code>flatten</code> takes a photo of each view while you are in it, with SnapDOM, and moves the photo while the view sits behind. Zoom into a bright tile with it on, then off.</p>
+    </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example</span><label class="demo-switch"><input type="checkbox" id="flatten-on" checked> flatten</label><a id="heavy-open" href="examples/heavy.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="heavy-demo" src="examples/heavy.html" title="Heavy views: live example"></iframe>
+    </div>
+
+    <section>
+      <h2>Turn it on</h2>
+      <p>Install SnapDOM next to Zumly and hand it over:</p>
+      <pre><code>npm install zumly @zumer/snapdom</code></pre>
+      <pre><code>import Zumly from 'zumly'
+import { snapdom } from '@zumer/snapdom'
+
+new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom } })</code></pre>
+      <p>With script tags, load SnapDOM before Zumly and pass <code>flatten: true</code>, which reads the global <code>snapdom</code>:</p>
+      <pre><code>&lt;script src="https://unpkg.com/@zumer/snapdom/dist/snapdom.js"&gt;&lt;/script&gt;
+&lt;script src="https://unpkg.com/zumly/dist/zumly.js"&gt;&lt;/script&gt;</code></pre>
+      <p>Zumly does not depend on SnapDOM. If it is missing, Zumly says so once in the console and the views stay as they are.</p>
+    </section>
+
+    <section>
+      <h2>What happens</h2>
+      <ul>
+        <li>You arrive at a view and stop for a moment: Zumly takes its photo, a little at a time, so taps and drags still answer.</li>
+        <li>You zoom into something: the view you leave shows the photo. Its content is still there and laid out, only hidden, so the blur and dimming, clicks on siblings and every driver work as before.</li>
+        <li>You come back: the real view returns, crossfading from the photo.</li>
+        <li>You leave before the photo is ready: that zoom moves the real view. Nothing waits for a photo.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>When it pays off</h2>
+      <p>Three zooms in and three out, with a clock, spinners and numbers changing in every view. Chrome on a MacBook; a dropped frame is one the screen never got.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Views</th><th>Without</th><th><code>animateEffects: false</code></th><th>With <code>flatten</code></th></tr></thead>
+        <tbody id="bench-rows"></tbody>
+      </table></div>
+      <p>A light view gains nothing, so <code>flatten</code> leaves it alone. It photographs a view with at least <code>minNodes</code> elements, or with <code>backdrop-filter</code> inside. Mark a view <code>data-flatten="true"</code> to photograph it anyway, or <code>data-flatten="false"</code> to keep it live behind (a video, a game). Views with an iframe stay live: SnapDOM can only draw a placeholder for it.</p>
+    </section>
+
+    <section>
+      <h2>Options</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>snapdom</code></td><td>the global <code>snapdom</code></td><td>The <code>snapdom</code> function from <code>@zumer/snapdom</code>.</td></tr>
+          <tr><td><code>minNodes</code></td><td><code>800</code></td><td>Views with fewer elements are photographed only if they use <code>backdrop-filter</code>.</td></tr>
+          <tr><td><code>scale</code></td><td><code>1</code></td><td>Resolution of the photo. The blur behind hides its softness; without effects, <code>2</code> keeps text behind sharp, for four times the memory.</td></tr>
+          <tr><td><code>refresh</code></td><td><code>false</code></td><td>With <code>false</code>, the photo is the view as you found it, plus what you change by hand. A number of milliseconds also follows changes nobody made by hand (live data), taking a new photo at most that often.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h2>Good to know</h2>
+      <ul>
+        <li>The view behind stands still. A clock or a chart that updates stops while the view is behind, and is current again when you come back. Set <code>refresh</code> if the photo should follow it.</li>
+        <li>Change something by hand, a toggle or a slider, and leave at once: that view moves as itself until its new photo is ready, so its old state never flashes.</li>
+        <li>Each view behind keeps its photo in a canvas: width × height × 4 bytes, times the pixel ratio squared.</li>
+        <li>On a slow tablet a photo takes up to a second, spread over many frames. Zumly waits for a quiet moment to start one.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Try the cheap fix first</h2>
+      <p><code>transitions: { animateEffects: false }</code> applies the blur at once instead of animating it. It needs nothing else, and with many nodes it already takes out part of the stutter. Reach for <code>flatten</code> when that is not enough: frosted glass, thousands of nodes, or a slow device.</p>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h4>Learn</h4>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+            <li><a href="../guides/navigation.html">Navigation controls</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frameworks</h4>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Drivers</h4>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Zumly</h4>
+          <ul>
+            <li><a href="../">Live demo</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License · <a href="/privacy.html">Privacy</a><span data-cookie-settings hidden> · <a href="#">Cookies</a></span></span>
+        <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
+      </div>
+    </div>
+  </footer>
+  <script>
+    // Reloads the example with flatten on or off
+    ;(function () {
+      var input = document.getElementById('flatten-on')
+      var frame = document.getElementById('heavy-demo')
+      var open = document.getElementById('heavy-open')
+      input.addEventListener('change', function () {
+        var src = 'examples/heavy.html' + (input.checked ? '' : '?flatten=0')
+        frame.src = src
+        open.href = src
+      })
+    })()
+  </script>
+</body>
+</html>

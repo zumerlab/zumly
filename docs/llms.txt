@@ -23,6 +23,7 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 - **Events**: `viewChanged` fires after every navigation with `{ type, viewName, from, zoomLevel, node }`
 - **Back button** (`depthNav`): styles `'button'`, `'title'` (title of the view above) or `'rings'` (a ring per level, bands to jump several). Views name themselves with `title` or `data-title`
 - **Gestures**: `gestures: { follow: true }` makes trackpad, swipe and pinch (`inputs.pinch`) drive the zoom-out with their progress (`zoomOutProgress` event); `zoomOut(2)` / `zoomOut({ to })` climb several levels in one transition
+- **Flatten**: `flatten: { snapdom }` shows views behind as a SnapDOM photo (taken at idle, never mid-transition), for smooth zooms with heavy views; light views and `data-flatten="false"` stay live. SnapDOM is passed in or read from its global; Zumly does not depend on it
 - **Diagnostics**: the console explains typos in view names and options, and a canvas without size
 
 ## Quick start
@@ -54,6 +55,7 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 - Full LLM reference: https://zumerlab.com/zumly/llms-full.txt
 - Learn in six steps (each with a runnable single-file example): https://zumerlab.com/zumly/learn/
 - API reference: https://zumerlab.com/zumly/api.html
+- Heavy views (flatten with SnapDOM): https://zumerlab.com/zumly/guides/heavy-views.html
 - Driver API: https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md
 - TypeScript types: https://github.com/zumerlab/zumly/blob/main/types/zumly.d.ts
 

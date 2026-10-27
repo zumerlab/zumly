@@ -146,6 +146,7 @@ new Zumly({
     duration: '1s',           // CSS time ('600ms') or number of ms (600)
     ease: 'ease-in-out',      // CSS easing; all drivers follow the same curve. anime/gsap/motion also accept their own ease names
     effects: ['blur(3px)', 'blur(8px) saturate(0)'],  // CSS filter for [previousView, lastView]
+    animateEffects: true,     // false applies the effects at once instead of animating them (smoother with heavy views)
     stagger: 0,               // Progressive delay (ms) between view layers
     parallax: 0,              // Parallax intensity (0-1) — reserved for future use
     hideTrigger: false,        // 'fade' | true | false — hide trigger element during zoom
@@ -181,6 +182,14 @@ new Zumly({
   gestures: {                 // true = { follow: true }; default false
     follow: false,            // Trackpad, swipe and pinch drive the zoom-out with their progress
     threshold: 0.5,           // Releasing past this progress (0-1) finishes it
+  },
+
+  // ─── Heavy views ─────────────────────────
+  flatten: {                  // true = global snapdom; default false
+    snapdom,                  // import { snapdom } from '@zumer/snapdom'
+    minNodes: 800,            // Lighter views are photographed only if they use backdrop-filter
+    scale: 1,                 // Resolution of the photo (1-4)
+    refresh: false,           // false: photo on arrival, renewed after changes by hand; ms: also follow live data
   },
 
   // ─── Navigation labels (aria-label) ──────
@@ -269,6 +278,18 @@ When the back button and the sibling bar share an edge, the bar is shifted aside
 #### `gestures`
 
 With `follow: true`, the trackpad (two-finger scroll), a swipe left and a pinch (with `inputs.pinch`) carry a 0-1 progress instead of firing the zoom-out at once. The current view shrinks toward its trigger (taking the trigger's border-radius), the previous view loses its effect, the last view takes the previous-view effect. Release past `threshold` or flick → finish; otherwise everything returns. A mouse wheel notch (large or line-based delta) still zooms out at once; momentum after a release is ignored. Implemented with engine-owned Web Animations, then the end state settles with the none driver, so it works with every driver. Skipped under prefers-reduced-motion. Progress is reported by the `zoomOutProgress` event.
+
+#### `flatten`
+
+Views behind are shown as a SnapDOM photo while they sit there, so a zoom moves pictures instead of DOM. It pays off with heavy views (thousands of nodes, `backdrop-filter`): in Chrome, a frosted-glass board went from about half its frames dropped to none. Light views gain nothing and are left alone.
+
+- The photo of the current view is taken at idle, after input has been quiet for 300 ms, with SnapDOM `fast: false` (it pauses every frame, so taps still answer). Never during a transition or a gesture. A view gets a fresh photo on each visit.
+- On zoom-in, the view that moves behind gets class `z-flat`: its children stay laid out but `visibility: hidden`, and a `<canvas class="z-flat-layer">` with the photo covers its border box. The view element still moves, takes the `effects` filter by CSS and answers sibling hit-tests, so geometry and every driver are unchanged. The leaving view during a zoom-out and the followed zoom-out gesture use photos too.
+- Back in front, the real content returns and the photo crossfades out (160 ms).
+- No photo yet (the user left at once): that zoom moves the real view. A photo that does not fit after a resize is dropped.
+- Eligible: `data-flatten="true"`, or at least `minNodes` elements, or `backdrop-filter` inside. Never: `data-flatten="false"`, or an iframe inside.
+- Changes by hand (a mutation within 1 s of a pointer or key press inside the view, not on a trigger) mark the photo outdated: the view moves as itself until a new photo is taken. With `refresh: <ms>`, other changes (live data) are photographed again too, at most that often and with at most a tenth of the main thread.
+- Without SnapDOM, Zumly warns once and views stay live. `destroy()` removes photos, observers, listeners and pending captures.
 
 #### `labels`
 
@@ -988,6 +1009,8 @@ Always include `zumly.css` (or `zumly.min.css`). This provides the canvas layout
 | `.has-effect-reverse` | Animating effect removal |
 | `.z-view-fade-in` | View fading in (hideTrigger: 'fade') |
 | `.z-view-fade-out` | View fading out on zoom-out |
+| `.z-flat` | View behind shown as a photo (`flatten`): children hidden, layout kept |
+| `.z-flat-layer` | The `<canvas>` with the photo, inside a `.z-flat` view |
 
 ### CSS Custom Properties
 

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Heavy views</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+  <script src="https://unpkg.com/@zumer/snapdom/dist/snapdom.js"></script>
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+  <style>
+    body { margin: 0; font: 14px/1.4 system-ui, sans-serif; color: #e8eefc; background: #070b16; }
+    .stage { position: relative; height: 100vh; background: radial-gradient(circle at 30% 20%, #23305e, #070b16 70%); }
+    .board { width: 100%; height: 100%; padding: 56px 24px 24px; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; align-content: start; overflow: hidden; }
+    .clock { position: absolute; left: 24px; top: 16px; font: 600 15px ui-monospace, monospace; }
+    .tile { position: relative; height: 96px; border-radius: 14px; padding: 10px; box-sizing: border-box; background: hsl(var(--h) 70% 60% / .16); border: 1px solid hsl(var(--h) 80% 75% / .35); backdrop-filter: blur(8px) saturate(1.4); box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+    .tile.zoom-me { cursor: zoom-in; border-color: hsl(var(--h) 90% 75%); }
+    .tile b { display: block; font-size: 12px; opacity: .85; }
+    .bars { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 44px; display: flex; align-items: flex-end; gap: 2px; }
+    .bars i { flex: 1; border-radius: 2px; background: linear-gradient(hsl(var(--h) 90% 70%), hsl(var(--h) 70% 40%)); }
+    .detail { width: 520px; height: 380px; border-radius: 22px; padding: 20px; box-sizing: border-box; background: hsl(var(--h) 45% 16% / .92); border: 1px solid hsl(var(--h) 80% 70% / .5); overflow: hidden; }
+    .detail h2 { margin: 0 0 12px; font-size: 18px; }
+    .rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .row { height: 22px; border-radius: 6px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; background: hsl(var(--h) 60% 50% / .18); backdrop-filter: blur(4px); }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    // ?flatten=0 runs the same board without it, for comparison.
+    const flatten = new URLSearchParams(location.search).get('flatten') !== '0'
+    const hues = [200, 280, 150, 30, 330, 180, 100, 240]
+    const bars = n => Array.from({ length: n }, (_, i) => `<i style="height:${20 + ((i * 37) % 80)}%"></i>`).join('')
+
+    function board () {
+      let tiles = ''
+      for (let i = 0; i < 48; i++) {
+        const h = hues[i % hues.length]
+        const name = `Sensor ${i + 1}`
+        // Every seventh tile opens its readings.
+        const opens = i % 7 === 3
+        const className = opens ? 'tile zoom-me' : 'tile'
+        const data = opens ? ` data-to="detail" data-h="${h}" data-title="${name}"` : ''
+        tiles += `<div class="${className}"${data} style="--h:${h}"><b>${name}</b><div class="bars">${bars(24)}</div></div>`
+      }
+      return `<div class="z-view board" data-title="Board"><span class="clock">--:--:--</span>${tiles}</div>`
+    }
+
+    function detail ({ target, props }) {
+      target.className = 'z-view detail'
+      target.style.setProperty('--h', props.h)
+      let rows = ''
+      for (let i = 0; i < 90; i++) rows += `<div class="row"><span>reading ${i + 1}</span><span>${(Math.sin(i) * 50 + 50).toFixed(1)}</span></div>`
+      target.innerHTML = `<h2>${props.title}</h2><div class="rows">${rows}</div>`
+    }
+
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'board',
+      views: { board: board(), detail },
+      // true reads the global snapdom from its script tag.
+      flatten
+    })
+    app.init()
+
+    // Something alive on the board, as a real dashboard has.
+    setInterval(() => {
+      for (const clock of document.querySelectorAll('.clock')) clock.textContent = new Date().toLocaleTimeString()
+    }, 250)
+  </script>
+</body>
+</html>
