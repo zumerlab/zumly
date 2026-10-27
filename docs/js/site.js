@@ -53,6 +53,17 @@
       })
       pre.appendChild(btn)
     })
+    // Wide tables stack on phones; each cell shows its column name (CSS)
+    root.querySelectorAll('.table-wrap table').forEach(function (table) {
+      var heads = [].map.call(table.querySelectorAll('thead th'), function (th) { return th.textContent.trim() })
+      if (heads.length < 3) return
+      table.classList.add('stack')
+      table.querySelectorAll('tbody tr').forEach(function (tr) {
+        [].forEach.call(tr.children, function (td, i) {
+          if (i > 0 && heads[i] && heads[i] !== 'Description') td.setAttribute('data-label', heads[i])
+        })
+      })
+    })
   }
   window.enhanceCode = enhance
 

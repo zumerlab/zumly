@@ -125,7 +125,8 @@ html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143
 }
 .sc-card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
 .sc-preview { position: relative; height: 160px; overflow: hidden; pointer-events: none; background: #0a0b14; }
-.sc-preview iframe { width: 200%; height: 200%; border: none; transform: scale(0.5); transform-origin: 0 0; }
+/* Rendered at 3x so the demos stay above their 768px mobile breakpoint */
+.sc-preview iframe { width: 300%; height: 300%; border: none; transform: scale(calc(1 / 3)); transform-origin: 0 0; }
 .sc-label { padding: 10px 16px 14px; }
 .sc-tag { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fish); }
 .sc-label h4 { font-size: 0.95rem; margin: 2px 0 0; }

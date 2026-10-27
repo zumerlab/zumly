@@ -211,6 +211,15 @@ th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom
 th { color: var(--text); font-weight: 600; font-size: 0.8rem; }
 td:first-child code { white-space: nowrap; }
 section > table { display: block; overflow-x: auto; }
+@media (max-width: 640px) {
+  table.stack, table.stack tbody, table.stack tr, table.stack td { display: block; }
+  table.stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  table.stack tr { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  table.stack td { border: 0; padding: 2px 0; }
+  table.stack td:first-child { padding-bottom: 6px; color: var(--text); font-weight: 600; }
+  table.stack td:empty { display: none; }
+  table.stack td[data-label]::before { content: attr(data-label) " · "; color: var(--text-dim); font-size: 0.8rem; font-weight: 600; }
+}
 
 /* ━━━ Final CTA ━━━ */
 .final-cta {
