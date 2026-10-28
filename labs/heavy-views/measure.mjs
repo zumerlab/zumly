@@ -13,6 +13,7 @@ import { dirname } from 'node:path'
 import { chromium } from 'playwright'
 import { createLabsServer } from '../serve.mjs'
 import { VARIANTS, CONDS } from './variants.mjs'
+import { framesOf, windowStats, median } from './trace-stats.mjs'
 
 const args = process.argv.slice(2)
 const arg = (name, fallback) => args.includes(name) ? args[args.indexOf(name) + 1] : fallback
@@ -37,42 +38,6 @@ const browser = await chromium.launch({
   headless: false,
   args: ['--enable-gpu-rasterization', '--ignore-gpu-blocklist', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--disable-background-timer-throttling'],
 })
-
-// ── Frames: one vsync per frame_sequence, presented, dropped or idle ──
-
-function framesOf (events, pid) {
-  const bySeq = new Map()
-  for (const e of events) {
-    if (e.name !== 'PipelineReporter' || e.ph !== 'b' || e.pid !== pid) continue
-    const r = e.args?.frame_reporter
-    if (!r) continue
-    const key = `${r.frame_source}:${r.frame_sequence}`
-    const f = bySeq.get(key) || { ts: e.ts, presented: false, dropped: false }
-    f.ts = Math.min(f.ts, e.ts)
-    if (r.state === 'STATE_PRESENTED_ALL' || r.state === 'STATE_PRESENTED_PARTIAL') f.presented = true
-    if (r.state === 'STATE_DROPPED' && r.affects_smoothness) f.dropped = true
-    bySeq.set(key, f)
-  }
-  return [...bySeq.values()].sort((a, b) => a.ts - b.ts)
-}
-
-function windowStats (frames, from, to) {
-  const inWin = frames.filter(f => f.ts >= from && f.ts <= to)
-  const presented = inWin.filter(f => f.presented && !f.dropped).length
-  const dropped = inWin.filter(f => f.dropped).length
-  // What the eye sees as a hitch is a run of dropped frames; a pause with nothing to draw
-  // presents no frame either.
-  let run = 0
-  let maxDroppedRun = 0
-  let runAt = null
-  for (const f of inWin) {
-    if (f.dropped) {
-      if (++run > maxDroppedRun) { maxDroppedRun = run; runAt = Math.round((f.ts - from) / 1000) }
-    } else if (f.presented) run = 0
-  }
-  // runAt: ms from the start of the window to the last frame of the worst run.
-  return { presented, dropped, maxDroppedRun, runAt }
-}
 
 // ── Threads: busy time of top-level tasks, per group ──────────────────
 
@@ -161,6 +126,8 @@ function analyse (traceBuf) {
       tailBusy: busyIn(tasks, end, end + 500000),
       ...windowStats(frames, start, end + 50000),
       latencyMs: first ? Math.round((first.ts - click) / 1000) : null,
+      // From the click to the motion: with launch=1, the photo of the view coming in is taken first.
+      startMs: Math.round((start - click) / 1000),
       busy: busyIn(tasks, start, end),
       // From the click to the first moving frame: what makes the zoom start late.
       preBusy: busyIn(tasks, click, first ? first.ts : start),
@@ -174,13 +141,6 @@ function analyse (traceBuf) {
 
 // ── Summaries ─────────────────────────────────────────────────────────
 
-const median = (xs) => {
-  const v = xs.filter(x => x != null)
-  if (!v.length) return null
-  const s = [...v].sort((a, b) => a - b)
-  const mid = Math.floor(s.length / 2)
-  return s.length % 2 ? s[mid] : +((s[mid - 1] + s[mid]) / 2).toFixed(1)
-}
 const pct = (items, dropped = 'dropped', presented = 'presented') => {
   const d = items.reduce((a, x) => a + x[dropped], 0)
   const all = items.reduce((a, x) => a + x[dropped] + x[presented], 0)
@@ -204,6 +164,7 @@ function summarise ({ steps, rests }) {
     worstRun: Math.max(0, ...steps.map(s => s.maxDroppedRun)),
     latencyIn: median(ins.map(s => s.latencyMs)),
     latencyOut: median(outs.map(s => s.latencyMs)),
+    startIn: median(ins.map(s => s.startMs)),
     // From the driver call to its completion. A zoom that ends on the safety timer lasts
     // duration + 150 ms, and the last frame holds still for those 150 ms.
     motionIn: median(ins.map(s => s.motionMs)),
@@ -223,6 +184,7 @@ const line = (cond, variant, s) => [
   `in ${String(s.inDropped).padStart(5)}%`, `out ${String(s.outDropped).padStart(5)}%`,
   `tail ${s.inTail}%/${s.outTail}%`,
   `hitches ${s.hitches}/${s.zooms} (run ${s.worstRun})`,
+  `start ${s.startIn}`,
   `lat ${s.latencyIn}/${s.latencyOut}`,
   `motion ${s.motionIn}/${s.motionOut} ms`,
   `rest ${s.restDetail}%/${s.restBoard}%`,
@@ -303,7 +265,7 @@ if (runs > 1) {
       const mb = (key) => Object.fromEntries(['main', 'impl', 'raster', 'gpu', 'viz'].map(g => [g, median(mine.map(s => s[key][g]))]))
       console.log(line(cond, variant, {
         inDropped: m('inDropped'), outDropped: m('outDropped'), inTail: m('inTail'), outTail: m('outTail'), hitches: m('hitches'), zooms: mine[0].zooms, worstRun: m('worstRun'),
-        latencyIn: m('latencyIn'), latencyOut: m('latencyOut'), motionIn: m('motionIn'), motionOut: m('motionOut'), restDetail: m('restDetail'), restBoard: m('restBoard'),
+        startIn: m('startIn'), latencyIn: m('latencyIn'), latencyOut: m('latencyOut'), motionIn: m('motionIn'), motionOut: m('motionOut'), restDetail: m('restDetail'), restBoard: m('restBoard'),
         busyIn: mb('busyIn'), busyOut: mb('busyOut'),
       }))
     }
