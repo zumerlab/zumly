@@ -68,7 +68,7 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
       <ul>
         <li>While you are in a view, its photo follows it: the stream repaints only what changed, at most ten times a second.</li>
         <li>You zoom into something: the view you leave shows the photo, as it was at that moment. Its content is still there and laid out, only hidden, so the blur and dimming, clicks on siblings and every driver work as before.</li>
-        <li>You come back: the real view returns, crossfading from the photo.</li>
+        <li>You come back: the real view returns. Over an opaque background it crossfades from the photo; a translucent view swaps at once, because a crossfade would show both.</li>
         <li>A photo is never taken during a transition. If there is none yet, the zoom moves the real view. Nothing waits for a photo.</li>
       </ul>
     </section>
@@ -107,7 +107,8 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
         <li>A zoom never starts from old content. When keeping a photo current would cost more than half the main thread, that view simply moves as itself. What makes it costly: a value that changes often inside a box with no solid background, or over other content (a badge on top of cards). Give such a value a solid background and it costs a few milliseconds.</li>
         <li>Animations are not followed: a spinner shows the angle it had when its area was last repainted, and a CSS transition shows its end only after the next repaint there. Behind a blur, nobody notices.</li>
         <li>Without <code>stream</code> there is one photo, taken again once the view stops changing. A view that changed since its photo moves as itself, so views with live data are not flattened.</li>
-        <li>A view behind stands still while it is there. When you come back, the real view crossfades in, with whatever changed meanwhile.</li>
+        <li>A view behind stands still while it is there. When you come back, the real view takes its place with whatever changed meanwhile.</li>
+        <li>Only views with triggers are photographed. A view without them never moves behind, so following it would cost frames for a photo nobody sees. One that gets a trigger later is followed from then on.</li>
         <li>A zoom-in starts a frame or two later: hiding the content of the view that grows takes a moment, about 25 ms on a laptop and 65 ms on a phone-class processor. The motion that follows is the smooth part.</li>
         <li>Each view behind keeps its photo in a canvas: width × height × 4 bytes, times the pixel ratio squared.</li>
       </ul>
@@ -115,7 +116,12 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
 
     <section>
       <h2>Try the cheap fix first</h2>
-      <p><code>transitions: { animateEffects: false }</code> applies the blur at once instead of animating it. It needs nothing else, and with many nodes it already takes out part of the stutter. Reach for <code>flatten</code> when that is not enough: frosted glass, thousands of nodes, or a slow device.</p>
+      <p><code>transitions: { animateEffects: false }</code> applies the blur at once instead of animating it. It needs nothing else, and with many nodes it already takes out part of the stutter. Chrome cannot run a blur animation on the compositor, so it redraws it from the main thread on every frame. Reach for <code>flatten</code> when that is not enough: frosted glass, thousands of nodes, or a slow device.</p>
+      <p>Two more that cost nothing:</p>
+      <ul>
+        <li>Use the <code>css</code> or <code>waapi</code> driver. They move views on the compositor; GSAP, Anime.js and Motion move them from the main thread, so any work there shows in the motion.</li>
+        <li>A heavy view that comes in can grow empty: <code>data-deferred</code> on its trigger (or <code>deferred: true</code>) adds its content when the zoom ends.</li>
+      </ul>
     </section>
   </main>
   <footer class="site-footer">
