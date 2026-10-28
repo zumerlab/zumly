@@ -309,4 +309,30 @@ describe('Transition drivers', () => {
       expect(onComplete).toHaveBeenCalledTimes(1)
     })
   })
+
+  describe('waapi zoom-out', () => {
+    it('starts its animations right away, without waiting frames', () => {
+      document.body.innerHTML = '<div class="zumly-canvas"><div class="z-view is-previous-view"></div><div class="z-view is-current-view"></div></div>'
+      const canvas = document.querySelector('.zumly-canvas')
+      const [previousView, currentView] = canvas.querySelectorAll('.z-view')
+      const state = transform => ({ origin: '0 0', transform })
+      waapiTransition({
+        type: 'zoomOut',
+        currentView,
+        previousView,
+        lastView: null,
+        currentStage: {
+          views: [
+            { forwardState: state('translate(0px, 0px)'), backwardState: state('translate(10px, 10px) scale(0.2)') },
+            { forwardState: state('translate(-5px, -5px) scale(4)'), backwardState: state('translate(0px, 0px)') }
+          ]
+        },
+        duration: '200ms',
+        ease: 'linear',
+        canvas
+      }, () => {})
+      expect(currentView.getAnimations()).toHaveLength(1)
+      expect(previousView.getAnimations()).toHaveLength(1)
+    })
+  })
 })

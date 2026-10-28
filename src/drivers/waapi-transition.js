@@ -107,57 +107,52 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
   const to1 = v1.backwardState
   const to2 = v2 ? v2.backwardState : null
 
-  // Set current view initial state
+  // Set initial state. The animations start on the next frame, like the CSS driver's: the
+  // two frames this used to wait added ~33 ms before every zoom-out moved.
   currentView.style.transformOrigin = v0.forwardState.origin
   currentView.style.transform = v0.forwardState.transform
+  previousView.style.transformOrigin = v1.forwardState.origin
+  if (lastView && v2) lastView.style.transformOrigin = v2.forwardState.origin
 
-  // Defer animation start to ensure computed styles are flushed
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      previousView.style.transformOrigin = v1.forwardState.origin
-      if (lastView && v2) lastView.style.transformOrigin = v2.forwardState.origin
+  // Start from where each view is: its inline transform, set when the zoom-in ended
+  const from1 = previousView.style.transform || getComputedStyle(previousView).transform || v1.forwardState.transform
+  const from2 = lastView && v2
+    ? (lastView.style.transform || getComputedStyle(lastView).transform || v2.forwardState.transform)
+    : null
 
-      // Use computed transform as "from" so animation runs from actual position
-      const from1 = previousView.style.transform || getComputedStyle(previousView).transform || v1.forwardState.transform
-      const from2 = lastView && v2
-        ? (lastView.style.transform || getComputedStyle(lastView).transform || v2.forwardState.transform)
-        : null
+  const stagger = currentStage.stagger || 0
+  const anims = []
+  anims.push(currentView.animate(
+    [{ transform: v0.forwardState.transform }, { transform: v0.backwardState.transform }],
+    { duration: durationMs, easing: ease, fill: 'forwards' }
+  ))
+  anims.push(previousView.animate(
+    [{ transform: from1 }, { transform: to1.transform }],
+    { duration: durationMs, delay: stagger, easing: ease, fill: 'both' }
+  ))
+  if (lastView && to2) {
+    anims.push(lastView.animate(
+      [{ transform: from2 }, { transform: to2.transform }],
+      { duration: durationMs, delay: stagger * 2, easing: ease, fill: 'both' }
+    ))
+  }
 
-      const stagger = currentStage.stagger || 0
-      const anims = []
-      anims.push(currentView.animate(
-        [{ transform: v0.forwardState.transform }, { transform: v0.backwardState.transform }],
-        { duration: durationMs, easing: ease, fill: 'forwards' }
-      ))
-      anims.push(previousView.animate(
-        [{ transform: from1 }, { transform: to1.transform }],
-        { duration: durationMs, delay: stagger, easing: ease, fill: 'both' }
-      ))
-      if (lastView && to2) {
-        anims.push(lastView.animate(
-          [{ transform: from2 }, { transform: to2.transform }],
-          { duration: durationMs, delay: stagger * 2, easing: ease, fill: 'both' }
-        ))
-      }
+  // Let WAAPI drive transforms — remove inline styles so WAAPI fill takes over
+  previousView.style.removeProperty('transform')
+  if (lastView) lastView.style.removeProperty('transform')
 
-      // Let WAAPI drive transforms — remove inline styles so WAAPI fill takes over
-      previousView.style.removeProperty('transform')
-      if (lastView) lastView.style.removeProperty('transform')
+  const maxDelay = (lastView && to2) ? stagger * 2 : stagger
+  const { finish } = createFinishGuard(() => {
+    cancelAll(anims)
+    try {
+      removeViewFromCanvas(currentView, canvas)
+      applyZoomOutPreviousState(previousView, to1)
+      if (lastView && to2) applyZoomOutLastState(lastView, to2)
+    } catch (e) { /* DOM cleanup should not block onComplete */ }
+    onComplete()
+  }, durationMs + maxDelay + SAFETY_BUFFER_MS)
 
-      const maxDelay = (lastView && to2) ? stagger * 2 : stagger
-      const { finish } = createFinishGuard(() => {
-        cancelAll(anims)
-        try {
-          removeViewFromCanvas(currentView, canvas)
-          applyZoomOutPreviousState(previousView, to1)
-          if (lastView && to2) applyZoomOutLastState(lastView, to2)
-        } catch (e) { /* DOM cleanup should not block onComplete */ }
-        onComplete()
-      }, durationMs + maxDelay + SAFETY_BUFFER_MS)
-
-      Promise.all(anims.map(a => a.finished)).then(finish).catch(finish)
-    })
-  })
+  Promise.all(anims.map(a => a.finished)).then(finish).catch(finish)
 }
 
 // ─── Lateral ────────────────────────────────────────────────────────
