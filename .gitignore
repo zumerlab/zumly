@@ -13,3 +13,7 @@ docs/demos/
 public/
 # Contact sheets from experiments/snapdom-compositor/filmstrip.mjs (regenerated on demand)
 experiments/snapdom-compositor/results/fluidity/film/
+# Chrome traces recorded by labs/*/trace.mjs (large; open them in DevTools › Performance)
+labs/**/results/traces/
+# Contact sheets from labs/*/film.mjs (regenerated on demand)
+labs/**/results/film/

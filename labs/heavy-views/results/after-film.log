@@ -1,0 +1,8 @@
+nf: 67 screenshots, motion 1028 ms
+f: 74 screenshots, motion 1010 ms
+/Users/martin/GitHub/zumerlab/zumly/labs/heavy-views/results/film/asis-out-motion-after.png
+/Users/martin/GitHub/zumerlab/zumly/labs/heavy-views/results/film/asis-out-tail-after.png
+nf          motion: 56 frames, longest gap 36 ms  |  tail: 5 frames, longest gap 159 ms  |  biggest change after the end 6.7 (end +-14 ms)
+   frames near the end (ms from the end : change) -249:17.7  -213:22.8  -197:17.6  -179:17.5  -164:16.8  -147:16.8  -131:16.8  -116:16.5  -80:19.8  -64:13.9  -50:11.3  -30:9.5  -14:6.7  -1:3.1  20:3.0  48:0.0  155:0.0  314:0.0  354:0.0
+f           motion: 61 frames, longest gap 19 ms  |  tail: 8 frames, longest gap 160 ms  |  biggest change after the end 7.7 (end +29 ms)
+   frames near the end (ms from the end : change) -240:17.5  -225:17.4  -210:18.3  -191:17.7  -172:17.3  -155:17.1  -139:16.0  -122:16.9  -106:16.4  -91:15.9  -73:14.8  -58:13.0  -39:11.8  -27:9.4  -10:6.6  0:3.1  29:7.7  47:0.0  139:0.1  299:0.0  347:5.2  373:0.0  393:5.2

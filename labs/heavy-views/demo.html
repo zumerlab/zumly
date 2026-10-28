@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Labs · Vistas pesadas</title>
+<link rel="stylesheet" href="/src/style.css">
+<script type="importmap">{ "imports": { "@zumer/snapdom": "/node_modules/@zumer/snapdom/dist/snapdom.mjs" } }</script>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { display: flex; flex-direction: column; font: 14px/1.4 system-ui, sans-serif; color: #e8eefc; background: #070b16; }
+  #bar { flex: none; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; padding: 10px 14px; background: #121a33; border-bottom: 1px solid #263055; font-size: 13px; }
+  .group { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .group > span { margin-right: 4px; color: #8a94b8; }
+  #bar button { font: inherit; color: #dde; background: #1c2647; border: 1px solid #2d3a68; border-radius: 6px; padding: 4px 9px; cursor: pointer; }
+  #bar button[aria-pressed="true"] { background: #3a5bd9; border-color: #3a5bd9; color: #fff; }
+  #bar button:disabled { opacity: .5; cursor: default; }
+  #bar #run { background: #1f7a4d; border-color: #1f7a4d; color: #fff; }
+  #status { color: #9fb0e0; }
+
+  /* The guide's demo (docs/guides/examples/heavy.html); the stage fills what the bar leaves. */
+  .stage { position: relative; flex: 1; min-height: 0; background: radial-gradient(circle at 30% 20%, #23305e, #070b16 70%); }
+  .board { width: 100%; height: 100%; padding: 56px 24px 24px; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; align-content: start; overflow: hidden; }
+  .clock { position: absolute; left: 24px; top: 14px; padding: 2px 8px; border-radius: 6px; background: #0e1530; font: 600 15px ui-monospace, monospace; }
+  .tile { position: relative; height: 96px; border-radius: 14px; padding: 10px; box-sizing: border-box; background: hsl(var(--h) 70% 60% / .16); border: 1px solid hsl(var(--h) 80% 75% / .35); backdrop-filter: blur(8px) saturate(1.4); box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+  .tile.zoom-me { cursor: zoom-in; border-color: hsl(var(--h) 90% 75%); }
+  .tile b { display: block; font-size: 12px; opacity: .85; }
+  .bars { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 44px; display: flex; align-items: flex-end; gap: 2px; }
+  .bars i { flex: 1; border-radius: 2px; background: linear-gradient(hsl(var(--h) 90% 70%), hsl(var(--h) 70% 40%)); }
+  .detail { width: 520px; height: 380px; border-radius: 22px; padding: 20px; box-sizing: border-box; background: hsl(var(--h) 45% 16% / .92); border: 1px solid hsl(var(--h) 80% 70% / .5); overflow: hidden; }
+  .detail h2 { margin: 0 0 12px; font-size: 18px; }
+  .rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .row { height: 22px; border-radius: 6px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; background: hsl(var(--h) 60% 50% / .18); backdrop-filter: blur(4px); }
+
+  /* live=1: a big counter. A zoom that opens on an old photo shows here, by eye. */
+  .counter { position: absolute; right: 24px; top: 8px; padding: 0 10px; border-radius: 8px; background: #0e1530; font: 700 28px/1.3 ui-monospace, monospace; }
+  /* fx=pane: fixed glass between the current view and each view behind (Martin's idea 1). */
+  .z-pane { position: absolute; inset: 0; pointer-events: none; background: rgb(7 11 22 / .3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  /* moving=1: no glass while views move (option 2). */
+  .zumly-canvas[data-z-moving] .tile,
+  .zumly-canvas[data-z-moving] .row { backdrop-filter: none; -webkit-backdrop-filter: none; }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="stage"><div id="app" class="canvas zumly-canvas"></div></div>
+<script type="module">
+import { Zumly } from '/src/entry-esm.js'
+import { snapdom } from '@zumer/snapdom'
+import { stream } from '/node_modules/@zumer/snapdom-plugins/stream.js'
+
+// Variants, from the URL. Every change reloads the page, so each one starts clean.
+const q = new URLSearchParams(location.search)
+const opt = {
+  flatten: q.get('flatten') !== '0',
+  // filter: Zumly's effects, animated. instant: animateEffects: false. pane: no effects, fixed glass instead.
+  fx: ['instant', 'pane'].includes(q.get('fx')) ? q.get('fx') : 'filter',
+  moving: q.get('moving') === '1', // option 2: data-z-moving on the canvas while views move
+  wc: q.get('wc') === 'lean', // option 12: will-change only for what each view animates
+  hold: q.get('hold') === '1', // idea 2: views behind keep will-change, so they are not re-rastered at their new scale
+  persp: q.get('persp') !== '0', // option 13: persp=0 takes perspective off the canvas
+  live: q.get('live') === '1', // values that change every second, and a big counter
+  driver: q.get('driver') || 'css',
+}
+const effects = opt.fx !== 'pane'
+
+const GROUPS = [
+  { label: 'Fotos', key: 'flatten', value: opt.flatten ? '1' : '0', options: [['1', 'flatten'], ['0', 'sin flatten']] },
+  { label: 'Efecto', key: 'fx', value: opt.fx, options: [['filter', 'filter animado'], ['instant', 'de golpe'], ['pane', 'capa de vidrio']] },
+]
+const TOGGLES = [
+  { key: 'moving', on: '1', label: 'marca de movimiento' },
+  { key: 'wc', on: 'lean', label: 'will-change justo' },
+  { key: 'hold', on: '1', label: 'will-change sostenido' },
+  { key: 'persp', on: '0', label: 'sin perspective' },
+  { key: 'live', on: '1', label: 'en vivo' },
+]
+const go = (key, value) => {
+  const next = new URLSearchParams(q)
+  if (value === null) next.delete(key)
+  else next.set(key, value)
+  location.search = next.toString()
+}
+const bar = document.getElementById('bar')
+const button = (parent, text, pressed, onClick) => {
+  const b = document.createElement('button')
+  b.textContent = text
+  if (pressed !== null) b.setAttribute('aria-pressed', String(pressed))
+  b.addEventListener('click', onClick)
+  parent.append(b)
+  return b
+}
+const group = (label) => {
+  const g = document.createElement('div')
+  g.className = 'group'
+  g.innerHTML = label ? `<span>${label}</span>` : ''
+  bar.append(g)
+  return g
+}
+for (const { label, key, value, options } of GROUPS) {
+  const g = group(label)
+  for (const [v, text] of options) button(g, text, v === value, () => go(key, v))
+}
+const toggles = group('CSS')
+for (const { key, on, label } of TOGGLES) {
+  const pressed = q.get(key) === on
+  button(toggles, label, pressed, () => go(key, pressed ? null : on))
+}
+const run = button(group(''), '▶ 3 zooms', null, () => runByEye())
+run.id = 'run'
+const status = document.createElement('div')
+status.id = 'status'
+bar.append(status)
+
+// Variant CSS that overrides src/style.css without touching it.
+const css = []
+if (!opt.persp) css.push('.zumly-canvas { perspective: none !important }')
+if (opt.wc) {
+  css.push(
+    '.zoom-current-view, .zoom-current-view-reverse, .zoom-lateral-back { will-change: transform !important }',
+    '.zoom-lateral-in, .zoom-lateral-out { will-change: transform, opacity !important }',
+    `.zoom-previous-view, .zoom-previous-view-reverse, .zoom-last-view, .zoom-last-view-reverse { will-change: ${effects ? 'transform, filter' : 'transform'} !important }`)
+}
+if (opt.hold) css.push('.zumly-canvas > .z-view.is-previous-view, .zumly-canvas > .z-view.is-last-view { will-change: transform, opacity, filter }')
+if (css.length) document.head.insertAdjacentHTML('beforeend', `<style>${css.join('\n')}</style>`)
+
+// The guide's views, with a value per tile, a counter and changing readings when live.
+const hues = [200, 280, 150, 30, 330, 180, 100, 240]
+const bars = n => Array.from({ length: n }, (_, i) => `<i style="height:${20 + ((i * 37) % 80)}%"></i>`).join('')
+
+function board () {
+  let tiles = ''
+  for (let i = 0; i < 48; i++) {
+    const h = hues[i % hues.length]
+    const name = `Sensor ${i + 1}`
+    // Every seventh tile opens its readings.
+    const opens = i % 7 === 3
+    const className = opens ? 'tile zoom-me' : 'tile'
+    const data = opens ? ` data-to="detail" data-h="${h}" data-title="${name}"` : ''
+    const value = opt.live ? ` · <span class="v">${(i * 37) % 100}</span>` : ''
+    tiles += `<div class="${className}"${data} style="--h:${h}"><b>${name}${value}</b><div class="bars">${bars(24)}</div></div>`
+  }
+  const counter = opt.live ? '<span class="counter">0</span>' : ''
+  return `<div class="z-view board" data-title="Board"><span class="clock">--:--:--</span>${counter}${tiles}</div>`
+}
+
+function detail ({ target, props }) {
+  target.className = 'z-view detail'
+  target.style.setProperty('--h', props.h)
+  let rows = ''
+  for (let i = 0; i < 90; i++) rows += `<div class="row"><span>reading ${i + 1}</span><span>${(Math.sin(i) * 50 + 50).toFixed(1)}</span></div>`
+  target.innerHTML = `<h2>${props.title}</h2><div class="rows">${rows}</div>`
+}
+
+const app = new Zumly({
+  mount: '#app',
+  initialView: 'board',
+  views: { board: board(), detail },
+  transitions: {
+    driver: opt.driver,
+    // Blur and dim the board behind, as the guide does; with fx=pane the glass does it.
+    effects: effects ? ['blur(3px) brightness(.7)', 'blur(8px) brightness(.5)'] : ['none', 'none'],
+    animateEffects: opt.fx !== 'instant',
+  },
+  // The stream is wrapped to log its frames (window.streamLog), for debugging flatten.
+  flatten: opt.flatten && {
+    snapdom,
+    stream: (el, options) => stream(el, {
+      ...options,
+      onFrame (frame) {
+        window.streamLog.push({ t: Math.round(performance.now()), view: el.dataset.viewName, reason: frame.reason, full: frame.full, ms: Math.round(frame.ms) })
+        options.onFrame?.(frame)
+      },
+    }),
+  },
+})
+window.streamLog = []
+
+const parseMs = (d) => {
+  const m = String(d).trim().match(/^(\d*\.?\d+)(ms|s)?$/)
+  return m ? parseFloat(m[1]) * (m[2] === 'ms' ? 1 : 1000) : 1000
+}
+
+// fx=pane: a pane goes right after each view behind, so the current view sits on all of
+// them and a deeper view gets more blur. A zoom-in fades in the pane over the view going
+// behind; a zoom-out fades out the one over the view coming back.
+const panes = {
+  make () {
+    const pane = document.createElement('div')
+    pane.className = 'z-pane'
+    pane.setAttribute('aria-hidden', 'true')
+    return pane
+  },
+  fade (pane, from, to, spec) {
+    pane.animate([{ opacity: from }, { opacity: to }], { duration: parseMs(spec.duration), easing: spec.ease, fill: 'forwards' })
+  },
+  start (spec) {
+    const canvas = app.canvas
+    // A pane over nothing (its view was detached) would only blur the page.
+    for (const pane of canvas.querySelectorAll(':scope > .z-pane')) {
+      if (!pane.previousElementSibling?.classList.contains('z-view')) pane.remove()
+    }
+    if (spec.type === 'zoomIn') {
+      const pane = this.make()
+      canvas.insertBefore(pane, spec.currentView)
+      this.fade(pane, 0, 1, spec)
+    } else if (spec.type === 'zoomOut') {
+      const over = spec.currentView.previousElementSibling
+      if (over?.classList.contains('z-pane')) this.fade(over, 1, 0, spec)
+    }
+  },
+  sync () {
+    const canvas = app.canvas
+    for (const pane of canvas.querySelectorAll(':scope > .z-pane')) pane.remove()
+    for (const view of canvas.querySelectorAll(':scope > .z-view.is-previous-view, :scope > .z-view.is-last-view')) view.after(this.make())
+  },
+}
+
+// Wrap the driver: performance marks line each step up with a Chromium trace (measure.mjs),
+// and the moving mark and the panes follow the real motion.
+let stepIndex = 0
+// Which views move as photos in each transition, and what Zumly said, for debugging flatten.
+window.flatLog = []
+window.notes = []
+const notify = app.notify.bind(app)
+app.notify = (msg, type) => {
+  window.notes.push({ t: Math.round(performance.now()), msg })
+  return notify(msg, type)
+}
+const real = app.transitionDriver
+app.transitionDriver = {
+  runTransition (spec, done) {
+    performance.mark(`z:${stepIndex}:motion-start`)
+    window.flatLog.push({
+      step: stepIndex,
+      type: spec.type,
+      flat: [...app.canvas.querySelectorAll(':scope > .z-view.z-flat')].map(v => v.dataset.viewName),
+      photos: [...app.canvas.querySelectorAll(':scope > .z-view')].filter(v => app._flattener?.photos.has(v)).map(v => v.dataset.viewName),
+      live: [...app.canvas.querySelectorAll(':scope > .z-view')].filter(v => app._flattener?.live.has(v)).map(v => v.dataset.viewName),
+    })
+    if (opt.moving) app.canvas.dataset.zMoving = spec.type
+    if (opt.fx === 'pane') panes.start(spec)
+    return real.runTransition(spec, () => {
+      performance.mark(`z:${stepIndex}:motion-end`)
+      delete app.canvas.dataset.zMoving
+      if (opt.fx === 'pane') panes.sync()
+      done()
+    })
+  },
+}
+await app.init()
+
+// Something alive on the board, as a real dashboard has.
+setInterval(() => {
+  for (const clock of document.querySelectorAll('#app .clock')) clock.textContent = new Date().toLocaleTimeString()
+}, 250)
+if (opt.live) {
+  let count = 0
+  setInterval(() => {
+    count++
+    for (const counter of document.querySelectorAll('#app .counter')) counter.textContent = String(count)
+  }, 100)
+  let tick = 0
+  setInterval(() => {
+    tick++
+    document.querySelectorAll('#app .tile .v').forEach((v, i) => { if (i % 3 === tick % 3) v.textContent = String((i * 37 + tick * 11) % 100) })
+    document.querySelectorAll('#app .row span:last-child').forEach((v, i) => { if (i % 5 === tick % 5) v.textContent = (Math.sin(i + tick) * 50 + 50).toFixed(1) })
+  }, 1000)
+}
+
+setInterval(() => {
+  if (!opt.flatten) { status.textContent = 'Sin flatten'; return }
+  const flat = app.canvas.querySelectorAll(':scope > .z-view.z-flat').length
+  const current = app.canvas.querySelector(':scope > .z-view.is-current-view')
+  status.textContent = `Fotos detrás: ${flat}` + (app._flattener?.photos.has(current) ? ' · foto de esta vista lista' : '')
+}, 200)
+
+// ── Steps, for measure.mjs and by eye ────────────────────────────────
+
+const wait = (ms) => new Promise(r => setTimeout(r, ms))
+const once = (event) => new Promise(r => { const fn = () => { app.off(event, fn); r() }; app.on(event, fn) })
+
+async function step (kind, trigger) {
+  stepIndex++
+  const done = once(kind === 'in' ? 'afterZoomIn' : 'afterZoomOut')
+  performance.mark(`z:${stepIndex}:${kind}:click`)
+  if (kind === 'in') app.zoomIn(trigger)
+  else app.zoomOut()
+  await done
+}
+
+async function rest (ms) {
+  performance.mark(`z:${stepIndex}:rest-start`)
+  await wait(ms)
+  performance.mark(`z:${stepIndex}:rest-end`)
+}
+
+// rounds × (zoom into a tile, look around, zoom out, look around), a different tile each time.
+window.bench = async ({ rounds = 3, settle = 1200, restMs = 2000 } = {}) => {
+  while (app.zoomLevel() > 1) await app.zoomOut()
+  await wait(settle)
+  for (let i = 0; i < rounds; i++) {
+    const triggers = [...app.canvas.querySelectorAll(':scope > .is-current-view .zoom-me')]
+    await step('in', triggers[i % triggers.length])
+    await wait(settle)
+    if (restMs) await rest(restMs)
+    await step('out')
+    await wait(settle)
+    if (restMs) await rest(restMs)
+  }
+  return { opt }
+}
+
+// One step on its own, for film.mjs: into the first tile of the current view, or out.
+window.step = (kind) => step(kind, kind === 'in' ? app.canvas.querySelector(':scope > .is-current-view .zoom-me') : null)
+
+async function runByEye () {
+  run.disabled = true
+  try { await window.bench({ rounds: 3, settle: 1500, restMs: 0 }) } finally { run.disabled = false }
+}
+
+window.app = app
+window.ready = true
+</script>
+</body>
+</html>
