@@ -37,12 +37,13 @@ uniform vec4 m;      // a, b, c, d
 uniform vec2 move;   // e, f
 uniform vec2 pos;    // layout position in the canvas
 uniform vec2 size;   // the canvas, CSS px
+uniform float yDir;  // -1 on screen; 1 into a texture, whose first row is its top
 out vec2 uv;
 void main () {
   vec2 p = rect.xy + corner * rect.zw - origin;
   vec2 s = pos + origin + vec2(m.x * p.x + m.z * p.y, m.y * p.x + m.w * p.y) + move;
   vec2 clip = s / size * 2.0 - 1.0;
-  gl_Position = vec4(clip.x, -clip.y, 0.0, 1.0);
+  gl_Position = vec4(clip.x, clip.y * yDir, 0.0, 1.0);
   uv = corner;
 }`
 
@@ -116,7 +117,7 @@ function compile (gl, type, source) {
 
 /**
  * @param {object} app - the Zumly instance
- * @param {{ photo: (view: HTMLElement, offscreen: boolean) => Promise<{canvas: HTMLCanvasElement, ms: number}>, flattener: () => object|null, log: (msg: string) => void }} deps
+ * @param {{ photo: (view: HTMLElement, offscreen: boolean, options?: object) => Promise<{canvas: HTMLCanvasElement, ms: number}>, flattener: () => object|null, log: (msg: string) => void }} deps
  */
 export function createGL (app, { photo, flattener, log }) {
   const canvas = document.createElement('canvas')
@@ -146,7 +147,7 @@ export function createGL (app, { photo, flattener, log }) {
     gl.uniform1i(uniforms.tex, 0)
     return { program, u: uniforms }
   }
-  const view = link(VERT, FRAG, ['rect', 'origin', 'm', 'move', 'pos', 'size', 'tex', 'lod', 'bright', 'alpha'])
+  const view = link(VERT, FRAG, ['rect', 'origin', 'm', 'move', 'pos', 'size', 'yDir', 'tex', 'lod', 'bright', 'alpha'])
   const blurPass = link(BLUR_VERT, BLUR_FRAG, ['tex', 'lod', 'dir', 'sigma'])
   const u = view.u
   const quad = gl.createBuffer()
@@ -160,6 +161,8 @@ export function createGL (app, { photo, flattener, log }) {
   const streams = new WeakMap()
   /** view → { texture, width, height, ratio, source }: a photo uploaded once. */
   const photos = new WeakMap()
+  /** view behind → { texture, width, height, ratio, rect, box }: its texture with what its overflow hides. */
+  const wide = new WeakMap()
   /** texture record → the two textures and framebuffers its blur passes draw into. */
   const targets = new WeakMap()
   let last = []
@@ -221,6 +224,15 @@ export function createGL (app, { photo, flattener, log }) {
     photos.delete(view)
   }
 
+  function dropWide (view) {
+    const rec = wide.get(view)
+    if (rec) {
+      gl.deleteTexture(rec.texture)
+      dropTargets(rec)
+    }
+    wide.delete(view)
+  }
+
   function target (width, height) {
     const texture = gl.createTexture()
     gl.bindTexture(gl.TEXTURE_2D, texture)
@@ -275,9 +287,13 @@ export function createGL (app, { photo, flattener, log }) {
    * uploaded once. flatten drops a view's photo on each visit and sets it when the stream is
    * ready, so a photo means the stream texture holds this visit's last frame, the one flatten
    * copied. Without one (a zoom before the stream was ready, a view flatten keeps live), the
-   * photo the zoom took of it when it went behind; a view in front drops that one.
+   * photo the zoom took of it when it went behind; a view in front drops that one. With what
+   * its overflow hides, when the zoom that sent it behind took that too.
    */
   function behind (view) {
+    const w = wide.get(view)
+    if (w && w.box[0] === view.offsetWidth && w.box[1] === view.offsetHeight) return w
+    dropWide(view)
     const photo = flattener()?.photos.get(view)
     if (!photo) return photos.get(view) || null
     const s = streams.get(view)
@@ -300,6 +316,174 @@ export function createGL (app, { photo, flattener, log }) {
     return { rec, ms }
   }
 
+  /** Where a texture goes on its view: x, y, width and height in CSS px from its border box. */
+  function rectOf (rec, box) {
+    if (rec.rect) return rec.rect
+    // A photo has a margin around the border box, the same on every side.
+    const w = rec.width / rec.ratio
+    const h = rec.height / rec.ratio
+    return [-(w - box[0]) / 2, -(h - box[1]) / 2, w, h]
+  }
+
+  /**
+   * The content a view's overflow hides, in bands around what it shows, up to a canvas away (a
+   * zoom never shows more). Only bands outside the canvas while the view is in front, so nothing
+   * appears or goes when a zoom starts or ends; and only for a view that scrolls, or that asks
+   * for it with data-gl-overflow, since overflow: hidden may be hiding something on purpose.
+   * Each band: x, y, w, h in the view's content (as scrolled), bx, by from its border box.
+   */
+  function bandsOf (el) {
+    const style = getComputedStyle(el)
+    if (!/auto|scroll/.test(style.overflowX + style.overflowY) && !('glOverflow' in el.dataset)) return []
+    const { scrollLeft: sl, scrollTop: st, scrollWidth: sw, scrollHeight: sh, clientWidth: cw, clientHeight: ch } = el
+    if (sw <= cw + 1 && sh <= ch + 1) return []
+    const width = app.canvas.clientWidth
+    const height = app.canvas.clientHeight
+    const x0 = Math.max(0, sl - width)
+    const x1 = Math.min(sw, sl + cw + width)
+    const y0 = Math.max(0, st - height)
+    const y1 = Math.min(sh, st + ch + height)
+    const box = el.getBoundingClientRect()
+    const area = app.canvas.getBoundingClientRect()
+    return [
+      { x: x0, y: y0, w: x1 - x0, h: st - y0 },
+      { x: x0, y: st + ch, w: x1 - x0, h: y1 - st - ch },
+      { x: x0, y: st, w: sl - x0, h: ch },
+      { x: sl + cw, y: st, w: x1 - sl - cw, h: ch },
+    ].filter(b => b.w >= 1 && b.h >= 1).map(b => ({ ...b, bx: el.clientLeft - sl + b.x, by: el.clientTop - st + b.y })).filter(b => {
+      const left = box.left + b.bx
+      const top = box.top + b.by
+      return left >= area.right - 1 || left + b.w <= area.left + 1 || top >= area.bottom - 1 || top + b.h <= area.top + 1
+    })
+  }
+
+  /**
+   * Photos of the bands. SnapDOM draws a view inside its box, so the view grows to its whole
+   * content for a moment, moved back by its scroll so it shows the same, and its real content
+   * comes back if flatten had hidden it (under the photo, so it shows the same too).
+   */
+  async function bandShots (el, bands, glass) {
+    const { scrollLeft: sl, scrollTop: st } = el
+    const props = ['width', 'height', 'box-sizing', 'overflow', 'transform']
+    const kept = props.map(p => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)])
+    const transform = getComputedStyle(el).transform
+    const flat = el.classList.contains('z-flat')
+    const width = el.scrollWidth + el.offsetWidth - el.clientWidth
+    const height = el.scrollHeight + el.offsetHeight - el.clientHeight
+    const set = (p, v) => el.style.setProperty(p, v, 'important')
+    set('width', `${width}px`)
+    set('height', `${height}px`)
+    set('box-sizing', 'border-box')
+    set('overflow', 'visible')
+    set('transform', `translate(${-sl}px, ${-st}px)${transform === 'none' ? '' : ` ${transform}`}`)
+    el.classList.remove('z-flat')
+    try {
+      const box = el.getBoundingClientRect()
+      const shots = []
+      for (const band of bands) {
+        const clip = { x: box.left + scrollX + el.clientLeft + band.x, y: box.top + scrollY + el.clientTop + band.y, width: band.w, height: band.h }
+        const { canvas: shot } = await photo(el, false, { clip, glass, wait: false, exclude: ['.z-flat-layer'], excludeMode: 'remove' })
+        shots.push({ band, shot })
+      }
+      return shots
+    } finally {
+      for (const [p, v, priority] of kept) v ? el.style.setProperty(p, v, priority) : el.style.removeProperty(p)
+      if (flat) el.classList.add('z-flat')
+      el.scrollLeft = sl
+      el.scrollTop = st
+    }
+  }
+
+  /**
+   * One texture with a view and the bands around it, drawn in the GPU: the bands first, then the
+   * view over them, whose margin is clear. Blurred as one, there is no seam where they meet.
+   */
+  function composite (base, box, parts) {
+    const rects = [rectOf(base, box), ...parts.map(p => p.rect)]
+    const x0 = Math.min(...rects.map(r => r[0]))
+    const y0 = Math.min(...rects.map(r => r[1]))
+    const max = gl.getParameter(gl.MAX_TEXTURE_SIZE)
+    const span = [Math.max(...rects.map(r => r[0] + r[2])) - x0, Math.max(...rects.map(r => r[1] + r[3])) - y0]
+    const ratio = Math.min(base.ratio, max / span[0], max / span[1])
+    const width = Math.ceil(span[0] * ratio)
+    const height = Math.ceil(span[1] * ratio)
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.texStorage2D(gl.TEXTURE_2D, Math.floor(Math.log2(Math.max(width, height))) + 1, gl.RGBA8, width, height)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    const fbo = gl.createFramebuffer()
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+    gl.viewport(0, 0, width, height)
+    gl.clearColor(0, 0, 0, 0)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    gl.useProgram(view.program)
+    gl.uniform2f(u.size, width / ratio, height / ratio)
+    gl.uniform1f(u.yDir, 1)
+    gl.uniform2f(u.pos, -x0, -y0)
+    gl.uniform2f(u.origin, 0, 0)
+    gl.uniform4f(u.m, 1, 0, 0, 1)
+    gl.uniform2f(u.move, 0, 0)
+    gl.uniform1f(u.bright, 1)
+    gl.uniform1f(u.alpha, 1)
+    gl.uniform1f(u.lod, 0)
+    for (const { rec, rect } of [...parts, { rec: base, rect: rects[0] }]) {
+      gl.bindTexture(gl.TEXTURE_2D, rec.texture)
+      gl.uniform4f(u.rect, ...rect)
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+    gl.deleteFramebuffer(fbo)
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+    gl.generateMipmap(gl.TEXTURE_2D)
+    return { texture, width, height, ratio, rect: [x0, y0, width / ratio, height / ratio], box: [...box], dirty: false }
+  }
+
+  /**
+   * Whether a band comes into the canvas during a zoom-in that takes the view to `to` around
+   * `origin`. The way there scales and moves the view steadily, so whatever a point of the view
+   * does, it does by the end: a band outside the canvas at both ends stays out all the way.
+   */
+  function reaches (el, band, origin, to) {
+    const k = new DOMMatrix(to)
+    const [ox, oy] = origin.split(' ').map(parseFloat)
+    const xs = []
+    const ys = []
+    for (const [x, y] of [[band.bx, band.by], [band.bx + band.w, band.by], [band.bx, band.by + band.h], [band.bx + band.w, band.by + band.h]]) {
+      xs.push(el.offsetLeft + ox + k.a * (x - ox) + k.c * (y - oy) + k.e)
+      ys.push(el.offsetTop + oy + k.b * (x - ox) + k.d * (y - oy) + k.f)
+    }
+    return Math.max(...xs) > 0 && Math.min(...xs) < app.canvas.clientWidth && Math.max(...ys) > 0 && Math.min(...ys) < app.canvas.clientHeight
+  }
+
+  /**
+   * The view's texture widened with what its overflow hides, or null when it hides nothing the
+   * zoom shows (state: the view's stage in the zoom-in). glass: whether the bands keep their
+   * glass, as the view's texture does.
+   */
+  async function widen (el, base, glass, state) {
+    const bands = bandsOf(el).filter(b => reaches(el, b, state.backwardState.origin, state.forwardState.transform))
+    if (!bands.length) return null
+    const t = performance.now()
+    const ratio = dpr * rootScale(el)
+    const shots = await bandShots(el, bands, glass)
+    const parts = shots.map(({ band, shot }) => {
+      const rec = upload(shot, ratio)
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+      // SnapDOM's margin, as around a view: the same on every side.
+      const w = shot.width / ratio
+      const h = shot.height / ratio
+      return { rec, rect: [band.bx - (w - band.w) / 2, band.by - (h - band.h) / 2, w, h] }
+    })
+    mips(base)
+    const rec = composite(base, [el.offsetWidth, el.offsetHeight], parts)
+    for (const { rec: part } of parts) gl.deleteTexture(part.texture)
+    return { rec, ms: Math.round(performance.now() - t) }
+  }
+
   /** A layer to draw: a view with its texture, matrix around its origin, and effect. */
   function layer (view, rec, matrix, origin, effect, alpha = 1) {
     return { view, rec, matrix, origin, pos: [view.offsetLeft, view.offsetTop], box: [view.offsetWidth, view.offsetHeight], effect, alpha }
@@ -320,12 +504,10 @@ export function createGL (app, { photo, flattener, log }) {
     gl.clearColor(0, 0, 0, 0)
     gl.clear(gl.COLOR_BUFFER_BIT)
     gl.uniform2f(u.size, canvas.width / dpr, canvas.height / dpr)
+    gl.uniform1f(u.yDir, -1)
     layers.forEach(({ rec, matrix: k, origin, pos, box, effect, alpha }, i) => {
       if (alpha <= 0) return
-      const w = rec.width / rec.ratio
-      const h = rec.height / rec.ratio
-      // The photo has a margin around the border box, the same on every side.
-      gl.uniform4f(u.rect, -(w - box[0]) / 2, -(h - box[1]) / 2, w, h)
+      gl.uniform4f(u.rect, ...rectOf(rec, box))
       gl.uniform2f(u.origin, origin[0], origin[1])
       gl.uniform4f(u.m, k.a, k.b, k.c, k.d)
       gl.uniform2f(u.move, k.e, k.f)
@@ -373,7 +555,10 @@ export function createGL (app, { photo, flattener, log }) {
     const layers = []
     for (const view of views()) {
       const current = view.classList.contains('is-current-view')
-      if (current) dropPhoto(view)
+      if (current) {
+        dropPhoto(view)
+        dropWide(view)
+      }
       const rec = current ? null : behind(view)
       if (!rec) {
         show(view)
@@ -403,10 +588,21 @@ export function createGL (app, { photo, flattener, log }) {
     for (const view of [previousView, lastView]) {
       if (!view) continue
       let r = behind(view)
+      // flatten's photo keeps the view's glass; the zoom's own photo, the demo's choice.
+      const glass = flattener()?.photos.has(view) || undefined
       if (!r) {
         const shot = await snapshot(view, false)
         r = shot.rec
         info.shot = (info.shot || 0) + shot.ms
+      }
+      // The view going behind grows: what its overflow hides comes into sight.
+      if (type === 'zoomIn' && view === previousView) {
+        const wider = await widen(view, r, glass, spec.currentStage.views[1]).catch(error => log(`gl: no overflow (${error.message})`))
+        if (wider) {
+          wide.set(view, wider.rec)
+          r = wider.rec
+          info.overflowMs = wider.ms
+        }
       }
       recs.set(view, r)
     }

@@ -179,7 +179,9 @@ function board () {
     tiles += `<div class="${className}"${data} style="--h:${h}"><b>${name}${value}</b><div class="bars">${bars(24)}</div></div>`
   }
   const counter = opt.live ? '<span class="counter">0</span>' : ''
-  return `<div class="z-view board" data-title="Board"><span class="clock">--:--:--</span>${counter}${tiles}</div>`
+  // The last row does not fit at 800 px. Its overflow hides nothing on purpose, so with gl=1 a
+  // zoom shows it whole (data-gl-overflow).
+  return `<div class="z-view board" data-title="Board" data-gl-overflow><span class="clock">--:--:--</span>${counter}${tiles}</div>`
 }
 
 function detail ({ target, props }) {
@@ -299,7 +301,9 @@ const launch = {
       for (const fade of fades) fade.play()
     }
   },
-  async photo (view, offscreen) {
+  // options: more SnapDOM options (a clip); glass, to keep or drop the glass whatever the demo
+  // says; wait: false, to read the view without waiting a frame.
+  async photo (view, offscreen, { glass = opt.glass, wait = true, ...options } = {}) {
     // A view coming in goes out of sight while SnapDOM reads it, at scale 1 (outerTransforms:
     // false keeps a root scale). The engine hands it over hidden (.hide is opacity 0, until the
     // driver shows it), and SnapDOM would copy that opacity into the photo. A view leaving is
@@ -311,11 +315,11 @@ const launch = {
       view.style.contentVisibility = 'visible'
       view.classList.remove('hide')
     }
-    if (!opt.glass) view.classList.add('z-launch-noglass')
+    if (!glass) view.classList.add('z-launch-noglass')
     try {
-      await afterFrame()
+      if (wait) await afterFrame()
       const t = performance.now()
-      const result = await snapdom(view, { outerTransforms: false, outerShadows: false, fast: true, excludeStyleProps: prop => prop.startsWith('outline') })
+      const result = await snapdom(view, { outerTransforms: false, outerShadows: false, fast: true, excludeStyleProps: prop => prop.startsWith('outline'), ...options })
       const canvas = await result.toCanvas()
       return { canvas, ms: Math.round(performance.now() - t) }
     } finally {
@@ -435,7 +439,7 @@ app.transitionDriver = {
 await app.init()
 if (opt.gl) {
   glr = createGL(app, {
-    photo: (view, offscreen) => launch.photo(view, offscreen),
+    photo: (view, offscreen, options) => launch.photo(view, offscreen, options),
     flattener: () => app._flattener,
     log: msg => window.notes.push({ t: Math.round(performance.now()), msg }),
   })

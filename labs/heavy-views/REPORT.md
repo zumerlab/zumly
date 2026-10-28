@@ -391,6 +391,13 @@ Medido con `measure.mjs` (mediana de dos corridas, dpr 2). Los números de WebGL
 
 **El blur volvía a empezar al final del zoom-in** (lo vio Martin a ojo). Si `flatten` no tenía foto del tablero, la vista volvía al DOM un cuadro después del final, y la transición del `filter` del motor arrancaba otra vez de cero: un segundo entero de 0 a 3 px. Pasaba en el primer zoom de cada carga, porque el stream del tablero se apaga en la primera visita por el reloj (`no host`), y en vivo, en todos. Ahora el tablero queda en WebGL con la foto que el zoom le sacó al irse atrás, hasta que vuelve al frente. Y cuando una vista vuelve al DOM, por ejemplo antes de un zoom lateral, su efecto aparece donde estaba, sin transición. De paso, el zoom-out en vivo ya no tiene que fotografiar el tablero: arranca en 58 ms en vez de 141, y su GPU baja del 14 % al 6,5 %.
 
+**Lo que esconde el `overflow` de la vista de atrás** (también lo vio Martin a ojo). En la demo, la última fila del tablero no entra: el tablero mide lo mismo que el lienzo (715 px), su contenido 824, y tiene `overflow: hidden`. Al hacer zoom en una tarjeta de esa fila, el tablero crece con su borde, y las tarjetas de al lado quedan cortadas por una línea recta en medio de la pantalla. En el DOM pasa lo mismo, con WebGL o sin él: el navegador no dibuja lo que una vista recorta. Con WebGL, en cambio, la textura puede ser más grande que la vista:
+- Al preparar un zoom-in, si el zoom va a mostrar algo de lo que el `overflow` esconde, la vista se agranda un momento hasta que entre todo su contenido, y SnapDOM fotografía solo las franjas que quedan fuera (`clip`). Con la vista al frente esas franjas caen fuera del lienzo, así que agrandarla no se ve.
+- Las franjas y la textura de la vista se juntan en la GPU en una sola textura, que es la que se desenfoca: no queda costura.
+- Las franjas solo se toman cuando el zoom las muestra. Como la escala y la posición se interpolan de forma pareja, alcanza con mirar dónde termina la vista. Zoom en Sensor 4: nada, 44 ms hasta arrancar. En Sensor 39 o 46: unos 55 ms más (35 en vivo, sin vidrio).
+- Solo vistas que scrollean, o que lo piden con `data-gl-overflow` (el tablero de la demo). Con `overflow: hidden` alguien puede estar escondiendo algo a propósito, como un menú fuera del lienzo.
+- La vuelta queda igual que antes de entrar. Antes y después del zoom, el tablero difiere solo en el reloj y en el anillo de foco que pone el motor.
+
 El cambio de WebGL al DOM al final no se nota más que el de la foto a la vista real ([`film.mjs`](film.mjs)): 1,3 contra 1,1 en el zoom-in y 3,5 contra 3,2 en el zoom-out.
 
 Lo que dice:
@@ -405,11 +412,13 @@ Trampas:
 - **El vidrio de la navegación de Zumly sobre WebGL.** El botón de volver, las bandas de profundidad y la barra de hermanos tienen `backdrop-filter`. Sobre un canvas WebGL que cambia en cada cuadro, la GPU espera a que ese canvas termine, también en cada cuadro (`WaitForCommandsToBeScheduled` en el trace). Con ese vidrio, el zoom-out costaba 21 % de GPU; sin él, 7 %. En la demo, mientras WebGL mueve las vistas, la navegación pierde el desenfoque y toma un fondo más opaco. `navglass=0` lo apaga siempre, para comparar. Si WebGL va al motor, esto va con él.
 - **El blur a tamaño completo.** Con σ chico, las pasadas corrían sobre 2564×1274 y el zoom-out costaba 28 %. Ahora nunca bajan del nivel 1.
 - **Ocultar el contenido con `visibility`, como hace `flatten`, rompe el stream del tablero.** Al volver, el stream ve cambiar la raíz del tablero, no tiene dónde repintar, hace cuadros completos y `flatten` lo apaga; WebGL tiene que fotografiar el tablero antes de cada zoom (147 ms). No encontré por qué. Se descartó: queda `opacity: 0`.
+- **SnapDOM rompe un contenedor grid scrolleado.** Con el tablero scrolleado (`scrollTop` 60), una captura común de SnapDOM 3.5.0, y también su stream, sale con las tarjetas en una sola columna y sin el scroll. Parece que corre el contenido metiéndolo en un `div`, que pasa a ser el único elemento de la grilla. Pasa también sin WebGL: con `flatten`, el tablero de atrás queda mal y en el zoom-in no se ve. Las franjas de arriba no tienen el problema, porque se sacan con la vista agrandada y el scroll en 0. Se arregla en SnapDOM.
 - **En vivo, el stream del tablero se apaga desde la segunda visita, con WebGL o sin él.** Los valores cambian dentro de tarjetas con `backdrop-filter`. El stream no encuentra dónde repintarlos (`no host for <span.v>`), hace un cuadro completo de 320-420 ms y `flatten` lo apaga. Es el pendiente de SnapDOM con el vidrio y los gradientes. Con WebGL hay que fotografiar el tablero antes de cada zoom-in (~100 ms). Antes del arreglo del blur costaba otra foto más en el zoom-out, y el tablero se ocultaba recién al arrancar: de ahí salían el 15 % de GPU y el tirón. Ahora queda oculto desde el final del zoom-in.
 
 Falta:
 
-- Mirarlo a ojo otra vez, después del arreglo del blur. Martin lo vio muy fluido.
+- Mirarlo a ojo otra vez, después del arreglo del blur y del `overflow`. Martin lo vio muy fluido.
+- `overflow`: una barra de scroll clásica (no superpuesta) cambia el ancho al agrandar la vista; un borde en la vista quedaría dibujado entre la vista y las franjas; con `lastView` (más de dos niveles) no se agranda.
 - Hermanos: hoy un zoom lateral cae al driver real, con todas las vistas en DOM.
 - Más de dos niveles (`lastView`): el código lo contempla, pero no está probado, porque la demo tiene dos.
 - Gestos (seguir el dedo), pérdida de contexto (hoy vuelve al DOM y no se recupera) y redimensionar en medio de un zoom.
@@ -443,7 +452,7 @@ Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs 
 3. **Capa de vidrio (idea 1)** como forma de los efectos: 0 % en el zoom-out en todas las corridas, sin SnapDOM. Falta que Martin mire el look.
 4. **Marca de movimiento (opción 2)** como receta de la guía: la GPU del zoom baja de ~60 % a ~17 %.
 5. **La primera transición en frío:** 14,5 % de cuadros perdidos en la primera corrida. Ver si se puede calentar al cargar.
-6. **SnapDOM:** emular el vidrio una sola vez, gradientes como fondo sólido, tramos y `signal`. Abaratan el stream en vistas de vidrio. Se hace en su repo.
+6. **SnapDOM:** emular el vidrio una sola vez, gradientes como fondo sólido, tramos y `signal`. Abaratan el stream en vistas de vidrio. Y un contenedor grid scrolleado, que sale en una columna (ver Experimento 7). Se hace en su repo.
 7. **WebGL (idea 3).** Hecho de lleno el 28/10, en `dev` (ver Experimento 7): GPU del zoom de ~40 % a 5,5-6,5 %, y en vivo de ~65 % a 5-6,5 %, con la misma espera del experimento 1. Martin lo vio muy fluido. Falta hermanos, gestos y más de dos niveles. Después: el movimiento en un worker.
 8. **Driver con View Transitions (opción 1).**
 9. **Foto ya desenfocada y la vista de dos niveles atrás como velo (opciones 7 y 8)**, si las tablets lo piden.
