@@ -14,6 +14,10 @@
  * off and that view moves as itself. Without stream there is one photo, taken again once the
  * view stops changing, and a view that changed after its photo moves as itself.
  *
+ * Only a view with triggers is photographed: one without them never moves behind, and
+ * following it would cost frames at rest for a photo nobody uses. Back in front, the photo
+ * crossfades into the real view when the view is opaque, and just goes when it is not.
+ *
  * SnapDOM is not a dependency: it is passed in (`flatten: { snapdom, stream }`) or read from
  * the global `snapdom` of its script build.
  */
@@ -71,6 +75,18 @@ function isOwnMutation (record, view) {
     if (nodes.length && nodes.every(node => node.classList?.contains(LAYER))) return true
   }
   return false
+}
+
+/**
+ * Whether a view paints its whole box. A crossfade from the photo shows one layer at a time
+ * only over an opaque view; over a translucent one both show at once, as a flash.
+ */
+function isOpaque (view) {
+  const color = getComputedStyle(view).backgroundColor
+  if (!color || color === 'transparent') return false
+  const alpha = color.match(/\/\s*([\d.]+%?)\s*\)$/) || color.match(/^rgba\((?:[^,]+,){3}\s*([\d.]+)\s*\)$/)
+  if (!alpha) return true
+  return alpha[1].endsWith('%') ? parseFloat(alpha[1]) >= 100 : parseFloat(alpha[1]) >= 1
 }
 
 /** A canvas of its own with the same pixels: a stream keeps drawing into its canvas. */
@@ -171,6 +187,15 @@ export class Flattener {
     this._schedule()
   }
 
+  /**
+   * The view back in front is about to take focus: its real content comes back first, since
+   * hidden content cannot be focused (the view itself would be, with a focus ring).
+   */
+  reveal (view) {
+    if (this.destroyed) return
+    this._unflat(view, true)
+  }
+
   /** The canvas was resized: photos of views whose box changed no longer fit. */
   resized () {
     if (this.destroyed || !this.canvas) return
@@ -256,10 +281,18 @@ export class Flattener {
     this.idle = null
   }
 
+  /**
+   * Only a view with triggers moves behind; one without them leaves by zoom-out or to a
+   * sibling, and moves as itself. data-flatten="true" photographs it anyway.
+   */
+  _canGoBehind (view) {
+    return view.dataset.flatten === 'true' || !!view.querySelector('.zoom-me[data-to]')
+  }
+
   /** Never start a capture during a transition or a gesture, or for a view that does not pay off. */
   _canCapture (view) {
     return !this.destroyed && !this.app.blockEvents && !this.app._scrub && view === this._current() &&
-      !this.live.has(view) && this._eligible(view)
+      !this.live.has(view) && this._canGoBehind(view) && this._eligible(view)
   }
 
   /** The SnapDOM scale for a view: outerTransforms: false keeps a root scale, so undo it. */
@@ -381,7 +414,8 @@ export class Flattener {
     view.classList.remove(FLAT)
     const layer = [...view.children].find(child => child.classList.contains(LAYER))
     if (!layer) return
-    if (!fade || typeof layer.animate !== 'function') {
+    // Over a translucent view a crossfade would show photo and view at once: the photo just goes.
+    if (!fade || typeof layer.animate !== 'function' || !isOpaque(view)) {
       layer.remove()
       return
     }
@@ -405,7 +439,9 @@ export class Flattener {
   _watch (view) {
     this._unwatch()
     this.watched = view
-    if (!this.stream) this.observer?.observe(view, { subtree: true, childList: true, attributes: true, characterData: true })
+    // Without stream, changes make the photo stale. With stream, a view without triggers is
+    // watched until one appears, so its stream can start then.
+    if (!this.stream || !this._canGoBehind(view)) this.observer?.observe(view, { subtree: true, childList: true, attributes: true, characterData: true })
   }
 
   _unwatch () {
@@ -417,6 +453,14 @@ export class Flattener {
     const view = this.watched
     if (!view || this.destroyed) return
     if (records.every(record => isOwnMutation(record, view))) return
+    // Nothing to photograph until the view has a trigger; when the first one appears, a
+    // stream starts following it.
+    if (!this._canGoBehind(view)) return
+    if (this.stream) {
+      this._unwatch()
+      if (!this.streaming) this._schedule()
+      return
+    }
     // The photo no longer shows the view: it is not used until a new one is taken, once the
     // view holds still.
     this.stale.add(view)

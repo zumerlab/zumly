@@ -171,10 +171,45 @@ describe('flatten', () => {
     expect(a.dataset.viewName).toBe('a')
     expect(isFlat(a)).toBe(false)
     expect(getComputedStyle(a.querySelector('.text')).visibility).toBe('visible')
-    // The photo fades out over the real view, then goes.
+    // The view is opaque: the photo fades out over the real view, then goes.
+    expect(layer(a)).not.toBeNull()
     await vi.waitFor(() => expect(layer(a)).toBeNull(), { timeout: 1000 })
     expect(isFlat(role('previous'))).toBe(true)
     await expect.poll(() => getComputedStyle(role('previous')).filter).toBe('blur(3px)')
+  })
+
+  it('gives focus to the first trigger of a view coming back from its photo', async () => {
+    await start()
+    await zoomInto('a')
+    expect(isFlat(named('home'))).toBe(true)
+    await app.zoomOut()
+    await settled()
+    const home = role('current')
+    // Not the view itself: hidden content cannot take focus, and the view would get a focus ring.
+    expect(document.activeElement).toBe(home.querySelector('.zoom-me'))
+    expect(home.hasAttribute('tabindex')).toBe(false)
+  })
+
+  it('swaps a translucent view back at once: a crossfade would show photo and view together', async () => {
+    const clear = view('home', ['a']).replace('background:#123', 'background:rgb(0 0 0 / .4)')
+    await start({ views: { ...views, home: clear } })
+    await zoomInto('a')
+    expect(isFlat(named('home'))).toBe(true)
+    await app.zoomOut()
+    await settled()
+    expect(isFlat(role('current'))).toBe(false)
+    expect(layer(role('current'))).toBeNull()
+  })
+
+  it('does not photograph a view without triggers: it never moves behind', async () => {
+    await start()
+    await zoomInto('a')
+    await zoomInto('c')
+    await app.zoomIn(role('current').querySelector('.zoom-me[data-to="d"]'))
+    await settled()
+    const d = role('current')
+    await new Promise(resolve => setTimeout(resolve, 800))
+    expect(snapdom.mock.calls.some(([el]) => el === d)).toBe(false)
   })
 
   it('takes a new photo on each visit', async () => {
@@ -353,6 +388,25 @@ describe('flatten', () => {
       await settled()
       await vi.waitFor(() => expect(stream.streams.length).toBe(3), { timeout: 3000 })
       expect(stream.streams[2].element).toBe(home)
+    })
+
+    it('does not follow a view without triggers, and starts when one appears', async () => {
+      const stream = await startStreaming()
+      await app.zoomIn(role('current').querySelector('.zoom-me[data-to="a"]'))
+      await settled()
+      await vi.waitFor(() => expect(stream.streams.length).toBe(2), { timeout: 3000 })
+      await app.zoomIn(role('current').querySelector('.zoom-me[data-to="c"]'))
+      await settled()
+      await vi.waitFor(() => expect(stream.streams.length).toBe(3), { timeout: 3000 })
+      await app.zoomIn(role('current').querySelector('.zoom-me[data-to="d"]'))
+      await settled()
+      // d has no triggers: it never moves behind, so nothing follows it.
+      await new Promise(resolve => setTimeout(resolve, 800))
+      expect(stream.streams.length).toBe(3)
+      // Content that brings a trigger changes that.
+      role('current').insertAdjacentHTML('beforeend', trigger('a', 40))
+      await vi.waitFor(() => expect(stream.streams.length).toBe(4), { timeout: 3000 })
+      expect(stream.streams[3].element).toBe(role('current'))
     })
 
     it('turns a stream off when it costs too much, and keeps that view live', async () => {

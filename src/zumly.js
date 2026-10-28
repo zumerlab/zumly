@@ -420,9 +420,13 @@ export class Zumly {
     for (const view of this.canvas?.children || []) {
       if (view.classList.contains('z-view')) restoreViewContent(view)
     }
-    // Restore the incoming view before focusing it (it may have been inert).
+    // Restore the incoming view before focusing it (it may have been inert, or a photo whose
+    // hidden content cannot take focus: the view itself would get it, with a focus ring).
     const current = this.canvas?.querySelector('.is-current-view')
-    if (current) this._accessibility.restore(current)
+    if (current) {
+      this._accessibility.restore(current)
+      this._flattener?.reveal(current)
+    }
     this._manageFocus()
     if (this.canvas) this._accessibility.sync(this.canvas)
   }
