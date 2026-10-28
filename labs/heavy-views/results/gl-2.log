@@ -1,0 +1,9 @@
+4 runs at dpr 2, 1280×800, CPU 1×
+asis   f-gl        in   0.5%  out   1.6%  tail 0%/0%  hitches 0/6 (run 1)  start 50  lat 66/59  motion 1017/1017 ms  rest 0%/0%  | in: main 4 impl 3 raster 0 gpu 5 viz 2  | out: main 4 impl 4 raster 0 gpu 7 viz 2
+live   f-gl        in   0.5%  out   2.7%  tail 0%/0%  hitches 1/6 (run 4)  start 144  lat 152/142  motion 1025/1009 ms  rest 0%/2.5%  | in: main 6 impl 4 raster 0 gpu 8 viz 2  | out: main 6 impl 4 raster 0 gpu 14 viz 2
+asis   f-gl        in   0.5%  out   1.6%  tail 0%/0%  hitches 0/6 (run 1)  start 43  lat 49/62  motion 1019/1015 ms  rest 0%/2%  | in: main 4 impl 3 raster 0 gpu 7 viz 2  | out: main 4 impl 4 raster 0 gpu 8 viz 2
+live   f-gl        in     1%  out   3.2%  tail 0%/0%  hitches 1/6 (run 3)  start 163  lat 165/141  motion 1008/991 ms  rest 0%/6.5%  | in: main 6 impl 3 raster 0 gpu 7 viz 2  | out: main 6 impl 4 raster 0 gpu 14 viz 2
+
+Medians across runs
+asis   f-gl        in   0.5%  out   1.6%  tail 0%/0%  hitches 0/6 (run 1)  start 46.5  lat 57.5/60.5  motion 1018/1016 ms  rest 0%/1%  | in: main 4 impl 3 raster 0 gpu 6 viz 2  | out: main 4 impl 4 raster 0 gpu 7.5 viz 2
+live   f-gl        in   0.8%  out     3%  tail 0%/0%  hitches 1/6 (run 3.5)  start 153.5  lat 158.5/141.5  motion 1016.5/1000 ms  rest 0%/4.5%  | in: main 6 impl 3.5 raster 0 gpu 7.5 viz 2  | out: main 6 impl 4 raster 0 gpu 14 viz 2

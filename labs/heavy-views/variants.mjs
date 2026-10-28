@@ -14,6 +14,9 @@ export const VARIANTS = {
   'f-launch-ng': 'flatten=1&launch=1&glass=0', // the same photo without its glass
   'f-launch-ng-out': 'flatten=1&launch=1&glass=0&out=1', // and a photo of the view leaving a zoom-out
   'nf-launch': 'flatten=0&launch=1',
+  // Experiment 7: zooms drawn with WebGL, the views behind as textures at rest (gl.js).
+  'f-gl': 'flatten=1&gl=1&glass=0',
+  'f-gl-glass': 'flatten=1&gl=1', // the view coming in photographed with its glass
 }
 
 // asis: the guide's demo as it is (a clock); live: values that change and a big counter.

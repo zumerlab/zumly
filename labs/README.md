@@ -17,7 +17,7 @@ El servidor también expone `../snapdom` y `../orbit` en `/snapdom/` y `/orbit/`
 
 | Lab | Qué prueba | Estado |
 |---|---|---|
-| [Vistas pesadas](heavy-views/) | Fluidez del zoom con vistas de miles de nodos y vidrio: `flatten`, marca de movimiento, capa de vidrio fija, `will-change`, `perspective`, preparar y después animar (`launch=1`). [Reporte](heavy-views/REPORT.md) | Experimento 1 medido (28/10) |
+| [Vistas pesadas](heavy-views/) | Fluidez del zoom con vistas de miles de nodos y vidrio: `flatten`, marca de movimiento, capa de vidrio fija, `will-change`, `perspective`, preparar y después animar (`launch=1`), todo en WebGL (`gl=1`). [Reporte](heavy-views/REPORT.md) | Experimentos 1 y 7 medidos (28/10) |
 
 ## Cómo medimos
 
@@ -27,6 +27,7 @@ El servidor también expone `../snapdom` y `../orbit` en `/snapdom/` y `/orbit/`
 - En corridas largas, `caffeinate -d`, porque la pantalla se apaga a los 2 minutos. Usar la Mac durante la corrida no cambia los números.
 - Con la interfaz quieta no hay cuadros que contar: un hueco sin cuadros no es un tirón.
 - Los traces de DevTools, del MCP de chrome-devtools o de `trace.mjs` se comparan zoom por zoom con `heavy-views/read-trace.mjs`, que no necesita marcas de la demo. Mirar también sus capturas: una foto vacía que se mueve da números excelentes.
+- `read-trace.mjs` encuentra los zooms por sus animaciones CSS: con `gl=1` no hay ninguna, y para esa variante valen las marcas de la demo (`measure.mjs`).
 
 ## Relación con `experiments/`
 

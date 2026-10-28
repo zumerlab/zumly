@@ -51,6 +51,14 @@
   .z-launch-ring { position: absolute; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; box-sizing: border-box; border-radius: 50%; border: 3px solid rgb(255 255 255 / .25); border-top-color: #fff; opacity: 0; animation: z-ring-in 120ms forwards, z-ring-spin 700ms linear infinite; }
   @keyframes z-ring-in { to { opacity: 1 } }
   @keyframes z-ring-spin { to { transform: rotate(1turn) } }
+  /* gl=1: views drawn with WebGL (gl.js) are hidden but still answer hit-tests; their effects
+     are in the shader, so the CSS filter and its transition are off. */
+  .zumly-canvas > .z-gl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .z-view.z-gl-off { opacity: 0 !important; filter: none !important; transition: none !important; }
+  /* Zumly's nav is glass too, and glass over a WebGL canvas that changes every frame makes the
+     GPU wait for the canvas each frame (zoom-out GPU 21 % → 7 %). While WebGL moves the views
+     the nav goes without blur, a little more opaque. */
+  .zumly-canvas[data-z-gl-moving] :is(.z-nav-back, .z-depth-band, .z-lateral-nav) { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgb(20 22 28 / .72) !important; }
 </style>
 </head>
 <body>
@@ -60,6 +68,7 @@
 import { Zumly } from '/src/entry-esm.js'
 import { snapdom } from '@zumer/snapdom'
 import { stream } from '/node_modules/@zumer/snapdom-plugins/stream.js'
+import { createGL } from './gl.js'
 
 // Variants, from the URL. Every change reloads the page, so each one starts clean.
 const q = new URLSearchParams(location.search)
@@ -75,6 +84,7 @@ const opt = {
   launch: q.get('launch') === '1', // experiment 1: photograph the view coming in, then move it
   glass: q.get('glass') !== '0', // with launch: glass=0 takes that photo without backdrop-filter
   out: q.get('out') === '1', // with launch: a zoom-out also photographs the view leaving before it shrinks
+  gl: q.get('gl') === '1', // experiment 7: zooms drawn with WebGL, and the views behind as textures at rest
   driver: q.get('driver') || 'css',
 }
 const effects = opt.fx !== 'pane'
@@ -94,6 +104,7 @@ const LAB = [
   { key: 'launch', on: '1', label: 'preparar y animar' },
   { key: 'glass', on: '0', label: 'foto sin vidrio' },
   { key: 'out', on: '1', label: 'también al volver' },
+  { key: 'gl', on: '1', label: 'WebGL' },
 ]
 const go = (key, value) => {
   const next = new URLSearchParams(q)
@@ -126,7 +137,7 @@ for (const { key, on, label } of TOGGLES) {
   const pressed = q.get(key) === on
   button(toggles, label, pressed, () => go(key, pressed ? null : on))
 }
-const lab = group('Zoom-in')
+const lab = group('Lab')
 for (const { key, on, label } of LAB) {
   const pressed = q.get(key) === on
   button(lab, label, pressed, () => go(key, pressed ? null : on))
@@ -146,6 +157,8 @@ if (opt.wc) {
     '.zoom-lateral-in, .zoom-lateral-out { will-change: transform, opacity !important }',
     `.zoom-previous-view, .zoom-previous-view-reverse, .zoom-last-view, .zoom-last-view-reverse { will-change: ${effects ? 'transform, filter' : 'transform'} !important }`)
 }
+// navglass=0, for diagnosis: Zumly's nav (back button, depth bands, sibling bar) without its glass.
+if (q.get('navglass') === '0') css.push('.z-nav-back, .z-depth-band, .z-lateral-nav { backdrop-filter: none !important; -webkit-backdrop-filter: none !important }')
 if (opt.hold) css.push('.zumly-canvas > .z-view.is-previous-view, .zumly-canvas > .z-view.is-last-view { will-change: transform, opacity, filter }')
 if (css.length) document.head.insertAdjacentHTML('beforeend', `<style>${css.join('\n')}</style>`)
 
@@ -187,18 +200,21 @@ const app = new Zumly({
     effects: effects ? ['blur(3px) brightness(.7)', 'blur(8px) brightness(.5)'] : ['none', 'none'],
     animateEffects: opt.fx !== 'instant',
   },
-  // The stream is wrapped to log its frames (window.streamLog), for debugging flatten.
+  // The stream is wrapped to log its frames (window.streamLog), for debugging flatten; with gl=1
+  // each frame also goes into the view's texture.
   flatten: opt.flatten && {
     snapdom,
     stream: (el, options) => stream(el, {
       ...options,
       onFrame (frame) {
         window.streamLog.push({ t: Math.round(performance.now()), view: el.dataset.viewName, reason: frame.reason, full: frame.full, ms: Math.round(frame.ms) })
+        glr?.feed(el, frame, options)
         options.onFrame?.(frame)
       },
     }),
   },
 })
+let glr = null
 window.streamLog = []
 
 const parseMs = (d) => {
@@ -330,7 +346,12 @@ const launch = {
     view.classList.remove('z-launch-flat')
     view.querySelector(':scope > .z-launch-layer')?.remove()
   },
-  async prepare (spec, step) {
+  // work(spec) gets the zoom ready and returns what to log; by default, the photo of the view
+  // coming in, shown in its place.
+  async prepare (spec, step, work = (s) => this.photo(s.currentView, s.type === 'zoomIn').then(({ canvas, ms }) => {
+    this.flat(s.currentView, canvas)
+    return { photoMs: ms }
+  })) {
     const t0 = performance.now()
     performance.mark(`z:${step}:prepare-start`)
     const zoomIn = spec.type === 'zoomIn'
@@ -339,10 +360,10 @@ const launch = {
     const trigger = zoomIn ? spec.previousView.querySelector('.zoom-me.zoomed') : null
     const press = trigger ? this.press(trigger) : null
     const release = this.hold([spec.previousView, spec.lastView].filter(Boolean), view)
+    let result = null
     try {
-      const { canvas, ms } = await this.photo(view, zoomIn)
-      this.flat(view, canvas)
-      entry.photoMs = ms
+      result = await work(spec)
+      Object.assign(entry, result?.info || result)
     } catch (error) {
       // No photo: the view moves as itself, as without launch.
       entry.error = error.message
@@ -354,6 +375,7 @@ const launch = {
     press?.remove()
     release()
     window.launchLog.push(entry)
+    return result
   },
 }
 
@@ -372,7 +394,7 @@ const real = app.transitionDriver
 app.transitionDriver = {
   runTransition (spec, done) {
     const step = stepIndex
-    const go = () => {
+    const go = (run = (s, cb) => real.runTransition(s, cb)) => {
       performance.mark(`z:${step}:motion-start`)
       window.flatLog.push({
         step,
@@ -383,7 +405,7 @@ app.transitionDriver = {
       })
       if (opt.moving) app.canvas.dataset.zMoving = spec.type
       if (opt.fx === 'pane') panes.start(spec)
-      return real.runTransition(spec, () => {
+      return run(spec, () => {
         performance.mark(`z:${step}:motion-end`)
         delete app.canvas.dataset.zMoving
         if (opt.fx === 'pane') panes.sync()
@@ -391,14 +413,33 @@ app.transitionDriver = {
         done()
       })
     }
+    // gl=1: WebGL draws zooms in and out once their textures are ready; anything else (a sibling,
+    // or textures it could not get) runs on the real driver, with every view back to DOM.
+    if (glr && !glr.lost && (spec.type === 'zoomIn' || spec.type === 'zoomOut')) {
+      launch.prepare(spec, step, s => glr.prepare(s))
+        .catch(error => { window.notes.push({ t: Math.round(performance.now()), msg: `gl: ${error.message}` }) })
+        .then(prepared => prepared ? go((s, cb) => glr.run(s, prepared, cb)) : (glr.release(), go()))
+      return
+    }
+    if (glr) {
+      glr.release()
+      return go((s, cb) => real.runTransition(s, () => { cb(); requestAnimationFrame(() => glr.sync()) }))
+    }
     // The view leaving a zoom-out is removed at the end, photo and all. Whatever happens while
     // preparing, the zoom still moves.
     if (opt.launch && (spec.type === 'zoomIn' || (opt.out && spec.type === 'zoomOut'))) {
-      launch.prepare(spec, step).catch(error => window.notes.push({ t: Math.round(performance.now()), msg: `launch: ${error.message}` })).then(go)
+      launch.prepare(spec, step).catch(error => window.notes.push({ t: Math.round(performance.now()), msg: `launch: ${error.message}` })).then(() => go())
     } else go()
   },
 }
 await app.init()
+if (opt.gl) {
+  glr = createGL(app, {
+    photo: (view, offscreen) => launch.photo(view, offscreen),
+    flattener: () => app._flattener,
+    log: msg => window.notes.push({ t: Math.round(performance.now()), msg }),
+  })
+}
 
 // Something alive on the board, as a real dashboard has.
 setInterval(() => {
@@ -471,6 +512,7 @@ async function runByEye () {
 
 window.app = app
 window.launch = launch
+window.glr = glr
 window.ready = true
 </script>
 </body>
