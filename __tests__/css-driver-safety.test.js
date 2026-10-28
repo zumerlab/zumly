@@ -97,6 +97,35 @@ describe('css driver safety completion', () => {
     expect(previousView.classList.contains('zoom-previous-view-reverse')).toBe(false)
   })
 
+  it('finishes a zoom-out on the animationend of its keyframes, not on the safety timer', () => {
+    document.body.innerHTML = `
+      <div class="zumly-canvas">
+        <div class="z-view is-previous-view" data-view-name="home"></div>
+        <div class="z-view is-current-view" data-view-name="detail"></div>
+      </div>`
+    const canvas = document.querySelector('.zumly-canvas')
+    const previousView = canvas.querySelector('[data-view-name="home"]')
+    const currentView = canvas.querySelector('[data-view-name="detail"]')
+    let completed = false
+    cssTransition({
+      type: 'zoomOut',
+      currentView,
+      previousView,
+      lastView: null,
+      currentStage: makeStage(),
+      duration: '400ms',
+      ease: 'linear',
+      canvas,
+    }, () => { completed = true })
+    // What the browser sends: the -reverse classes run the zoom keyframes backwards, and
+    // animationend carries the keyframes name.
+    currentView.dispatchEvent(new AnimationEvent('animationend', { animationName: 'zoom-current-view' }))
+    previousView.dispatchEvent(new AnimationEvent('animationend', { animationName: 'zoom-previous-view' }))
+    expect(completed).toBe(true)
+    expect(canvas.querySelector('[data-view-name="detail"]')).toBeNull()
+    expect(previousView.classList.contains('zoom-previous-view-reverse')).toBe(false)
+  })
+
   it('ignores animationend bubbling from view content', async () => {
     const { canvas, previousView, currentView } = makeZoomInDom()
     // One-shot animation on CONTENT inside the incoming view (like an

@@ -248,7 +248,9 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
   const durationMs = parseDurationMs(duration)
   const maxDelay = lastView ? stagger * 2 : stagger
   const budgetMs = durationMs + maxDelay + SAFETY_BUFFER_MS
-  const zoomAnims = new Set(['zoom-current-view-reverse', 'zoom-previous-view-reverse', 'zoom-last-view-reverse'])
+  // animationend carries the keyframes name: the -reverse classes run the zoom-in keyframes
+  // backwards. With the class names, every zoom-out waited for the safety timer.
+  const zoomAnims = new Set(['zoom-current-view', 'zoom-previous-view', 'zoom-last-view'])
 
   const { finish, extend } = createFinishGuard(() => {
     cleanupAnimListeners(elements, handleEnd, handleStart)
