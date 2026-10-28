@@ -44,6 +44,8 @@ const WHEEL_RELEASE_MS = 140
 const SWIPE_FOLLOW_WIDTH = 0.6
 /** Fraction of the starting finger distance a pinch closes for a full zoom-out. */
 const PINCH_FOLLOW_CLOSE = 0.6
+/** Last part of a zoom-out (0-1) over which the view shrinking into its trigger fades out. */
+const ZOOM_OUT_FADE = 1 / 3
 
 /**
  * Index of a view identity among sibling entries ({ name, params, key }): the
@@ -612,6 +614,23 @@ export class Zumly {
       this._setTrackedTimeout(onEnd, parseFloat(duration) * (duration.includes('ms') ? 1 : 1000) + 100)
     } else {
       triggerEl.classList.remove('z-trigger-hidden')
+    }
+  }
+
+  /**
+   * Fade views out over the last part of a zoom-out, so the trigger they shrink into takes
+   * their place instead of the views vanishing when the motion ends. It animates only
+   * opacity, so it runs beside any driver.
+   * @param {HTMLElement[]} views
+   * @param {string} duration - CSS duration of the zoom-out
+   * @private
+   */
+  _fadeIntoTrigger (views, duration) {
+    const ms = parseDurationMs(duration)
+    if (!ms || this._prefersReducedMotion()) return
+    for (const view of views) {
+      if (typeof view?.animate !== 'function') continue
+      view.animate([{ opacity: 1 }, { opacity: 1, offset: 1 - ZOOM_OUT_FADE }, { opacity: 0 }], { duration: ms, fill: 'forwards' })
     }
   }
 
@@ -2100,6 +2119,8 @@ export class Zumly {
       ease,
       canvas
     }
+    // c1 lands on its trigger with the deeper views riding on it: all of them fade into it.
+    this._fadeIntoTrigger([c1, ...passengers], duration)
     const complete = () => {
       if (frame !== null) cancelAnimationFrame(frame)
       this._followFrame = null
@@ -2211,6 +2232,8 @@ export class Zumly {
       canvas,
       instant: !!options._instantSpec
     }
+    // hideTrigger: 'fade' already crossfades the view with its trigger over the whole zoom-out.
+    if (htMode !== 'fade' && !spec.instant) this._fadeIntoTrigger([currentView], duration)
     const complete = () => {
       this.blockEvents = false
       this._onTransitionComplete()
@@ -2318,12 +2341,21 @@ export class Zumly {
     this._depthNav?.setProgress(commit ? 1 : null, this.gestures.threshold)
 
     // Continue from where each view is now, decelerating like a released drag.
-    const settle = scrub.layers.map(entry => {
+    const settle = scrub.layers.map((entry, i) => {
       const cs = getComputedStyle(entry.el)
       const now = { transform: cs.transform, filter: cs.filter }
       if (entry.to.borderRadius) now.borderRadius = cs.borderRadius
       const target = commit ? entry.to : entry.from
-      const animation = entry.el.animate([now, target], { duration, fill: 'both', easing: 'cubic-bezier(.2,.8,.2,1)' })
+      const frames = [now, target]
+      // The view under the gesture fades into its trigger over the last part of the way, as a
+      // zoom-out does. Offsets follow the eased progress, the same one the transform follows.
+      if (commit && i === 0 && p < 1) {
+        const offset = Math.min(1, Math.max(0, (1 - ZOOM_OUT_FADE - p) / (1 - p)))
+        frames.splice(1, 0, { opacity: cs.opacity, offset })
+        now.opacity = cs.opacity
+        frames[2] = { ...target, opacity: 0 }
+      }
+      const animation = entry.el.animate(frames, { duration, fill: 'both', easing: 'cubic-bezier(.2,.8,.2,1)' })
       entry.animation.cancel()
       entry.animation = animation
       return animation.finished.catch(() => {})

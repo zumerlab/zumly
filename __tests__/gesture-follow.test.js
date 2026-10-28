@@ -111,6 +111,16 @@ describe('gestures.follow', () => {
     app.destroy()
   })
 
+  it('fades the view into its trigger as a released gesture lands', async () => {
+    const app = await atDetail()
+    const detail = app.canvas.querySelector('.is-current-view')
+    for (let i = 0; i < 6; i++) wheel(app, 40)
+    // Released past the threshold, the view finishes the way at opacity 0, as a zoom-out does.
+    await until(() => expect(detail.getAnimations().some(a => a.effect.getKeyframes().at(-1).opacity === '0')).toBe(true))
+    await until(() => expect(app.getCurrentViewName()).toBe('home'))
+    app.destroy()
+  })
+
   it('honors a custom threshold', async () => {
     const app = await atDetail({ gestures: { follow: true, threshold: 0.2 } })
     for (let i = 0; i < 3; i++) wheel(app, 40)

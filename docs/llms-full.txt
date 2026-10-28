@@ -236,6 +236,8 @@ Boolean, default `true`: the effects' filter transitions together with the zoom.
 - `true`: trigger gets `visibility: hidden` during zoom
 - `'fade'`: trigger crossfades with the incoming view (opacity transition)
 
+With `false` or `true`, a zoom-out fades the view into its trigger over the last third of the motion (opacity only, with any driver), so the trigger takes its place instead of the view vanishing at the end.
+
 Can be overridden per trigger with `data-hide-trigger` or `data-hide-trigger="fade"`.
 
 #### `transitions.stagger`
