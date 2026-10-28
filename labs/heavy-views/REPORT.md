@@ -382,6 +382,7 @@ Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs 
    - recomendar `css` o `waapi` con vistas pesadas;
    - decir cuándo no conviene `flatten` hasta que salga el 3.
 9. **Margen de la foto de `flatten`.** El canvas de SnapDOM trae 1 px de más por lado (3 px con `transform` en la raíz) y `_flat` lo encaja en la caja: la foto queda un poco más chica y corrida. Ponerla a su tamaño, centrada. Chico; puede bajar el cambio al volver al tablero.
+   Hecho el 28/10. La foto y el stream traen el mismo margen, igual en los cuatro lados, y la vista ocupa en el canvas `offsetWidth × dpr × scale`: `_flat` deduce de ahí el tamaño en CSS y la centra. Se notaba más de lo que parecía, porque toda vista a la que se llega por zoom-in queda con un `translate` y le tocan los 3 px (6 px más chica y 3 corrida). El test con SnapDOM real busca los bordes de la vista en la foto. Con el código anterior le daba 1 px de error; ahora le da menos de 0,5. El salto al volver al tablero no cambia en `film.mjs` (9,3–9,7 contra 5,1–9,3, ruido): el tablero no tiene `transform` y ahí era 1 px, que las capturas de 498 px no ven.
 
 ### Experimentación: en labs
 

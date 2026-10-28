@@ -110,7 +110,7 @@ export class Flattener {
     this.stream = options.stream
     this.minNodes = options.minNodes
     this.scale = options.scale
-    /** view → { canvas, width, height, streaming }: the view as it was in front. */
+    /** view → { canvas, width, height, ratio, streaming }: the view as it was in front, its border box, and canvas pixels per CSS pixel. */
     this.photos = new WeakMap()
     /** Views that changed after their photo was taken (without stream). */
     this.stale = new WeakSet()
@@ -301,10 +301,17 @@ export class Flattener {
     return this.scale / (Math.hypot(matrix.a, matrix.b) || 1)
   }
 
+  /** Capture options for a view, and the canvas pixels a CSS pixel of the view takes in its photo. */
+  _optionsFor (view) {
+    const dpr = globalThis.devicePixelRatio || 1
+    return { options: { ...CAPTURE, scale: this._scaleFor(view), dpr }, ratio: this.scale * dpr }
+  }
+
   /** Keep the photo of the current view current with SnapDOM's stream plugin. */
   _startStream (view) {
     if (!this._canCapture(view) || this.streaming) return
     const state = { view, frames: [], handle: null }
+    const { options, ratio } = this._optionsFor(view)
     const off = (why) => {
       this.app.notify(`flatten: view "${view.dataset.viewName}" stays live (${why}).`, 'info')
       this.live.add(view)
@@ -313,8 +320,7 @@ export class Flattener {
     }
     try {
       state.handle = this.stream(view, {
-        ...CAPTURE,
-        scale: this._scaleFor(view),
+        ...options,
         fps: STREAM_FPS,
         // A spinner's angle does not matter in a photo behind; following it would make every
         // frame a full one when it spins over nothing opaque.
@@ -337,7 +343,7 @@ export class Flattener {
     this.streaming = state
     state.handle.ready.then(() => {
       if (this.streaming !== state) return
-      this.photos.set(view, { canvas: state.handle.canvas, width: view.offsetWidth, height: view.offsetHeight, streaming: true })
+      this.photos.set(view, { canvas: state.handle.canvas, width: view.offsetWidth, height: view.offsetHeight, ratio, streaming: true })
     }, (error) => {
       if (this.streaming === state) off(error.message)
     })
@@ -361,9 +367,10 @@ export class Flattener {
     this.stale.delete(view)
     let photo = null
     try {
-      const result = await this.snapdom(view, { ...CAPTURE, scale: this._scaleFor(view) })
+      const { options, ratio } = this._optionsFor(view)
+      const result = await this.snapdom(view, options)
       const canvas = await result.toCanvas()
-      photo = { canvas, width: view.offsetWidth, height: view.offsetHeight, streaming: false }
+      photo = { canvas, width: view.offsetWidth, height: view.offsetHeight, ratio, streaming: false }
     } catch (error) {
       this.app.notify(`flatten: no photo of view "${view.dataset.viewName}": ${error.message}`, 'info')
     }
@@ -396,12 +403,16 @@ export class Flattener {
     const layer = photo.canvas
     layer.classList.add(LAYER)
     layer.setAttribute('aria-hidden', 'true')
-    // Absolute children start inside the border; the photo covers the border box.
+    // SnapDOM's canvas reaches a pixel or a few past the view on every side, the same on each:
+    // the photo keeps its own size, centred on the border box (absolute children start inside
+    // the border). Squeezed into the box, it would show the view a little smaller.
+    const width = layer.width / photo.ratio
+    const height = layer.height / photo.ratio
     Object.assign(layer.style, {
-      left: -view.clientLeft + 'px',
-      top: -view.clientTop + 'px',
-      width: photo.width + 'px',
-      height: photo.height + 'px',
+      left: -view.clientLeft - (width - photo.width) / 2 + 'px',
+      top: -view.clientTop - (height - photo.height) / 2 + 'px',
+      width: width + 'px',
+      height: height + 'px',
       opacity: ''
     })
     view.append(layer)

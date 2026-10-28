@@ -27,13 +27,20 @@ let app
 let snapdom
 let warn
 
-/** A snapdom that answers at once with a canvas the size of the element. */
+/** A canvas shaped like SnapDOM's: the element at scale × dpr, with a pixel more on every side. */
+function canvasFor (element, options) {
+  const k = (options?.scale ?? 1) * (options?.dpr ?? 1)
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round((element.offsetWidth + 2) * k)
+  canvas.height = Math.round((element.offsetHeight + 2) * k)
+  return canvas
+}
+
+/** A snapdom that answers at once with a canvas of the element. */
 function fakeSnapdom () {
-  return vi.fn(async (element) => ({
+  return vi.fn(async (element, options) => ({
     async toCanvas () {
-      const canvas = document.createElement('canvas')
-      canvas.width = element.offsetWidth
-      canvas.height = element.offsetHeight
+      const canvas = canvasFor(element, options)
       canvas.dataset.photoOf = element.dataset.viewName
       return canvas
     }
@@ -41,15 +48,13 @@ function fakeSnapdom () {
 }
 
 /**
- * A stream stand-in: a canvas the size of the element, ready at once. frame() reports a
- * repaint to the caller, as the real plugin does after each one.
+ * A stream stand-in: a canvas of the element, ready at once. frame() reports a repaint to the
+ * caller, as the real plugin does after each one.
  */
 function fakeStream () {
   const streams = []
   const fn = vi.fn((element, options) => {
-    const canvas = document.createElement('canvas')
-    canvas.width = element.offsetWidth
-    canvas.height = element.offsetHeight
+    const canvas = canvasFor(element, options)
     const handle = {
       element,
       options,
@@ -97,6 +102,24 @@ const named = name => app.canvas.querySelector(`:scope > .z-view[data-view-name=
 const layer = el => el?.querySelector(':scope > .z-flat-layer') || null
 const isFlat = el => !!el?.classList.contains('z-flat')
 const settled = () => expect.poll(() => app.blockEvents).toBe(false)
+/**
+ * Where the view's pixels start and end along the middle row of its photo, in CSS pixels from
+ * the view's border box: [0, offsetWidth] when the photo lines up with the view.
+ */
+function photoEdges (view) {
+  const photo = layer(view)
+  const ratio = photo.width / parseFloat(photo.style.width)
+  const row = photo.getContext('2d').getImageData(0, Math.round(photo.height / 2), photo.width, 1).data
+  let first = -1
+  let last = -1
+  for (let x = 0; x < photo.width; x++) {
+    if (row[x * 4 + 3] < 128) continue
+    if (first < 0) first = x
+    last = x + 1
+  }
+  const left = parseFloat(photo.style.left) + view.clientLeft
+  return [left + first / ratio, left + last / ratio]
+}
 /** Wait until the current view has been photographed (the capture waits for quiet and idle). */
 const photographed = async (el = role('current')) => {
   await vi.waitFor(() => expect(snapdom.mock.calls.some(([target]) => target === el)).toBe(true), { timeout: 3000, interval: 20 })
@@ -119,9 +142,10 @@ describe('flatten', () => {
     const text = home.querySelector('.text')
     expect(getComputedStyle(text).visibility).toBe('hidden')
     expect(text.getBoundingClientRect().width).toBeGreaterThan(0)
-    // The photo covers the border box; the border stays real, the background is in the photo.
-    expect(layer(home).style.left).toBe('-4px')
-    expect(layer(home).style.width).toBe(`${home.offsetWidth}px`)
+    // The photo covers the border box, at its own size: SnapDOM's canvas has a pixel more on
+    // every side. The border stays real, the background is in the photo.
+    expect(layer(home).style.left).toBe('-5px')
+    expect(layer(home).style.width).toBe(`${home.offsetWidth + 2}px`)
     expect(getComputedStyle(home).borderTopWidth).toBe('4px')
     // Effects still apply, by CSS, to the view that holds the photo.
     await expect.poll(() => getComputedStyle(home).filter).toBe('blur(3px)')
@@ -456,6 +480,10 @@ describe('flatten', () => {
       expect(photo.width).toBeGreaterThanOrEqual(400)
       const pixel = photo.getContext('2d').getImageData(Math.round(photo.width / 2), Math.round(photo.height * 0.9), 1, 1).data
       expect(pixel[3]).toBeGreaterThan(0)
+      // Lined up with the view, neither smaller nor shifted.
+      const [start, end] = photoEdges(home)
+      expect(Math.abs(start)).toBeLessThan(0.5)
+      expect(Math.abs(end - home.offsetWidth)).toBeLessThan(0.5)
     }, 15000)
   })
 
@@ -583,7 +611,22 @@ describe('flatten', () => {
     // Not blank: the dark background of the view is in it.
     const pixel = photo.getContext('2d').getImageData(Math.round(photo.width / 2), Math.round(photo.height * 0.9), 1, 1).data
     expect(pixel[3]).toBeGreaterThan(0)
-  }, 15000)
+    // Lined up with the view, neither smaller nor shifted.
+    const [start, end] = photoEdges(home)
+    expect(Math.abs(start)).toBeLessThan(0.5)
+    expect(Math.abs(end - home.offsetWidth)).toBeLessThan(0.5)
+    // Also a view with a transform of its own, as every view reached by zooming in has: its
+    // canvas reaches further past it.
+    const a = role('current')
+    expect(getComputedStyle(a).transform).not.toBe('none')
+    await vi.waitFor(() => expect(app._flattener.photos.has(a)).toBe(true), { timeout: 8000, interval: 50 })
+    await app.zoomIn(a.querySelector('.zoom-me[data-to="c"]'))
+    await settled()
+    expect(isFlat(a)).toBe(true)
+    const [aStart, aEnd] = photoEdges(a)
+    expect(Math.abs(aStart)).toBeLessThan(0.5)
+    expect(Math.abs(aEnd - a.offsetWidth)).toBeLessThan(0.5)
+  }, 20000)
 })
 
 /** A GSAP stand-in: a timeline that jumps to the end on the next microtask. */
