@@ -1,0 +1,5 @@
+4 runs at dpr 2, 1280×800, CPU 1× (f-gl only, after the fix for the blur at the end of a zoom-in; per-run data in gl-3.json)
+
+Medians across runs
+asis   f-gl        in   0.5%  out   0.8%  tail 7.7%/2.5%  hitches 0/6 (run 1)  start 45.5  lat 49.5/60.5  motion 1007/1011.5 ms  rest 0%/2.6%  | in: main 4.5 impl 2.5 raster 0 gpu 5.5 viz 1.5  | out: main 3 impl 3.5 raster 0 gpu 6.5 viz 2
+live   f-gl        in   0.3%  out   0.8%  tail 0%/0%  hitches 0/6 (run 1)  start 149  lat 153.5/58  motion 1010/1006 ms  rest 0%/0.6%  | in: main 5.5 impl 3 raster 0 gpu 5 viz 1.5  | out: main 4 impl 3.5 raster 0 gpu 6.5 viz 1.5

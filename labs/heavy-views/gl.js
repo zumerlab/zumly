@@ -274,11 +274,12 @@ export function createGL (app, { photo, flattener, log }) {
    * The texture of a view behind, while flatten has a photo of it: its stream's, or the photo
    * uploaded once. flatten drops a view's photo on each visit and sets it when the stream is
    * ready, so a photo means the stream texture holds this visit's last frame, the one flatten
-   * copied. A view flatten keeps live has no photo, and no texture.
+   * copied. Without one (a zoom before the stream was ready, a view flatten keeps live), the
+   * photo the zoom took of it when it went behind; a view in front drops that one.
    */
   function behind (view) {
     const photo = flattener()?.photos.get(view)
-    if (!photo) return null
+    if (!photo) return photos.get(view) || null
     const s = streams.get(view)
     if (s?.rec.width) return s.rec
     let rec = photos.get(view)
@@ -347,9 +348,22 @@ export function createGL (app, { photo, flattener, log }) {
   const views = () => [...app.canvas.children].filter(v => v.classList.contains('z-view'))
   const restEffect = view => view.classList.contains('has-effect') ? parseEffect(view.style.getPropertyValue('--z-effect-filter')) : NONE
 
+  /**
+   * A view back to DOM with its effect where WebGL left it. Hidden, it had no filter, so the
+   * engine's filter transition would start over from none.
+   */
+  function show (view) {
+    if (!view.classList.contains(OFF)) return
+    const transition = view.style.transition
+    view.style.transition = 'none'
+    view.classList.remove(OFF)
+    getComputedStyle(view).filter // eslint-disable-line no-unused-expressions
+    view.style.transition = transition
+  }
+
   /** Every view back to DOM, nothing drawn: for a transition WebGL does not draw. */
   function release () {
-    for (const view of views()) view.classList.remove(OFF)
+    for (const view of views()) show(view)
     draw([])
   }
 
@@ -358,9 +372,11 @@ export function createGL (app, { photo, flattener, log }) {
     if (lost) return release()
     const layers = []
     for (const view of views()) {
-      const rec = view.classList.contains('is-current-view') ? null : behind(view)
+      const current = view.classList.contains('is-current-view')
+      if (current) dropPhoto(view)
+      const rec = current ? null : behind(view)
       if (!rec) {
-        view.classList.remove(OFF)
+        show(view)
         continue
       }
       view.classList.add(OFF)
@@ -461,7 +477,7 @@ export function createGL (app, { photo, flattener, log }) {
           draw(at(total).filter(l => l.view !== currentView))
           showViews(currentView, previousView, lastView)
           for (const { view } of entries) applyZoomInEndState(view, currentStage)
-          currentView.classList.remove(OFF)
+          show(currentView)
           dropPhoto(currentView)
         } else {
           // The view coming back stays drawn until sync() hands it to the DOM, after flatten
@@ -508,5 +524,5 @@ export function createGL (app, { photo, flattener, log }) {
     s.rec.dirty = true
   }
 
-  return { canvas, gl, feed, prepare, run, sync, release, get lost () { return lost } }
+  return { canvas, gl, feed, prepare, run, sync, release, get lost () { return lost }, get layers () { return last } }
 }

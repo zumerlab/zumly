@@ -374,39 +374,42 @@ Falta: cancelar con Escape durante la espera, mirarlo a ojo con datos en vivo (l
 - La textura del tablero la mantiene al día `streamTexture`, del plugin `stream` de SnapDOM, con los cuadros del stream de `flatten`: sube solo los rectángulos que cambian. La vista que entra, o la que se va en un zoom-out, es una foto sin vidrio sacada antes del movimiento, como en el experimento 1.
 - El desenfoque es un gaussiano en dos pasadas, sobre el nivel de mip donde σ queda en 2 texels y nunca a tamaño completo. En el mismo recorte, la diferencia media con el `blur()` de CSS es de 0,3 sobre 255.
 
-Medido con `measure.mjs` (mediana de dos corridas, dpr 2; [`results/gl.log`](results/gl.log), y [`results/gl-2.log`](results/gl-2.log) con los últimos cambios):
+Medido con `measure.mjs` (mediana de dos corridas, dpr 2). Los números de WebGL son de [`results/gl-3.log`](results/gl-3.log), después del arreglo del blur al final del zoom-in (abajo). Los de antes están en [`results/gl.log`](results/gl.log) y [`results/gl-2.log`](results/gl-2.log):
 
 | | `flatten` | Experimento 1, sin vidrio, ida y vuelta | WebGL |
 |---|---|---|---|
-| GPU en el zoom-in, tal cual | 42,5 % | 11 % | 7 % |
-| GPU en el zoom-out, tal cual | 44,5 % | 12 % | 8 % |
-| GPU en el zoom-in, en vivo | 64,5 % | 41 % | 7,5 % |
-| GPU en el zoom-out, en vivo | 64 % | 48,5 % | 15 % |
-| Compositor (viz), en vivo | 17-18,5 % | 7-11 % | 2 % |
-| Del clic al movimiento, tal cual | 13,5 ms | 47 ms | 49 ms |
-| Del clic al movimiento, en vivo | 6,5 ms | 43 ms | 162,5 ms |
-| Cuadros perdidos, zoom-in / zoom-out, tal cual | 0,3 / 0 % | 0,5 / 0,8 % | 0,8 / 1,6 % |
-| Cuadros perdidos, zoom-in / zoom-out, en vivo | 0 / 5,3 % | 0,8 / 0,3 % | 0 / 3,2 % |
+| GPU en el zoom-in, tal cual | 42,5 % | 11 % | 5,5 % |
+| GPU en el zoom-out, tal cual | 44,5 % | 12 % | 6,5 % |
+| GPU en el zoom-in, en vivo | 64,5 % | 41 % | 5 % |
+| GPU en el zoom-out, en vivo | 64 % | 48,5 % | 6,5 % |
+| Compositor (viz), en vivo | 17-18,5 % | 7-11 % | 1,5 % |
+| Del clic al movimiento, tal cual | 13,5 ms | 47 ms | 45,5 ms |
+| Del clic al movimiento, en vivo | 6,5 ms | 43 ms | 149 ms |
+| Del clic al movimiento, zoom-out, en vivo | 11,5 ms | 57,5 ms | 58 ms |
+| Cuadros perdidos, zoom-in / zoom-out, tal cual | 0,3 / 0 % | 0,5 / 0,8 % | 0,5 / 0,8 % |
+| Cuadros perdidos, zoom-in / zoom-out, en vivo | 0 / 5,3 % | 0,8 / 0,3 % | 0,3 / 0,8 % |
+
+**El blur volvía a empezar al final del zoom-in** (lo vio Martin a ojo). Si `flatten` no tenía foto del tablero, la vista volvía al DOM un cuadro después del final, y la transición del `filter` del motor arrancaba otra vez de cero: un segundo entero de 0 a 3 px. Pasaba en el primer zoom de cada carga, porque el stream del tablero se apaga en la primera visita por el reloj (`no host`), y en vivo, en todos. Ahora el tablero queda en WebGL con la foto que el zoom le sacó al irse atrás, hasta que vuelve al frente. Y cuando una vista vuelve al DOM, por ejemplo antes de un zoom lateral, su efecto aparece donde estaba, sin transición. De paso, el zoom-out en vivo ya no tiene que fotografiar el tablero: arranca en 58 ms en vez de 141, y su GPU baja del 14 % al 6,5 %.
 
 El cambio de WebGL al DOM al final no se nota más que el de la foto a la vista real ([`film.mjs`](film.mjs)): 1,3 contra 1,1 en el zoom-in y 3,5 contra 3,2 en el zoom-out.
 
 Lo que dice:
 
-1. **Donde más gana es en vivo.** Con datos que cambian, el experimento 1 queda en 41-48 % de GPU, porque el tablero se queda sin foto y se mueve como DOM, con su vidrio y su filtro. WebGL lo mueve como textura: 7,5 % en el zoom-in y 15 % en el zoom-out.
-2. **Tal cual, baja un poco más que el experimento 1** (de 11 % a 7 % y de 12 % a 8 %), y el compositor trabaja la cuarta parte.
-3. **El costo es la misma espera del experimento 1:** ~45 ms para la foto de la vista que entra. En vivo sube a 160 ms, porque además hay que fotografiar el tablero (ver la última trampa).
-4. **Pierde un cuadro suelto por zoom:** casi siempre el primero del zoom-in o el último del zoom-out, cuando el tablero vuelve a ser DOM. Tal cual, ningún tirón. En vivo, algunos zoom-out tienen uno de 2-4 cuadros.
+1. **Donde más gana es en vivo.** Con datos que cambian, el experimento 1 queda en 41-48 % de GPU, porque el tablero se queda sin foto y se mueve como DOM, con su vidrio y su filtro. WebGL lo mueve como textura: 5 % en el zoom-in y 6,5 % en el zoom-out.
+2. **Tal cual, baja un poco más que el experimento 1** (de 11 % a 5,5 % y de 12 % a 6,5 %), y el compositor trabaja la cuarta parte.
+3. **El costo es la misma espera del experimento 1:** ~45 ms para la foto de la vista que entra. En vivo, el zoom-in sube a 150 ms, porque además hay que fotografiar el tablero (ver la última trampa). El zoom-out usa esa misma foto y arranca en 58 ms.
+4. **Pierde un cuadro suelto por zoom:** casi siempre el primero del zoom-in o el último del zoom-out, cuando el tablero vuelve a ser DOM. Ningún tirón, tampoco en vivo, desde el arreglo del blur.
 
 Trampas:
 
 - **El vidrio de la navegación de Zumly sobre WebGL.** El botón de volver, las bandas de profundidad y la barra de hermanos tienen `backdrop-filter`. Sobre un canvas WebGL que cambia en cada cuadro, la GPU espera a que ese canvas termine, también en cada cuadro (`WaitForCommandsToBeScheduled` en el trace). Con ese vidrio, el zoom-out costaba 21 % de GPU; sin él, 7 %. En la demo, mientras WebGL mueve las vistas, la navegación pierde el desenfoque y toma un fondo más opaco. `navglass=0` lo apaga siempre, para comparar. Si WebGL va al motor, esto va con él.
 - **El blur a tamaño completo.** Con σ chico, las pasadas corrían sobre 2564×1274 y el zoom-out costaba 28 %. Ahora nunca bajan del nivel 1.
 - **Ocultar el contenido con `visibility`, como hace `flatten`, rompe el stream del tablero.** Al volver, el stream ve cambiar la raíz del tablero, no tiene dónde repintar, hace cuadros completos y `flatten` lo apaga; WebGL tiene que fotografiar el tablero antes de cada zoom (147 ms). No encontré por qué. Se descartó: queda `opacity: 0`.
-- **En vivo, el stream del tablero se apaga desde la segunda visita, con WebGL o sin él.** Los valores cambian dentro de tarjetas con `backdrop-filter`. El stream no encuentra dónde repintarlos (`no host for <span.v>`), hace un cuadro completo de 320-420 ms y `flatten` lo apaga. Es el pendiente de SnapDOM con el vidrio y los gradientes. Con WebGL cuesta dos veces. Hay que fotografiar el tablero antes de cada zoom (~100 ms). Además, en el zoom-out el vidrio del tablero queda bajo `opacity: 0`, donde Chrome lo sigue dibujando: de ahí sale el 15 %, y el tirón.
+- **En vivo, el stream del tablero se apaga desde la segunda visita, con WebGL o sin él.** Los valores cambian dentro de tarjetas con `backdrop-filter`. El stream no encuentra dónde repintarlos (`no host for <span.v>`), hace un cuadro completo de 320-420 ms y `flatten` lo apaga. Es el pendiente de SnapDOM con el vidrio y los gradientes. Con WebGL hay que fotografiar el tablero antes de cada zoom-in (~100 ms). Antes del arreglo del blur costaba otra foto más en el zoom-out, y el tablero se ocultaba recién al arrancar: de ahí salían el 15 % de GPU y el tirón. Ahora queda oculto desde el final del zoom-in.
 
 Falta:
 
-- Mirarlo a ojo, sobre todo el desenfoque en movimiento y el final.
+- Mirarlo a ojo otra vez, después del arreglo del blur. Martin lo vio muy fluido.
 - Hermanos: hoy un zoom lateral cae al driver real, con todas las vistas en DOM.
 - Más de dos niveles (`lastView`): el código lo contempla, pero no está probado, porque la demo tiene dos.
 - Gestos (seguir el dedo), pérdida de contexto (hoy vuelve al DOM y no se recupera) y redimensionar en medio de un zoom.
@@ -441,7 +444,7 @@ Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs 
 4. **Marca de movimiento (opción 2)** como receta de la guía: la GPU del zoom baja de ~60 % a ~17 %.
 5. **La primera transición en frío:** 14,5 % de cuadros perdidos en la primera corrida. Ver si se puede calentar al cargar.
 6. **SnapDOM:** emular el vidrio una sola vez, gradientes como fondo sólido, tramos y `signal`. Abaratan el stream en vistas de vidrio. Se hace en su repo.
-7. **WebGL (idea 3).** Hecho de lleno el 28/10, en `dev` (ver Experimento 7): GPU del zoom de ~40 % a 7-8 %, y en vivo de ~65 % a 7,5-15 %, con la misma espera del experimento 1. Falta mirarlo a ojo, hermanos, gestos y más de dos niveles. Después: el movimiento en un worker.
+7. **WebGL (idea 3).** Hecho de lleno el 28/10, en `dev` (ver Experimento 7): GPU del zoom de ~40 % a 5,5-6,5 %, y en vivo de ~65 % a 5-6,5 %, con la misma espera del experimento 1. Martin lo vio muy fluido. Falta hermanos, gestos y más de dos niveles. Después: el movimiento en un worker.
 8. **Driver con View Transitions (opción 1).**
 9. **Foto ya desenfocada y la vista de dos niveles atrás como velo (opciones 7 y 8)**, si las tablets lo piden.
 
