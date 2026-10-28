@@ -157,6 +157,19 @@ describe('zoomOut over several levels', () => {
     app.destroy()
   })
 
+  it('lets the views riding along scale what Chrome already rastered', async () => {
+    const app = createApp({ transitions: { driver: 'css', duration: '120ms' } })
+    await app.init()
+    await zoomDown(app, 4)
+    const riders = ['v3', 'v4'].map(name => app.canvas.querySelector(`:scope > .z-view[data-view-name="${name}"]`))
+    const out = app.zoomOut(3)
+    // They follow c1 from the main thread every frame: will-change keeps their raster.
+    for (const el of riders) expect(el.style.willChange).toBe('transform')
+    await out
+    expect(riders.every(el => !el.isConnected)).toBe(true)
+    app.destroy()
+  })
+
   it('walks the router back several levels in a single transition', async () => {
     const app = createApp()
     await app.init()

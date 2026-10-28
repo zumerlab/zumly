@@ -2095,9 +2095,12 @@ export class Zumly {
       showViewContent(targetGrand)
     }
 
-    // Passengers follow c1 whatever the driver: read its pose every frame.
+    // Passengers follow c1 whatever the driver: read its pose every frame. Their scale changes
+    // from the main thread each frame; with will-change, Chrome scales what it already
+    // rastered instead of rastering them again every frame.
     let frame = null
     const c1Start = invertPose(stylePose(c1))
+    for (const { el } of passengerStart) el.style.willChange = 'transform'
     const follow = () => {
       const cs = getComputedStyle(c1)
       const delta = composePoses(poseFromTransform(cs.transformOrigin, cs.transform), c1Start)
