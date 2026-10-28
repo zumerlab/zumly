@@ -92,7 +92,8 @@ const effects = opt.fx !== 'pane'
 
 // With gl=1, the views behind take any effect the shader knows: CSS's filter functions, and
 // these, which only WebGL draws. Each is a few lines of GLSL (see EFFECTS in gl.js): v is the
-// amount, photo the view's size in CSS px, st the point of the view read.
+// amount, photo the view's size in CSS px, st the point of the view read, focus and focusSize
+// the trigger, progress how far the zoom has gone.
 const GL_EFFECTS = {
   // Squares of v CSS px.
   pixelate: { none: 0, uv: 'vec2 cell = v / photo; st = (floor(st / cell) + 0.5) * cell;' },
@@ -107,6 +108,20 @@ const GL_EFFECTS = {
   },
   // Darker toward the edges of the view, by v (0 to 1).
   vignette: { none: 0, color: 'rgb *= 1.0 - v * smoothstep(0.25, 0.75, distance(st, vec2(0.5)));' },
+  // The view going back is rubber: its trigger stays stuck to the view coming out of it, and
+  // the rest lags behind the zoom, more the farther it is, stretched between. Past the middle
+  // of the zoom it is let go: it catches up, overshoots and settles, wobbling. Where it pulls
+  // away from its own edges, there is nothing. v: how hard (1 is a lot). Flat at rest.
+  rubber: {
+    none: 0,
+    uv: `vec2 gap = max(abs(st - focus) - 0.5 * focusSize, 0.0) * photo;
+  float reach = 0.25 * max(photo.x, photo.y);
+  float hold = 0.55;
+  float back = (progress - hold) / (1.0 - hold);
+  float k = progress < hold ? smoothstep(0.0, hold, progress) : cos(back * 9.42478) * (1.0 - back) * (1.0 - back);
+  st = focus + (st - focus) * (1.0 + 0.8 * v * k * (1.0 - exp(-length(gap) / reach)));`,
+    color: 'if (st.x < 0.0 || st.y < 0.0 || st.x > 1.0 || st.y > 1.0) a = 0.0;',
+  },
 }
 // The effects of the view behind and the one behind it, as the engine takes them.
 const LOOKS = {
@@ -114,13 +129,14 @@ const LOOKS = {
   mono: ['grayscale(1) blur(2px) brightness(.6)', 'grayscale(1) blur(6px) brightness(.4)'],
   pixel: ['pixelate(10px) saturate(1.4) brightness(.6)', 'pixelate(20px) brightness(.4)'],
   lens: ['chroma(3px) blur(1.5px) vignette(.8) brightness(.75)', 'chroma(6px) blur(5px) vignette(1) brightness(.5)'],
+  rubber: ['rubber(1) blur(1px) brightness(.75)', 'rubber(1) blur(4px) brightness(.5)'],
 }
 
 const GROUPS = [
   { label: 'Fotos', key: 'flatten', value: opt.flatten ? '1' : '0', options: [['1', 'flatten'], ['0', 'sin flatten']] },
   { label: 'Efecto', key: 'fx', value: opt.fx, options: [['filter', 'filter animado'], ['instant', 'de golpe'], ['pane', 'capa de vidrio']] },
 ]
-const LOOK_NAMES = [['css', 'blur'], ['mono', 'gris'], ['pixel', 'píxeles'], ['lens', 'lente']]
+const LOOK_NAMES = [['css', 'blur'], ['mono', 'gris'], ['pixel', 'píxeles'], ['lens', 'lente'], ['rubber', 'goma']]
 const TOGGLES = [
   { key: 'moving', on: '1', label: 'marca de movimiento' },
   { key: 'wc', on: 'lean', label: 'will-change justo' },

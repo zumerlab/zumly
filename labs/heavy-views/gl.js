@@ -82,8 +82,10 @@ void main () {
  * The effects the shader draws, by the name they take in an effect string. none: the value that
  * leaves a view as it is. blur is drawn apart, in passes of its own. The rest is GLSL run on
  * each pixel of a view, in this order, with v (the amount, on its way from none to its value),
- * photo (the view's photo, in CSS px), time (s), and tex and lod (the view's texture, already
- * blurred):
+ * photo (the view's photo, in CSS px), focus and focusSize (the trigger zoomed into: its center
+ * and size, in st; without one, the middle of the view),
+ * progress (how far the zoom that sends the view back has gone, 0 to 1; at rest, 1), time (s),
+ * and tex and lod (the view's texture, already blurred):
  * - uv: may move st, the point of the photo read, from 0 to 1 across it;
  * - color: may change rgb and a, not premultiplied, and may read tex again around st.
  * These are CSS's filter functions, with CSS's formulas; createGL takes more.
@@ -123,6 +125,9 @@ uniform sampler2D tex;
 uniform float lod;
 uniform float alpha;
 uniform vec2 photo;
+uniform vec2 focus;
+uniform vec2 focusSize;
+uniform float progress;
 uniform float time;
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
 ${list.map(([name]) => `uniform float ${glslName(name)};`).join('\n')}
@@ -202,7 +207,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     gl.uniform1i(uniforms.tex, 0)
     return { program, u: uniforms }
   }
-  const base = ['rect', 'origin', 'm', 'move', 'pos', 'size', 'yDir', 'tex', 'lod', 'alpha', 'photo', 'time']
+  const base = ['rect', 'origin', 'm', 'move', 'pos', 'size', 'yDir', 'tex', 'lod', 'alpha', 'photo', 'focus', 'focusSize', 'progress', 'time']
   const linkView = fx => link(VERT, fragment(fx), [...base, ...Object.keys(fx).map(glslName)])
   let effects = { ...EFFECTS, ...more }
   let view
@@ -518,6 +523,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     gl.uniform4f(u.m, 1, 0, 0, 1)
     gl.uniform2f(u.move, 0, 0)
     setEffect(NONE)
+    gl.uniform1f(u.progress, 1)
     gl.uniform1f(u.alpha, 1)
     gl.uniform1f(u.lod, 0)
     for (const { rec, rect } of [...parts, { rec: base, rect: rects[0] }]) {
@@ -584,9 +590,29 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     return { rec, ms: Math.round(performance.now() - t) }
   }
 
-  /** A layer to draw: a view with its texture, matrix around its origin, and effect. */
-  function layer (view, rec, matrix, origin, effect, alpha = 1) {
-    return { view, rec, matrix, origin, pos: [view.offsetLeft, view.offsetTop], box: [view.offsetWidth, view.offsetHeight], effect, alpha }
+  /** view → its trigger's center and size, in CSS px from its border box (see focusOf). */
+  const focuses = new WeakMap()
+
+  /**
+   * Where the trigger zoomed into sits in a view, kept for later: the engine unmarks it before a
+   * zoom-out moves. Read while the view only scales and moves.
+   */
+  function focusOf (view) {
+    const trigger = view.querySelector('.zoom-me.zoomed')
+    if (trigger) {
+      const v = view.getBoundingClientRect()
+      const t = trigger.getBoundingClientRect()
+      const scale = rootScale(view)
+      focuses.set(view, [(t.left + t.width / 2 - v.left) / scale, (t.top + t.height / 2 - v.top) / scale, t.width / scale, t.height / scale])
+    }
+    return focuses.get(view)
+  }
+
+  /** A layer to draw: a view with its texture, matrix around its origin, effect and how far its zoom has gone. */
+  function layer (view, rec, matrix, origin, effect, alpha = 1, progress = 1) {
+    const box = [view.offsetWidth, view.offsetHeight]
+    const focus = focuses.get(view) || [box[0] / 2, box[1] / 2, 0, 0]
+    return { view, rec, matrix, origin, pos: [view.offsetLeft, view.offsetTop], box, effect, alpha, progress, focus }
   }
 
   function draw (layers) {
@@ -606,11 +632,14 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     gl.uniform2f(u.size, canvas.width / dpr, canvas.height / dpr)
     gl.uniform1f(u.yDir, -1)
     gl.uniform1f(u.time, performance.now() / 1000)
-    layers.forEach(({ rec, matrix: k, origin, pos, box, effect, alpha }, i) => {
+    layers.forEach(({ rec, matrix: k, origin, pos, box, effect, alpha, progress, focus }, i) => {
       if (alpha <= 0) return
       const rect = rectOf(rec, box)
       gl.uniform4f(u.rect, ...rect)
       gl.uniform2f(u.photo, rect[2], rect[3])
+      gl.uniform2f(u.focus, (focus[0] - rect[0]) / rect[2], (focus[1] - rect[1]) / rect[3])
+      gl.uniform2f(u.focusSize, focus[2] / rect[2], focus[3] / rect[3])
+      gl.uniform1f(u.progress, progress)
       gl.uniform2f(u.origin, origin[0], origin[1])
       gl.uniform4f(u.m, k.a, k.b, k.c, k.d)
       gl.uniform2f(u.move, k.e, k.f)
@@ -823,6 +852,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     incoming.classList.replace('is-new-current-view', 'is-current-view')
     incoming.classList.remove('zoom-current-view', 'has-no-events')
     const order = views()
+    for (const { view } of moves) focusOf(view)
     const layers = moves.map(({ view, origin, from, to, fade }) => ({
       view,
       fade,
@@ -880,6 +910,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
       }
     }
     const order = views()
+    for (const { view } of entries) focusOf(view)
     const layers = entries.map(({ view, state, role }) => {
       const { backwardState: back, forwardState: front } = state
       const originStr = forward ? back.origin : front.origin
@@ -904,7 +935,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
       return layers.map(l => {
         const t = curve(clamp01((elapsed - l.role * stagger) / ms))
         const alpha = !forward && l.role === 0 ? clamp01((1 - clamp01(elapsed / ms)) / FADE) : 1
-        return layer(l.view, l.rec, interpolateMatrix(l.from, l.to, t), l.origin, mixEffect(l.fx[0], l.fx[1], fxT), alpha)
+        return layer(l.view, l.rec, interpolateMatrix(l.from, l.to, t), l.origin, mixEffect(l.fx[0], l.fx[1], fxT), alpha, forward ? fxT : 1 - fxT)
       })
     }
     play(total, at, () => {
