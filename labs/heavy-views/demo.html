@@ -85,14 +85,42 @@ const opt = {
   glass: q.get('glass') !== '0', // with launch: glass=0 takes that photo without backdrop-filter
   out: q.get('out') === '1', // with launch: a zoom-out also photographs the view leaving before it shrinks
   gl: q.get('gl') === '1', // experiment 7: zooms drawn with WebGL, and the views behind as textures at rest
+  look: q.get('look') || 'css', // with gl: the effects of the views behind (LOOKS)
   driver: q.get('driver') || 'css',
 }
 const effects = opt.fx !== 'pane'
+
+// With gl=1, the views behind take any effect the shader knows: CSS's filter functions, and
+// these, which only WebGL draws. Each is a few lines of GLSL (see EFFECTS in gl.js): v is the
+// amount, photo the view's size in CSS px, st the point of the view read.
+const GL_EFFECTS = {
+  // Squares of v CSS px.
+  pixelate: { none: 0, uv: 'vec2 cell = v / photo; st = (floor(st / cell) + 0.5) * cell;' },
+  // Red and blue apart by v CSS px, as through a cheap lens.
+  chroma: {
+    none: 0,
+    color: `vec2 d = vec2(v / photo.x, 0.0);
+  vec4 r = textureLod(tex, st + d, lod);
+  vec4 b = textureLod(tex, st - d, lod);
+  rgb.r = r.a > 0.0 ? r.r / r.a : 0.0;
+  rgb.b = b.a > 0.0 ? b.b / b.a : 0.0;`,
+  },
+  // Darker toward the edges of the view, by v (0 to 1).
+  vignette: { none: 0, color: 'rgb *= 1.0 - v * smoothstep(0.25, 0.75, distance(st, vec2(0.5)));' },
+}
+// The effects of the view behind and the one behind it, as the engine takes them.
+const LOOKS = {
+  css: ['blur(3px) brightness(.7)', 'blur(8px) brightness(.5)'],
+  mono: ['grayscale(1) blur(2px) brightness(.6)', 'grayscale(1) blur(6px) brightness(.4)'],
+  pixel: ['pixelate(10px) saturate(1.4) brightness(.6)', 'pixelate(20px) brightness(.4)'],
+  lens: ['chroma(3px) blur(1.5px) vignette(.8) brightness(.75)', 'chroma(6px) blur(5px) vignette(1) brightness(.5)'],
+}
 
 const GROUPS = [
   { label: 'Fotos', key: 'flatten', value: opt.flatten ? '1' : '0', options: [['1', 'flatten'], ['0', 'sin flatten']] },
   { label: 'Efecto', key: 'fx', value: opt.fx, options: [['filter', 'filter animado'], ['instant', 'de golpe'], ['pane', 'capa de vidrio']] },
 ]
+const LOOK_NAMES = [['css', 'blur'], ['mono', 'gris'], ['pixel', 'píxeles'], ['lens', 'lente']]
 const TOGGLES = [
   { key: 'moving', on: '1', label: 'marca de movimiento' },
   { key: 'wc', on: 'lean', label: 'will-change justo' },
@@ -141,6 +169,11 @@ const lab = group('Lab')
 for (const { key, on, label } of LAB) {
   const pressed = q.get(key) === on
   button(lab, label, pressed, () => go(key, pressed ? null : on))
+}
+// In the second row, so the canvas keeps the size it has in the measurements.
+if (opt.gl) {
+  const looks = group('Look')
+  for (const [v, text] of LOOK_NAMES) button(looks, text, v === opt.look, () => go('look', v))
 }
 const run = button(group(''), '▶ 3 zooms', null, () => runByEye())
 run.id = 'run'
@@ -198,8 +231,9 @@ const app = new Zumly({
   views: { board: board(), detail },
   transitions: {
     driver: opt.driver,
-    // Blur and dim the board behind, as the guide does; with fx=pane the glass does it.
-    effects: effects ? ['blur(3px) brightness(.7)', 'blur(8px) brightness(.5)'] : ['none', 'none'],
+    // Blur and dim the board behind, as the guide does (with gl=1, the look chosen); with fx=pane
+    // the glass does it.
+    effects: effects ? (opt.gl && LOOKS[opt.look]) || LOOKS.css : ['none', 'none'],
     animateEffects: opt.fx !== 'instant',
   },
   // The stream is wrapped to log its frames (window.streamLog), for debugging flatten; with gl=1
@@ -417,18 +451,20 @@ app.transitionDriver = {
         done()
       })
     }
-    // gl=1: WebGL draws zooms in and out once their textures are ready; anything else (a sibling,
-    // or textures it could not get) runs on the real driver, with every view back to DOM.
-    if (glr && !glr.lost && (spec.type === 'zoomIn' || spec.type === 'zoomOut')) {
-      launch.prepare(spec, step, s => glr.prepare(s))
-        .catch(error => { window.notes.push({ t: Math.round(performance.now()), msg: `gl: ${error.message}` }) })
-        .then(prepared => prepared ? go((s, cb) => glr.run(s, prepared, cb)) : (glr.release(), go()))
-      return
-    }
-    if (glr) {
+    // gl=1: WebGL draws zooms in and out, and moves to a sibling, once their textures are ready.
+    // Anything else (textures it could not get, keepAlive 'visible') runs on the real driver,
+    // with every view back to DOM until it ends.
+    const dom = () => {
       glr.release()
       return go((s, cb) => real.runTransition(s, () => { cb(); requestAnimationFrame(() => glr.sync()) }))
     }
+    if (glr && !glr.lost && (spec.type === 'zoomIn' || spec.type === 'zoomOut' || spec.type === 'lateral')) {
+      launch.prepare(spec, step, s => glr.prepare(s))
+        .catch(error => { window.notes.push({ t: Math.round(performance.now()), msg: `gl: ${error.message}` }) })
+        .then(prepared => prepared ? go((s, cb) => glr.run(s, prepared, cb)) : dom())
+      return
+    }
+    if (glr) return dom()
     // The view leaving a zoom-out is removed at the end, photo and all. Whatever happens while
     // preparing, the zoom still moves.
     if (opt.launch && (spec.type === 'zoomIn' || (opt.out && spec.type === 'zoomOut'))) {
@@ -442,6 +478,7 @@ if (opt.gl) {
     photo: (view, offscreen, options) => launch.photo(view, offscreen, options),
     flattener: () => app._flattener,
     log: msg => window.notes.push({ t: Math.round(performance.now()), msg }),
+    effects: GL_EFFECTS,
   })
 }
 

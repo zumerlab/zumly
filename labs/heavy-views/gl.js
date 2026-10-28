@@ -1,8 +1,9 @@
 // gl=1 (experiment 7, all in): zooms drawn with WebGL. One WebGL canvas sits in Zumly's canvas,
 // under the views. While views move, each one is a texture in it and the views themselves are
 // hidden (opacity 0, so they still answer hit-tests). At rest the views behind stay textures,
-// with the engine's effects (blur, brightness) in the shader instead of a CSS filter, and only
-// the current view is DOM.
+// with the engine's effects in the shader instead of a CSS filter, and only the current view is
+// DOM. The effects are the engine's strings (transitions.effects), in CSS filter syntax; any
+// function the shader knows works, CSS's or one of its own (see EFFECTS).
 //
 // Textures: a view behind comes from flatten's stream through streamTexture, which uploads only
 // the rects each frame changed; the view coming in, or leaving a zoom-out, is a photo taken
@@ -47,19 +48,6 @@ void main () {
   uv = corner;
 }`
 
-const FRAG = `#version 300 es
-precision highp float;
-uniform sampler2D tex;
-uniform float lod;
-uniform float bright;
-uniform float alpha;
-in vec2 uv;
-out vec4 color;
-void main () {
-  vec4 c = textureLod(tex, uv, lod);
-  color = vec4(c.rgb * bright, c.a) * alpha;
-}`
-
 // One pass of a separable Gaussian, into a texture the size of the mip level it reads.
 const BLUR_VERT = `#version 300 es
 in vec2 corner;
@@ -90,17 +78,83 @@ void main () {
   color = sum / total;
 }`
 
-const NONE = { blur: 0, bright: 1 }
-
-/** The parts of an effect the shader draws: blur(px) and brightness(). */
-export function parseEffect (value) {
-  if (!value || value === 'none') return NONE
-  const blur = /blur\(\s*([\d.]+)px\s*\)/.exec(value)
-  const bright = /brightness\(\s*([\d.]+)(%?)\s*\)/.exec(value)
-  return { blur: blur ? +blur[1] : 0, bright: bright ? +bright[1] / (bright[2] ? 100 : 1) : 1 }
+/**
+ * The effects the shader draws, by the name they take in an effect string. none: the value that
+ * leaves a view as it is. blur is drawn apart, in passes of its own. The rest is GLSL run on
+ * each pixel of a view, in this order, with v (the amount, on its way from none to its value),
+ * photo (the view's photo, in CSS px), time (s), and tex and lod (the view's texture, already
+ * blurred):
+ * - uv: may move st, the point of the photo read, from 0 to 1 across it;
+ * - color: may change rgb and a, not premultiplied, and may read tex again around st.
+ * These are CSS's filter functions, with CSS's formulas; createGL takes more.
+ */
+export const EFFECTS = {
+  blur: { none: 0 },
+  brightness: { none: 1, color: 'rgb *= v;' },
+  contrast: { none: 1, color: 'rgb = (rgb - 0.5) * v + 0.5;' },
+  saturate: { none: 1, color: 'rgb = mix(vec3(dot(rgb, LUMA)), rgb, v);' },
+  grayscale: { none: 0, color: 'rgb = mix(rgb, vec3(dot(rgb, LUMA)), v);' },
+  sepia: { none: 0, color: 'rgb = mix(rgb, mat3(0.393, 0.349, 0.272, 0.769, 0.686, 0.534, 0.189, 0.168, 0.131) * rgb, v);' },
+  invert: { none: 0, color: 'rgb = mix(rgb, 1.0 - rgb, v);' },
+  opacity: { none: 1, color: 'a *= v;' },
+  'hue-rotate': {
+    none: 0,
+    color: `float k = cos(radians(v));
+  float s = sin(radians(v));
+  rgb = vec3(
+    dot(vec3(0.213 + k * 0.787 - s * 0.213, 0.715 - k * 0.715 - s * 0.715, 0.072 - k * 0.072 + s * 0.928), rgb),
+    dot(vec3(0.213 - k * 0.213 + s * 0.143, 0.715 + k * 0.285 + s * 0.140, 0.072 - k * 0.072 - s * 0.283), rgb),
+    dot(vec3(0.213 - k * 0.213 - s * 0.787, 0.715 - k * 0.715 + s * 0.715, 0.072 + k * 0.928 + s * 0.072), rgb));`,
+  },
 }
 
-const mixEffect = (a, b, t) => ({ blur: lerp(a.blur, b.blur, t), bright: lerp(a.bright, b.bright, t) })
+const glslName = name => 'fx_' + name.replace(/[^a-zA-Z0-9]/g, '_')
+const glslFloat = x => Number.isInteger(x) ? `${x}.0` : String(x)
+
+/** The view's fragment shader, with every effect in it: one at its none costs a comparison. */
+function fragment (effects) {
+  const list = Object.entries(effects).filter(([name]) => name !== 'blur')
+  const uvs = list.filter(([, e]) => e.uv)
+  const colors = list.filter(([, e]) => e.color)
+  const on = ([name, e]) => `${glslName(name)} != ${glslFloat(e.none)}`
+  return `#version 300 es
+precision highp float;
+uniform sampler2D tex;
+uniform float lod;
+uniform float alpha;
+uniform vec2 photo;
+uniform float time;
+const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
+${list.map(([name]) => `uniform float ${glslName(name)};`).join('\n')}
+${uvs.map(([name, e]) => `void ${glslName(name)}_uv (inout vec2 st, float v) {\n  ${e.uv}\n}`).join('\n')}
+${colors.map(([name, e]) => `void ${glslName(name)}_color (inout vec3 rgb, inout float a, vec2 st, float v) {\n  ${e.color}\n}`).join('\n')}
+in vec2 uv;
+out vec4 color;
+void main () {
+  vec2 st = uv;
+${uvs.map(fx => `  if (${on(fx)}) ${glslName(fx[0])}_uv(st, ${glslName(fx[0])});`).join('\n')}
+  vec4 c = textureLod(tex, st, lod);
+  float a = c.a;
+  vec3 rgb = a > 0.0 ? c.rgb / a : vec3(0.0);
+${colors.map(fx => `  if (${on(fx)}) { ${glslName(fx[0])}_color(rgb, a, st, ${glslName(fx[0])}); rgb = clamp(rgb, 0.0, 1.0); }`).join('\n')}
+  a = clamp(a, 0.0, 1.0);
+  color = vec4(rgb * a, a) * alpha;
+}`
+}
+
+const NONE = {}
+const UNITS = { '': 1, px: 1, '%': 0.01, deg: 1, turn: 360, rad: 180 / Math.PI }
+
+/** An effect string as amounts by name: 'blur(3px) brightness(70%)' → { blur: 3, brightness: 0.7 }. */
+export function parseEffect (value) {
+  const fx = {}
+  if (!value || value === 'none') return fx
+  for (const [, name, number, unit = ''] of value.matchAll(/([a-z][\w-]*)\(\s*(-?[\d.]+)\s*(px|%|deg|turn|rad)?\s*\)/gi)) {
+    fx[name.toLowerCase()] = +number * UNITS[unit.toLowerCase()]
+  }
+  return fx
+}
+
 const clamp01 = x => Math.max(0, Math.min(1, x))
 const rootScale = view => {
   const m = new DOMMatrix(getComputedStyle(view).transform)
@@ -117,9 +171,10 @@ function compile (gl, type, source) {
 
 /**
  * @param {object} app - the Zumly instance
- * @param {{ photo: (view: HTMLElement, offscreen: boolean, options?: object) => Promise<{canvas: HTMLCanvasElement, ms: number}>, flattener: () => object|null, log: (msg: string) => void }} deps
+ * @param {{ photo: (view: HTMLElement, offscreen: boolean, options?: object) => Promise<{canvas: HTMLCanvasElement, ms: number}>, flattener: () => object|null, log: (msg: string) => void, effects?: Record<string, { none: number, uv?: string, color?: string }> }} deps
+ *   effects: more effects for the shader, by name (see EFFECTS); one with the name of a CSS one replaces it
  */
-export function createGL (app, { photo, flattener, log }) {
+export function createGL (app, { photo, flattener, log, effects: more = {} }) {
   const canvas = document.createElement('canvas')
   canvas.className = 'z-gl'
   canvas.setAttribute('aria-hidden', 'true')
@@ -147,7 +202,37 @@ export function createGL (app, { photo, flattener, log }) {
     gl.uniform1i(uniforms.tex, 0)
     return { program, u: uniforms }
   }
-  const view = link(VERT, FRAG, ['rect', 'origin', 'm', 'move', 'pos', 'size', 'yDir', 'tex', 'lod', 'bright', 'alpha'])
+  const base = ['rect', 'origin', 'm', 'move', 'pos', 'size', 'yDir', 'tex', 'lod', 'alpha', 'photo', 'time']
+  const linkView = fx => link(VERT, fragment(fx), [...base, ...Object.keys(fx).map(glslName)])
+  let effects = { ...EFFECTS, ...more }
+  let view
+  try {
+    view = linkView(effects)
+  } catch (error) {
+    // A slip in an effect's GLSL leaves CSS's effects, not a page without WebGL.
+    log(`gl: effects left out (${error.message.trim()})`)
+    effects = { ...EFFECTS }
+    view = linkView(effects)
+  }
+  const fxList = Object.entries(effects).filter(([name]) => name !== 'blur')
+  const unknown = new Set()
+  /** An effect into the view's shader: each one at its amount, or at none. */
+  const setEffect = (effect) => {
+    for (const [name, e] of fxList) gl.uniform1f(view.u[glslName(name)], effect[name] ?? e.none)
+    for (const name in effect) {
+      if (effects[name] || unknown.has(name)) continue
+      unknown.add(name)
+      log(`gl: no effect "${name}"`)
+    }
+  }
+  const mixEffect = (a, b, t) => {
+    const out = {}
+    for (const name of new Set([...Object.keys(a), ...Object.keys(b)])) {
+      const none = effects[name]?.none ?? 0
+      out[name] = lerp(a[name] ?? none, b[name] ?? none, t)
+    }
+    return out
+  }
   const blurPass = link(BLUR_VERT, BLUR_FRAG, ['tex', 'lod', 'dir', 'sigma'])
   const u = view.u
   const quad = gl.createBuffer()
@@ -330,9 +415,10 @@ export function createGL (app, { photo, flattener, log }) {
    * zoom never shows more). Only bands outside the canvas while the view is in front, so nothing
    * appears or goes when a zoom starts or ends; and only for a view that scrolls, or that asks
    * for it with data-gl-overflow, since overflow: hidden may be hiding something on purpose.
+   * front: where the view's border box sits in the canvas when it is in front.
    * Each band: x, y, w, h in the view's content (as scrolled), bx, by from its border box.
    */
-  function bandsOf (el) {
+  function bandsOf (el, front) {
     const style = getComputedStyle(el)
     if (!/auto|scroll/.test(style.overflowX + style.overflowY) && !('glOverflow' in el.dataset)) return []
     const { scrollLeft: sl, scrollTop: st, scrollWidth: sw, scrollHeight: sh, clientWidth: cw, clientHeight: ch } = el
@@ -343,28 +429,28 @@ export function createGL (app, { photo, flattener, log }) {
     const x1 = Math.min(sw, sl + cw + width)
     const y0 = Math.max(0, st - height)
     const y1 = Math.min(sh, st + ch + height)
-    const box = el.getBoundingClientRect()
-    const area = app.canvas.getBoundingClientRect()
     return [
       { x: x0, y: y0, w: x1 - x0, h: st - y0 },
       { x: x0, y: st + ch, w: x1 - x0, h: y1 - st - ch },
       { x: x0, y: st, w: sl - x0, h: ch },
       { x: sl + cw, y: st, w: x1 - sl - cw, h: ch },
     ].filter(b => b.w >= 1 && b.h >= 1).map(b => ({ ...b, bx: el.clientLeft - sl + b.x, by: el.clientTop - st + b.y })).filter(b => {
-      const left = box.left + b.bx
-      const top = box.top + b.by
-      return left >= area.right - 1 || left + b.w <= area.left + 1 || top >= area.bottom - 1 || top + b.h <= area.top + 1
+      const left = front[0] + b.bx
+      const top = front[1] + b.by
+      return left >= width - 1 || left + b.w <= 1 || top >= height - 1 || top + b.h <= 1
     })
   }
 
   /**
    * Photos of the bands. SnapDOM draws a view inside its box, so the view grows to its whole
-   * content for a moment, moved back by its scroll so it shows the same, and its real content
-   * comes back if flatten had hidden it (under the photo, so it shows the same too).
+   * content for a moment, and its real content comes back if flatten had hidden it. In front,
+   * it stays where it is, moved back by its scroll: it shows the same, its real content under
+   * flatten's photo. Behind (offscreen), it is hidden and WebGL draws it: it goes out of sight,
+   * at its own size, and shows itself there to SnapDOM.
    */
-  async function bandShots (el, bands, glass) {
+  async function bandShots (el, bands, glass, offscreen) {
     const { scrollLeft: sl, scrollTop: st } = el
-    const props = ['width', 'height', 'box-sizing', 'overflow', 'transform']
+    const props = ['width', 'height', 'box-sizing', 'overflow', 'transform', 'opacity']
     const kept = props.map(p => [p, el.style.getPropertyValue(p), el.style.getPropertyPriority(p)])
     const transform = getComputedStyle(el).transform
     const flat = el.classList.contains('z-flat')
@@ -375,7 +461,12 @@ export function createGL (app, { photo, flattener, log }) {
     set('height', `${height}px`)
     set('box-sizing', 'border-box')
     set('overflow', 'visible')
-    set('transform', `translate(${-sl}px, ${-st}px)${transform === 'none' ? '' : ` ${transform}`}`)
+    if (offscreen) {
+      set('transform', 'translate(-200vw, 0)')
+      set('opacity', '1')
+    } else {
+      set('transform', `translate(${-sl}px, ${-st}px)${transform === 'none' ? '' : ` ${transform}`}`)
+    }
     el.classList.remove('z-flat')
     try {
       const box = el.getBoundingClientRect()
@@ -426,7 +517,7 @@ export function createGL (app, { photo, flattener, log }) {
     gl.uniform2f(u.origin, 0, 0)
     gl.uniform4f(u.m, 1, 0, 0, 1)
     gl.uniform2f(u.move, 0, 0)
-    gl.uniform1f(u.bright, 1)
+    setEffect(NONE)
     gl.uniform1f(u.alpha, 1)
     gl.uniform1f(u.lod, 0)
     for (const { rec, rect } of [...parts, { rec: base, rect: rects[0] }]) {
@@ -443,12 +534,11 @@ export function createGL (app, { photo, flattener, log }) {
   }
 
   /**
-   * Whether a band comes into the canvas during a zoom-in that takes the view to `to` around
-   * `origin`. The way there scales and moves the view steadily, so whatever a point of the view
-   * does, it does by the end: a band outside the canvas at both ends stays out all the way.
+   * Whether a band comes into the canvas on the way to k (around origin). The way there scales
+   * and moves the view steadily, so whatever a point of the view does, it does by the end: a
+   * band outside the canvas at both ends stays out all the way.
    */
-  function reaches (el, band, origin, to) {
-    const k = new DOMMatrix(to)
+  function reaches (el, band, origin, k) {
     const [ox, oy] = origin.split(' ').map(parseFloat)
     const xs = []
     const ys = []
@@ -460,16 +550,26 @@ export function createGL (app, { photo, flattener, log }) {
   }
 
   /**
-   * The view's texture widened with what its overflow hides, or null when it hides nothing the
-   * zoom shows (state: the view's stage in the zoom-in). glass: whether the bands keep their
-   * glass, as the view's texture does.
+   * The view's texture (base) widened with what its overflow hides, or null when a move to k
+   * (around origin) shows nothing it lacks. glass: whether the bands keep their glass, as the
+   * view's texture does. offscreen: the view is behind, hidden (see bandShots).
    */
-  async function widen (el, base, glass, state) {
-    const bands = bandsOf(el).filter(b => reaches(el, b, state.backwardState.origin, state.forwardState.transform))
+  async function widen (el, base, glass, origin, k, offscreen = false) {
+    const box = [el.offsetWidth, el.offsetHeight]
+    // In front, where it is; behind, where it was in front, as a view that fills the canvas is.
+    let front = [el.offsetLeft, el.offsetTop]
+    if (!offscreen) {
+      const r = el.getBoundingClientRect()
+      const area = app.canvas.getBoundingClientRect()
+      front = [r.left - area.left, r.top - area.top]
+    }
+    const [rx, ry, rw, rh] = rectOf(base, box)
+    const has = b => b.bx >= rx && b.by >= ry && b.bx + b.w <= rx + rw && b.by + b.h <= ry + rh
+    const bands = bandsOf(el, front).filter(b => !has(b) && reaches(el, b, origin, k))
     if (!bands.length) return null
     const t = performance.now()
-    const ratio = dpr * rootScale(el)
-    const shots = await bandShots(el, bands, glass)
+    const ratio = dpr * (offscreen ? 1 : rootScale(el))
+    const shots = await bandShots(el, bands, glass, offscreen)
     const parts = shots.map(({ band, shot }) => {
       const rec = upload(shot, ratio)
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
@@ -479,7 +579,7 @@ export function createGL (app, { photo, flattener, log }) {
       return { rec, rect: [band.bx - (w - band.w) / 2, band.by - (h - band.h) / 2, w, h] }
     })
     mips(base)
-    const rec = composite(base, [el.offsetWidth, el.offsetHeight], parts)
+    const rec = composite(base, box, parts)
     for (const { rec: part } of parts) gl.deleteTexture(part.texture)
     return { rec, ms: Math.round(performance.now() - t) }
   }
@@ -495,7 +595,7 @@ export function createGL (app, { photo, flattener, log }) {
     // Blurs first: they draw into their own framebuffers. CSS blurs a view in its own pixels,
     // before its transform, so σ is in texels of the photo.
     const textures = layers.map(({ rec, effect, alpha }) => {
-      const sigma = effect.blur * rec.ratio
+      const sigma = (effect.blur || 0) * rec.ratio
       if (alpha <= 0 || sigma < 0.5) return null
       return blurred(rec, sigma)
     })
@@ -505,14 +605,17 @@ export function createGL (app, { photo, flattener, log }) {
     gl.clear(gl.COLOR_BUFFER_BIT)
     gl.uniform2f(u.size, canvas.width / dpr, canvas.height / dpr)
     gl.uniform1f(u.yDir, -1)
+    gl.uniform1f(u.time, performance.now() / 1000)
     layers.forEach(({ rec, matrix: k, origin, pos, box, effect, alpha }, i) => {
       if (alpha <= 0) return
-      gl.uniform4f(u.rect, ...rectOf(rec, box))
+      const rect = rectOf(rec, box)
+      gl.uniform4f(u.rect, ...rect)
+      gl.uniform2f(u.photo, rect[2], rect[3])
       gl.uniform2f(u.origin, origin[0], origin[1])
       gl.uniform4f(u.m, k.a, k.b, k.c, k.d)
       gl.uniform2f(u.move, k.e, k.f)
       gl.uniform2f(u.pos, pos[0], pos[1])
-      gl.uniform1f(u.bright, effect.bright)
+      setEffect(effect)
       gl.uniform1f(u.alpha, alpha)
       if (textures[i]) {
         gl.bindTexture(gl.TEXTURE_2D, textures[i])
@@ -559,7 +662,9 @@ export function createGL (app, { photo, flattener, log }) {
         dropPhoto(view)
         dropWide(view)
       }
-      const rec = current ? null : behind(view)
+      // Only the views behind: a sibling keepAlive hid is not drawn either.
+      const back = view.classList.contains('is-previous-view') || view.classList.contains('is-last-view')
+      const rec = back ? behind(view) : null
       if (!rec) {
         show(view)
         continue
@@ -579,6 +684,7 @@ export function createGL (app, { photo, flattener, log }) {
    */
   async function prepare (spec) {
     if (lost) return null
+    if (spec.type === 'lateral') return prepareLateral(spec)
     const { type, currentView, previousView, lastView } = spec
     const recs = new Map()
     const info = { photoMs: 0 }
@@ -597,7 +703,8 @@ export function createGL (app, { photo, flattener, log }) {
       }
       // The view going behind grows: what its overflow hides comes into sight.
       if (type === 'zoomIn' && view === previousView) {
-        const wider = await widen(view, r, glass, spec.currentStage.views[1]).catch(error => log(`gl: no overflow (${error.message})`))
+        const { backwardState: from, forwardState: to } = spec.currentStage.views[1]
+        const wider = await widen(view, r, glass, from.origin, new DOMMatrix(to.transform)).catch(error => log(`gl: no overflow (${error.message})`))
         if (wider) {
           wide.set(view, wider.rec)
           r = wider.rec
@@ -611,8 +718,151 @@ export function createGL (app, { photo, flattener, log }) {
     return { recs, info }
   }
 
-  /** Draw a zoom-in or zoom-out with the prepared textures; done() once it ends. */
+  /**
+   * A move to a sibling: the sibling coming in photographed out of sight, the view leaving from
+   * its stream (or photographed where it is), the views behind as they are drawn. With keepAlive
+   * 'visible' the view leaving stays where it is, in the DOM, over everything WebGL draws: the
+   * real driver runs it.
+   */
+  async function prepareLateral (spec) {
+    const { currentView: incoming, previousView: outgoing, backView, lastView } = spec
+    if (spec.keepAlive === 'visible') return null
+    const recs = new Map()
+    const info = { photoMs: 0 }
+    for (const view of [backView, lastView]) {
+      if (!view) continue
+      const r = behind(view)
+      if (!r) return null
+      recs.set(view, r)
+    }
+    const { rec, ms } = await snapshot(incoming, true)
+    recs.set(incoming, rec)
+    info.photoMs = ms
+    let r = behind(outgoing)
+    if (!r) {
+      const shot = await snapshot(outgoing, false)
+      r = shot.rec
+      info.shot = shot.ms
+    }
+    recs.set(outgoing, r)
+    // The move can take the view behind somewhere its zoom-in did not show: what its overflow
+    // hides there is photographed now.
+    if (backView && spec.backViewState) {
+      const old = wide.get(backView)
+      const glass = flattener()?.photos.has(backView) || undefined
+      const origin = getComputedStyle(backView).transformOrigin
+      const wider = await widen(backView, recs.get(backView), glass, origin, new DOMMatrix(spec.backViewState.transformEnd), true)
+        .catch(error => log(`gl: no overflow (${error.message})`))
+      if (wider) {
+        wide.set(backView, wider.rec)
+        recs.set(backView, wider.rec)
+        info.overflowMs = wider.ms
+        if (old) {
+          gl.deleteTexture(old.texture)
+          dropTargets(old)
+        }
+      }
+    }
+    for (const rec of recs.values()) mips(rec)
+    return { recs, info }
+  }
+
+  /**
+   * Draw at(elapsed) every frame for total ms, then end() and hand over to the DOM and the
+   * engine (done), even if end() fails. A hidden tab, without frames, still ends.
+   */
+  function play (total, at, end, done) {
+    let raf = 0
+    let start = null
+    let finished = false
+    const finish = () => {
+      if (finished) return
+      finished = true
+      cancelAnimationFrame(raf)
+      clearTimeout(deadline)
+      try {
+        end()
+      } catch (error) {
+        log(`gl: ${error.message}`)
+      }
+      delete app.canvas.dataset.zGlMoving
+      done()
+      // flatten settles a microtask after the engine completes: read the roles a frame later.
+      requestAnimationFrame(sync)
+    }
+    const deadline = setTimeout(finish, total + 1000)
+    const tick = (now) => {
+      if (start === null) start = now
+      const elapsed = now - start
+      if (elapsed >= total) return finish()
+      draw(at(elapsed))
+      raf = requestAnimationFrame(tick)
+    }
+    draw(at(0))
+    raf = requestAnimationFrame(tick)
+  }
+
+  /**
+   * Draw a move to a sibling, as the drivers do: the sibling comes in and fades in, the view
+   * leaving goes and fades out, the views behind shift with their effects as they are.
+   */
+  function runLateral (spec, prepared, done) {
+    const { currentView: incoming, previousView: outgoing, backView, backViewState, lastView, lastViewState, currentStage } = spec
+    const v0 = currentStage.views[0]
+    const incomingEnd = spec.incomingTransformEnd || v0.forwardState.transform
+    const moves = [
+      { view: incoming, origin: v0.forwardState.origin, from: spec.incomingTransformStart, to: incomingEnd, fade: [0, 1] },
+      { view: outgoing, origin: outgoing.style.transformOrigin, from: spec.outgoingTransform, to: spec.outgoingTransformEnd, fade: [1, 0] },
+    ]
+    if (backView && backViewState) moves.push({ view: backView, origin: backView.style.transformOrigin, from: backViewState.transformStart, to: backViewState.transformEnd })
+    if (lastView && lastViewState) moves.push({ view: lastView, origin: lastView.style.transformOrigin, from: lastViewState.transformStart, to: lastViewState.transformEnd })
+    for (const { view } of moves) view.classList.add(OFF)
+    app.canvas.dataset.zGlMoving = 'lateral'
+    // The engine hands the sibling over hidden and still new, as to every driver.
+    showViews(incoming)
+    incoming.classList.replace('is-new-current-view', 'is-current-view')
+    incoming.classList.remove('zoom-current-view', 'has-no-events')
+    const order = views()
+    const layers = moves.map(({ view, origin, from, to, fade }) => ({
+      view,
+      fade,
+      from: readTransitionMatrix(view, origin, from),
+      to: readTransitionMatrix(view, origin, to),
+      origin: getComputedStyle(view).transformOrigin.split(' ').map(parseFloat),
+      effect: fade ? NONE : restEffect(view),
+      rec: prepared.recs.get(view),
+      z: order.indexOf(view),
+    })).sort((a, b) => a.z - b.z)
+    const ms = parseDurationMs(spec.duration)
+    const curve = cssEasing(spec.ease) || (t => t)
+    const at = (elapsed) => {
+      const t = curve(clamp01(elapsed / ms))
+      return layers.map(l => layer(l.view, l.rec, interpolateMatrix(l.from, l.to, t), l.origin, l.effect, l.fade ? lerp(l.fade[0], l.fade[1], t) : 1))
+    }
+    play(ms, at, () => {
+      // The views behind stay drawn where they end; the sibling is DOM from now on.
+      draw(at(ms).filter(l => l.view !== incoming && l.view !== outgoing))
+      incoming.style.transform = incomingEnd
+      incoming.style.removeProperty('opacity')
+      if (backView && backViewState) backView.style.transform = backViewState.transformEnd
+      if (lastView && lastViewState) lastView.style.transform = lastViewState.transformEnd
+      // keepAlive keeps the view leaving, and the engine hides it (display: none).
+      if (spec.keepAlive) {
+        outgoing.style.opacity = ''
+        outgoing.style.transform = spec.outgoingTransformEnd
+      } else {
+        removeViewFromCanvas(outgoing, spec.canvas)
+      }
+      show(incoming)
+      show(outgoing)
+      dropPhoto(incoming)
+      dropPhoto(outgoing)
+    }, done)
+  }
+
+  /** Draw a zoom-in, a zoom-out or a move to a sibling with the prepared textures; done() once it ends. */
   function run (spec, prepared, done) {
+    if (spec.type === 'lateral') return runLateral(spec, prepared, done)
     const { type, currentView, previousView, lastView, currentStage, canvas: zCanvas } = spec
     const forward = type === 'zoomIn'
     const [v0, v1, v2] = currentStage.views
@@ -657,51 +907,24 @@ export function createGL (app, { photo, flattener, log }) {
         return layer(l.view, l.rec, interpolateMatrix(l.from, l.to, t), l.origin, mixEffect(l.fx[0], l.fx[1], fxT), alpha)
       })
     }
-    draw(at(0))
-
-    let raf = 0
-    let start = null
-    let finished = false
-    const finish = () => {
-      if (finished) return
-      finished = true
-      cancelAnimationFrame(raf)
-      clearTimeout(deadline)
-      try {
-        if (forward) {
-          // The views behind stay drawn where they end; the one in front is DOM from now on.
-          draw(at(total).filter(l => l.view !== currentView))
-          showViews(currentView, previousView, lastView)
-          for (const { view } of entries) applyZoomInEndState(view, currentStage)
-          show(currentView)
-          dropPhoto(currentView)
-        } else {
-          // The view coming back stays drawn until sync() hands it to the DOM, after flatten
-          // has put the real one back.
-          draw(at(total))
-          dropPhoto(currentView)
-          removeViewFromCanvas(currentView, zCanvas)
-          applyZoomOutPreviousState(previousView, v1.backwardState)
-          if (lastView && v2) applyZoomOutLastState(lastView, v2.backwardState)
-        }
-      } catch (error) {
-        log(`gl: ${error.message}`)
+    play(total, at, () => {
+      if (forward) {
+        // The views behind stay drawn where they end; the one in front is DOM from now on.
+        draw(at(total).filter(l => l.view !== currentView))
+        showViews(currentView, previousView, lastView)
+        for (const { view } of entries) applyZoomInEndState(view, currentStage)
+        show(currentView)
+        dropPhoto(currentView)
+      } else {
+        // The view coming back stays drawn until sync() hands it to the DOM, after flatten
+        // has put the real one back.
+        draw(at(total))
+        dropPhoto(currentView)
+        removeViewFromCanvas(currentView, zCanvas)
+        applyZoomOutPreviousState(previousView, v1.backwardState)
+        if (lastView && v2) applyZoomOutLastState(lastView, v2.backwardState)
       }
-      delete app.canvas.dataset.zGlMoving
-      done()
-      // flatten settles a microtask after the engine completes: read the roles a frame later.
-      requestAnimationFrame(sync)
-    }
-    // A hidden tab stops animation frames; the zoom still ends.
-    const deadline = setTimeout(finish, total + 1000)
-    const tick = (now) => {
-      if (start === null) start = now
-      const elapsed = now - start
-      if (elapsed >= total) return finish()
-      draw(at(elapsed))
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
+    }, done)
   }
 
   /** Feed a stream frame of a view into its texture (from the demo's stream wrapper). */

@@ -17,6 +17,7 @@ export const VARIANTS = {
   // Experiment 7: zooms drawn with WebGL, the views behind as textures at rest (gl.js).
   'f-gl': 'flatten=1&gl=1&glass=0',
   'f-gl-glass': 'flatten=1&gl=1', // the view coming in photographed with its glass
+  'f-gl-lens': 'flatten=1&gl=1&glass=0&look=lens', // effects only the shader draws: three reads a pixel
 }
 
 // asis: the guide's demo as it is (a clock); live: values that change and a big counter.
