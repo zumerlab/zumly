@@ -17,3 +17,5 @@ experiments/snapdom-compositor/results/fluidity/film/
 labs/**/results/traces/
 # Contact sheets from labs/*/film.mjs (regenerated on demand)
 labs/**/results/film/
+# Screenshots taken by hand while checking a lab (large)
+labs/**/results/launch/

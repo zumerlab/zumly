@@ -1,0 +1,12 @@
+6 runs at dpr 2, 1280×800, CPU 4×
+asis   f           in     0%  out   6.4%  tail 0%/0%  hitches 0/6 (run 2)  start 15  lat 18/10  motion 1004/1011 ms  rest 0%/0%  | in: main 10 impl 2 raster 0 gpu 29 viz 5  | out: main 7 impl 2 raster 0 gpu 30 viz 5
+asis   f-launch-ng  in     1%  out   6.3%  tail 0%/0%  hitches 0/6 (run 2)  start 83  lat 87/11  motion 1026/1018 ms  rest 0%/0%  | in: main 4 impl 0 raster 0 gpu 2 viz 1  | out: main 8 impl 2 raster 0 gpu 31 viz 6
+asis   f-launch    in     0%  out  12.1%  tail 0%/0%  hitches 0/6 (run 2)  start 714  lat 724/11  motion 1026/1029 ms  rest 0%/56.1%  | in: main 5 impl 1 raster 0 gpu 30 viz 5  | out: main 10 impl 3 raster 0 gpu 55 viz 15
+asis   f-launch-ng  in   0.5%  out   6.3%  tail 0%/0%  hitches 0/6 (run 2)  start 86  lat 95/10  motion 1038/1026 ms  rest 0%/0%  | in: main 5 impl 0 raster 0 gpu 2 viz 1  | out: main 6 impl 2 raster 0 gpu 31 viz 5
+asis   f-launch    in     0%  out   6.9%  tail 0%/0%  hitches 0/6 (run 2)  start 715  lat 719/11  motion 1012/1018 ms  rest 0%/48.8%  | in: main 2 impl 0 raster 0 gpu 3 viz 1  | out: main 9 impl 2 raster 0 gpu 31 viz 5
+asis   f           in   0.5%  out   6.5%  tail 0%/0%  hitches 0/6 (run 2)  start 15  lat 28/10  motion 1021/1012 ms  rest 0%/2%  | in: main 10 impl 2 raster 0 gpu 30 viz 5  | out: main 5 impl 2 raster 0 gpu 31 viz 5
+
+Medians across runs
+asis   f           in   0.3%  out   6.5%  tail 0%/0%  hitches 0/6 (run 2)  start 15  lat 23/10  motion 1012.5/1011.5 ms  rest 0%/1%  | in: main 10 impl 2 raster 0 gpu 29.5 viz 5  | out: main 6 impl 2 raster 0 gpu 30.5 viz 5
+asis   f-launch-ng  in   0.8%  out   6.3%  tail 0%/0%  hitches 0/6 (run 2)  start 84.5  lat 91/10.5  motion 1032/1022 ms  rest 0%/0%  | in: main 4.5 impl 0 raster 0 gpu 2 viz 1  | out: main 7 impl 2 raster 0 gpu 31 viz 5.5
+asis   f-launch    in     0%  out   9.5%  tail 0%/0%  hitches 0/6 (run 2)  start 714.5  lat 721.5/11  motion 1019/1023.5 ms  rest 0%/52.5%  | in: main 3.5 impl 0.5 raster 0 gpu 16.5 viz 3  | out: main 9.5 impl 2.5 raster 0 gpu 43 viz 10

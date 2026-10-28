@@ -39,6 +39,18 @@
   /* moving=1: no glass while views move (option 2). */
   .zumly-canvas[data-z-moving] .tile,
   .zumly-canvas[data-z-moving] .row { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+  /* launch=1: the view coming in moves as a photo taken before the motion (experiment 1), as
+     flatten shows the views behind. glass=0 takes the photo without its glass. */
+  .z-view.z-launch-flat { background: transparent !important; }
+  .z-view.z-launch-flat > :not(.z-launch-layer) { visibility: hidden !important; }
+  .z-launch-layer { position: absolute; pointer-events: none; }
+  .z-launch-noglass * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+  /* While the photo is taken the trigger looks pressed, and a ring turns over it if it takes long. */
+  .z-launch-press { position: absolute; z-index: 10; pointer-events: none; box-sizing: border-box; background: rgb(0 0 0 / .22); box-shadow: inset 0 0 0 2px rgb(255 255 255 / .55); }
+  .z-launch-ring { position: absolute; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; box-sizing: border-box; border-radius: 50%; border: 3px solid rgb(255 255 255 / .25); border-top-color: #fff; opacity: 0; animation: z-ring-in 120ms forwards, z-ring-spin 700ms linear infinite; }
+  @keyframes z-ring-in { to { opacity: 1 } }
+  @keyframes z-ring-spin { to { transform: rotate(1turn) } }
 </style>
 </head>
 <body>
@@ -60,6 +72,9 @@ const opt = {
   hold: q.get('hold') === '1', // idea 2: views behind keep will-change, so they are not re-rastered at their new scale
   persp: q.get('persp') !== '0', // option 13: persp=0 takes perspective off the canvas
   live: q.get('live') === '1', // values that change every second, and a big counter
+  launch: q.get('launch') === '1', // experiment 1: photograph the view coming in, then move it
+  glass: q.get('glass') !== '0', // with launch: glass=0 takes that photo without backdrop-filter
+  out: q.get('out') === '1', // with launch: a zoom-out also photographs the view leaving before it shrinks
   driver: q.get('driver') || 'css',
 }
 const effects = opt.fx !== 'pane'
@@ -74,6 +89,11 @@ const TOGGLES = [
   { key: 'hold', on: '1', label: 'will-change sostenido' },
   { key: 'persp', on: '0', label: 'sin perspective' },
   { key: 'live', on: '1', label: 'en vivo' },
+]
+const LAB = [
+  { key: 'launch', on: '1', label: 'preparar y animar' },
+  { key: 'glass', on: '0', label: 'foto sin vidrio' },
+  { key: 'out', on: '1', label: 'también al volver' },
 ]
 const go = (key, value) => {
   const next = new URLSearchParams(q)
@@ -105,6 +125,11 @@ const toggles = group('CSS')
 for (const { key, on, label } of TOGGLES) {
   const pressed = q.get(key) === on
   button(toggles, label, pressed, () => go(key, pressed ? null : on))
+}
+const lab = group('Zoom-in')
+for (const { key, on, label } of LAB) {
+  const pressed = q.get(key) === on
+  button(lab, label, pressed, () => go(key, pressed ? null : on))
 }
 const run = button(group(''), '▶ 3 zooms', null, () => runByEye())
 run.id = 'run'
@@ -216,6 +241,122 @@ const panes = {
   },
 }
 
+// launch=1 (experiment 1): before a zoom-in moves, the view coming in is photographed with
+// SnapDOM; it moves as that photo and becomes itself when the motion ends. Its first style,
+// layout and paint, and flatten hiding the view behind, happen before the motion instead of
+// in its first frames. While the photo is taken the trigger looks pressed; past RING_AFTER_MS
+// a ring turns over it, and once shown it stays RING_MIN_MS so it does not flicker.
+// With out=1, a zoom-out photographs the view leaving, in place, and shrinks that photo.
+const RING_AFTER_MS = 300
+const RING_MIN_MS = 400
+window.launchLog = []
+const afterFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)))
+const launch = {
+  press (trigger) {
+    const stage = app.canvas.parentElement
+    const r = trigger.getBoundingClientRect()
+    const s = stage.getBoundingClientRect()
+    const press = document.createElement('div')
+    press.className = 'z-launch-press'
+    Object.assign(press.style, { left: `${r.left - s.left}px`, top: `${r.top - s.top}px`, width: `${r.width}px`, height: `${r.height}px`, borderRadius: getComputedStyle(trigger).borderRadius })
+    const ring = document.createElement('i')
+    ring.className = 'z-launch-ring'
+    ring.style.animationDelay = `${RING_AFTER_MS}ms, 0ms`
+    press.append(ring)
+    stage.append(press)
+    return press
+  },
+  // The effects of the views behind start with the zoom, and so does the engine's fade of a
+  // zoom-out into its trigger; they wait where they are, and release() lets them run with the motion.
+  hold (views, moving) {
+    for (const view of views) {
+      view.style.filter = getComputedStyle(view).filter
+      view.style.transition = 'none'
+    }
+    const fades = moving.getAnimations().filter(a => !(a instanceof CSSAnimation) && !(a instanceof CSSTransition))
+    for (const fade of fades) fade.pause()
+    return () => {
+      for (const view of views) {
+        view.style.removeProperty('filter')
+        view.style.removeProperty('transition')
+      }
+      for (const fade of fades) fade.play()
+    }
+  },
+  async photo (view, offscreen) {
+    // A view coming in goes out of sight while SnapDOM reads it, at scale 1 (outerTransforms:
+    // false keeps a root scale). The engine hands it over hidden (.hide is opacity 0, until the
+    // driver shows it), and SnapDOM would copy that opacity into the photo. A view leaving is
+    // read where it is.
+    const transform = view.style.transform
+    const hidden = view.classList.contains('hide')
+    if (offscreen) {
+      view.style.transform = 'translate(-200vw, 0)'
+      view.style.contentVisibility = 'visible'
+      view.classList.remove('hide')
+    }
+    if (!opt.glass) view.classList.add('z-launch-noglass')
+    try {
+      await afterFrame()
+      const t = performance.now()
+      const result = await snapdom(view, { outerTransforms: false, outerShadows: false, fast: true, excludeStyleProps: prop => prop.startsWith('outline') })
+      const canvas = await result.toCanvas()
+      return { canvas, ms: Math.round(performance.now() - t) }
+    } finally {
+      view.classList.remove('z-launch-noglass')
+      view.classList.toggle('hide', hidden)
+      view.style.transform = transform
+    }
+  },
+  // The photo covers the border box, as flatten's does; the view's border stays real. SnapDOM's
+  // canvas has a margin around the box (1 px a side, 3 px with a root transform), so it goes at
+  // its own size, centred on the box: fitted to the box, it would come out smaller and shifted.
+  flat (view, canvas) {
+    canvas.className = 'z-launch-layer'
+    canvas.setAttribute('aria-hidden', 'true')
+    const width = canvas.width / devicePixelRatio
+    const height = canvas.height / devicePixelRatio
+    Object.assign(canvas.style, {
+      left: `${-view.clientLeft - (width - view.offsetWidth) / 2}px`,
+      top: `${-view.clientTop - (height - view.offsetHeight) / 2}px`,
+      width: `${width}px`,
+      height: `${height}px`,
+    })
+    view.append(canvas)
+    view.classList.add('z-launch-flat')
+  },
+  // At the end the photo just goes, as flatten does with a translucent view.
+  unflat (view) {
+    view.classList.remove('z-launch-flat')
+    view.querySelector(':scope > .z-launch-layer')?.remove()
+  },
+  async prepare (spec, step) {
+    const t0 = performance.now()
+    performance.mark(`z:${step}:prepare-start`)
+    const zoomIn = spec.type === 'zoomIn'
+    const view = spec.currentView
+    const entry = { step, type: spec.type, view: view.dataset.viewName, glass: opt.glass }
+    const trigger = zoomIn ? spec.previousView.querySelector('.zoom-me.zoomed') : null
+    const press = trigger ? this.press(trigger) : null
+    const release = this.hold([spec.previousView, spec.lastView].filter(Boolean), view)
+    try {
+      const { canvas, ms } = await this.photo(view, zoomIn)
+      this.flat(view, canvas)
+      entry.photoMs = ms
+    } catch (error) {
+      // No photo: the view moves as itself, as without launch.
+      entry.error = error.message
+    }
+    const waited = performance.now() - t0
+    entry.ring = waited > RING_AFTER_MS
+    if (entry.ring && waited < RING_AFTER_MS + RING_MIN_MS) await new Promise(r => setTimeout(r, RING_AFTER_MS + RING_MIN_MS - waited))
+    entry.prepareMs = Math.round(performance.now() - t0)
+    press?.remove()
+    release()
+    window.launchLog.push(entry)
+  },
+}
+
 // Wrap the driver: performance marks line each step up with a Chromium trace (measure.mjs),
 // and the moving mark and the panes follow the real motion.
 let stepIndex = 0
@@ -230,22 +371,31 @@ app.notify = (msg, type) => {
 const real = app.transitionDriver
 app.transitionDriver = {
   runTransition (spec, done) {
-    performance.mark(`z:${stepIndex}:motion-start`)
-    window.flatLog.push({
-      step: stepIndex,
-      type: spec.type,
-      flat: [...app.canvas.querySelectorAll(':scope > .z-view.z-flat')].map(v => v.dataset.viewName),
-      photos: [...app.canvas.querySelectorAll(':scope > .z-view')].filter(v => app._flattener?.photos.has(v)).map(v => v.dataset.viewName),
-      live: [...app.canvas.querySelectorAll(':scope > .z-view')].filter(v => app._flattener?.live.has(v)).map(v => v.dataset.viewName),
-    })
-    if (opt.moving) app.canvas.dataset.zMoving = spec.type
-    if (opt.fx === 'pane') panes.start(spec)
-    return real.runTransition(spec, () => {
-      performance.mark(`z:${stepIndex}:motion-end`)
-      delete app.canvas.dataset.zMoving
-      if (opt.fx === 'pane') panes.sync()
-      done()
-    })
+    const step = stepIndex
+    const go = () => {
+      performance.mark(`z:${step}:motion-start`)
+      window.flatLog.push({
+        step,
+        type: spec.type,
+        flat: [...app.canvas.querySelectorAll(':scope > .z-view.z-flat')].map(v => v.dataset.viewName),
+        photos: [...app.canvas.querySelectorAll(':scope > .z-view')].filter(v => app._flattener?.photos.has(v)).map(v => v.dataset.viewName),
+        live: [...app.canvas.querySelectorAll(':scope > .z-view')].filter(v => app._flattener?.live.has(v)).map(v => v.dataset.viewName),
+      })
+      if (opt.moving) app.canvas.dataset.zMoving = spec.type
+      if (opt.fx === 'pane') panes.start(spec)
+      return real.runTransition(spec, () => {
+        performance.mark(`z:${step}:motion-end`)
+        delete app.canvas.dataset.zMoving
+        if (opt.fx === 'pane') panes.sync()
+        if (opt.launch && spec.type === 'zoomIn') launch.unflat(spec.currentView)
+        done()
+      })
+    }
+    // The view leaving a zoom-out is removed at the end, photo and all. Whatever happens while
+    // preparing, the zoom still moves.
+    if (opt.launch && (spec.type === 'zoomIn' || (opt.out && spec.type === 'zoomOut'))) {
+      launch.prepare(spec, step).catch(error => window.notes.push({ t: Math.round(performance.now()), msg: `launch: ${error.message}` })).then(go)
+    } else go()
   },
 }
 await app.init()
@@ -320,6 +470,7 @@ async function runByEye () {
 }
 
 window.app = app
+window.launch = launch
 window.ready = true
 </script>
 </body>

@@ -280,6 +280,90 @@ Dos corridas por variante, dpr 2 ([`results/after-base.log`](results/after-base.
 - **Al final del zoom-out** ya no hay pausa ni salto: la vista se funde con su mosaico. Con `flatten`, el cambio de foto a tablero real baja de 13,5-15,1 a 7,7. Lo que queda es que el vidrio de la foto no ve el degradado de la página, que está detrás del tablero.
 - **Tests:** suite completa en Chromium, 536 OK. Los archivos tocados en Firefox y WebKit pasan, salvo los 22 de `new Touch()` que ya fallaban.
 
+## Chrome real, con el MCP (28/10, tarde)
+
+Traces de la demo del lab con el motor local, grabados con el MCP de chrome-devtools en Chrome 156 estable, con la secuencia de `trace.mjs`: 3 zoom-in y 3 zoom-out, 2,5 s entre cada uno. La página queda en 1280×699 porque la pantalla no da para 800 de alto. Los clics son eventos sintéticos dentro de la página.
+
+Se leen con [`read-trace.mjs`](read-trace.mjs). No necesita las marcas de la demo, así que también lee el trace de la guía publicada. Para cada zoom da: la espera desde que se suelta el clic, los cuadros perdidos, el salto más grande en las capturas después del final, el trabajo del hilo principal y de la GPU durante el movimiento, y las tareas largas de después.
+
+| | 1.1.0 publicada (Playwright) | Local, Chrome en frío | Local, Chrome caliente |
+|---|---|---|---|
+| Zoom-in: cuadros perdidos | 0,5 % | 9,8 % (racha de 6) | 0 % |
+| Zoom-in: GPU durante el movimiento | 30 % | 31 % | 31 % |
+| Zoom-out: cuadros perdidos | 5,9 % (racha de 11) | 0,5 % | 0 % |
+| Zoom-out: salto después del final | 14,5 a +146 ms | 5,2 a +27 ms | 5,2 a +31 ms |
+| Zoom-out: hilo principal durante el movimiento | 3 % | 2 % | 2 % (22 ms en 1 s) |
+| Zoom-out: tareas largas después (suma) | 231 ms | 249 ms | 259 ms |
+
+Lo que dice:
+
+1. **El arreglo del zoom-out se ve en Chrome real.** Ya no está el salto a +146 ms. Queda el cambio de foto a tablero real a +30 ms, que es el del tablero translúcido.
+2. **La primera vez, en frío, el primer zoom-in se traba:** 18 cuadros perdidos, un hueco de 123 ms. El primer zoom-out tiene uno de 100 ms. Es la GPU: tareas de 88-134 ms en `CrGpuMain`, con el hilo principal libre. Después de esa vez, 0. Es el experimento 5 (la primera transición en frío). El trace del MCP no trae las categorías internas de la GPU, así que no se ve qué compila.
+3. **Las tareas largas después del zoom-out siguen:** dos o tres de 50-190 ms, entre 380 y 550 ms después del final. Es el stream de SnapDOM que arranca sobre el tablero: recálculo de estilos (47-77 ms), parseo del SVG (35-38 ms) y su JS. No caen durante el movimiento, pero un clic en ese momento espera. Se arregla en SnapDOM.
+4. En caliente, Chrome estable y el Chromium de Playwright dan lo mismo.
+
+Traces en `results/traces/` (`mcp-local`, `mcp-local-warm`, `mcp-launch-ng`, `mcp-launch`), y la comparación en `compare.json`.
+
+## Experimento 1: preparar y después animar (28/10, tarde)
+
+`launch=1` en la demo, sin tocar `src/`. Antes de mover un zoom-in, el driver de la demo:
+
+- muestra el disparador apretado, y un anillo que gira si la espera pasa de 300 ms (una vez visible, queda 400 ms como mínimo);
+- frena el desenfoque del tablero, que el motor arranca antes de llamar al driver, para que corra junto con el movimiento;
+- saca la foto de la vista que entra con SnapDOM, fuera de pantalla y a escala 1;
+- pone la foto en lugar del contenido, como hace `flatten` con las vistas de atrás, y recién entonces llama al driver real;
+- al terminar el movimiento saca la foto y queda la vista real.
+
+`glass=0` saca la foto sin `backdrop-filter`.
+
+Medido con `measure.mjs` (Playwright, 1280×800, dpr 2, mediana de dos corridas; [`results/launch.log`](results/launch.log) y [`results/launch-cpu4.log`](results/launch-cpu4.log)):
+
+| | Sin `launch` | `launch`, sin vidrio | `launch`, con vidrio |
+|---|---|---|---|
+| Del clic al movimiento | 13 ms | 49 ms | 128 ms |
+| Ídem, CPU 4× | 15 ms | 85 ms | 714 ms, con anillo |
+| GPU en el zoom-in, tal cual | 39 % | 11 % | 13 % |
+| GPU en el zoom-in, en vivo | 63 % | 41 % | 41 % |
+| GPU en el zoom-in, CPU 4× | 30 % | 2 % | 17 % |
+| Cuadros perdidos en el zoom-in | 0-0,5 % | 0,5-1 % | 0 % |
+
+En Chrome real (MCP, caliente) da lo mismo: GPU de 31 % a 3 %, 41 ms de espera sin vidrio y 158 ms con vidrio, 0 cuadros perdidos. En mitad del movimiento las capturas se ven iguales con y sin `launch`, desenfoque del tablero incluido.
+
+Lo que dice:
+
+1. **El vidrio de la vista que entra era casi toda la GPU del zoom-in.** Con la foto baja de 39 % a 11 %, y a 2 % con CPU 4×. En esta Mac, a 60 Hz, ya no se perdían cuadros, así que no cambia el conteo: lo que gana es margen para una tablet o una pantalla de 120 Hz. En vivo queda en 41 %; lo más probable es el tablero, que con datos en vivo a veces vuelve vivo porque el stream se apaga por costo. Eso no lo toca (sin medir).
+2. **Sin vidrio, la espera queda debajo de los 100 ms** que se sienten inmediatos: 25-60 ms de foto, 85 ms con CPU 4×, y el anillo no aparece. Con vidrio, SnapDOM emula cada `backdrop-filter` por separado (opción 10): 110-170 ms en la Mac y 450-560 ms con CPU 4×. Además, con vidrio y CPU 4× el reposo en el tablero pierde 50 % de cuadros. No lo expliqué; alcanza para descartar el vidrio en la foto del movimiento.
+3. **La foto sin vidrio se parece más a la vista real que la que emula el vidrio:** diferencia de 1,8 contra 2,2 en una captura quieta, porque en `detail` las filas están sobre un fondo casi liso. El cambio de foto a vista real al final no se nota (1,3 contra 1,6 sin `launch`).
+4. **El costo es la espera:** 36 ms más en la Mac y 70 ms más con CPU 4×.
+
+Dos trampas que salieron:
+
+- **El motor entrega la vista nueva con `.hide` (`opacity: 0`)** hasta que el driver la muestra. SnapDOM copia esa opacidad a la raíz y la foto sale transparente. La primera medición dio 3 % de GPU con una caja vacía moviéndose: lo mostraron las capturas del trace, no los números.
+- **El canvas de SnapDOM trae un margen alrededor de la caja:** 1 px por lado, 3 px si la raíz tiene `transform`. Encajado en la caja, la foto queda 1 % más chica y corrida (diferencia de 14,0 contra 1,8 con la vista real). **`flatten.js` tiene lo mismo:** la foto del tablero mide 1282×616 para una caja de 1280×614, y [`_flat`](../../src/flatten.js#L400) la encaja en la caja. Puede ser parte del cambio de 5,2 al volver al tablero. Queda para `src/`.
+
+### Al volver (`out=1`)
+
+Martin preguntó si se hizo lo mismo al revés: nada pesado durante el movimiento, todo antes o después.
+
+Sin `out`, el zoom-out ya no procesa casi nada durante el movimiento: el hilo principal trabaja 22 ms en 1 s, y del clic al movimiento pasan 3 ms. Lo pesado viene después: el stream que arranca sobre el tablero, de 380 a 550 ms después del final (ver Chrome real). Lo que sí trabajaba durante el movimiento era la GPU, con 33-40 %: `detail` se achica viva, con sus 90 vidrios.
+
+`out=1` hace en el zoom-out lo mismo que `launch` en el zoom-in: saca la foto de la vista que se va, donde está, y achica la foto. Frena el fundido con el disparador, que el motor arranca antes de llamar al driver, para que corra con el movimiento. La vista se saca al final, con foto y todo. Medido contra `launch=1&glass=0` ([`results/launch-out.log`](results/launch-out.log), y un trace en Chrome real):
+
+| Zoom-out | Sin foto | Con foto |
+|---|---|---|
+| GPU, tal cual | 39,5 % | 11,5 % |
+| GPU, en vivo | 66,5 % | 48,5 % |
+| GPU en Chrome real | 33 % | 3 % |
+| Cuadros perdidos, en vivo | 4,3 % (un tirón por corrida) | 0 % |
+| Del clic al primer cuadro | 5-9 ms | 59-70 ms |
+| Tareas largas después | 249 ms | 242 ms |
+
+Lo mismo que en el zoom-in: la GPU baja a un cuarto, a cambio de unos 40 ms antes de arrancar. En vivo, los cuadros perdidos del zoom-out pasaron de 4,3 % a 0 % en las dos corridas. Las tareas largas de después no cambian: son del stream del tablero, y se arreglan en SnapDOM.
+
+Mientras se saca la foto (~40 ms) la vista que se va está quieta y sin vidrio, porque `glass=0` lo apaga en la vista real. En `detail` no se nota; en una vista con vidrio sobre algo con más contraste podría notarse.
+
+Falta: cancelar con Escape durante la espera, mirarlo a ojo con datos en vivo (lo que cambia durante el movimiento aparece de golpe al final) y probarlo con una vista que tarde en armarse.
+
 ## Plan
 
 Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs antes de decidir. Cada paso se mide como en el diagnóstico ([`demo.html`](demo.html), [`measure.mjs`](measure.mjs), [`film.mjs`](film.mjs)) y se mira a ojo con dpr 2.
@@ -297,10 +381,11 @@ Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs 
    - nombrar `deferred`;
    - recomendar `css` o `waapi` con vistas pesadas;
    - decir cuándo no conviene `flatten` hasta que salga el 3.
+9. **Margen de la foto de `flatten`.** El canvas de SnapDOM trae 1 px de más por lado (3 px con `transform` en la raíz) y `_flat` lo encaja en la caja: la foto queda un poco más chica y corrida. Ponerla a su tamaño, centrada. Chico; puede bajar el cambio al volver al tablero.
 
 ### Experimentación: en labs
 
-1. **Preparar y después animar (idea 4).** La foto de la vista que entra se saca antes del movimiento, con un anillo si tarda y un fundido al final. Ataca lo que más gasta la GPU, el vidrio de la vista que se mueve, sin pedirle nada al autor. Incluye ocultar al presionar (opción 6).
+1. **Preparar y después animar (idea 4).** Medido el 28/10 (ver Experimento 1): sin vidrio en la foto, la GPU del zoom-in baja de 39 % a 11 % y la del zoom-out de 39,5 % a 11,5 %, con ~40 ms de espera antes de arrancar y sin anillo. Falta mirarlo a ojo, cancelar con Escape y decidir si va al motor (en `flatten`, o como opción propia).
 2. **Medir con menos margen de GPU:** ventana grande o dpr 3, y una tablet. Sin esto no se sabe cuánto valen 1, 3, 4 y 7 en el hardware de Pulse.
 3. **Capa de vidrio (idea 1)** como forma de los efectos: 0 % en el zoom-out en todas las corridas, sin SnapDOM. Falta que Martin mire el look.
 4. **Marca de movimiento (opción 2)** como receta de la guía: la GPU del zoom baja de ~60 % a ~17 %.
