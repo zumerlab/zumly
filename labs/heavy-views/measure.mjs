@@ -5,7 +5,9 @@
 //
 //   caffeinate -d node labs/heavy-views/measure.mjs [--variants f,nf,f-moving] [--conds asis,live]
 //     [--runs 2] [--rounds 3] [--cpu 4] [--out labs/heavy-views/results/step0.json] [--threads]
-//     [--no-warmup]
+//     [--no-warmup] [--channel chrome]
+//
+//   --channel chrome measures in the installed Google Chrome instead of Playwright's Chromium.
 //
 // --threads prints the top-level trace events of each thread group, to check the attribution.
 import { mkdir, writeFile } from 'node:fs/promises'
@@ -26,6 +28,7 @@ const settle = +arg('--settle', 1200)
 const restMs = +arg('--rest', 2000)
 const out = arg('--out', null)
 const showThreads = args.includes('--threads')
+const channel = arg('--channel', undefined)
 const viewport = { width: 1280, height: 800 }
 
 for (const name of variantNames) if (!VARIANTS[name]) throw new Error(`unknown variant "${name}"`)
@@ -36,6 +39,7 @@ const port = server.address().port
 
 const browser = await chromium.launch({
   headless: false,
+  channel,
   args: ['--enable-gpu-rasterization', '--ignore-gpu-blocklist', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--disable-background-timer-throttling'],
 })
 
@@ -243,7 +247,7 @@ if (!args.includes('--no-warmup')) {
     await page.close().catch(() => {})
   }
 }
-console.log(`${jobs.length} runs at dpr 2, ${viewport.width}×${viewport.height}, CPU ${throttle}×`)
+console.log(`${jobs.length} runs at dpr 2, ${viewport.width}×${viewport.height}, CPU ${throttle}×${channel ? `, ${channel}` : ''}`)
 const results = []
 for (const job of jobs) {
   const r = await measure(job.run, job.cond, job.variant)

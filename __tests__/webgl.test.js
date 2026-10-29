@@ -66,6 +66,12 @@ describe('webgl: effect strings', () => {
     expect(parseEffect('pixelate(10px) rubber(1)')).toEqual({ pixelate: 10, rubber: 1 })
   })
 
+  it('takes up to four numbers in an effect, a #hex color as three', () => {
+    expect(parseEffect('tint(#ff0066 .5) blur(2px)')).toEqual({ tint: [1, 0, 0.4, 0.5], blur: 2 })
+    expect(parseEffect('wave(4px, 2, 30deg)')).toEqual({ wave: [4, 2, 30] })
+    expect(parseEffect('tint(#f06)')).toEqual({ tint: [1, 0, 0.4] })
+  })
+
   it('has CSS\'s filter functions, each with the value that leaves a view as it is', () => {
     for (const name of ['blur', 'brightness', 'contrast', 'saturate', 'grayscale', 'sepia', 'invert', 'opacity', 'hue-rotate']) {
       expect(typeof EFFECTS[name].none).toBe('number')
@@ -146,6 +152,41 @@ describe.runIf(hasWebGL2)('webgl', () => {
     expect(app.canvas.querySelector('.z-gl-off')).toBeNull()
     lose.restoreContext()
     await expect.poll(() => app._webgl.lost).toBe(false)
+  })
+
+  it('follows a zoom-out gesture: the views behind in WebGL, to the end or back', async () => {
+    await start({ gestures: { follow: true } })
+    await app.zoomIn(role('current').querySelector('.zoom-me[data-to="a"]'))
+    await settled()
+    await expect.poll(() => role('previous').classList.contains('z-gl-off')).toBe(true)
+    expect(app._beginZoomOutScrub('wheel')).toBe(true)
+    expect(app.canvas.dataset.zGlMoving).toBe('scrub')
+    app._scrubZoomOut(0.3)
+    await app._endZoomOutScrub(false)
+    expect(role('current').dataset.viewName).toBe('a')
+    await expect.poll(() => role('previous').classList.contains('z-gl-off')).toBe(true)
+    expect(app._beginZoomOutScrub('wheel')).toBe(true)
+    app._scrubZoomOut(0.8)
+    await app._endZoomOutScrub(true)
+    await settled()
+    expect(role('current').dataset.viewName).toBe('home')
+    await expect.poll(() => app.canvas.querySelector('.z-gl-off')).toBeNull()
+    expect(app.canvas.dataset.zGlMoving).toBeUndefined()
+  })
+
+  it('draws two views behind on a third level, and goes back', async () => {
+    await start()
+    await app.zoomIn(role('current').querySelector('.zoom-me[data-to="a"]'))
+    await settled()
+    await app.zoomIn(role('current').querySelector('.zoom-me[data-to="c"]'))
+    await settled()
+    await expect.poll(() => role('last')?.classList.contains('z-gl-off')).toBe(true)
+    expect(role('previous').classList.contains('z-gl-off')).toBe(true)
+    expect(app._webgl.layers.map(l => l.view.dataset.viewName).sort()).toEqual(['a', 'home'])
+    await app.zoomOut()
+    await settled()
+    expect(role('current').dataset.viewName).toBe('a')
+    await expect.poll(() => app._webgl.layers.map(l => l.view.dataset.viewName)).toEqual(['home'])
   })
 
   it('takes its canvas and hidden views away on destroy', async () => {

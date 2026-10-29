@@ -495,9 +495,10 @@ export function checkParameters (parameters, instance) {
     } else {
       instance.webgl = { effects: {}, glass: false }
       if (o.effects !== undefined) {
-        const valid = o.effects && typeof o.effects === 'object' && Object.values(o.effects).every(e => e && typeof e.none === 'number' && (typeof e.uv === 'string' || typeof e.color === 'string'))
+        const amount = n => typeof n === 'number' || (Array.isArray(n) && n.length <= 4 && n.every(x => typeof x === 'number'))
+        const valid = o.effects && typeof o.effects === 'object' && Object.values(o.effects).every(e => e && amount(e.none) && (typeof e.uv === 'string' || typeof e.color === 'string'))
         if (valid) instance.webgl.effects = o.effects
-        else notification(false, '\'webgl.effects\' must map names to { none, uv?, color? }, with GLSL in uv or color. Going with CSS\'s.', 'warn')
+        else notification(false, '\'webgl.effects\' must map names to { none, uv?, color?, animate? }, with GLSL in uv or color. Going with CSS\'s.', 'warn')
       }
       if (o.glass !== undefined) {
         if (typeof o.glass === 'boolean') instance.webgl.glass = o.glass

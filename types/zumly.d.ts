@@ -208,12 +208,17 @@ export interface FlattenOptions {
  * time (s), and tex and lod (the view's texture).
  */
 export interface WebGLEffect {
-  /** The value that leaves a view as it is. */
-  none: number
+  /**
+   * The value that leaves a view as it is. An effect takes up to four numbers ('tint(#f06 .5)':
+   * a #hex color counts as three): v is the first, vs all four.
+   */
+  none: number | number[]
   /** May move st, the point of the view read. */
   uv?: string
   /** May change rgb and a (not premultiplied), and read tex again around st. */
   color?: string
+  /** Keep redrawing while the effect is on a view at rest: for one that changes with time. */
+  animate?: boolean
 }
 
 /**

@@ -30,6 +30,8 @@
   .detail { width: 520px; height: 380px; border-radius: 22px; padding: 20px; box-sizing: border-box; background: hsl(var(--h) 45% 16% / .92); border: 1px solid hsl(var(--h) 80% 70% / .5); overflow: hidden; }
   .detail h2 { margin: 0 0 12px; font-size: 18px; }
   .rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .reading { width: 320px; height: 220px; border-radius: 18px; padding: 18px; box-sizing: border-box; background: #18324a; border: 1px solid #5aa9e6; }
+  .reading .big { font: 700 72px/1 ui-monospace, monospace; margin: 18px 0 0; }
   .row { height: 22px; border-radius: 6px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; background: hsl(var(--h) 60% 50% / .18); backdrop-filter: blur(4px); }
 
   /* live=1: a big counter. A zoom that opens on an old photo shows here, by eye. */
@@ -78,6 +80,8 @@ const opt = {
   out: q.get('out') === '1', // with launch: a zoom-out also photographs the view leaving before it shrinks
   gl: q.get('gl') === '1', // experiment 7: zooms drawn with WebGL, and the views behind as textures at rest
   look: q.get('look') || 'css', // with gl: the effects of the views behind (LOOKS)
+  follow: q.get('follow') === '1', // a zoom-out follows the wheel, a swipe or a pinch (gestures.follow)
+  levels: q.get('levels') === '3' ? 3 : 2, // levels=3: the first readings of a detail open a third view
   driver: q.get('driver') || 'css',
 }
 const effects = opt.fx !== 'pane'
@@ -114,6 +118,16 @@ const GL_EFFECTS = {
   st = focus + (st - focus) * (1.0 + 0.8 * v * k * (1.0 - exp(-length(gap) / reach)));`,
     color: 'if (st.x < 0.0 || st.y < 0.0 || st.x > 1.0 || st.y > 1.0) a = 0.0;',
   },
+  // The view behind ripples like water, all the time: animate keeps WebGL redrawing at rest.
+  // v: how high the waves are, in CSS px.
+  ripple: {
+    none: 0,
+    animate: true,
+    uv: `st.y += sin(st.x * photo.x / 40.0 + time * 3.0) * v / photo.y;
+  st.x += cos(st.y * photo.y / 55.0 + time * 2.0) * v / photo.x;`,
+  },
+  // Colors toward one: tint(#color amount), the amount from 0 to 1.
+  tint: { none: [0, 0, 0, 0], color: 'rgb = mix(rgb, vs.rgb * (0.4 + dot(rgb, LUMA) * 1.2), vs.a);' },
 }
 // The effects of the view behind and the one behind it, as the engine takes them.
 const LOOKS = {
@@ -122,13 +136,14 @@ const LOOKS = {
   pixel: ['pixelate(10px) saturate(1.4) brightness(.6)', 'pixelate(20px) brightness(.4)'],
   lens: ['chroma(3px) blur(1.5px) vignette(.8) brightness(.75)', 'chroma(6px) blur(5px) vignette(1) brightness(.5)'],
   rubber: ['rubber(1) blur(1px) brightness(.75)', 'rubber(1) blur(4px) brightness(.5)'],
+  liquid: ['ripple(3px) tint(#3a7bd5 .6) blur(1px) brightness(.85)', 'ripple(5px) tint(#3a7bd5 .8) blur(4px) brightness(.5)'],
 }
 
 const GROUPS = [
   { label: 'Fotos', key: 'flatten', value: opt.flatten ? '1' : '0', options: [['1', 'flatten'], ['0', 'sin flatten']] },
   { label: 'Efecto', key: 'fx', value: opt.fx, options: [['filter', 'filter animado'], ['instant', 'de golpe'], ['pane', 'capa de vidrio']] },
 ]
-const LOOK_NAMES = [['css', 'blur'], ['mono', 'gris'], ['pixel', 'píxeles'], ['lens', 'lente'], ['rubber', 'goma']]
+const LOOK_NAMES = [['css', 'blur'], ['mono', 'gris'], ['pixel', 'píxeles'], ['lens', 'lente'], ['rubber', 'goma'], ['liquid', 'líquido']]
 const TOGGLES = [
   { key: 'moving', on: '1', label: 'marca de movimiento' },
   { key: 'wc', on: 'lean', label: 'will-change justo' },
@@ -229,14 +244,24 @@ function detail ({ target, props }) {
   target.className = 'z-view detail'
   target.style.setProperty('--h', props.h)
   let rows = ''
-  for (let i = 0; i < 90; i++) rows += `<div class="row"><span>reading ${i + 1}</span><span>${(Math.sin(i) * 50 + 50).toFixed(1)}</span></div>`
+  for (let i = 0; i < 90; i++) {
+    // levels=3: the first three readings open a view of their own, as a third level.
+    const opens = opt.levels === 3 && i < 3
+    const to = opens ? ` zoom-me" data-to="reading" data-n="${i + 1}" data-title="${props.title} · ${i + 1}` : ''
+    rows += `<div class="row${to}"><span>reading ${i + 1}</span><span>${(Math.sin(i) * 50 + 50).toFixed(1)}</span></div>`
+  }
   target.innerHTML = `<h2>${props.title}</h2><div class="rows">${rows}</div>`
+}
+
+function reading ({ target, props }) {
+  target.className = 'z-view reading'
+  target.innerHTML = `<h2>${props.title}</h2><p class="big">${props.n}</p>`
 }
 
 const app = new Zumly({
   mount: '#app',
   initialView: 'board',
-  views: { board: board(), detail },
+  views: { board: board(), detail, reading },
   transitions: {
     driver: opt.driver,
     // Blur and dim the board behind, as the guide does (with gl=1, the look chosen); with fx=pane
@@ -257,6 +282,7 @@ const app = new Zumly({
   },
   // gl=1 (experiment 7, now in src/webgl.js): zooms drawn with WebGL, with the look's effects.
   webgl: opt.gl && { effects: GL_EFFECTS, glass: opt.glass },
+  gestures: { follow: opt.follow },
 })
 window.streamLog = []
 

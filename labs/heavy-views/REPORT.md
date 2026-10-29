@@ -431,6 +431,24 @@ Falta:
 - Mantener la vista actual en una textura con stream, para que el zoom-out arranque sin foto.
 - Medir con CPU 4× y en Chrome real.
 
+## WebGL en el motor (28/10, noche, `dev`)
+
+Martin: "terminar todo lo de WebGL y pasarlo a `src` en `dev`". El renderer pasó de la demo a [`src/webgl.js`](../../src/webgl.js), detrás de una opción nueva:
+
+```js
+new Zumly({ ..., flatten: { snapdom, stream }, webgl: true })            // o { effects, glass }
+```
+
+- **Necesita `flatten`.** Usa su SnapDOM para las fotos, y cada cuadro de su stream actualiza la textura de la vista. `streamTexture` está escrito adentro, así que no suma dependencias. Sin WebGL2, las vistas quedan en el DOM, como antes.
+- **Cada navegación pasa por WebGL:** zoom-in, zoom-out y hermanos. Mientras se sacan las texturas, el disparador se ve apretado, y si tarda más de 300 ms aparece un anillo (lo del experimento 1, ahora en el motor). Lo demás va al driver, con las vistas devueltas al DOM: una transición sin animación (movimiento reducido), `keepAlive: 'visible'` o una textura que no se pudo sacar.
+- **Gestos:** en un zoom-out que sigue la rueda, el swipe o el pinch, la vista bajo el dedo sigue en el DOM (como antes, con WAAPI), y WebGL mueve las de atrás con el mismo progreso, el mismo largo y la misma curva al soltar. Probado yendo hasta el final y volviendo.
+- **El zoom-out arranca sin foto.** Con `webgl`, `flatten` sigue con stream también a las vistas sin disparadores, y el zoom-out sale de esa textura: 0 ms de foto, contra ~25-45.
+- **Tres niveles:** probado tablero → detalle → lectura y vuelta (`levels=3` en la demo). Había un error: el efecto de la vista que pasa de previa a última (de 3 a 8 px) saltaba de golpe, porque el motor ya había escrito el efecto nuevo. Ahora arranca del último efecto con que se dibujó en reposo.
+- **Contexto perdido:** las vistas vuelven al DOM; cuando vuelve el contexto, WebGL rearma programas y texturas y vuelve a fotografiar las vistas de atrás.
+- **Redimensionar:** en reposo, una vista cuya foto ya no entra vuelve al DOM, y cuando el tamaño se queda quieto se fotografía de nuevo donde está, sin su efecto y a su tamaño. Probado redimensionando a mitad de un zoom-in y de un zoom-out.
+- **Efectos:** aceptan hasta cuatro números, y un color `#hex` cuenta como tres (`tint(#ff0066 .5)`). `animate: true` sigue redibujando mientras uno de esos efectos esté en pantalla: la demo trae `ripple`, que ondula el tablero de atrás todo el tiempo (look `liquid`), y deja de dibujar cuando el tablero vuelve al frente.
+- **Tests:** [`__tests__/webgl.test.js`](../../__tests__/webgl.test.js) prueba la opción, las cadenas de efectos y, donde hay WebGL2 (el Chromium headless no lo tiene, así que corren con ventana), los zooms, un hermano, un gesto hasta el final y de vuelta, tres niveles, el contexto perdido y `destroy`. La suite completa sigue en verde.
+
 ## Plan
 
 Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs antes de decidir. Cada paso se mide como en el diagnóstico ([`demo.html`](demo.html), [`measure.mjs`](measure.mjs), [`film.mjs`](film.mjs)) y se mira a ojo con dpr 2.

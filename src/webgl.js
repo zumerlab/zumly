@@ -91,7 +91,11 @@ void main () {
  * and tex and lod (the view's texture, already blurred):
  * - uv: may move st, the point of the photo read, from 0 to 1 across it;
  * - color: may change rgb and a, not premultiplied, and may read tex again around st.
- * These are CSS's filter functions, with CSS's formulas; createGL takes more.
+ * An effect can take up to four numbers, a #hex color counting as three (r, g, b, 0 to 1):
+ * 'tint(#ff0066 .5)'. v is the first, vs all four. none is a number or a list of them.
+ * animate: true keeps redrawing while the effect is on a view at rest, for one that changes
+ * with time (it costs a draw each frame).
+ * These are CSS's filter functions, with CSS's formulas; createWebGL takes more.
  */
 export const EFFECTS = {
   blur: { none: 0 },
@@ -115,13 +119,18 @@ export const EFFECTS = {
 
 const glslName = name => 'fx_' + name.replace(/[^a-zA-Z0-9]/g, '_')
 const glslFloat = x => Number.isInteger(x) ? `${x}.0` : String(x)
+/** An effect's value as four numbers: the rest are 0. */
+const four = value => {
+  const list = Array.isArray(value) ? value : [value]
+  return [0, 1, 2, 3].map(i => list[i] ?? 0)
+}
 
 /** The view's fragment shader, with every effect in it: one at its none costs a comparison. */
 function fragment (effects) {
   const list = Object.entries(effects).filter(([name]) => name !== 'blur')
   const uvs = list.filter(([, e]) => e.uv)
   const colors = list.filter(([, e]) => e.color)
-  const on = ([name, e]) => `${glslName(name)} != ${glslFloat(e.none)}`
+  const on = ([name, e]) => `${glslName(name)} != vec4(${four(e.none).map(glslFloat).join(', ')})`
   return `#version 300 es
 precision highp float;
 uniform sampler2D tex;
@@ -133,18 +142,18 @@ uniform vec2 focusSize;
 uniform float progress;
 uniform float time;
 const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
-${list.map(([name]) => `uniform float ${glslName(name)};`).join('\n')}
-${uvs.map(([name, e]) => `void ${glslName(name)}_uv (inout vec2 st, float v) {\n  ${e.uv}\n}`).join('\n')}
-${colors.map(([name, e]) => `void ${glslName(name)}_color (inout vec3 rgb, inout float a, vec2 st, float v) {\n  ${e.color}\n}`).join('\n')}
+${list.map(([name]) => `uniform vec4 ${glslName(name)};`).join('\n')}
+${uvs.map(([name, e]) => `void ${glslName(name)}_uv (inout vec2 st, float v, vec4 vs) {\n  ${e.uv}\n}`).join('\n')}
+${colors.map(([name, e]) => `void ${glslName(name)}_color (inout vec3 rgb, inout float a, vec2 st, float v, vec4 vs) {\n  ${e.color}\n}`).join('\n')}
 in vec2 uv;
 out vec4 color;
 void main () {
   vec2 st = uv;
-${uvs.map(fx => `  if (${on(fx)}) ${glslName(fx[0])}_uv(st, ${glslName(fx[0])});`).join('\n')}
+${uvs.map(fx => `  if (${on(fx)}) ${glslName(fx[0])}_uv(st, ${glslName(fx[0])}.x, ${glslName(fx[0])});`).join('\n')}
   vec4 c = textureLod(tex, st, lod);
   float a = c.a;
   vec3 rgb = a > 0.0 ? c.rgb / a : vec3(0.0);
-${colors.map(fx => `  if (${on(fx)}) { ${glslName(fx[0])}_color(rgb, a, st, ${glslName(fx[0])}); rgb = clamp(rgb, 0.0, 1.0); }`).join('\n')}
+${colors.map(fx => `  if (${on(fx)}) { ${glslName(fx[0])}_color(rgb, a, st, ${glslName(fx[0])}.x, ${glslName(fx[0])}); rgb = clamp(rgb, 0.0, 1.0); }`).join('\n')}
   a = clamp(a, 0.0, 1.0);
   color = vec4(rgb * a, a) * alpha;
 }`
@@ -153,12 +162,29 @@ ${colors.map(fx => `  if (${on(fx)}) { ${glslName(fx[0])}_color(rgb, a, st, ${gl
 const NONE = {}
 const UNITS = { '': 1, px: 1, deg: 1, turn: 360, rad: 180 / Math.PI }
 
-/** An effect string as amounts by name: 'blur(3px) brightness(70%)' → { blur: 3, brightness: 0.7 }. */
+/** One argument of an effect as numbers: a length, angle or percentage, or a #hex color (r, g, b). */
+function amounts (arg) {
+  const hex = /^#([\da-f]{3}|[\da-f]{6})$/i.exec(arg)
+  if (hex) {
+    const h = hex[1].length === 3 ? [...hex[1]].map(c => c + c).join('') : hex[1]
+    return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255)
+  }
+  const n = /^(-?[\d.]+)(px|%|deg|turn|rad)?$/i.exec(arg)
+  if (!n) return []
+  const unit = (n[2] || '').toLowerCase()
+  return [unit === '%' ? n[1] / 100 : n[1] * UNITS[unit]]
+}
+
+/**
+ * An effect string as amounts by name: 'blur(3px) brightness(70%) tint(#f06 .5)' →
+ * { blur: 3, brightness: 0.7, tint: [1, 0, 0.4, 0.5] }. One number stays a number.
+ */
 export function parseEffect (value) {
   const fx = {}
   if (!value || value === 'none') return fx
-  for (const [, name, number, unit = ''] of value.matchAll(/([a-z][\w-]*)\(\s*(-?[\d.]+)\s*(px|%|deg|turn|rad)?\s*\)/gi)) {
-    fx[name.toLowerCase()] = unit === '%' ? number / 100 : number * UNITS[unit.toLowerCase()]
+  for (const [, name, args] of value.matchAll(/([a-z][\w-]*)\(([^()]*)\)/gi)) {
+    const list = args.trim().split(/[\s,]+/).flatMap(amounts)
+    if (list.length) fx[name.toLowerCase()] = list.length === 1 ? list[0] : list.slice(0, 4)
   }
   return fx
 }
@@ -315,7 +341,7 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
   const unknown = new Set()
   /** An effect into the view's shader: each one at its amount, or at none. */
   const setEffect = (effect) => {
-    for (const [name, e] of fxList) gl.uniform1f(view.u[glslName(name)], effect[name] ?? e.none)
+    for (const [name, e] of fxList) gl.uniform4f(view.u[glslName(name)], ...four(effect[name] ?? e.none))
     for (const name in effect) {
       if (effects[name] || unknown.has(name)) continue
       unknown.add(name)
@@ -326,10 +352,21 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     const out = {}
     for (const name of new Set([...Object.keys(a), ...Object.keys(b)])) {
       const none = effects[name]?.none ?? 0
-      out[name] = lerp(a[name] ?? none, b[name] ?? none, t)
+      const from = a[name] ?? none
+      const to = b[name] ?? none
+      out[name] = Array.isArray(from) || Array.isArray(to)
+        ? four(from).map((x, i) => lerp(x, four(to)[i], t))
+        : lerp(from, to, t)
     }
     return out
   }
+  /** Whether a layer at rest has an effect that changes with time (animate: true) and is on. */
+  const living = layers => layers.some(({ effect }) => Object.entries(effect).some(([name, value]) => {
+    const e = effects[name]
+    return e?.animate && four(value).some((x, i) => x !== four(e.none)[i])
+  }))
+  /** The frame that redraws the views at rest while one of them has a living effect. */
+  let alive = 0
 
   // Each map holds textures of the current context: a lost one takes them all (see restore).
   /** view → { st }: the texture its stream keeps current. */
@@ -355,7 +392,20 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     if (canvas.width === width && canvas.height === height) return
     canvas.width = width
     canvas.height = height
-    draw(last)
+    // At rest the views behind are drawn again: one whose photo no longer fits goes to the DOM,
+    // and once the resize stops, it is photographed again (retexture).
+    if (app.canvas.dataset.zGlMoving || lost) draw(last)
+    else sync()
+    clearTimeout(retextureTimer)
+    retextureTimer = setTimeout(retexture, 400)
+  }
+  let retextureTimer = 0
+  /** Views behind without a texture (a resize, a context back) are photographed where they are, at rest. */
+  async function retexture () {
+    if (lost || app.blockEvents || scrub || app.canvas.dataset.zGlMoving) return
+    const bare = views().filter(v => (v.classList.contains('is-previous-view') || v.classList.contains('is-last-view')) && !behind(v))
+    for (const view of bare) await snapshot(view, false).catch(error => log(`no photo of a view behind (${error.message}).`))
+    if (bare.length && !app.blockEvents && !app.canvas.dataset.zGlMoving) sync()
   }
   const observer = new ResizeObserver(resize)
   observer.observe(app.canvas)
@@ -377,6 +427,7 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     lost = false
     resize()
     sync()
+    retexture()
   })
 
   function mips (rec) {
@@ -499,9 +550,19 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     return rec
   }
 
+  /**
+   * A photo of a view, uploaded. One behind is read where it is, at its own size (its root
+   * scale undone) and without the engine's effect, which the shader draws; it keeps its glass,
+   * since it is in sight while SnapDOM reads it.
+   */
   async function snapshot (view, offscreen) {
-    const ratio = dpr * (offscreen ? 1 : rootScale(view))
-    const { canvas: shot, ms } = await photo(view, offscreen)
+    const back = !offscreen && (view.classList.contains('is-previous-view') || view.classList.contains('is-last-view'))
+    const k = offscreen ? 1 : rootScale(view)
+    const options = back
+      ? { scale: 1 / k, glass: true, excludeStyleProps: prop => prop.startsWith('outline') || (prop === 'filter' && view.classList.contains('has-effect')) }
+      : {}
+    const ratio = dpr * (back ? 1 : k)
+    const { canvas: shot, ms } = await photo(view, offscreen, options)
     dropPhoto(view)
     const rec = upload(shot, ratio)
     photos.set(view, rec)
@@ -720,6 +781,13 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
   function draw (layers) {
     last = layers
     if (lost) return
+    // An effect that changes with time keeps the views at rest redrawn; a motion draws its own frames.
+    if (!alive && living(layers)) {
+      alive = requestAnimationFrame(() => {
+        alive = 0
+        if (!app.canvas.dataset.zGlMoving && !scrub) draw(last)
+      })
+    }
     // Blurs first: they draw into their own framebuffers. CSS blurs a view in its own pixels,
     // before its transform, so σ is in texels of the photo.
     const textures = layers.map(({ rec, effect, alpha }) => {
@@ -763,6 +831,12 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
 
   const views = () => [...app.canvas.children].filter(v => v.classList.contains('z-view'))
   const restEffect = view => view.classList.contains('has-effect') ? parseEffect(view.style.getPropertyValue('--z-effect-filter')) : NONE
+  /**
+   * view → the effect it was last drawn with at rest. A zoom that changes the effect of a view
+   * that stays behind starts from it: by then the engine has written the new one.
+   */
+  const shown = new WeakMap()
+  const shownEffect = view => shown.get(view) || restEffect(view)
 
   /**
    * A view back to DOM with its effect where WebGL left it. Hidden, it had no filter, so the
@@ -805,7 +879,9 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
       const style = getComputedStyle(view)
       const m = new DOMMatrix(style.transform)
       const origin = style.transformOrigin.split(' ').map(parseFloat)
-      layers.push(layer(view, rec, m, origin, restEffect(view)))
+      const effect = restEffect(view)
+      shown.set(view, effect)
+      layers.push(layer(view, rec, m, origin, effect))
     }
     draw(layers)
   }
@@ -1026,9 +1102,9 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
       // Effects: zoom-in, none → previous effect → last effect; zoom-out, the other way.
       let fx = [NONE, NONE]
       if (forward && role === 1) fx = [NONE, engineEffect(view)]
-      if (forward && role === 2) fx = [restEffect(view), engineEffect(view)]
+      if (forward && role === 2) fx = [shownEffect(view), engineEffect(view)]
       if (!forward && role === 1) fx = [engineEffect(view), NONE]
-      if (!forward && role === 2) fx = [restEffect(view), engineEffect(view)]
+      if (!forward && role === 2) fx = [shownEffect(view), engineEffect(view)]
       return { view, role, from, to, origin, fx, rec: prepared.recs.get(view), z: order.indexOf(view) }
     }).sort((a, b) => a.z - b.z)
 
@@ -1196,22 +1272,22 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
       const at = getComputedStyle(view).transformOrigin.split(' ').map(parseFloat)
       view.style.transform = transform
       view.style.transformOrigin = transformOrigin
-      layers.push({ view, rec, from, to: target, origin: at, fx: [restEffect(view), to] })
+      layers.push({ view, rec, from, to: target, origin: at, fx: [shownEffect(view), to] })
     }
     for (const { view } of layers) view.classList.add(OFF)
     app.canvas.dataset.zGlMoving = 'scrub'
     scrub = { layers, progress: 0 }
-    draw(scrubLayers(0))
+    draw(scrubLayers(scrub, 0))
     return true
   }
 
-  const scrubLayers = p => scrub.layers.map(l => layer(l.view, l.rec, interpolateMatrix(l.from, l.to, p), l.origin, mixEffect(l.fx[0], l.fx[1], p), 1, 1 - p))
+  const scrubLayers = (own, p) => own.layers.map(l => layer(l.view, l.rec, interpolateMatrix(l.from, l.to, p), l.origin, mixEffect(l.fx[0], l.fx[1], p), 1, 1 - p))
 
   /** The gesture moved: progress 0 (where it started) to 1 (the zoom-out done). */
   function scrubTo (progress) {
     if (!scrub || lost) return
     scrub.progress = progress
-    draw(scrubLayers(progress))
+    draw(scrubLayers(scrub, progress))
   }
 
   /**
@@ -1228,13 +1304,13 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
       play(duration, (elapsed) => {
         if (scrub !== own) return last
         own.progress = lerp(from, target, curve(clamp01(elapsed / duration)))
-        return scrubLayers(own.progress)
+        return scrubLayers(own, own.progress)
       }, () => {
         if (scrub !== own) return
         scrub = null
         // Put back, it is at rest as before; done, it stays drawn until the engine's zoom-out,
         // instant now, hands the views to the DOM.
-        if (commit) draw(scrubLayers(1))
+        if (commit) draw(scrubLayers(own, 1))
         else sync()
       }, resolve, false)
     })
@@ -1251,6 +1327,8 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
   /** Everything back to DOM, the canvas out. */
   function destroy () {
     observer.disconnect()
+    clearTimeout(retextureTimer)
+    cancelAnimationFrame(alive)
     release()
     delete app.canvas.dataset.zGlMoving
     canvas.remove()
