@@ -91,7 +91,7 @@ describe('webgl: option', () => {
 
   it('takes effects as GLSL by name, and warns about anything else', async () => {
     await start({ webgl: { effects: { pixelate: { none: 0, uv: 'st = st;' } }, glass: true } })
-    expect(app.webgl).toEqual({ effects: { pixelate: { none: 0, uv: 'st = st;' } }, glass: true, hover: false, ancestors: false })
+    expect(app.webgl).toEqual({ effects: { pixelate: { none: 0, uv: 'st = st;' } }, glass: true, hover: false, ancestors: true })
     app.destroy()
     await start({ webgl: { effects: { bad: { uv: 1 } } } })
     expect(app.webgl.effects).toEqual({})
@@ -232,8 +232,8 @@ describe.runIf(hasWebGL2)('webgl', () => {
     expect(role('current').dataset.viewName).toBe('b')
   })
 
-  it('ancestors: past the third level, the views behind stay as one picture, and go back', async () => {
-    await start({ webgl: { ancestors: true }, views: { ...views, c: view('c', ['d']), d: view('d') } })
+  it('ancestors (on by default): past the third level, the views behind stay as one picture, and go back', async () => {
+    await start({ views: { ...views, c: view('c', ['d']), d: view('d') } })
     for (const to of ['a', 'c', 'd']) {
       await app.zoomIn(role('current').querySelector(`.zoom-me[data-to="${to}"]`))
       await settled()

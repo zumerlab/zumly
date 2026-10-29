@@ -493,7 +493,7 @@ export function checkParameters (parameters, instance) {
     if (!instance.flatten) {
       notification(false, '\'webgl\' needs flatten (its SnapDOM photos and stream). Ignoring.', 'warn')
     } else {
-      instance.webgl = { effects: {}, glass: false, hover: false, ancestors: false }
+      instance.webgl = { effects: {}, glass: false, hover: false, ancestors: true }
       if (o.effects !== undefined) {
         const amount = n => typeof n === 'number' || (Array.isArray(n) && n.length <= 4 && n.every(x => typeof x === 'number'))
         const valid = o.effects && typeof o.effects === 'object' && Object.values(o.effects).every(e => e && amount(e.none) && (typeof e.uv === 'string' || typeof e.color === 'string'))
@@ -510,7 +510,7 @@ export function checkParameters (parameters, instance) {
       }
       if (o.ancestors !== undefined) {
         if (typeof o.ancestors === 'boolean') instance.webgl.ancestors = o.ancestors
-        else notification(false, '\'webgl.ancestors\' must be true or false. Falling back to false.', 'warn')
+        else notification(false, '\'webgl.ancestors\' must be true or false. Falling back to true.', 'warn')
       }
     }
   } else if (glIn !== undefined && glIn !== false) {

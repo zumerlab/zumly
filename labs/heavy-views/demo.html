@@ -95,7 +95,7 @@ const opt = {
   // down to level N. Without it, two levels: board and detail.
   levels: Math.min(10, Math.max(2, parseInt(q.get('levels'), 10) || 2)),
   hover: q.get('hover') === '1', // with gl: experiment 10, a zoom-in gets ready while the pointer is on its trigger
-  ancestors: q.get('ancestors') === '1', // with gl: every view behind stays, as one picture (try with levels=6)
+  ancestors: q.get('ancestors') !== '0', // with gl: every view behind stays, as one picture (ancestors=0 turns it off; see it with levels=8&big=1)
   ms: parseInt(q.get('ms'), 10) || 0, // the length of a zoom, in ms (Zumly's own without it)
   bigNext: q.get('big') === '1', // with levels: small zooms, where the views far behind show
   slow: Math.max(0, parseInt(q.get('slow'), 10) || 0), // a detail takes that many ms to fetch its readings

@@ -256,7 +256,7 @@ function compile (gl, type, source) {
  *   glass: whether the photo of a view coming in or leaving keeps its backdrop-filter (slower to take).
  * @returns {object|null} null without WebGL2: the views stay DOM.
  */
-export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlass = false, hover = false, ancestors = false }) {
+export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlass = false, hover = false, ancestors = true }) {
   const log = msg => app.notify(`webgl: ${msg}`, 'info')
   const flattener = () => app._flattener
   const canvas = document.createElement('canvas')

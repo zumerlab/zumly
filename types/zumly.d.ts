@@ -238,9 +238,9 @@ export interface WebGLOptions {
    */
   hover?: boolean
   /**
-   * Experimental. Zumly keeps three views; a zoom-in to a fourth level takes the oldest out, and
-   * what showed of it goes blank. With ancestors, every view behind the two it draws stays, as
-   * one picture that moves with the zoom. Default: false.
+   * Zumly keeps three views; a zoom-in to a fourth level takes the oldest out, and what showed
+   * of it went blank. With ancestors, every view behind the two it draws stays, as one picture
+   * that moves with the zoom. false brings the old behavior back. Default: true.
    */
   ancestors?: boolean
 }

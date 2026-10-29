@@ -618,7 +618,7 @@ Martin: "en los zoom-in se ven las vistas previas; ahora hay hasta dos, y al ir 
 - **Qué pasa hoy:** el motor tiene como mucho tres vistas: la actual y dos atrás. Un zoom-in a un nivel más saca del lienzo la más vieja al arrancar (`src/zumly.js`, `removeView`). Lo que se veía de ella alrededor de las otras queda en blanco de golpe.
   - Solo se nota cuando cada nivel acerca poco: disparadores grandes o vistas chicas.
   - En la demo de niveles normal cada nivel acerca 5×, y la vista de dos niveles atrás ya tapa todo.
-- **`webgl: { ancestors: true }`:** cuando el motor saca la vista más vieja, WebGL dibuja una vez, en una sola imagen del tamaño del lienzo, esa vista más la imagen de todo lo que había detrás. Esa imagen se mueve con la escena y queda atrás de todo.
+- **`webgl: { ancestors }`** (prendido por defecto): cuando el motor saca la vista más vieja, WebGL dibuja una vez, en una sola imagen del tamaño del lienzo, esa vista más la imagen de todo lo que había detrás. Esa imagen se mueve con la escena y queda atrás de todo.
   - Va a la mitad de los píxeles de la pantalla, porque queda atrás y borrosa.
   - Hay una por nivel pasado el tercero (~4 MB cada una a dpr 2). Un zoom-out vuelve a la anterior.
   - La vista que el motor vuelve a poner queda escondida hasta que termina el zoom-out, para que no aparezca quieta.
@@ -629,7 +629,10 @@ Martin: "en los zoom-in se ven las vistas previas; ahora hay hasta dos, y al ir 
   - con la opción, alrededor se ven los niveles de antes, cada vez más borrosos, y se mueven con el zoom en los dos sentidos;
   - el nivel 5 al entrar y al volver del 6 queda idéntico.
 - **Costo:** una pasada más por zoom-in, solo cuando el motor saca una vista, y la memoria de las imágenes. No está medido con trace.
-- **Pendiente:** que Martin lo mire a mano, y decidir el look. Hoy cada imagen guarda el efecto con que se dibujó; se podría oscurecer o desenfocar más a cada nivel.
+- **Martin (29/10), mirándolo:** "es mucho mejor, hay más continuidad visual con ancestors".
+- **Decidido:**
+  - va prendido por defecto con `webgl`; `ancestors: false` vuelve a lo de antes, y en la demo, `ancestors=0`;
+  - el look queda como está: cada nivel guarda el efecto con que se dibujó.
 
 ## Plan
 
