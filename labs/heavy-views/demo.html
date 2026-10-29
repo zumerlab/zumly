@@ -30,7 +30,11 @@
   .detail { width: 520px; height: 380px; border-radius: 22px; padding: 20px; box-sizing: border-box; background: hsl(var(--h) 45% 16% / .92); border: 1px solid hsl(var(--h) 80% 70% / .5); overflow: hidden; }
   .detail h2 { margin: 0 0 12px; font-size: 18px; }
   .rows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .reading { width: 320px; height: 220px; border-radius: 18px; padding: 18px; box-sizing: border-box; background: #18324a; border: 1px solid #5aa9e6; }
+  .reading { width: 320px; height: 220px; border-radius: 18px; padding: 18px; box-sizing: border-box; background: hsl(var(--h, 205) 50% 20%); border: 1px solid hsl(var(--h, 205) 70% 63%); position: relative; }
+  .reading h2 { margin: 0; font-size: 15px; }
+  .reading .level { margin: 2px 0 0; font-size: 11px; opacity: .7; }
+  .reading .nexts { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 8px; }
+  .reading .next { width: 64px; height: 44px; border-radius: 10px; display: grid; place-items: center; font: 700 16px ui-monospace, monospace; background: hsl(var(--h, 205) 60% 40% / .5); border: 1px solid hsl(var(--h, 205) 70% 70% / .6); cursor: pointer; }
   .reading .big { font: 700 72px/1 ui-monospace, monospace; margin: 18px 0 0; }
   .row { height: 22px; border-radius: 6px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; background: hsl(var(--h) 60% 50% / .18); backdrop-filter: blur(4px); }
 
@@ -81,7 +85,9 @@ const opt = {
   gl: q.get('gl') === '1', // experiment 7: zooms drawn with WebGL, and the views behind as textures at rest
   look: q.get('look') || 'css', // with gl: the effects of the views behind (LOOKS)
   follow: q.get('follow') === '1', // a zoom-out follows the wheel, a swipe or a pinch (gestures.follow)
-  levels: q.get('levels') === '3' ? 3 : 2, // levels=3: the first readings of a detail open a third view
+  // levels=N (3 to 10): the first readings of a detail open a view, and that one opens the next,
+  // down to level N. Without it, two levels: board and detail.
+  levels: Math.min(10, Math.max(2, parseInt(q.get('levels'), 10) || 2)),
   driver: q.get('driver') || 'css',
 }
 const effects = opt.fx !== 'pane'
@@ -245,17 +251,26 @@ function detail ({ target, props }) {
   target.style.setProperty('--h', props.h)
   let rows = ''
   for (let i = 0; i < 90; i++) {
-    // levels=3: the first three readings open a view of their own, as a third level.
-    const opens = opt.levels === 3 && i < 3
-    const to = opens ? ` zoom-me" data-to="reading" data-n="${i + 1}" data-title="${props.title} · ${i + 1}` : ''
+    // levels=N: the first three readings open a view of their own, the third level.
+    const opens = opt.levels >= 3 && i < 3
+    const to = opens ? ` zoom-me" data-to="reading" data-n="${i + 1}" data-depth="3" data-title="${props.title} · ${i + 1}` : ''
     rows += `<div class="row${to}"><span>reading ${i + 1}</span><span>${(Math.sin(i) * 50 + 50).toFixed(1)}</span></div>`
   }
   target.innerHTML = `<h2>${props.title}</h2><div class="rows">${rows}</div>`
 }
 
+// A reading, at depth 3 to levels; above the last level, three tiles open the next one.
 function reading ({ target, props }) {
+  const depth = +props.depth || 3
   target.className = 'z-view reading'
-  target.innerHTML = `<h2>${props.title}</h2><p class="big">${props.n}</p>`
+  target.style.setProperty('--h', (depth * 47) % 360)
+  let next = ''
+  if (depth < opt.levels) {
+    for (let i = 1; i <= 3; i++) {
+      next += `<div class="zoom-me next" data-to="reading" data-n="${i}" data-depth="${depth + 1}" data-title="${props.title} · ${i}">${i}</div>`
+    }
+  }
+  target.innerHTML = `<h2>${props.title}</h2><p class="level">nivel ${depth} de ${opt.levels}</p><p class="big">${props.n}</p><div class="nexts">${next}</div>`
 }
 
 const app = new Zumly({

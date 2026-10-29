@@ -488,13 +488,24 @@ Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs 
 
 1. **Preparar y después animar (idea 4).** Medido el 28/10 (ver Experimento 1): sin vidrio en la foto, la GPU del zoom-in baja de 39 % a 11 % y la del zoom-out de 39,5 % a 11,5 %, con ~40 ms de espera antes de arrancar y sin anillo. Falta mirarlo a ojo, cancelar con Escape y decidir si va al motor (en `flatten`, o como opción propia).
 2. **Medir con menos margen de GPU:** ventana grande o dpr 3, y una tablet. Sin esto no se sabe cuánto valen 1, 3, 4 y 7 en el hardware de Pulse.
-3. **Capa de vidrio (idea 1)** como forma de los efectos: 0 % en el zoom-out en todas las corridas, sin SnapDOM. Falta que Martin mire el look.
+3. **Capa de vidrio (idea 1)** como forma de los efectos: 0 % en el zoom-out en todas las corridas, sin SnapDOM. Es la única que deja vivas las vistas de atrás, porque siguen siendo DOM. Martin (28/10): sin `flatten`, el zoom-in va fluido y el zoom-out "arrastra un poco".
+    - **Causa:** cada zoom-out salta 5-6 cuadros (huecos de 33 ms en vez de 16), todos en la segunda mitad. Es la GPU: al achicarse el tablero entran cada vez más tarjetas con vidrio, y a eso se suman la capa y las 90 filas con vidrio del detalle que se va. El zoom-in no salta ninguno.
+    - **Arreglo:** con la marca de movimiento (`moving=1`, sin vidrio en las tarjetas mientras se mueve) el zoom-out no salta ninguno, tal cual y en vivo. Falta que Martin mire cómo se ve que las tarjetas pierdan el vidrio durante el zoom.
+    - **Trampa de medición:** esos cuadros no salen como perdidos en `measure.mjs` (Chrome no los marca como `affects_smoothness`), así que el 0 % los escondía. Para verlos hay que medir los huecos entre cuadros presentados. WebGL y `flatten` en el DOM no tienen huecos en ningún sentido.
 4. **Marca de movimiento (opción 2)** como receta de la guía: la GPU del zoom baja de ~60 % a ~17 %.
 5. **La primera transición en frío:** 14,5 % de cuadros perdidos en la primera corrida. Ver si se puede calentar al cargar.
 6. **SnapDOM:** emular el vidrio una sola vez, gradientes como fondo sólido, tramos y `signal`. Abaratan el stream en vistas de vidrio. Y un contenedor grid scrolleado, que sale en una columna (ver Experimento 7). Se hace en su repo.
 7. **WebGL (idea 3).** Hecho de lleno el 28/10 y pasado al motor en `dev` (`src/webgl.js`, opción `webgl`; ver Experimento 7 y "WebGL en el motor"): GPU del zoom de ~40-70 % a 7-8,5 % en Chrome, y a 1-2 % con CPU 4×. Pasan por WebGL los hermanos, los gestos, tres niveles y efectos en GLSL. Falta decidir si va a `main` (docs, guía, Pulse). El movimiento en un worker no hace falta por ahora: durante un zoom WebGL, el hilo principal trabaja 4-7 % y se pierden 0-1,6 % de cuadros.
 8. **Driver con View Transitions (opción 1).**
 9. **Foto ya desenfocada y la vista de dos niveles atrás como velo (opciones 7 y 8)**, si las tablets lo piden.
+10. **Preparar en el hover** (Martin, 28/10: "eso es importante"). Con WebGL, la espera antes de moverse es la foto de la vista que entra (45-160 ms; 713 con CPU 4× y datos en vivo). El prefetcher ya resuelve la vista cuando el puntero o el foco pasan por un disparador, si es HTML o viene de una URL. La idea es armarla ahí mismo fuera de pantalla, sacarle la foto y subirla como textura, para que el clic arranque casi sin espera. Hay que ver:
+    - las vistas que arma una función: hoy no se guardan, porque dependen del disparador y sus props;
+    - el trabajo tirado cuando el puntero pasa y no hay clic: cancelar si se va, y no hacer más de una a la vez;
+    - los datos en vivo: la foto puede quedar vieja entre el hover y el clic;
+    - el tacto, que no tiene hover: `pointerdown` deja unos 100 ms antes del clic;
+    - la memoria de las texturas preparadas y no usadas.
+
+    Medir la espera del clic al movimiento con y sin, tal cual y en vivo, y con CPU 4×.
 
 Descartadas por la medición: sacar `perspective`, `will-change` sostenido y `will-change` justo.
 

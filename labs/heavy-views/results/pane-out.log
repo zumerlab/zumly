@@ -1,0 +1,25 @@
+4 runs at dpr 2, 1280×800, CPU 1×
+   [main] ThreadControllerImpl::RunTask ×1633, BlinkScheduler_PerformMicrotaskCheckpoint ×1336, LocalFrameView::RunStyleAndLayoutLifecyclePhases ×286, LocalFrameView::RunCompositingInputsLifecyclePhase ×284, LocalFrameView::RunPrePaintLifecyclePhase ×283, ProxyMain::BeginMainFrame ×279
+   [viz] ThreadControllerImpl::RunTask ×5604, Graphics.Pipeline ×3837, Receive mojo message ×1304, SimpleWatcher::OnHandleReady ×1129, DirectRenderer::DrawFrame ×495, SkiaRenderer::SwapBuffers ×488
+   [gpu] ThreadControllerImpl::RunTask ×9886, Graphics.Pipeline ×990, Receive mojo message ×12, SimpleWatcher::OnHandleReady ×1
+   [impl] ThreadControllerImpl::RunTask ×4826, Graphics.Pipeline ×2327, SimpleWatcher::OnHandleReady ×1739, Receive mojo message ×1739, Scheduler::BeginFrame ×907, Scheduler::BeginImplFrame ×711
+asis   nf-pane     in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 5  lat 13/11  motion 1011/1009 ms  rest 0%/0%  | in: main 2 impl 3 raster 0 gpu 63 viz 18  | out: main 1 impl 3 raster 0 gpu 63 viz 18
+   [main] ThreadControllerImpl::RunTask ×2236, BlinkScheduler_PerformMicrotaskCheckpoint ×1768, LocalFrameView::RunStyleAndLayoutLifecyclePhases ×399, LocalFrameView::RunPrePaintLifecyclePhase ×397, LocalFrameView::RunCompositingInputsLifecyclePhase ×392, ProxyMain::BeginMainFrame ×386
+   [gpu] ThreadControllerImpl::RunTask ×10626, Graphics.Pipeline ×1092, Receive mojo message ×7, SimpleWatcher::OnHandleReady ×1
+   [impl] ThreadControllerImpl::RunTask ×5912, Graphics.Pipeline ×3115, SimpleWatcher::OnHandleReady ×2359, Receive mojo message ×2359, Scheduler::BeginFrame ×1205, Scheduler::BeginImplFrame ×904
+   [viz] ThreadControllerImpl::RunTask ×6778, Graphics.Pipeline ×4763, Receive mojo message ×1855, SimpleWatcher::OnHandleReady ×1625, DirectRenderer::DrawFrame ×545, SkiaRenderer::SwapBuffers ×540
+live   nf-pane     in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 3  lat 10/12  motion 1009/1012 ms  rest 0%/0%  | in: main 2 impl 3 raster 0 gpu 64 viz 18  | out: main 2 impl 4 raster 0 gpu 65 viz 20
+   [main] ThreadControllerImpl::RunTask ×1724, BlinkScheduler_PerformMicrotaskCheckpoint ×1476, LocalFrameView::RunStyleAndLayoutLifecyclePhases ×339, LocalFrameView::RunPrePaintLifecyclePhase ×324, LocalFrameView::RunCompositingInputsLifecyclePhase ×312, ProxyMain::BeginMainFrame ×300
+   [gpu] ThreadControllerImpl::RunTask ×10154, Graphics.Pipeline ×1016, Receive mojo message ×17, SimpleWatcher::OnHandleReady ×2
+   [viz] ThreadControllerImpl::RunTask ×5738, Graphics.Pipeline ×3990, Receive mojo message ×1363, SimpleWatcher::OnHandleReady ×1193, DirectRenderer::DrawFrame ×507, SkiaRenderer::SwapBuffers ×500
+   [impl] ThreadControllerImpl::RunTask ×5054, Graphics.Pipeline ×2395, SimpleWatcher::OnHandleReady ×1811, Receive mojo message ×1811, Scheduler::BeginFrame ×919, Scheduler::BeginImplFrame ×736
+asis   nf-pane     in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 5  lat 10/13  motion 1006/1013 ms  rest 0%/0%  | in: main 2 impl 3 raster 0 gpu 64 viz 19  | out: main 2 impl 3 raster 0 gpu 65 viz 20
+   [main] ThreadControllerImpl::RunTask ×2454, BlinkScheduler_PerformMicrotaskCheckpoint ×1928, LocalFrameView::RunStyleAndLayoutLifecyclePhases ×611, LocalFrameView::RunPrePaintLifecyclePhase ×587, LocalFrameView::RunCompositingInputsLifecyclePhase ×552, ProxyMain::BeginMainFrame ×398
+   [gpu] ThreadControllerImpl::RunTask ×10404, Graphics.Pipeline ×1073, Receive mojo message ×12, SimpleWatcher::OnHandleReady ×1
+   [viz] ThreadControllerImpl::RunTask ×6747, Graphics.Pipeline ×4709, Receive mojo message ×1854, SimpleWatcher::OnHandleReady ×1599, DirectRenderer::DrawFrame ×536, SkiaRenderer::SwapBuffers ×532
+   [impl] ThreadControllerImpl::RunTask ×6185, Graphics.Pipeline ×3081, SimpleWatcher::OnHandleReady ×2305, Receive mojo message ×2304, Scheduler::BeginFrame ×1200, Scheduler::BeginImplFrame ×893
+live   nf-pane     in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 4  lat 8/8  motion 1003/1011 ms  rest 0%/0%  | in: main 2 impl 3 raster 0 gpu 67 viz 18  | out: main 2 impl 3 raster 0 gpu 65 viz 20
+
+Medians across runs
+asis   nf-pane     in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 5  lat 11.5/12  motion 1008.5/1011 ms  rest 0%/0%  | in: main 2 impl 3 raster 0 gpu 63.5 viz 18.5  | out: main 1.5 impl 3 raster 0 gpu 64 viz 19
+live   nf-pane     in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 3.5  lat 9/10  motion 1006/1011.5 ms  rest 0%/0%  | in: main 2 impl 3 raster 0 gpu 65.5 viz 18  | out: main 2 impl 3.5 raster 0 gpu 65 viz 20
