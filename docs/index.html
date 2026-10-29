@@ -52,6 +52,16 @@
     var Z = window.Zumly
     if (!Z) { console.error('Zumly not loaded'); return }
 
+    // The Phone showcase draws its zooms with WebGL on its own page: its card opens that page.
+    function phoneCard () {
+      var colors = ['#111', '#fff', '#ffd60a', '#8e8e96', '#fa233b', '#5ac46b', '#c7c7cc', '#0a84ff', '#111', '#333', '#ffffff55', '#fff']
+      var icons = colors.map(function (c) { return '<i style="background:' + c + '"></i>' }).join('')
+      return '<div class="sc-card">' +
+        '<a class="sc-preview sc-phone" href="showcases/phone.html" target="_blank" rel="noopener" aria-label="Open Phone"><div class="sc-phone-body"><div class="sc-phone-screen">' + icons + '<b></b></div></div></a>' +
+        '<div class="sc-label"><span class="sc-tag">WebGL</span><h4>Phone</h4><p>An iOS-style home screen: every app opens with a zoom from its icon. Change how often SnapDOM captures the screen and watch the zoom.</p>' +
+        '<a href="showcases/phone.html" target="_blank" rel="noopener">Open full screen &#8599;</a></div></div>'
+    }
+
     // Every view lives in its own file; this page only wires them together.
     var views = {
       home: 'views/home.html',
@@ -65,7 +75,7 @@
             '<div class="sc-preview zoom-me" data-to="' + sc.root + '" aria-label="Open ' + sc.title + '"><div class="sc-mini">' + sc.preview() + '</div></div>' +
             '<div class="sc-label"><span class="sc-tag">' + sc.tag + '</span><h4>' + sc.title + '</h4><p>' + sc.blurb + '</p>' +
             '<a href="' + sc.page + '" target="_blank" rel="noopener">Open full screen &#8599;</a></div></div>'
-        }).join('')
+        }).join('') + phoneCard()
         return '<div class="z-view v v-section" data-title="Showcases"><div class="v-inner">' +
           '<h2 class="v-title">Showcases</h2><p class="v-sub">Small apps built with Zumly. Zoom into a card: the app grows out of its own thumbnail.</p>' +
           '<div class="sc-grid">' + cards + '</div></div></div>'
@@ -128,7 +138,21 @@
       })
     })
 
+    // The version badge on the home view: the one on npm, which is what this site loads.
+    var npmVersion = fetch('https://unpkg.com/zumly/package.json')
+      .then(function (r) { return r.json() })
+      .then(function (pkg) { return pkg.version })
+      .catch(function () { return null })
+    function showVersion () {
+      npmVersion.then(function (version) {
+        var el = app.canvas.querySelector('.home-version')
+        if (el && version) el.textContent = 'v' + version
+      })
+    }
+    app.on('viewMounted', function (e) { if (e.viewName === 'home') showVersion() })
+
     app.init().then(function () {
+      showVersion()
       // GitHub stars (shields.io JSON avoids GitHub API rate limits)
       fetch('https://img.shields.io/github/stars/zumerlab/zumly.json')
         .then(function (r) { return r.json() })

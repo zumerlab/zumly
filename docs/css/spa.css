@@ -69,10 +69,12 @@ html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143
   color: var(--text);
 }
 .home-version {
-  position: absolute; bottom: 4px; right: -46px;
-  font-size: 0.62rem; font-weight: 700; color: var(--accent);
+  position: absolute; bottom: 4px; left: calc(100% + 8px);
+  font-size: 0.62rem; font-weight: 700; color: var(--accent); white-space: nowrap;
   border: 1px solid var(--line-strong); padding: 1px 7px; border-radius: 99px;
 }
+/* Filled from npm when the page loads; hidden until then. */
+.home-version:empty { display: none; }
 .home-tagline { font-size: 0.82rem; font-weight: 650; letter-spacing: 0.4em; color: var(--fish); margin: 8px 0 12px; }
 .home-sub { font-size: clamp(1rem, 2.4vw, 1.18rem); color: var(--text-mid); max-width: 460px; margin: 0 auto 30px; }
 
@@ -131,6 +133,16 @@ html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143
 .sc-label h4 { font-size: 0.95rem; margin: 2px 0 0; }
 .sc-label p { font-size: 0.8rem; color: var(--text-dim); margin: 3px 0 6px; }
 .sc-label a { font-size: 0.78rem; color: var(--accent); }
+/* The Phone showcase runs on its own page (WebGL, its own Zumly): its card is a drawing of it. */
+.sc-phone { display: grid; place-items: center; background: radial-gradient(circle at 30% 20%, #232a52, #0b0d16 70%); }
+.sc-phone-body { height: 82%; aspect-ratio: 390 / 844; padding: 2.4%; border-radius: 14% / 6.5%; background: #2b2e36; box-shadow: 0 8px 30px #0008; }
+.sc-phone-screen {
+  position: relative; height: 100%; border-radius: 12% / 5.6%; overflow: hidden; padding: 22% 9% 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); align-content: start; gap: 9% 12%;
+  background: radial-gradient(circle at 15% 8%, #ff8a5c, transparent 55%), radial-gradient(circle at 95% 45%, #7b5cff, transparent 55%), radial-gradient(circle at 25% 100%, #19b4ff, transparent 55%), #1b1238;
+}
+.sc-phone-screen i { aspect-ratio: 1; border-radius: 24%; }
+.sc-phone-screen b { position: absolute; left: 6%; right: 6%; bottom: 3%; height: 11%; border-radius: 30%; background: #ffffff40; }
 
 /* ━━━ API view ━━━ */
 .v-doc { background: var(--bg); }
