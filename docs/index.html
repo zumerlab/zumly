@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="css/site.css" />
   <link rel="stylesheet" href="css/spa.css" />
   <link rel="stylesheet" href="css/showcases.css" />
+  <link rel="stylesheet" href="css/phone.css" />
 </head>
 
 <body>
@@ -47,20 +48,12 @@
   <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
   <script src="js/site.js"></script>
   <script src="js/showcases.js"></script>
+  <script src="js/phone.js"></script>
   <script>
   ;(function () {
     'use strict'
     var Z = window.Zumly
     if (!Z) { console.error('Zumly not loaded'); return }
-
-    // The Phone showcase draws its zooms with WebGL on its own page: its card opens that page.
-    function phoneCard () {
-      return '<div class="sc-card">' +
-        '<a class="sc-preview sc-phone" href="showcases/phone.html" target="_blank" rel="noopener" aria-label="Open Phone">' +
-        '<img src="showcases/phone-preview.webp" alt="" width="168" height="361" loading="lazy" decoding="async"></a>' +
-        '<div class="sc-label"><span class="sc-tag">Drawing</span><h4>Phone</h4><p>An iOS-style home screen: every app opens with a zoom from its icon. Draw it with the DOM, with SnapDOM captures or with WebGL.</p>' +
-        '<a href="showcases/phone.html" target="_blank" rel="noopener">Open full screen &#8599;</a></div></div>'
-    }
 
     // Every view lives in its own file; this page only wires them together.
     var views = {
@@ -69,13 +62,13 @@
       learn: 'views/learn.html',
       // Each card is a thumbnail of the showcase's first view, so the zoom into it is seamless
       showcases: function () {
-        var cards = ['assembly', 'house', 'mission'].map(function (name) {
+        var cards = ['assembly', 'house', 'mission', 'phone'].map(function (name) {
           var sc = window.ZumlyShowcases[name]
           return '<div class="sc-card">' +
             '<div class="sc-preview zoom-me" data-to="' + sc.root + '" aria-label="Open ' + sc.title + '"><div class="sc-mini">' + sc.preview() + '</div></div>' +
             '<div class="sc-label"><span class="sc-tag">' + sc.tag + '</span><h4>' + sc.title + '</h4><p>' + sc.blurb + '</p>' +
             '<a href="' + sc.page + '" target="_blank" rel="noopener">Open full screen &#8599;</a></div></div>'
-        }).join('') + phoneCard()
+        }).join('')
         return '<div class="z-view v v-section" data-title="Showcases"><div class="v-inner">' +
           '<h2 class="v-title">Showcases</h2><p class="v-sub">Small apps built with Zumly. Zoom into a card: the app grows out of its own thumbnail.</p>' +
           '<div class="sc-grid">' + cards + '</div></div></div>'
@@ -104,7 +97,7 @@
     }
 
     views.showcases.title = 'Showcases'   // names the sibling dot before the view is shown
-    ;['assembly', 'house', 'mission'].forEach(function (name) { Object.assign(views, window.ZumlyShowcases[name].views) })
+    ;['assembly', 'house', 'mission', 'phone'].forEach(function (name) { Object.assign(views, window.ZumlyShowcases[name].views) })
 
     var app = new Z({
       mount: '#app',

@@ -133,9 +133,9 @@ html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143
 .sc-label h4 { font-size: 0.95rem; margin: 2px 0 0; }
 .sc-label p { font-size: 0.8rem; color: var(--text-dim); margin: 3px 0 6px; }
 .sc-label a { font-size: 0.78rem; color: var(--accent); }
-/* The Phone showcase runs on its own page (WebGL, its own Zumly): its card is a screenshot of it. */
-.sc-phone { display: block; position: relative; background: radial-gradient(circle at 30% 20%, #232a52, #0b0d16 70%); }
-.sc-phone img { position: absolute; top: 7%; left: 50%; height: 86%; width: auto; transform: translateX(-50%); }
+/* Phone showcase (css/phone.css): a screen is as big as the phone on its first view, inside the
+   bars at the top and bottom of the canvas. */
+#app { --ph-h: calc((100vh - 128px) * .89); --ph-w: calc(var(--ph-h) * 390 / 844); }
 
 /* ━━━ API view ━━━ */
 .v-doc { background: var(--bg); }
