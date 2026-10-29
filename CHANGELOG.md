@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v1.2.0](https://github.com/zumerlab/zumly/compare/v1.1.0...v1.2.0)
+
+> 29 October 2026
+
+**Features**
+
+- a zoom-out fades the view into its trigger [`7a5ef36`](https://github.com/zumerlab/zumly/commit/7a5ef36af199340a5e1d418a1025c2783abb4cfe)
+
+**Fixes**
+
+- flatten stops costing frames at rest and on the way back [`4d8b5a4`](https://github.com/zumerlab/zumly/commit/4d8b5a4d364b90ce049f75a68eb0126c242659d6)
+- flatten's photo keeps its own size, centred on the view [`d6d0e89`](https://github.com/zumerlab/zumly/commit/d6d0e8908116093544ec41e027c7ca86059a7565)
+- the CSS driver ends a zoom-out with its animation, not on the safety timer [`a0c51b5`](https://github.com/zumerlab/zumly/commit/a0c51b56c7feccf93a7fb97fe46ca6a8f361817d)
+
+**Performance**
+
+- the WAAPI driver starts a zoom-out on the next frame [`fb71e7a`](https://github.com/zumerlab/zumly/commit/fb71e7a5de19b4c8dfc732adb63427f578d9dc73)
+- views riding along a zoomOut(n) keep their raster [`a490839`](https://github.com/zumerlab/zumly/commit/a49083955ca9f5518bd9e844840054a6aa0e127c)
+
+**Docs**
+
+- WebGL in the heavy views guide, the API, README and llms [`7c9b16c`](https://github.com/zumerlab/zumly/commit/7c9b16cc46d3ffc7d236234a995ce4fa56022e56)
+- heavy views guide on drivers, deferred and the blur Chrome cannot composite [`eb50311`](https://github.com/zumerlab/zumly/commit/eb5031196ecaad754f288405e17a43ac1eb5a4bc)
+
+
 #### [v1.1.0](https://github.com/zumerlab/zumly/compare/v1.0.0...v1.1.0)
 
 > 27 October 2026
