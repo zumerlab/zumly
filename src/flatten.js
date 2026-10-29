@@ -335,7 +335,9 @@ export class Flattener {
           if (frame.reason !== 'start') state.frames.push({ t, ms: frame.ms })
           state.frames = state.frames.filter(f => t - f.t < STREAM_WINDOW)
           const busy = state.frames.reduce((sum, f) => sum + f.ms, 0)
-          if (frame.full && frame.reason !== 'start' && frame.ms > STREAM_SLOW_MS) off(`full frames take ${Math.round(frame.ms)} ms`)
+          // A keyframe (the plugin's full frame now and then, at idle) is not a slow device.
+          const slow = frame.full && frame.reason !== 'start' && frame.reason !== 'keyframe' && frame.ms > STREAM_SLOW_MS
+          if (slow) off(`full frames take ${Math.round(frame.ms)} ms`)
           else if (busy > STREAM_BUDGET * STREAM_WINDOW) off('keeping its photo current costs too much')
         }
       })
