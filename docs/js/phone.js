@@ -2,12 +2,14 @@
 // icon. Like the other showcases, the demo (index.html) adds these views to its own;
 // showcases/phone.html runs them alone, inside a phone, with SnapDOM and WebGL to pick from.
 //
-// window.ZumlyShowcases.phone = { title, tag, blurb, page, root, views, preview() }
-//   root 'phone' is the whole phone, for the demo; 'phone-home' is only its screen, for the
-//   page, whose canvas is the screen.
+// window.ZumlyShowcases.phone = { title, tag, blurb, page, root, views, preview(), screenViews }
+//   views     the demo's one view: the whole phone. Its screen runs a Zumly of its own on
+//             screenViews, so an app opens inside the screen and the phone stays where it is.
+//   screenViews  the screens, from 'phone-home'; showcases/phone.html runs them on its canvas,
+//             which is the phone's screen too.
 //
-// Every phone view is a size container (.ph-view) and sizes what is in it in its own units, so
-// the same view fits the page's phone and the demo's canvas (docs/css/phone.css).
+// Every phone screen is a size container (.ph-view) and sizes what is in it in its own units
+// (docs/css/phone.css).
 ;(function () {
   'use strict'
   const showcases = window.ZumlyShowcases = window.ZumlyShowcases || {}
@@ -83,11 +85,8 @@
     <div class="dots"><i></i><i></i></div>
     <div class="dock">${['phone', 'safari', 'messages', 'mail'].map(icon).join('')}</div>`
 
-  // For the page: the screen alone, as its canvas is the phone's screen.
+  // The first screen, on the phone's canvas.
   const phoneHome = () => `<div class="z-view ph ph-view ph-home" data-title="Home">${homeInner()}</div>`
-  // For the demo: the whole phone, frame and all, so its card is a picture of a phone.
-  const phoneStage = () => `<div class="z-view sx-root ph-stage" data-title="Phone"><div class="ph-device"><div class="ph-screen"><div class="ph ph-home ph-fill">
-      <div class="ph-status"><span class="js-now">9:41</span><i class="ph-island"></i></div>${homeInner()}</div></div></div></div>`
 
   // ── Apps ───────────────────────────────────────────────────────────
   const view = (target, className, title, light) => {
@@ -223,13 +222,8 @@
     })
   }
 
-  showcases.phone = {
-    title: 'Phone', tag: 'Drawing', page: 'showcases/phone.html',
-    blurb: 'An iOS-style home screen: every app opens with a zoom from its icon. Full screen, draw it with the DOM, SnapDOM or WebGL.',
-    root: 'phone',
-    views: {
-      phone: phoneStage,
-      'phone-home': phoneHome,
+  const screenViews = {
+    'phone-home': phoneHome,
       'phone-app': generic,
       'phone-weather': weather,
       'phone-clock': clock,
@@ -242,9 +236,54 @@
       'phone-notes': notes,
       'phone-note': note,
       'phone-folder': folder,
-      'phone-calculator': calculator
+    'phone-calculator': calculator
+  }
+
+  // ── The demo's phone ───────────────────────────────────────────────
+  // The whole phone is the demo's view; its screen is a canvas of its own. The demo zooms into
+  // the phone, and the phone's Zumly opens its apps inside the screen.
+  const screenParts = `<div class="ph-status"><span class="js-now">9:41</span></div><i class="ph-island"></i>`
+  const phoneMarkup = (screen) => `<div class="ph-device"><div class="ph-screen">${screen}${screenParts}</div></div>`
+  // What happens inside the phone stays there: the demo does not take its taps, keys or gestures.
+  const OWN_EVENTS = ['mouseup', 'mousedown', 'mouseover', 'click', 'touchstart', 'touchmove', 'touchend', 'touchcancel', 'wheel', 'keydown', 'keyup', 'focusin', 'pointerdown']
+
+  const phone = {
+    title: 'Phone',
+    render ({ target, onCleanup }) {
+      target.className = 'z-view sx-root ph-stage'
+      target.dataset.title = 'Phone'
+      target.innerHTML = phoneMarkup('<div class="ph-canvas zumly-canvas"></div><button class="ph-home-bar" type="button" aria-label="Home"></button>')
+      onCleanup(() => target.phone?.destroy())
+      return target
     },
-    // The demo's card: the phone without triggers, drawn small.
-    preview: () => phoneStage().replace(/\b(zoom-me|z-view)\b/g, '').replace(/\sdata-(to|title)="[^"]*"/g, '')
+    mounted (node) {
+      const screen = node.querySelector('.ph-screen')
+      for (const type of OWN_EVENTS) screen.addEventListener(type, event => event.stopPropagation())
+      const app = node.phone = new window.Zumly({
+        mount: node.querySelector('.ph-canvas'),
+        initialView: 'phone-home',
+        views: screenViews,
+        transitions: { duration: '550ms', ease: 'cubic-bezier(.2, .8, .2, 1)', effects: ['blur(3px) brightness(.75)', 'blur(8px) brightness(.55)'] },
+        depthNav: false,
+        lateralNav: false,
+        gestures: { follow: true },
+        inputs: { pinch: true }
+      })
+      // Light screens get a dark status bar and home bar.
+      app.on('viewChanged', ({ node: view }) => screen.classList.toggle('light', view?.dataset.light !== undefined))
+      node.querySelector('.ph-home-bar').addEventListener('click', () => { if (app.zoomLevel() > 1) app.zoomOut() })
+      return app.init()
+    }
+  }
+
+  showcases.phone = {
+    title: 'Phone', tag: 'Drawing', page: 'showcases/phone.html',
+    blurb: 'An iOS-style home screen: every app opens inside the phone with a zoom from its icon. Full screen, draw it with the DOM, SnapDOM or WebGL.',
+    root: 'phone',
+    views: { phone },
+    screenViews,
+    // The demo's card: the phone with its home screen, without triggers, drawn small.
+    preview: () => `<div class="sx-root ph-stage">${phoneMarkup(`<div class="ph ph-home ph-fill">${homeInner()}</div>`)}</div>`
+      .replace(/\bzoom-me\b/g, '').replace(/\sdata-(to|title)="[^"]*"/g, '')
   }
 })()

@@ -1,22 +1,28 @@
 /* The Phone showcase (docs/js/phone.js). Every phone view is a size container and sizes what is
-   in it in its own units: --ph-w and --ph-h set how big a screen is (the demo sets them; on
-   showcases/phone.html a screen is the whole canvas). The phone's font is the system's, never a
-   webfont: SnapDOM captures these screens, and a webfont costs ~100 ms per capture. */
+   in it in its own units. The phone's font is the system's, never a webfont: SnapDOM captures
+   these screens, and a webfont costs ~100 ms per capture. */
 
 .ph { font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif; line-height: 1.35; letter-spacing: normal; text-align: left; }
 .ph h1, .ph h2, .ph h3, .ph p { color: inherit; letter-spacing: normal; }
 .ph-view { width: var(--ph-w, 100cqw); height: var(--ph-h, 100cqh); container-type: size; overflow: hidden; }
 /* A view's own box (its padding, its background) is measured in the container around it, not
-   in itself: those take --ph-w and --ph-h, what a screen measures wherever the view is. What is
-   inside a view is measured in the view, in cqw. */
+   in itself: those take --ph-w and --ph-h, the screen it is on (.ph-screen sets them; on the
+   page, the screen is the container around the canvas). What is inside a view is measured in
+   the view, in cqw. */
 
 /* ── The whole phone, the demo's first view (and its card) ─────────── */
 .ph-stage { display: grid; place-items: center; padding: 0; background: radial-gradient(circle at 30% 20%, #232a52, #0b0d16 70%); }
 .ph-device { height: 92cqh; aspect-ratio: 418 / 872; padding: 1.4cqh; border-radius: 6.4cqh; background: linear-gradient(145deg, #3b3e48, #111217); box-shadow: 0 0 0 .25cqh #5a5d6855, 0 4cqh 12cqh #000b; }
 .ph-screen { position: relative; width: 100%; height: 100%; border-radius: 5.3cqh; overflow: hidden; container-type: size; --ph-w: 100cqw; --ph-h: 100cqh; }
 .ph-fill { position: absolute; inset: 0; }
-.ph-status { position: absolute; z-index: 2; inset: 0 0 auto; height: 14cqw; padding: 1cqw 9cqw 0 10cqw; display: flex; align-items: center; color: #fff; font-weight: 600; font-size: 4.2cqw; }
-.ph-island { position: absolute; top: 2.8cqw; left: 50%; width: 31cqw; height: 9cqw; transform: translateX(-50%); border-radius: 99px; background: #000; }
+.ph-status { position: absolute; z-index: 5; inset: 0 0 auto; height: 14cqw; padding: 1cqw 9cqw 0 10cqw; display: flex; align-items: center; color: #fff; font-weight: 600; font-size: 4.2cqw; pointer-events: none; transition: color .3s; }
+.ph-island { position: absolute; z-index: 6; top: 2.8cqw; left: 50%; width: 31cqw; height: 9cqw; transform: translateX(-50%); border-radius: 99px; background: #000; }
+/* The demo's phone runs a Zumly of its own on its screen: the canvas fills it, under the bars. */
+.ph-screen > .ph-canvas { position: absolute; inset: 0; }
+.ph-home-bar { position: absolute; z-index: 6; bottom: 1.6cqw; left: 50%; width: 36cqw; height: 5cqw; transform: translateX(-50%); border: 0; padding: 0; background: none; cursor: pointer; }
+.ph-home-bar::after { content: ''; position: absolute; left: 0; right: 0; bottom: 1cqw; height: 1.4cqw; border-radius: 99px; background: #fff; opacity: .85; transition: background .3s; }
+.ph-screen.light .ph-status { color: #000; }
+.ph-screen.light .ph-home-bar::after { background: #000; opacity: .7; }
 
 /* ── Home screen ──────────────────────────────────────────────────── */
 .ph-home {
