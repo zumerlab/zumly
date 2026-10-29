@@ -88,6 +88,8 @@ const opt = {
   // levels=N (3 to 10): the first readings of a detail open a view, and that one opens the next,
   // down to level N. Without it, two levels: board and detail.
   levels: Math.min(10, Math.max(2, parseInt(q.get('levels'), 10) || 2)),
+  hover: q.get('hover') === '1', // with gl: experiment 10, a zoom-in gets ready while the pointer is on its trigger
+  slow: Math.max(0, parseInt(q.get('slow'), 10) || 0), // a detail takes that many ms to fetch its readings
   driver: q.get('driver') || 'css',
 }
 const effects = opt.fx !== 'pane'
@@ -246,7 +248,8 @@ function board () {
   return `<div class="z-view board" data-title="Board" data-gl-overflow><span class="clock">--:--:--</span>${counter}${tiles}</div>`
 }
 
-function detail ({ target, props }) {
+async function detail ({ target, props }) {
+  if (opt.slow) await wait(opt.slow)
   target.className = 'z-view detail'
   target.style.setProperty('--h', props.h)
   let rows = ''
@@ -290,13 +293,13 @@ const app = new Zumly({
     stream: (el, options) => stream(el, {
       ...options,
       onFrame (frame) {
-        window.streamLog.push({ t: Math.round(performance.now()), view: el.dataset.viewName, reason: frame.reason, full: frame.full, ms: Math.round(frame.ms) })
+        window.streamLog.push({ t: Math.round(performance.now()), view: el.dataset.viewName, reason: frame.reason, full: frame.full, ms: Math.round(frame.ms), busyMs: frame.busyMs && Math.round(frame.busyMs) })
         options.onFrame?.(frame)
       },
     }),
   },
   // gl=1 (experiment 7, now in src/webgl.js): zooms drawn with WebGL, with the look's effects.
-  webgl: opt.gl && { effects: GL_EFFECTS, glass: opt.glass },
+  webgl: opt.gl && { effects: GL_EFFECTS, glass: opt.glass, hover: opt.hover },
   gestures: { follow: opt.follow },
 })
 window.streamLog = []
@@ -547,7 +550,13 @@ setInterval(() => {
 const wait = (ms) => new Promise(r => setTimeout(r, ms))
 const once = (event) => new Promise(r => { const fn = () => { app.off(event, fn); r() }; app.on(event, fn) })
 
-async function step (kind, trigger) {
+// hover: the pointer rests that long on the trigger before the click, as a hand does.
+async function step (kind, trigger, hover = 0) {
+  if (hover) {
+    performance.mark(`z:${stepIndex + 1}:hover`)
+    for (const type of ['pointerover', 'mouseover']) trigger.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerType: 'mouse' }))
+    await wait(hover)
+  }
   stepIndex++
   const done = once(kind === 'in' ? 'afterZoomIn' : 'afterZoomOut')
   performance.mark(`z:${stepIndex}:${kind}:click`)
@@ -563,12 +572,12 @@ async function rest (ms) {
 }
 
 // rounds × (zoom into a tile, look around, zoom out, look around), a different tile each time.
-window.bench = async ({ rounds = 3, settle = 1200, restMs = 2000 } = {}) => {
+window.bench = async ({ rounds = 3, settle = 1200, restMs = 2000, hover = 0 } = {}) => {
   while (app.zoomLevel() > 1) await app.zoomOut()
   await wait(settle)
   for (let i = 0; i < rounds; i++) {
     const triggers = [...app.canvas.querySelectorAll(':scope > .is-current-view .zoom-me')]
-    await step('in', triggers[i % triggers.length])
+    await step('in', triggers[i % triggers.length], hover)
     await wait(settle)
     if (restMs) await rest(restMs)
     await step('out')

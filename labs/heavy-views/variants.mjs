@@ -18,6 +18,11 @@ export const VARIANTS = {
   'f-gl': 'flatten=1&gl=1&glass=0',
   'f-gl-glass': 'flatten=1&gl=1', // the view coming in photographed with its glass
   'f-gl-lens': 'flatten=1&gl=1&glass=0&look=lens', // effects only the shader draws: three reads a pixel
+  // Experiment 10: the view coming in built and photographed while the pointer is on its trigger.
+  'f-gl-hover': 'flatten=1&gl=1&glass=0&hover=1',
+  // A detail that takes 300 ms to fetch its readings, without and with hover.
+  'f-gl-slow': 'flatten=1&gl=1&glass=0&slow=300',
+  'f-gl-slow-hover': 'flatten=1&gl=1&glass=0&slow=300&hover=1',
 }
 
 // asis: the guide's demo as it is (a clock); live: values that change and a big counter.

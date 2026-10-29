@@ -1,0 +1,9 @@
+4 runs at dpr 2, 1280×800, CPU 4×, stream from ../snapdom
+live   f-gl        in  28.6%  out   0.5%  tail 42.9%/0%  hover 23.1%  hitches 1/6 (run 7)  start 710 (photo 57, overflow 0)  lat 721/94  motion 1024/1001 ms  rest 0%/41.7%  | in: main 3 impl 1 raster 0 gpu 1 viz 0  | out: main 3 impl 1 raster 0 gpu 1 viz 0
+live   f-gl-hover  in  31.7%  out   2.1%  tail 52.4%/0%  hover 12.5%  hitches 1/6 (run 10)  start 710 (photo 0, overflow 0, 3 ready on hover)  lat 715/110  motion 1032/1018 ms  rest 26%/45.3%  | in: main 3 impl 0 raster 0 gpu 2 viz 0  | out: main 3 impl 1 raster 0 gpu 2 viz 0
+live   f-gl-hover  in  30.9%  out   1.1%  tail 50%/0%  hover 17.6%  hitches 1/6 (run 9)  start 710 (photo 0, overflow 0, 3 ready on hover)  lat 712/115  motion 1024/998 ms  rest 32.1%/46.8%  | in: main 3 impl 1 raster 0 gpu 2 viz 0  | out: main 9 impl 1 raster 0 gpu 2 viz 0
+live   f-gl        in   0.5%  out   1.1%  tail 0%/0%  hover 29.4%  hitches 0/6 (run 1)  start 710 (photo 71, overflow 0)  lat 712/111  motion 1020/1004 ms  rest 0%/45.6%  | in: main 6 impl 1 raster 0 gpu 2 viz 0  | out: main 4 impl 1 raster 0 gpu 2 viz 0
+
+Medians across runs
+live   f-gl        in  14.6%  out   0.8%  tail 21.4%/0%  hover 26.3%  hitches 0.5/6 (run 4)  start 710 (photo 64, overflow 0)  lat 716.5/102.5  motion 1022/1002.5 ms  rest 0%/43.7%  | in: main 4.5 impl 1 raster 0 gpu 1.5 viz 0  | out: main 3.5 impl 1 raster 0 gpu 1.5 viz 0
+live   f-gl-hover  in  31.3%  out   1.6%  tail 51.2%/0%  hover 15.1%  hitches 1/6 (run 9.5)  start 710 (photo 0, overflow 0, 3 ready on hover)  lat 713.5/112.5  motion 1028/1008 ms  rest 29.1%/46%  | in: main 3 impl 0.5 raster 0 gpu 2 viz 0  | out: main 6 impl 1 raster 0 gpu 2 viz 0

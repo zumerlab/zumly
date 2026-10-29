@@ -5,13 +5,17 @@
 //
 //   caffeinate -d node labs/heavy-views/measure.mjs [--variants f,nf,f-moving] [--conds asis,live]
 //     [--runs 2] [--rounds 3] [--cpu 4] [--out labs/heavy-views/results/step0.json] [--threads]
-//     [--no-warmup] [--channel chrome]
+//     [--no-warmup] [--channel chrome] [--hover 250]
 //
+//   --hover rests the pointer that many ms on a trigger before each zoom-in.
+//   --stream-from ../snapdom serves the stream plugin from a SnapDOM working tree, to measure
+//   a fix before it is published.
 //   --channel chrome measures in the installed Google Chrome instead of Playwright's Chromium.
 //
 // --threads prints the top-level trace events of each thread group, to check the attribution.
 import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { chromium } from 'playwright'
 import { createLabsServer } from '../serve.mjs'
 import { VARIANTS, CONDS } from './variants.mjs'
@@ -29,6 +33,8 @@ const restMs = +arg('--rest', 2000)
 const out = arg('--out', null)
 const showThreads = args.includes('--threads')
 const channel = arg('--channel', undefined)
+const hover = +arg('--hover', 0)
+const streamFrom = arg('--stream-from', null)
 const viewport = { width: 1280, height: 800 }
 
 for (const name of variantNames) if (!VARIANTS[name]) throw new Error(`unknown variant "${name}"`)
@@ -118,11 +124,16 @@ function analyse (traceBuf) {
     const end = at.get(`z:${i}:motion-end`)
     if (!start || !end) continue
     const first = frames.find(f => f.ts > start && f.presented)
+    // --hover: the frames while the pointer rests on the trigger, before the click.
+    const hovered = at.get(`z:${i}:hover`)
+    const hoverStats = hovered ? windowStats(frames, hovered, click) : { dropped: 0, presented: 0 }
     // After the motion, flatten crossfades from the photo to the real view (160 ms) and the
     // engine updates the nav, focus and photos: the tail, until half a second later.
     const tail = windowStats(frames, end + 50000, end + 500000)
     steps.push({
       kind,
+      hoverDropped: hoverStats.dropped,
+      hoverPresented: hoverStats.presented,
       motionMs: Math.round((end - start) / 1000),
       tailDropped: tail.dropped,
       tailPresented: tail.presented,
@@ -162,6 +173,7 @@ function summarise ({ steps, rests }) {
     inDropped: pct(ins),
     outDropped: pct(outs),
     inTail: pct(ins, 'tailDropped', 'tailPresented'),
+    hoverDropped: pct(ins, 'hoverDropped', 'hoverPresented'),
     outTail: pct(outs, 'tailDropped', 'tailPresented'),
     hitches: steps.filter(s => s.maxDroppedRun >= 3 || s.tailRun >= 3).length, // 3+ dropped vsyncs in a row: a visible hitch
     zooms: steps.length,
@@ -187,8 +199,9 @@ const line = (cond, variant, s) => [
   cond.padEnd(5), variant.padEnd(10),
   `in ${String(s.inDropped).padStart(5)}%`, `out ${String(s.outDropped).padStart(5)}%`,
   `tail ${s.inTail}%/${s.outTail}%`,
+  ...(hover ? [`hover ${s.hoverDropped}%`] : []),
   `hitches ${s.hitches}/${s.zooms} (run ${s.worstRun})`,
-  `start ${s.startIn}`,
+  `start ${s.startIn}${s.photoIn != null ? ` (photo ${s.photoIn}, overflow ${s.overflowIn}${s.early ? `, ${s.early} ready on hover` : ''})` : ''}`,
   `lat ${s.latencyIn}/${s.latencyOut}`,
   `motion ${s.motionIn}/${s.motionOut} ms`,
   `rest ${s.restDetail}%/${s.restBoard}%`,
@@ -203,6 +216,12 @@ async function measure (run, cond, variant) {
   try {
     page.on('pageerror', e => console.error(`[${variant}] pageerror`, e.message))
     page.on('response', r => { if (r.status() >= 400 && !r.url().endsWith('favicon.ico')) console.error(`[${variant}] ${r.status()} ${r.url()}`) })
+    if (streamFrom) {
+      await page.route('**/node_modules/@zumer/snapdom-plugins/stream/src/*.js', route => route.fulfill({
+        body: readFileSync(join(streamFrom, 'packages/plugins/stream/src', new URL(route.request().url()).pathname.split('/').pop())),
+        contentType: 'text/javascript'
+      }))
+    }
     if (throttle > 1) {
       const cdp = await page.context().newCDPSession(page)
       await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle })
@@ -211,11 +230,13 @@ async function measure (run, cond, variant) {
     await page.waitForFunction(() => window.ready, null, { timeout: 30000 })
     await page.bringToFront()
     await browser.startTracing(page, { categories: ['benchmark', 'blink.user_timing', 'toplevel'] })
-    await page.evaluate(([r, s, rest]) => window.bench({ rounds: r, settle: s, restMs: rest }), [rounds, settle, restMs])
+    await page.evaluate(([r, s, rest, h]) => window.bench({ rounds: r, settle: s, restMs: rest, hover: h }), [rounds, settle, restMs, hover])
     const result = analyse(await browser.stopTracing())
-    const summary = summarise(result)
+    // What the zoom-ins waited for, with gl=1: the photo of the view coming in, the overflow bands.
+    const launches = await page.evaluate(() => window.launchLog.filter(e => e.type === 'zoomIn'))
+    const summary = { ...summarise(result), photoIn: median(launches.map(e => e.photoMs ?? 0)), overflowIn: median(launches.map(e => e.overflowMs ?? 0)), early: launches.filter(e => e.early).length }
     console.log(line(cond, variant, summary))
-    return { run, cond, variant, query: VARIANTS[variant] + CONDS[cond], cpu: throttle, summary, ...result }
+    return { run, cond, variant, query: VARIANTS[variant] + CONDS[cond], cpu: throttle, hover, summary, launches, ...result }
   } catch (e) {
     // Chromium windows sometimes close on their own in long runs: note it and go on.
     console.error(`! ${cond} ${variant}: ${e.message.split('\n')[0]}`)
@@ -247,7 +268,7 @@ if (!args.includes('--no-warmup')) {
     await page.close().catch(() => {})
   }
 }
-console.log(`${jobs.length} runs at dpr 2, ${viewport.width}×${viewport.height}, CPU ${throttle}×${channel ? `, ${channel}` : ''}`)
+console.log(`${jobs.length} runs at dpr 2, ${viewport.width}×${viewport.height}, CPU ${throttle}×${channel ? `, ${channel}` : ''}${streamFrom ? `, stream from ${streamFrom}` : ''}`)
 const results = []
 for (const job of jobs) {
   const r = await measure(job.run, job.cond, job.variant)
@@ -268,8 +289,8 @@ if (runs > 1) {
       const m = (key) => median(mine.map(s => s[key]))
       const mb = (key) => Object.fromEntries(['main', 'impl', 'raster', 'gpu', 'viz'].map(g => [g, median(mine.map(s => s[key][g]))]))
       console.log(line(cond, variant, {
-        inDropped: m('inDropped'), outDropped: m('outDropped'), inTail: m('inTail'), outTail: m('outTail'), hitches: m('hitches'), zooms: mine[0].zooms, worstRun: m('worstRun'),
-        startIn: m('startIn'), latencyIn: m('latencyIn'), latencyOut: m('latencyOut'), motionIn: m('motionIn'), motionOut: m('motionOut'), restDetail: m('restDetail'), restBoard: m('restBoard'),
+        inDropped: m('inDropped'), outDropped: m('outDropped'), inTail: m('inTail'), outTail: m('outTail'), hoverDropped: m('hoverDropped'), hitches: m('hitches'), zooms: mine[0].zooms, worstRun: m('worstRun'),
+        startIn: m('startIn'), photoIn: m('photoIn'), overflowIn: m('overflowIn'), early: m('early'), latencyIn: m('latencyIn'), latencyOut: m('latencyOut'), motionIn: m('motionIn'), motionOut: m('motionOut'), restDetail: m('restDetail'), restBoard: m('restBoard'),
         busyIn: mb('busyIn'), busyOut: mb('busyOut'),
       }))
     }

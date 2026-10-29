@@ -464,6 +464,48 @@ new Zumly({ ..., flatten: { snapdom, stream }, webgl: true })            // o { 
 - **Un error que encontró la medición:** al preparar un zoom-in, el motor ya marcó el tablero como vista previa, y el arreglo de redimensionar lo trataba como una vista que ya está atrás. Lo fotografiaba con vidrio y sin escala: 411 ms en vez de 106, y en vivo cada zoom-in después del primero esperaba 708 ms. Ahora ese trato es solo para una vista que ya está atrás y perdió su textura.
 - **Tests:** [`__tests__/webgl.test.js`](../../__tests__/webgl.test.js) prueba la opción, las cadenas de efectos y, donde hay WebGL2 (el Chromium headless no lo tiene, así que corren con ventana), los zooms, un hermano, un gesto hasta el final y de vuelta, tres niveles, el contexto perdido y `destroy`. La suite completa sigue en verde.
 
+## Experimento 10: preparar en el hover (29/10, `dev`)
+
+Martin: "eso es importante". La espera antes de un zoom-in con WebGL es armar la vista que entra y sacarle la foto. Con `webgl: { hover: true }` eso pasa mientras el puntero o el foco están sobre el disparador, y el clic usa ese mismo nodo y su textura.
+
+- **Cómo anda:**
+  - Al pasar por un disparador de la vista actual, el motor arma la vista como lo haría en el clic, también si la arma una función. Después, WebGL la mete un momento en el lienzo fuera de pantalla, le saca la foto y la sube.
+  - En el clic, `zoomIn` toma ese nodo en vez de armarlo de nuevo, y WebGL usa la textura si la vista mide lo mismo. Si la foto todavía no terminó, el clic la espera en vez de empezar de cero.
+  - Hay una sola preparación a la vez. Se tira, con sus cleanups, cuando el puntero pasa a otro disparador, cuando hay cualquier movimiento o cuando se pierde el contexto.
+  - El tacto también entra: `pointerover` llega al apoyar el dedo, antes del `touchend` que dispara el zoom.
+- **Queda afuera:** las vistas con `mounted()` y los custom elements, que corren algo al insertarse, y las vistas `deferred`. Esas esperan el clic, como antes.
+- **El costo:** las funciones de vista corren en el hover, y si no hay clic su trabajo se tira. Por eso es opcional.
+- **Medido** (dpr 2, 250 ms de hover antes de cada clic, mediana de dos corridas; [`results/hover.log`](results/hover.log), [`results/hover-2.log`](results/hover-2.log), [`results/hover-cpu4.log`](results/hover-cpu4.log)):
+
+  | Del clic al movimiento, zoom-in | sin hover | con hover |
+  |---|---|---|
+  | Tal cual | 45-48 ms | 15-17,5 ms |
+  | En vivo | 28-33 ms | 6,5-7,5 ms |
+  | Detalle que tarda 300 ms en traer sus datos (`slow=300`) | 348-361 ms | 96-108 ms |
+  | CPU 4×, tal cual | 76,5 ms | 21,5 ms |
+  | CPU 4×, en vivo | 709 ms | 708 ms |
+
+  - La foto de la vista que entra (15-25 ms; 50-57 con CPU 4×) sale del camino, y también armarla y esperar un cuadro.
+  - Con una vista que trae sus datos, el hover esconde lo que dura el hover: de 300 ms quedan ~100.
+  - Los zooms en sí no cambian (0-1 % de cuadros perdidos).
+  - Mientras el puntero está quieto, preparar se lleva un cuadro en 2 de 6 hovers. Es una tarea de 25-40 ms; un efecto de hover en el disparador hecho en el hilo principal lo notaría.
+- **Con CPU 4× y en vivo no ayuda**, y no es por la vista que entra: su foto ya está, pero el tablero no tiene textura. `flatten` le apaga el stream por presupuesto, así que cada zoom-in le saca una foto en el momento (400-450 ms).
+  - Según la sesión de SnapDOM, el vidrio no es el costo: lo que pesa es vestir las tarjetas recortadas.
+  - La tarea larga venía de las ventanas de un parche capturadas una detrás de otra en la misma tarea. En su árbol de trabajo cada ventana va en su tarea: en reposo, de 11,4 % de cuadros perdidos a 0, y con CPU 4× de 9,5 % a 3,5 %, sin tareas largas.
+  - Pero `frame.ms` sigue siendo tiempo de reloj, y `flatten` presupuesta con eso. Les pedí `frame.busyMs` (lo que el cuadro bloquea), y `flatten` ya lo usa si viene, si no `ms`.
+  - Con eso el stream debería aguantar con CPU 4×, y el zoom-in en vivo bajaría de ~709 ms a lo de tal cual. Falta una build dev nueva de los plugins (decide Martin) para medirlo.
+- **Hallazgo de paso: el stream en reposo, con las versiones dev.** Con `4.4.1-dev.0`, `flatten` ya no apaga el stream del tablero en vivo (antes lo apagaban los cuadros "no host"). El zoom-in arranca sin foto, pero en reposo el tablero pierde 13-28 % de cuadros (antes 1-4 %):
+  - el hilo principal está ocupado 21-29 %;
+  - una vez por segundo, un parche de 16-17 rectángulos chicos (3-4 % del área) tarda 140-180 ms.
+
+  Es lo que la sesión de SnapDOM ya arregló en su árbol de trabajo (arriba). Hasta que salga, con las versiones dev la demo en vivo se traba un poco en reposo sobre el tablero.
+- **Con el stream del árbol de SnapDOM** (`measure.mjs --stream-from ../snapdom`, con el yield por ventana y `busyMs`; [`results/hover-tree.log`](results/hover-tree.log), [`results/hover-tree-cpu4.log`](results/hover-tree-cpu4.log)):
+  - **En reposo**, el tablero en vivo pasa de 22-27 % de cuadros perdidos a 2,7-3,9 %.
+  - **En el zoom-in en vivo** empeoraba: de 0,3 % a 2,7-5,3 %, con tramos de 2-3 cuadros seguidos. Las ventanas de un parche que ya estaba en marcha seguían capturando después de `stop()`, en pleno movimiento. La sesión de SnapDOM ya lo arregló: con eso, el zoom-in en vivo vuelve a 0,3-0,6 % sin tirones, y el tablero en reposo queda en 3,3-7 % ([`results/hover-tree-2.log`](results/hover-tree-2.log)).
+  - **Con CPU 4×** el stream se sigue apagando: con `busyMs` igual pasa el 50 %. El zoom-in sigue en ~710 ms, y el tablero en reposo, en 44-46 % perdidos.
+  - La palanca ahí es el costo de cada ventana (lo que cuesta vestir las tarjetas recortadas), del lado de SnapDOM. No subo el presupuesto de `flatten`: más de medio hilo principal en un equipo lento no es algo para esconder.
+- **Pendiente:** que Martin lo pruebe a mano (`demo.html?gl=1&glass=0&hover=1`, y `&slow=300` para la vista lenta), y medir otra vez con la build dev nueva.
+
 ## Plan
 
 Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs antes de decidir. Cada paso se mide como en el diagnóstico ([`demo.html`](demo.html), [`measure.mjs`](measure.mjs), [`film.mjs`](film.mjs)) y se mira a ojo con dpr 2.
@@ -498,7 +540,7 @@ Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs 
 7. **WebGL (idea 3).** Hecho de lleno el 28/10 y pasado al motor en `dev` (`src/webgl.js`, opción `webgl`; ver Experimento 7 y "WebGL en el motor"): GPU del zoom de ~40-70 % a 7-8,5 % en Chrome, y a 1-2 % con CPU 4×. Pasan por WebGL los hermanos, los gestos, tres niveles y efectos en GLSL. Falta decidir si va a `main` (docs, guía, Pulse). El movimiento en un worker no hace falta por ahora: durante un zoom WebGL, el hilo principal trabaja 4-7 % y se pierden 0-1,6 % de cuadros.
 8. **Driver con View Transitions (opción 1).**
 9. **Foto ya desenfocada y la vista de dos niveles atrás como velo (opciones 7 y 8)**, si las tablets lo piden.
-10. **Preparar en el hover** (Martin, 28/10: "eso es importante"). Con WebGL, la espera antes de moverse es la foto de la vista que entra (45-160 ms; 713 con CPU 4× y datos en vivo). El prefetcher ya resuelve la vista cuando el puntero o el foco pasan por un disparador, si es HTML o viene de una URL. La idea es armarla ahí mismo fuera de pantalla, sacarle la foto y subirla como textura, para que el clic arranque casi sin espera. Hay que ver:
+10. **Preparar en el hover** (Martin, 28/10: "eso es importante"). Hecho el 29/10 como `webgl: { hover: true }` (ver Experimento 10): el zoom-in arranca en 7-17 ms en vez de 28-48, y una vista que tarda 300 ms en traer sus datos, en ~100. Con CPU 4× y en vivo falta que el tablero mantenga su stream (SnapDOM). Lo que sigue es el plan original: Con WebGL, la espera antes de moverse es la foto de la vista que entra (45-160 ms; 713 con CPU 4× y datos en vivo). El prefetcher ya resuelve la vista cuando el puntero o el foco pasan por un disparador, si es HTML o viene de una URL. La idea es armarla ahí mismo fuera de pantalla, sacarle la foto y subirla como textura, para que el clic arranque casi sin espera. Hay que ver:
     - las vistas que arma una función: hoy no se guardan, porque dependen del disparador y sus props;
     - el trabajo tirado cuando el puntero pasa y no hay clic: cancelar si se va, y no hacer más de una a la vez;
     - los datos en vivo: la foto puede quedar vieja entre el hover y el clic;
