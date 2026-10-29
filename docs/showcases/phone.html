@@ -6,18 +6,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Phone — a Zumly showcase</title>
-  <meta name="description" content="A Zumly showcase: an iOS-style home screen where every app opens with a zoom from its icon, drawn with WebGL from SnapDOM captures. Change how often the screen is captured and watch the zoom." />
+  <meta name="description" content="A Zumly showcase: an iOS-style home screen where every app opens with a zoom from its icon. Draw it with the DOM, with SnapDOM captures, or with WebGL." />
   <link rel="canonical" href="https://zumerlab.com/zumly/showcases/phone.html" />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Phone — a Zumly showcase" />
-  <meta property="og:description" content="An iOS-style home screen where every app opens with a zoom from its icon, drawn with WebGL from SnapDOM captures." />
+  <meta property="og:description" content="An iOS-style home screen where every app opens with a zoom from its icon. Draw it with the DOM, with SnapDOM captures, or with WebGL." />
   <meta property="og:url" content="https://zumerlab.com/zumly/showcases/phone.html" />
   <meta property="og:image" content="https://zumerlab.com/zumly/zumly-logo.png" />
   <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
-  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
+  <link rel="preload" href="../fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="../css/fonts.css" />
   <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
   <style>
     * { box-sizing: border-box; }
@@ -234,7 +232,7 @@
       <h1>Phone</h1>
       <p>Tap an app. The bar at the bottom takes you back.</p>
 
-      <div class="control">
+      <div class="control" id="rate-control">
         <label for="rate">Capture rate <output id="rate-out">10 per second</output></label>
         <input id="rate" type="range" min="1" max="30" step="1" value="10" />
         <small>How often SnapDOM captures the screen you are on.</small>
@@ -248,9 +246,9 @@
       <div class="control">
         <label>Drawn with</label>
         <div class="modes">
-          <a href="?mode=webgl" data-mode="webgl">WebGL</a>
-          <a href="?mode=rasterize" data-mode="rasterize">Rasterize</a>
           <a href="?mode=dom" data-mode="dom">DOM</a>
+          <a href="?mode=rasterize" data-mode="rasterize">Rasterize</a>
+          <a href="?mode=webgl" data-mode="webgl">WebGL</a>
         </div>
       </div>
 
@@ -261,8 +259,6 @@
 
   <script type="module">
     import Zumly from 'https://unpkg.com/zumly/dist/zumly.mjs'
-    import { snapdom } from 'https://esm.sh/@zumer/snapdom'
-    import { stream } from 'https://esm.sh/@zumer/snapdom-plugins/stream'
 
     const $ = selector => document.querySelector(selector)
     const pad = n => String(n).padStart(2, '0')
@@ -285,7 +281,11 @@
       for (const w of root.querySelectorAll('.js-stopwatch')) w.textContent = stopwatch()
       for (const t of root.querySelectorAll('.js-temp')) t.textContent = `${72 + Math.round(Math.sin(now / 9000) * 2)}°`
     }
-    const mode = ['webgl', 'rasterize', 'dom'].includes(new URLSearchParams(location.search).get('mode')) ? new URLSearchParams(location.search).get('mode') : 'webgl'
+    const asked = new URLSearchParams(location.search).get('mode')
+    const mode = ['webgl', 'rasterize', 'dom'].includes(asked) ? asked : 'dom'
+    // SnapDOM only works with rasterize and WebGL: the DOM mode does not even load it.
+    const { snapdom } = mode === 'dom' ? {} : await import('https://esm.sh/@zumer/snapdom')
+    const { stream } = mode === 'dom' ? {} : await import('https://esm.sh/@zumer/snapdom-plugins/stream')
 
     // ── The capture rate ─────────────────────────────────────────────
     // rasterize starts SnapDOM's stream on the screen you are on, and keeps its canvas as that
@@ -543,6 +543,8 @@
       app.duration = `${$('#speed').value}ms`
     })
     for (const a of document.querySelectorAll('.modes a')) a.classList.toggle('on', a.dataset.mode === mode)
+    // Nothing is captured in DOM mode, so there is no rate to set.
+    $('#rate-control').hidden = mode === 'dom'
 
     // ── What is alive: the time, the clock, the stopwatch and the temperature ──
     function tick () {
