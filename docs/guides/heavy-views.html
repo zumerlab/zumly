@@ -144,6 +144,7 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, rasterize: { snapdom, 
           <tr><td><code>ancestors</code></td><td style="white-space: nowrap"><code>true</code></td><td>Past the third level, keep everything behind as one picture. <code>false</code> lets the oldest view go, as without WebGL.</td></tr>
         </tbody>
       </table></div>
+      <p>See it on a phone: the <a href="../showcases/phone.html">Phone showcase</a> opens every app with a zoom from its icon, and lets you change how often the screen is captured.</p>
       <h3>Effects in the shader</h3>
       <p><code>transitions.effects</code> works as before, in CSS filter syntax, and every CSS filter function is there. Your own are a few lines of GLSL: <code>uv</code> moves the point of the view that is read, <code>color</code> changes the color read there.</p>
       <pre><code>new Zumly({

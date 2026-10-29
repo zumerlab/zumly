@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Analytics, cookie consent and events for zumerlab.com -->
+  <script async src="/zumerlab.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phone — a Zumly showcase</title>
+  <meta name="description" content="A Zumly showcase: an iOS-style home screen where every app opens with a zoom from its icon, drawn with WebGL from SnapDOM captures. Change how often the screen is captured and watch the zoom." />
+  <link rel="canonical" href="https://zumerlab.com/zumly/showcases/phone.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Phone — a Zumly showcase" />
+  <meta property="og:description" content="An iOS-style home screen where every app opens with a zoom from its icon, drawn with WebGL from SnapDOM captures." />
+  <meta property="og:url" content="https://zumerlab.com/zumly/showcases/phone.html" />
+  <meta property="og:image" content="https://zumerlab.com/zumly/zumly-logo.png" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      background: radial-gradient(1100px 700px at 25% 15%, #1d2347, #07080d 70%);
+      color: #e7e9f2; font: 15px/1.5 Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+    .stage { min-height: 100vh; display: flex; align-items: center; justify-content: center; gap: 56px; padding: 24px 16px; flex-wrap: wrap; }
+
+    /* ── The phone ─────────────────────────────────────────────────── */
+    .phone {
+      --h: min(844px, calc(100vh - 48px));
+      height: var(--h); aspect-ratio: 390 / 844; padding: calc(var(--h) * .014);
+      border-radius: calc(var(--h) * .07); background: linear-gradient(145deg, #3b3e48, #111217);
+      box-shadow: 0 0 0 2px #5a5d6855, 0 40px 120px #000b;
+    }
+    /* The phone's own font, never a webfont: SnapDOM captures the screen, and a webfont costs
+       ~100 ms per capture (7 with this one). */
+    .screen { position: relative; width: 100%; height: 100%; border-radius: calc(var(--h) * .058); overflow: hidden; background: #000; container-type: size; isolation: isolate; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    .screen .canvas { position: absolute; inset: 0; }
+    .island { position: absolute; z-index: 6; top: 2.8cqw; left: 50%; width: 31cqw; height: 9cqw; transform: translateX(-50%); border-radius: 99px; background: #000; }
+    .status {
+      position: absolute; z-index: 5; inset: 0 0 auto; height: 14cqw; padding: 1cqw 8cqw 0 10cqw;
+      display: flex; align-items: center; justify-content: space-between; pointer-events: none;
+      color: #fff; font-weight: 600; font-size: 4.2cqw; line-height: 1; transition: color .3s;
+    }
+    .status svg { height: 3.2cqw; fill: currentColor; margin-left: 1.4cqw; }
+    .home-bar {
+      position: absolute; z-index: 6; bottom: 1.6cqw; left: 50%; width: 36cqw; height: 5cqw; transform: translateX(-50%);
+      border: 0; padding: 0; background: none; cursor: pointer;
+    }
+    .home-bar::after { content: ''; position: absolute; left: 0; right: 0; bottom: 1cqw; height: 1.4cqw; border-radius: 99px; background: #fff; opacity: .85; transition: background .3s; }
+    .screen.light .status { color: #000; }
+    .screen.light .home-bar::after { background: #000; opacity: .7; }
+
+    /* ── Views: sized in the screen's units, so they fit any phone height ── */
+    .z-view.ios { width: 100cqw; height: 100cqh; overflow: hidden; }
+
+    .home {
+      padding: 17cqw 6cqw 0; color: #fff;
+      background:
+        radial-gradient(80cqw 60cqh at 15% 8%, #ff8a5c, transparent 60%),
+        radial-gradient(90cqw 70cqh at 95% 42%, #7b5cff, transparent 60%),
+        radial-gradient(110cqw 80cqh at 25% 105%, #19b4ff, transparent 60%),
+        #1b1238;
+    }
+    .widgets { display: grid; grid-template-columns: 1fr 1fr; gap: 5.5cqw; }
+    .widget { aspect-ratio: 1; border-radius: 6cqw; padding: 4.5cqw; display: flex; flex-direction: column; box-shadow: 0 2cqw 6cqw #0003; cursor: pointer; }
+    .widget.weather { background: linear-gradient(#4aa0f5, #1f62d6); }
+    .widget.weather b { font-size: 4.2cqw; }
+    .widget.weather .temp { font-size: 12cqw; font-weight: 300; line-height: 1.1; }
+    .widget.weather small { margin-top: auto; font-size: 3.2cqw; opacity: .9; }
+    .widget.calendar { background: #fff; color: #111; }
+    .widget.calendar .day { color: #fa3b30; font-weight: 700; font-size: 3.4cqw; line-height: 1; text-transform: uppercase; }
+    .widget.calendar .date { font-size: 12cqw; font-weight: 300; line-height: 1.1; }
+    .widget.calendar small { margin-top: auto; font-size: 3.2cqw; color: #555; border-left: 1cqw solid #34c759; padding-left: 1.6cqw; }
+    .widget-label { text-align: center; font-size: 3cqw; margin-top: 1.4cqw; }
+    .icons { display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 5cqw; margin-top: 6cqw; justify-items: center; }
+    .app { width: 18cqw; text-align: center; font-size: 3cqw; }
+    .app > i {
+      display: grid; place-items: center; width: 15.5cqw; aspect-ratio: 1; margin: 0 auto; border-radius: 3.8cqw;
+      font: normal 8cqw/1 -apple-system, BlinkMacSystemFont, sans-serif; color: #fff; box-shadow: 0 .6cqw 2cqw #0004; cursor: pointer; position: relative; overflow: hidden;
+    }
+    .app > span { display: block; margin-top: 1.4cqw; white-space: nowrap; text-shadow: 0 .3cqw 1cqw #0006; }
+    .dots { position: absolute; left: 0; right: 0; bottom: 31cqw; display: flex; justify-content: center; gap: 2cqw; }
+    .dots i { width: 1.8cqw; height: 1.8cqw; border-radius: 50%; background: #fff; opacity: .4; }
+    .dots i:first-child { opacity: 1; }
+    .dock {
+      position: absolute; left: 3.5cqw; right: 3.5cqw; bottom: 4.5cqw; height: 24cqw; border-radius: 8cqw;
+      display: flex; justify-content: space-around; align-items: center;
+      background: #ffffff38; backdrop-filter: blur(16px) saturate(1.6); -webkit-backdrop-filter: blur(16px) saturate(1.6);
+    }
+    .dock .app > span { display: none; }
+
+    /* Icons with a picture of their own */
+    .ic-clock { background: #111 !important; }
+    .ic-clock::before { content: ''; position: absolute; inset: 1.6cqw; border-radius: 50%; background: #fff; }
+    .ic-clock b { position: absolute; left: 50%; bottom: 50%; width: .7cqw; margin-left: -.35cqw; border-radius: 1cqw; background: #111; transform-origin: 50% 100%; }
+    .ic-clock b.h { height: 3.6cqw; transform: rotate(300deg); }
+    .ic-clock b.m { height: 5.2cqw; transform: rotate(60deg); }
+    .ic-photos { background: #fff !important; }
+    .ic-photos::before { content: ''; position: absolute; inset: 2.6cqw; border-radius: 50%; background: conic-gradient(#f9c74f, #f9844a, #f94144, #c9184a, #7209b7, #4361ee, #4cc9f0, #43aa8b, #90be6d, #f9c74f); }
+    .ic-calendar { background: #fff !important; color: #111 !important; display: flex !important; flex-direction: column; justify-content: center; gap: .6cqw; }
+    .ic-calendar em { font-size: 2.4cqw; font-weight: 700; line-height: 1; color: #fa3b30; font-style: normal; text-transform: uppercase; }
+    .ic-calendar strong { font-size: 7.6cqw; font-weight: 300; line-height: 1; }
+    .ic-notes { background: linear-gradient(#ffd60a 0 26%, #fff 26%) !important; }
+    .ic-notes::before { content: ''; position: absolute; inset: 7cqw 2.6cqw 2.6cqw; background: repeating-linear-gradient(#ddd 0 .3cqw, transparent .3cqw 2cqw); }
+    .ic-folder { background: #ffffff40 !important; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: grid !important; grid-template-columns: repeat(3, 1fr); place-items: stretch; align-content: center; gap: .9cqw; padding: 2cqw; }
+    .ic-folder s { display: block; width: 100%; aspect-ratio: 1; border-radius: .8cqw; text-decoration: none; }
+
+    /* App screens */
+    .appview { padding-top: 15cqw; }
+    .appview h1 { margin: 0 5cqw 3cqw; font-size: 8.5cqw; font-weight: 700; letter-spacing: -.02em; }
+    .light-view { background: #f2f2f7; color: #000; }
+    .group { margin: 0 4cqw 6cqw; border-radius: 3.4cqw; background: #fff; overflow: hidden; }
+    .row { display: flex; align-items: center; gap: 3cqw; padding: 0 4cqw; height: 12cqw; font-size: 4.2cqw; border-bottom: 1px solid #e5e5ea; }
+    .row:last-child { border-bottom: 0; }
+    .row > i { width: 7.2cqw; height: 7.2cqw; border-radius: 1.8cqw; display: grid; place-items: center; color: #fff; font-style: normal; font-size: 4.2cqw; line-height: 1; }
+    .row > span { flex: 1; }
+    .row > em { color: #8e8e93; font-style: normal; }
+    .row.more::after { content: '›'; color: #c4c4c7; font-size: 6cqw; margin-left: 1cqw; }
+    .row.zoom-me { cursor: pointer; }
+    .toggle { width: 13cqw; height: 7.8cqw; border-radius: 99px; background: #34c759; position: relative; }
+    .toggle::after { content: ''; position: absolute; top: .6cqw; right: .6cqw; width: 6.6cqw; height: 6.6cqw; border-radius: 50%; background: #fff; box-shadow: 0 .4cqw 1cqw #0003; }
+    .toggle.off { background: #e9e9eb; }
+    .toggle.off::after { right: auto; left: .6cqw; }
+
+    .weather-app { background: linear-gradient(#3a8ef0, #1b4fae 60%, #142f6b); color: #fff; text-align: center; }
+    .weather-app .city { font-size: 8cqw; margin-top: 4cqw; }
+    .weather-app .big { font-size: 25cqw; font-weight: 200; line-height: 1; margin-left: 4cqw; }
+    .weather-app .sky { font-size: 4.6cqw; opacity: .9; }
+    .card { margin: 6cqw 4cqw 0; padding: 3.5cqw 4cqw; border-radius: 4cqw; background: #ffffff1f; text-align: left; font-size: 3.8cqw; }
+    .card h3 { margin: 0 0 2cqw; font-size: 3cqw; font-weight: 600; line-height: 1; opacity: .7; text-transform: uppercase; letter-spacing: .04em; }
+    .hours { display: flex; justify-content: space-between; text-align: center; }
+    .hours b { display: block; font-size: 5.6cqw; font-weight: 400; margin: 1.4cqw 0; }
+    .days div { display: flex; justify-content: space-between; padding: 1.8cqw 0; border-top: 1px solid #ffffff22; }
+    .days div:first-child { border-top: 0; }
+
+    .clock-app { background: #000; color: #fff; text-align: center; }
+    .face { position: relative; width: 74cqw; aspect-ratio: 1; margin: 10cqw auto 6cqw; border-radius: 50%; background: radial-gradient(#1c1c1e 60%, #2c2c2e); }
+    .face::before { content: ''; position: absolute; inset: 3cqw; border-radius: 50%; background: repeating-conic-gradient(from -.75deg, #c7c7cc 0 1.5deg, transparent 1.5deg 30deg); -webkit-mask: radial-gradient(transparent 90%, #000 90.5%); mask: radial-gradient(transparent 90%, #000 90.5%); }
+    .face b { position: absolute; left: 50%; bottom: 50%; border-radius: 2cqw; transform-origin: 50% 100%; }
+    .face .h { width: 2.2cqw; margin-left: -1.1cqw; height: 18cqw; background: #fff; }
+    .face .m { width: 1.6cqw; margin-left: -.8cqw; height: 28cqw; background: #fff; }
+    .face .s { width: .6cqw; margin-left: -.3cqw; height: 32cqw; background: #ff9f0a; }
+    .face::after { content: ''; position: absolute; left: 50%; top: 50%; width: 3cqw; height: 3cqw; margin: -1.5cqw; border-radius: 50%; background: #ff9f0a; }
+    .digital { font-size: 13cqw; font-weight: 200; font-variant-numeric: tabular-nums; }
+    /* A value that changes all the time, on a solid background of its own: each capture
+       repaints only it (rasterize's guide, "Good to know"). */
+    .clock-app .digital { display: table; margin: 0 auto; background: #000; }
+    .clock-app .face { width: 58cqw; margin: 4cqw auto 2cqw; }
+    .clock-app .face .h { height: 14cqw; }
+    .clock-app .face .m { height: 22cqw; }
+    .clock-app .face .s { height: 25cqw; }
+    .clock-app .group { margin-top: 5cqw; background: #1c1c1e; text-align: left; }
+    .clock-app .row { border-color: #2c2c2e; }
+    .clock-app .row > em { color: #fff; font-variant-numeric: tabular-nums; }
+
+    .photos-app { background: #fff; color: #000; }
+    .shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6cqw; }
+    .shots i { aspect-ratio: 1; cursor: pointer; }
+    .photo-view { color: #fff; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 6cqw 14cqw; }
+    .photo-view h2 { margin: 0; font-size: 7cqw; }
+    .photo-view p { margin: 1cqw 0 0; opacity: .8; font-size: 3.8cqw; }
+
+    .notes-app { background: #f2f2f7; color: #000; }
+    .note-row { display: block; padding: 3cqw 4cqw; border-bottom: 1px solid #e5e5ea; cursor: pointer; }
+    .note-row b { display: block; font-size: 4.2cqw; }
+    .note-row small { color: #8e8e93; font-size: 3.4cqw; }
+    .note { background: #fffdf5; color: #222; padding: 15cqw 6cqw 0; font-size: 4.4cqw; line-height: 1.5; }
+    .note h2 { font-size: 7cqw; margin: 0 0 3cqw; }
+
+    .folder { width: 84cqw; height: 100cqw; color: #fff; overflow: visible; }
+    .folder h2 { margin: 0 0 5cqw; font-size: 7cqw; font-weight: 700; text-align: center; }
+    .folder .panel {
+      display: grid; grid-template-columns: repeat(3, 1fr); row-gap: 5cqw; padding: 7cqw 3cqw; border-radius: 9cqw;
+      background: #ffffff40; backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    }
+    .folder .app { width: auto; }
+
+    .calc { background: #000; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 4cqw 12cqw; }
+    .calc output { display: block; text-align: right; font-size: 20cqw; font-weight: 300; padding: 0 3cqw; overflow: hidden; white-space: nowrap; }
+    .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3.4cqw; margin-top: 3cqw; }
+    .keys button { aspect-ratio: 1; border: 0; border-radius: 50%; font: 400 8cqw/1 -apple-system, BlinkMacSystemFont, sans-serif; color: #fff; background: #333; cursor: pointer; }
+    .keys button.op { background: #ff9f0a; }
+    .keys button.fn { background: #a5a5a5; color: #000; }
+    .keys button.wide { grid-column: span 2; aspect-ratio: auto; border-radius: 99px; text-align: left; padding-left: 7cqw; }
+
+    .generic { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 34cqw; }
+    .generic .glyph { width: 30cqw; aspect-ratio: 1; border-radius: 7cqw; display: grid; place-items: center; font: normal 15cqw/1 -apple-system, BlinkMacSystemFont, sans-serif; color: #fff; box-shadow: 0 2cqw 6cqw #0003; }
+    .generic h2 { margin: 6cqw 0 1cqw; font-size: 7cqw; }
+    .generic p { margin: 0 10cqw; font-size: 4cqw; opacity: .65; }
+
+    /* ── The panel beside the phone ───────────────────────────────── */
+    .panel { width: min(360px, 100%); }
+    .panel h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: -.02em; }
+    .panel > p { margin: 0 0 22px; color: #aab0c4; }
+    .control { margin-bottom: 20px; }
+    .control label { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 6px; }
+    .control output { color: #8fb4ff; font-variant-numeric: tabular-nums; }
+    .control input { width: 100%; accent-color: #6d8dff; }
+    .control small { display: block; color: #8b91a6; margin-top: 4px; font-size: 13px; }
+    .modes { display: flex; gap: 6px; margin: 6px 0 4px; }
+    .modes a { flex: 1; text-align: center; padding: 7px 0; border-radius: 9px; border: 1px solid #2c3350; color: #c8cde0; text-decoration: none; font-weight: 600; font-size: 14px; }
+    .modes a.on { background: #6d8dff; border-color: #6d8dff; color: #fff; }
+    .stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 18px 0; padding: 14px 16px; border-radius: 12px; background: #ffffff0d; font-size: 14px; }
+    .stats dt { color: #8b91a6; }
+    .stats dd { margin: 0; font-variant-numeric: tabular-nums; }
+    .links { font-size: 14px; }
+    .links a { color: #8fb4ff; }
+    @media (max-width: 760px) {
+      .stage { gap: 28px; padding-top: 20px; }
+      .phone { --h: min(720px, 82vh); }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <div class="phone">
+      <div class="screen">
+        <div class="canvas zumly-canvas"></div>
+        <div class="status" aria-hidden="true">
+          <span class="clock-now">9:41</span>
+          <span>
+            <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+            <svg viewBox="0 0 16 12"><path d="M8 2.2c2.2 0 4.2.8 5.7 2.2l1.3-1.3A9.9 9.9 0 0 0 8 .3 9.9 9.9 0 0 0 1 3.1l1.3 1.3A8.1 8.1 0 0 1 8 2.2Zm0 3.7c1.2 0 2.3.4 3.1 1.2l1.3-1.3A6.2 6.2 0 0 0 8 4 6.2 6.2 0 0 0 3.6 5.8l1.3 1.3A4.4 4.4 0 0 1 8 5.9Zm0 3.7c.4 0 .8.2 1.1.5L8 11.2 6.9 10.1c.3-.3.7-.5 1.1-.5Z"/></svg>
+            <svg viewBox="0 0 27 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="17" height="8" rx="1.6"/><rect x="24" y="4" width="2" height="4" rx="1" opacity=".5"/></svg>
+          </span>
+        </div>
+        <div class="island" aria-hidden="true"></div>
+        <button class="home-bar" type="button" aria-label="Home"></button>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <h1>Phone</h1>
+      <p>Tap an app: it opens with a zoom from its icon. The bar at the bottom takes you back, and so do a swipe, a pinch or the trackpad. Folders, Photos, Settings and Notes go deeper.</p>
+
+      <div class="control">
+        <label for="rate">Capture rate <output id="rate-out">10 per second</output></label>
+        <input id="rate" type="range" min="1" max="30" step="1" value="10" />
+        <small>How often SnapDOM may repaint its picture of the screen you are on; it repaints only when something changed. Open the Clock: its stopwatch never stops, so the captures follow this rate. A zoom out of it starts from that picture, so at 1 per second the stopwatch it shrinks can be a second behind.</small>
+      </div>
+
+      <div class="control">
+        <label for="speed">Zoom <output id="speed-out">550 ms</output></label>
+        <input id="speed" type="range" min="150" max="3000" step="50" value="550" />
+        <small>Slow it down to watch the screens behind.</small>
+      </div>
+
+      <div class="control">
+        <label>Drawn with</label>
+        <div class="modes">
+          <a href="?mode=webgl" data-mode="webgl">WebGL</a>
+          <a href="?mode=rasterize" data-mode="rasterize">Rasterize</a>
+          <a href="?mode=dom" data-mode="dom">DOM</a>
+        </div>
+        <small id="mode-note"></small>
+      </div>
+
+      <dl class="stats">
+        <dt>Captures</dt><dd id="st-rate">—</dd>
+        <dt>Last one</dt><dd id="st-busy">—</dd>
+        <dt>Following</dt><dd id="st-view">—</dd>
+      </dl>
+
+      <p class="links"><a href="../guides/heavy-views.html#webgl">How it works</a> · <a href="../">Zumly</a></p>
+    </aside>
+  </main>
+  <noscript><p>A Zumly showcase: an iOS-style home screen where every app opens with a zoom from its icon. It needs JavaScript. <a href="../learn/">Learn Zumly</a>.</p></noscript>
+
+  <script type="module">
+    import Zumly from 'https://unpkg.com/zumly/dist/zumly.mjs'
+    import { snapdom } from 'https://esm.sh/@zumer/snapdom'
+    import { stream } from 'https://esm.sh/@zumer/snapdom-plugins/stream'
+
+    const $ = selector => document.querySelector(selector)
+    const pad = n => String(n).padStart(2, '0')
+    const started = performance.now()
+    const stopwatch = () => {
+      const t = (performance.now() - started) / 1000
+      return `${pad(Math.floor(t / 60) % 60)}:${pad(Math.floor(t) % 60)}.${pad(Math.floor(t * 100) % 100)}`
+    }
+    // Live values, in a whole page or in a screen just built: a screen is photographed for its
+    // zoom as soon as it exists, so it comes already filled in.
+    function paint (root) {
+      const now = new Date()
+      const s = now.getSeconds(); const m = now.getMinutes() + s / 60; const h = (now.getHours() % 12) + m / 60
+      for (const face of root.querySelectorAll('.face')) {
+        face.querySelector('.h').style.transform = `rotate(${h * 30}deg)`
+        face.querySelector('.m').style.transform = `rotate(${m * 6}deg)`
+        face.querySelector('.s').style.transform = `rotate(${s * 6}deg)`
+      }
+      for (const z of root.querySelectorAll('.js-zone')) z.textContent = now.toLocaleTimeString('en-US', { timeZone: z.dataset.zone, hour: 'numeric', minute: '2-digit', second: z.classList.contains('digital') ? '2-digit' : undefined })
+      for (const w of root.querySelectorAll('.js-stopwatch')) w.textContent = stopwatch()
+      for (const t of root.querySelectorAll('.js-temp')) t.textContent = `${72 + Math.round(Math.sin(now / 9000) * 2)}°`
+    }
+    const mode = ['webgl', 'rasterize', 'dom'].includes(new URLSearchParams(location.search).get('mode')) ? new URLSearchParams(location.search).get('mode') : 'webgl'
+    const NOTES = {
+      webgl: 'Zooms drawn in WebGL, from SnapDOM pictures of each screen. The one that holds best on a modest GPU.',
+      rasterize: 'SnapDOM pictures of the screens behind, moved by the browser. No WebGL.',
+      dom: 'The screens move as they are, nothing captured. The capture rate does nothing here.'
+    }
+
+    // ── The capture rate ─────────────────────────────────────────────
+    // rasterize starts SnapDOM's stream on the screen you are on, and keeps its canvas as that
+    // screen's picture. The rate is fixed when a stream starts, so a new rate starts a new one;
+    // this canvas stays the same, so the picture rasterize holds stays current.
+    let following = null
+    const captures = []
+    let lastBusy = null
+
+    function streamAtRate (element, options) {
+      const out = document.createElement('canvas')
+      const ctx = out.getContext('2d')
+      let inner = null
+      const copy = (frame) => {
+        const c = frame.canvas
+        if (out.width !== c.width || out.height !== c.height) { out.width = c.width; out.height = c.height }
+        const rects = frame.full ? [{ x: 0, y: 0, width: c.width, height: c.height }] : frame.rects
+        for (const r of rects) {
+          ctx.clearRect(r.x, r.y, r.width, r.height)
+          ctx.drawImage(c, r.x, r.y, r.width, r.height, r.x, r.y, r.width, r.height)
+        }
+      }
+      const onFrame = (frame) => {
+        copy(frame)
+        if (frame.reason !== 'start') {
+          captures.push(performance.now())
+          lastBusy = frame.busyMs ?? frame.ms
+        }
+        options.onFrame?.({ ...frame, canvas: out })
+      }
+      const own = {
+        start () {
+          inner?.stop()
+          inner = stream(element, { ...options, fps: +$('#rate').value, onFrame })
+        },
+        name: element.dataset.title || element.dataset.viewName.replace(/^./, c => c.toUpperCase())
+      }
+      own.start()
+      following = own
+      return {
+        canvas: out,
+        ready: inner.ready.then(() => { if (!out.width) copy({ canvas: inner.canvas, full: true }) }),
+        stop () {
+          inner.stop()
+          if (following === own) following = null
+        }
+      }
+    }
+
+    $('#rate').addEventListener('input', () => {
+      $('#rate-out').textContent = `${$('#rate').value} per second`
+      following?.start()
+    })
+
+    // ── Icons and screens ───────────────────────────────────────────
+    const apps = {
+      weather: { name: 'Weather', bg: 'linear-gradient(#55aaf8, #1f62d6)', glyph: '☀︎', to: 'weather' },
+      clock: { name: 'Clock', bg: '#111', icon: 'ic-clock', inner: '<b class="h"></b><b class="m"></b>', to: 'clock' },
+      photos: { name: 'Photos', bg: '#fff', icon: 'ic-photos', to: 'photos' },
+      calendar: { name: 'Calendar', bg: '#fff', icon: 'ic-calendar', to: 'app', light: true },
+      notes: { name: 'Notes', bg: '#fff', icon: 'ic-notes', to: 'notes' },
+      settings: { name: 'Settings', bg: 'linear-gradient(#a8a8b2, #6b6b74)', glyph: '⚙︎', to: 'settings' },
+      music: { name: 'Music', bg: 'linear-gradient(#fd5f78, #fa233b)', glyph: '♫' },
+      maps: { name: 'Maps', bg: 'linear-gradient(135deg, #8fd16a, #3fb0f5)', glyph: '➤' },
+      camera: { name: 'Camera', bg: 'linear-gradient(#d7d7dc, #8e8e96)', glyph: '◉' },
+      reminders: { name: 'Reminders', bg: '#fff', glyph: '☰', color: '#0a84ff', light: true },
+      stocks: { name: 'Stocks', bg: '#111', glyph: '▲', color: '#30d158' },
+      utilities: { name: 'Utilities', folder: ['#555', '#ff9f0a', '#0a84ff', '#e5484d', '#30d158', '#888'], to: 'folder' },
+      phone: { name: 'Phone', bg: 'linear-gradient(#5fe07a, #2fbf4f)', glyph: '✆' },
+      safari: { name: 'Safari', bg: 'linear-gradient(#fff, #e9eef7)', glyph: '◎', color: '#0a84ff', light: true },
+      messages: { name: 'Messages', bg: 'linear-gradient(#5fe07a, #2fbf4f)', glyph: '❝' },
+      mail: { name: 'Mail', bg: 'linear-gradient(#4fb3ff, #1773f0)', glyph: '✉︎' },
+      calculator: { name: 'Calculator', bg: '#333', glyph: '±', color: '#ff9f0a', to: 'calculator' },
+      compass: { name: 'Compass', bg: '#111', glyph: '✦' },
+      memos: { name: 'Voice Memos', bg: '#111', glyph: '◖', color: '#ff453a' },
+      measure: { name: 'Measure', bg: '#111', glyph: '⟷', color: '#ffd60a' },
+      translate: { name: 'Translate', bg: 'linear-gradient(#4fb3ff, #1773f0)', glyph: '文' },
+      magnifier: { name: 'Magnifier', bg: '#111', glyph: '⌕' }
+    }
+    const today = new Date()
+    const DAY = today.toLocaleDateString('en-US', { weekday: 'short' })
+
+    function icon (id) {
+      const a = apps[id]
+      const data = `data-to="${a.to || 'app'}" data-app="${id}" data-title="${a.name}"`
+      let face = a.glyph ? `<span style="color:${a.color || '#fff'}">${a.glyph}</span>` : a.inner || ''
+      if (a.icon === 'ic-calendar') face = `<em>${DAY}</em><strong>${today.getDate()}</strong>`
+      if (a.folder) return `<div class="app"><i class="zoom-me ic-folder" ${data}>${a.folder.map(c => `<s style="background:${c}"></s>`).join('')}</i><span>${a.name}</span></div>`
+      return `<div class="app"><i class="zoom-me ${a.icon || ''}" ${data} style="background:${a.bg}">${face}</i><span>${a.name}</span></div>`
+    }
+
+    const home = `<div class="z-view ios home" data-title="Home">
+      <div class="widgets">
+        <div><div class="widget weather zoom-me" data-to="weather" data-title="Weather"><b>New York</b><span class="temp js-temp">72°</span><small>Mostly sunny<br>H:76° L:63°</small></div><div class="widget-label">Weather</div></div>
+        <div><div class="widget calendar zoom-me" data-to="app" data-app="calendar" data-title="Calendar"><span class="day">${today.toLocaleDateString('en-US', { weekday: 'long' })}</span><span class="date">${today.getDate()}</span><small>Ship Zumly 2.0<br>4:00 – 5:00 PM</small></div><div class="widget-label">Calendar</div></div>
+      </div>
+      <div class="icons">${['clock', 'photos', 'notes', 'settings', 'music', 'maps', 'camera', 'reminders', 'stocks', 'calculator', 'utilities', 'calendar'].map(icon).join('')}</div>
+      <div class="dots"><i></i><i></i></div>
+      <div class="dock">${['phone', 'safari', 'messages', 'mail'].map(icon).join('')}</div>
+    </div>`
+
+    // An app this demo does not build: its icon, big, and its name.
+    function generic ({ target, props }) {
+      const a = apps[props.app] || apps.music
+      target.className = 'z-view ios generic' + (a.light ? ' light-view' : '')
+      target.dataset.title = a.name
+      if (a.light) target.dataset.light = ''
+      else target.style.background = '#1c1c1e'
+      target.style.color = a.light ? '#000' : '#fff'
+      const face = a.icon === 'ic-calendar'
+        ? `<span style="color:#fa3b30;font-size:7cqw">${DAY}</span>`
+        : `<span style="color:${a.color || '#fff'}">${a.glyph || ''}</span>`
+      target.innerHTML = `<div class="glyph" style="background:${a.bg}">${face}</div><h2>${a.name}</h2><p>This app is only an icon in this demo. The bar below takes you home.</p>`
+    }
+
+    function weather ({ target }) {
+      target.className = 'z-view ios appview weather-app'
+      const hours = ['Now', '1PM', '2PM', '3PM', '4PM', '5PM'].map((h, i) => `<div>${h}<b>${['☀︎', '☀︎', '⛅︎', '⛅︎', '☁︎', '☁︎'][i]}</b>${72 + [0, 2, 3, 3, 1, -1][i]}°</div>`).join('')
+      const days = ['Today', 'Fri', 'Sat', 'Sun', 'Mon'].map((d, i) => `<div><span>${d}</span><span>${['☀︎', '⛅︎', '☂︎', '☀︎', '⛅︎'][i]}</span><span>${63 - i}° — ${76 - i * 2}°</span></div>`).join('')
+      target.innerHTML = `<div class="city">New York</div><div class="big js-temp">72°</div><div class="sky">Mostly sunny · H:76° L:63°</div>
+        <div class="card"><h3>Hourly forecast</h3><div class="hours">${hours}</div></div>
+        <div class="card"><h3>5-day forecast</h3><div class="days">${days}</div></div>`
+      paint(target)
+    }
+
+    const CITIES = [['London', 'Europe/London'], ['Tokyo', 'Asia/Tokyo'], ['Buenos Aires', 'America/Argentina/Buenos_Aires']]
+    // A stopwatch that never stops, so the screen changes all the time and its captures run
+    // at the rate you pick. The cities make it a screen you can zoom out of, so it is followed.
+    function clock ({ target }) {
+      target.className = 'z-view ios appview clock-app'
+      const rows = CITIES.map(([name, zone]) => `<div class="row more zoom-me" data-to="city" data-zone="${zone}" data-title="${name}"><span>${name}</span><em class="js-zone" data-zone="${zone}">--:--</em></div>`).join('')
+      target.innerHTML = `<h1 style="text-align:left">Clock</h1><div class="face"><b class="h"></b><b class="m"></b><b class="s"></b></div>
+        <div class="digital js-stopwatch">00:00.00</div><div class="group">${rows}</div>`
+      paint(target)
+    }
+    function city ({ target, props }) {
+      const [name] = CITIES.find(([, zone]) => zone === props.zone) || CITIES[0]
+      target.className = 'z-view ios appview clock-app'
+      target.innerHTML = `<h1 style="text-align:left">${name}</h1><div class="digital js-zone" data-zone="${props.zone}" style="margin-top:30cqw;font-size:20cqw">--:--</div><p style="opacity:.6;font-size:4cqw">${props.zone.replace(/_/g, ' ')}</p>`
+      paint(target)
+    }
+
+    const shot = n => {
+      const h = (n * 47) % 360
+      return `linear-gradient(hsl(${h} 70% 62%), hsl(${(h + 40) % 360} 60% 38%))`
+    }
+    function photos ({ target }) {
+      target.className = 'z-view ios appview photos-app'
+      target.dataset.light = ''
+      let shots = ''
+      for (let n = 1; n <= 30; n++) shots += `<i class="zoom-me" data-to="photo" data-n="${n}" data-title="Photo ${n}" style="background:${shot(n)}"></i>`
+      target.innerHTML = `<h1>Library</h1><div class="shots">${shots}</div>`
+    }
+    function photo ({ target, props }) {
+      const n = +props.n || 1
+      const h = (n * 47) % 360
+      target.className = 'z-view ios photo-view'
+      target.style.background = `radial-gradient(18cqw 18cqw at ${20 + (n * 13) % 60}% ${22 + (n * 7) % 20}%, hsl(${(h + 60) % 360} 90% 80%), transparent 70%),
+        linear-gradient(transparent 55%, hsl(${(h + 200) % 360} 30% 18%) 55%), ${shot(n)}`
+      target.innerHTML = `<h2>Photo ${n}</h2><p>${['Morning walk', 'Rooftop', 'Lake trip', 'City lights', 'Weekend'][n % 5]} · Oct ${1 + (n % 28)}</p>`
+    }
+
+    const row = (glyph, bg, label, extra = '', more = '') => `<div class="row${more ? ' more zoom-me' : ''}" ${more}><i style="background:${bg}">${glyph}</i><span>${label}</span>${extra}</div>`
+    function settings ({ target }) {
+      target.className = 'z-view ios appview light-view'
+      target.dataset.light = ''
+      target.innerHTML = `<h1>Settings</h1>
+        <div class="group">${row('✈︎', '#ff9f0a', 'Airplane Mode', '<b class="toggle off"></b>')}${row('⌔', '#0a84ff', 'Wi-Fi', '<em>Zumerlab</em>')}${row('ᛒ', '#0a84ff', 'Bluetooth', '<em>On</em>')}${row('◉', '#30d158', 'Cellular')}</div>
+        <div class="group">${row('⚙︎', '#8e8e93', 'General', '', 'data-to="general" data-title="General"')}${row('☀︎', '#0a84ff', 'Display & Brightness')}${row('❀', '#30b0c7', 'Wallpaper')}${row('◐', '#5856d6', 'Focus')}</div>
+        <div class="group">${row('✋︎', '#0a84ff', 'Privacy & Security')}${row('⌘', '#ff3b30', 'Battery')}</div>`
+    }
+    function general ({ target }) {
+      target.className = 'z-view ios appview light-view'
+      target.dataset.light = ''
+      target.innerHTML = `<h1>General</h1>
+        <div class="group">${row('ⓘ', '#8e8e93', 'About', '', 'data-to="about" data-title="About"')}${row('↻', '#8e8e93', 'Software Update', '<em>Zumly 2.0</em>')}</div>
+        <div class="group">${row('⇄', '#0a84ff', 'AirDrop')}${row('▣', '#0a84ff', 'Picture in Picture')}${row('⌨', '#8e8e93', 'Keyboard')}${row('◷', '#8e8e93', 'Date & Time')}</div>`
+    }
+    function about ({ target }) {
+      target.className = 'z-view ios appview light-view'
+      target.dataset.light = ''
+      const line = (k, v) => `<div class="row"><span>${k}</span><em>${v}</em></div>`
+      target.innerHTML = `<h1>About</h1><div class="group">${line('Name', 'Zumly Phone')}${line('Software Version', '2.0')}${line('Drawn with', mode === 'dom' ? 'DOM' : mode === 'webgl' ? 'WebGL' : 'Rasterize')}${line('Captures', 'SnapDOM')}${line('Levels deep', '4')}</div>`
+    }
+
+    const NOTE_TEXTS = [
+      ['Zoom into anything', 'Every screen here is a Zumly view. An icon is its trigger, so the app grows out of it and shrinks back into it.'],
+      ['Pictures, not DOM', 'While a screen sits behind, SnapDOM keeps a picture of it, and the zoom moves the picture. With WebGL, the blur behind is a shader too.'],
+      ['Capture rate', 'Turn it down to one per second and zoom out of the Clock: the picture it shrinks into can be a second old.'],
+      ['Groceries', 'Coffee, oranges, bread, the good olive oil.']
+    ]
+    function notes ({ target }) {
+      target.className = 'z-view ios appview notes-app'
+      target.dataset.light = ''
+      target.innerHTML = `<h1>Notes</h1><div class="group">${NOTE_TEXTS.map(([title, text], i) => `<div class="note-row zoom-me" data-to="note" data-n="${i}" data-title="${title}"><b>${title}</b><small>Today · ${text.slice(0, 38)}…</small></div>`).join('')}</div>`
+    }
+    function note ({ target, props }) {
+      const [title, text] = NOTE_TEXTS[+props.n] || NOTE_TEXTS[0]
+      target.className = 'z-view ios note'
+      target.dataset.light = ''
+      target.innerHTML = `<h2>${title}</h2><p>${text}</p>`
+    }
+
+    function folder ({ target }) {
+      target.className = 'z-view folder'
+      target.dataset.title = 'Utilities'
+      target.innerHTML = `<h2>Utilities</h2><div class="panel">${['calculator', 'compass', 'memos', 'measure', 'translate', 'magnifier'].map(icon).join('')}</div>`
+    }
+
+    function calculator ({ target }) {
+      target.className = 'z-view ios calc'
+      const keys = [['AC', 'fn'], ['±', 'fn'], ['%', 'fn'], ['÷', 'op'], ['7'], ['8'], ['9'], ['×', 'op'], ['4'], ['5'], ['6'], ['−', 'op'], ['1'], ['2'], ['3'], ['+', 'op'], ['0', 'wide'], ['.'], ['=', 'op']]
+      target.innerHTML = `<output>0</output><div class="keys">${keys.map(([k, c]) => `<button type="button" class="${c || ''}">${k}</button>`).join('')}</div>`
+      let shown = '0'; let stored = null; let pending = null; let fresh = true
+      const out = target.querySelector('output')
+      const ops = { '+': (a, b) => a + b, '−': (a, b) => a - b, '×': (a, b) => a * b, '÷': (a, b) => a / b }
+      const show = v => { shown = String(+(+v).toPrecision(9)); out.textContent = shown }
+      target.querySelector('.keys').addEventListener('click', (event) => {
+        const k = event.target.closest('button')?.textContent
+        if (!k) return
+        if (/^[0-9.]$/.test(k)) {
+          if (k === '.' && shown.includes('.') && !fresh) return
+          shown = fresh ? (k === '.' ? '0.' : k) : shown + k
+          fresh = false
+          out.textContent = shown
+        } else if (k === 'AC') { stored = pending = null; show(0); fresh = true }
+        else if (k === '±') show(-shown)
+        else if (k === '%') show(shown / 100)
+        else {
+          if (pending && !fresh) show(ops[pending](stored, +shown))
+          stored = +shown
+          pending = k === '=' ? null : k
+          fresh = true
+        }
+      })
+    }
+
+    // ── Zumly ────────────────────────────────────────────────────────
+    const app = new Zumly({
+      mount: '.canvas',
+      initialView: 'home',
+      views: { home, app: generic, weather, clock, city, photos, photo, settings, general, about, notes, note, folder, calculator },
+      transitions: { duration: '550ms', ease: 'cubic-bezier(.2, .8, .2, 1)', effects: ['blur(3px) brightness(.75)', 'blur(8px) brightness(.55)'] },
+      depthNav: false,
+      lateralNav: false,
+      gestures: { follow: true },
+      inputs: { pinch: true },
+      // Every screen is captured, light or not, so the capture rate shows on all of them.
+      rasterize: mode === 'rasterize' && { snapdom, stream: streamAtRate, minNodes: 0 },
+      webgl: mode === 'webgl' && { snapdom, stream: streamAtRate, minNodes: 0, hover: true }
+    })
+    // Light screens get a dark status bar and home bar.
+    app.on('viewChanged', ({ node }) => $('.screen').classList.toggle('light', node?.dataset.light !== undefined))
+    // Every view a visitor zooms to, for the site analytics (/zumerlab.js)
+    app.on('viewChanged', (e) => { if (window.zumerlab && e.type !== 'init') window.zumerlab.track('zoom_view', { view: e.viewName, nav: e.type }) })
+    $('.home-bar').addEventListener('click', () => { if (app.zoomLevel() > 1) app.zoomOut() })
+    window.app = app
+    app.init()
+
+    $('#speed').addEventListener('input', () => {
+      $('#speed-out').textContent = `${$('#speed').value} ms`
+      app.duration = `${$('#speed').value}ms`
+    })
+    for (const a of document.querySelectorAll('.modes a')) a.classList.toggle('on', a.dataset.mode === mode)
+    $('#mode-note').textContent = NOTES[mode]
+
+    // ── What is alive: the time, the clock, the stopwatch and the temperature ──
+    function tick () {
+      const now = new Date()
+      $('.clock-now').textContent = `${now.getHours() % 12 || 12}:${pad(now.getMinutes())}`
+      paint(document)
+    }
+    tick()
+    setInterval(tick, 1000)
+    setInterval(() => { for (const w of document.querySelectorAll('.js-stopwatch')) w.textContent = stopwatch() }, 30)
+
+    // ── What the capture is doing ───────────────────────────────────
+    setInterval(() => {
+      const now = performance.now()
+      while (captures.length && now - captures[0] > 1000) captures.shift()
+      const on = mode !== 'dom' && following
+      $('#st-rate').textContent = mode === 'dom' ? 'none (DOM)'
+        : on ? `${captures.length} in the last second`
+          : app.blockEvents ? 'paused while it moves' : 'none: a screen that opens nothing is not followed'
+      $('#st-busy').textContent = on && lastBusy != null ? `${Math.round(lastBusy)} ms of main thread` : '—'
+      $('#st-view').textContent = on ? following.name : '—'
+    }, 250)
+  </script>
+</body>
+</html>
