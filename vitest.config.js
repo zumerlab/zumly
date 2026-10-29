@@ -20,7 +20,9 @@ export default defineConfig({
     browser: {
       enabled: true,
       provider: 'playwright',
-      instances: [...new Set(selectedBrowsers)].map(browser => ({ browser })),
+      // Chromium's new headless (channel 'chromium') has WebGL2 on the real GPU; the default
+      // headless shell has none, and the WebGL tests needed a window.
+      instances: [...new Set(selectedBrowsers)].map(browser => browser === 'chromium' ? { browser, launch: { channel: 'chromium' } } : { browser }),
     },
     coverage: {
       provider: 'v8',

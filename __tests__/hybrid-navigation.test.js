@@ -176,6 +176,19 @@ async function chaos (seed, cfg, steps = 60) {
   if (cfg.router) app.use(ZumlyRouter)
   await app.init()
   const r = rng(seed); const log = []
+  // history.back() lands later in Chrome (in its old headless shell, almost at once): until it
+  // does, canGoBack() still answers for the view being left, and a second back in the same
+  // burst would leave the entries the router wrote.
+  let traversing = false
+  const landed = () => { traversing = false }
+  addEventListener('popstate', landed)
+  try {
+    return await chaosSteps()
+  } finally {
+    removeEventListener('popstate', landed)
+  }
+
+  async function chaosSteps () {
   for (let i = 0; i < steps; i++) {
     const burst = 1 + Math.floor(r() * 3)
     for (let b = 0; b < burst; b++) {
@@ -184,11 +197,15 @@ async function chaos (seed, cfg, steps = 60) {
       const roll = r()
       if (roll < 0.35 && kids[cur]?.length) { const to = kids[cur][Math.floor(r() * kids[cur].length)]; log.push('in ' + to); app.canvas.querySelector(`.is-current-view .zoom-me[data-to="${to}"]`)?.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: 0 })) }
       else if (roll < 0.6 && sibs.length) { const to = sibs[Math.floor(r() * sibs.length)]; log.push('lat ' + to); app.goTo(to, { mode: 'lateral' }) }
-      else if (roll < 0.8) { if (cfg.router) { if (app.canGoBack()) { log.push('history.back'); history.back() } } else { log.push('back'); app.back() } }
+      else if (roll < 0.8) { if (cfg.router) { if (app.canGoBack() && !traversing) { log.push('history.back'); traversing = true; history.back() } } else { log.push('back'); app.back() } }
       else { log.push('out'); app.zoomOut() }
       if (r() < 0.5) await new Promise(res => setTimeout(res, r() * 40))
     }
     await settle()
+    if (traversing) {
+      for (let w = 0; traversing && w < 50; w++) await new Promise(res => setTimeout(res, 20))
+      await settle()
+    }
     const e = structural()
     if (e) return `seed ${seed} step ${i}: ${e.replace('[concurrent]', '[' + log.slice(-6).join(' | ') + ']')}`
     if (cfg.router) {
@@ -197,6 +214,7 @@ async function chaos (seed, cfg, steps = 60) {
     }
   }
   return null
+  }
 }
 
 
