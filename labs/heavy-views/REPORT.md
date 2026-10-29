@@ -504,7 +504,23 @@ Martin: "eso es importante". La espera antes de un zoom-in con WebGL es armar la
   - **En el zoom-in en vivo** empeoraba: de 0,3 % a 2,7-5,3 %, con tramos de 2-3 cuadros seguidos. Las ventanas de un parche que ya estaba en marcha seguían capturando después de `stop()`, en pleno movimiento. La sesión de SnapDOM ya lo arregló: con eso, el zoom-in en vivo vuelve a 0,3-0,6 % sin tirones, y el tablero en reposo queda en 3,3-7 % ([`results/hover-tree-2.log`](results/hover-tree-2.log)).
   - **Con CPU 4×** el stream se sigue apagando: con `busyMs` igual pasa el 50 %. El zoom-in sigue en ~710 ms, y el tablero en reposo, en 44-46 % perdidos.
   - La palanca ahí es el costo de cada ventana (lo que cuesta vestir las tarjetas recortadas), del lado de SnapDOM. No subo el presupuesto de `flatten`: más de medio hilo principal en un equipo lento no es algo para esconder.
-- **Pendiente:** que Martin lo pruebe a mano (`demo.html?gl=1&glass=0&hover=1`, y `&slow=300` para la vista lenta), y medir otra vez con la build dev nueva.
+- **Pendiente:** que Martin lo pruebe a mano (`demo.html?gl=1&glass=0&hover=1`, y `&slow=300` para la vista lenta).
+
+### Sin WebGL, con el stream nuevo (29/10)
+
+Martin: "¿lograste mejorar la performance sin WebGL? Eso me interesa". `flatten` en el DOM, el mismo día y en el mismo Chromium. A la izquierda, el stream estable (4.4.0, servido por route); a la derecha, `4.4.1-dev.1`, que es lo instalado. Medianas de dos corridas, dpr 2 ([`results/dom-440.log`](results/dom-440.log), [`results/dom-dev1.log`](results/dom-dev1.log)):
+
+| `flatten`, en vivo | stream 4.4.0 | stream 4.4.1-dev.1 |
+|---|---|---|
+| Tirones | 1,5 de 6 | 0 de 6 |
+| Cuadros perdidos, zoom-in / zoom-out | 0,3 / 8,6 % | 0 / 0 % |
+| GPU del zoom-in / zoom-out | 65 / 65,5 % | 39 / 43 % |
+| Tablero en reposo | 0 % | 3,3 % |
+
+- Con 4.4.0, `flatten` apagaba el stream del tablero en vivo (sus cuadros "no host") y el tablero se movía vivo atrás. Ahora queda como foto, y el zoom en vivo cuesta lo mismo que el tablero quieto.
+- Tal cual, el zoom-out pasa de 3,2 % a 0 %.
+- Sin `flatten` no cambia nada (10-17 % en el zoom-out), como era de esperar.
+- El techo del DOM sigue: 39-43 % de GPU contra 7-8 % con WebGL.
 
 ## Plan
 

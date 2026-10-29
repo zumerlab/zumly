@@ -1,0 +1,15 @@
+8 runs at dpr 2, 1280×800, CPU 1×
+asis   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 14  lat 24/11  motion 1026/1010 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 42 viz 7  | out: main 4 impl 4 raster 0 gpu 42 viz 8
+asis   nf          in   0.5%  out  10.2%  tail 0%/0%  hitches 1/6 (run 4)  start 9  lat 16/11  motion 1011/1013 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 62 viz 19  | out: main 4 impl 5 raster 0 gpu 67 viz 19
+live   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 5  lat 8/9  motion 1005/1015 ms  rest 0%/6.5%  | in: main 4 impl 3 raster 0 gpu 39 viz 7  | out: main 5 impl 4 raster 0 gpu 43 viz 8
+live   nf          in     0%  out    16%  tail 0%/0%  hitches 1/6 (run 4)  start 7  lat 23/8  motion 1027/1012 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 66 viz 19  | out: main 4 impl 5 raster 0 gpu 68 viz 20
+asis   nf          in     0%  out  16.9%  tail 0%/0%  hitches 2/6 (run 4)  start 9  lat 21/11  motion 1014/1028 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 63 viz 18  | out: main 4 impl 5 raster 0 gpu 69 viz 20
+asis   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 14  lat 22/8  motion 1025/1024 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 41 viz 8  | out: main 4 impl 4 raster 0 gpu 45 viz 9
+live   nf          in   0.5%  out   5.7%  tail 0%/0%  hitches 0/6 (run 2)  start 7  lat 11/11  motion 1009/1013 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 66 viz 18  | out: main 4 impl 4 raster 0 gpu 68 viz 20
+live   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 4  lat 14/7  motion 1014/1025 ms  rest 0%/0%  | in: main 3 impl 3 raster 0 gpu 39 viz 6  | out: main 5 impl 4 raster 0 gpu 43 viz 9
+
+Medians across runs
+asis   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 14  lat 23/9.5  motion 1025.5/1017 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 41.5 viz 7.5  | out: main 4 impl 4 raster 0 gpu 43.5 viz 8.5
+asis   nf          in   0.3%  out  13.5%  tail 0%/0%  hitches 1.5/6 (run 4)  start 9  lat 18.5/11  motion 1012.5/1020.5 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 62.5 viz 18.5  | out: main 4 impl 5 raster 0 gpu 68 viz 19.5
+live   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 4.5  lat 11/8  motion 1009.5/1020 ms  rest 0%/3.3%  | in: main 3.5 impl 3 raster 0 gpu 39 viz 6.5  | out: main 5 impl 4 raster 0 gpu 43 viz 8.5
+live   nf          in   0.3%  out  10.8%  tail 0%/0%  hitches 0.5/6 (run 3)  start 7  lat 17/9.5  motion 1018/1012.5 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 66 viz 18.5  | out: main 4 impl 4.5 raster 0 gpu 68 viz 20

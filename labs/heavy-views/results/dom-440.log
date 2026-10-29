@@ -1,0 +1,15 @@
+8 runs at dpr 2, 1280×800, CPU 1×, stream from /private/tmp/claude-502/-Users-martin-GitHub-zumerlab-zumly/d603c9ac-80ff-4afc-ad98-064cbb865642/scratchpad/plugins-440/tree
+asis   f           in     0%  out   6.4%  tail 10%/0%  hitches 0/6 (run 2)  start 12  lat 25/11  motion 1012/1014 ms  rest 0%/0%  | in: main 3 impl 3 raster 0 gpu 38 viz 7  | out: main 4 impl 4 raster 0 gpu 41 viz 8
+asis   nf          in     0%  out  16.9%  tail 0%/0%  hitches 2/6 (run 4)  start 8  lat 10/12  motion 1018/1026 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 65 viz 19  | out: main 4 impl 5 raster 0 gpu 69 viz 20
+live   f           in   0.5%  out   6.6%  tail 0%/0%  hitches 1/6 (run 4)  start 8  lat 8/11  motion 1002/1027 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 65 viz 18  | out: main 4 impl 5 raster 0 gpu 66 viz 19
+live   nf          in   0.5%  out  13.3%  tail 0%/0%  hitches 1/6 (run 4)  start 7  lat 10/12  motion 1020/1014 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 65 viz 19  | out: main 4 impl 5 raster 0 gpu 67 viz 20
+asis   nf          in     0%  out    17%  tail 0%/0%  hitches 2/6 (run 4)  start 7  lat 9/11  motion 1020/1014 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 65 viz 19  | out: main 4 impl 5 raster 0 gpu 65 viz 20
+asis   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 15  lat 23/11  motion 1009/1026 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 42 viz 7  | out: main 4 impl 4 raster 0 gpu 42 viz 8
+live   nf          in     0%  out  11.2%  tail 0%/0%  hitches 2/6 (run 4)  start 7  lat 11/11  motion 1011/1013 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 65 viz 19  | out: main 4 impl 5 raster 0 gpu 68 viz 19
+live   f           in     0%  out  10.6%  tail 0%/0%  hitches 2/6 (run 4)  start 7  lat 8/12  motion 1001/1030 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 65 viz 18  | out: main 4 impl 5 raster 0 gpu 65 viz 19
+
+Medians across runs
+asis   f           in     0%  out   3.2%  tail 5%/0%  hitches 0/6 (run 1)  start 13.5  lat 24/11  motion 1010.5/1020 ms  rest 0%/0%  | in: main 3.5 impl 3.5 raster 0 gpu 40 viz 7  | out: main 4 impl 4 raster 0 gpu 41.5 viz 8
+asis   nf          in     0%  out  16.9%  tail 0%/0%  hitches 2/6 (run 4)  start 7.5  lat 9.5/11.5  motion 1019/1020 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 65 viz 19  | out: main 4 impl 5 raster 0 gpu 67 viz 20
+live   f           in   0.3%  out   8.6%  tail 0%/0%  hitches 1.5/6 (run 4)  start 7.5  lat 8/11.5  motion 1001.5/1028.5 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 65 viz 18  | out: main 4 impl 5 raster 0 gpu 65.5 viz 19
+live   nf          in   0.3%  out  12.3%  tail 0%/0%  hitches 1.5/6 (run 4)  start 7  lat 10.5/11.5  motion 1015.5/1013.5 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 65 viz 19  | out: main 4 impl 5 raster 0 gpu 67.5 viz 19.5
