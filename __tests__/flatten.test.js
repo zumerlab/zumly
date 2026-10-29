@@ -445,6 +445,17 @@ describe('flatten', () => {
       expect(isFlat(home)).toBe(false)
     })
 
+    it('budgets on what a frame blocks (busyMs), not on its wall time', async () => {
+      const stream = await startStreaming()
+      const handle = stream.streams[0]
+      // Captured in turns: long on the clock, little on the main thread.
+      for (let i = 0; i < 8; i++) handle.frame({ full: false, reason: null, ms: 600, busyMs: 40 })
+      handle.frame({ full: true, reason: 'root resized', ms: 700, busyMs: 60 })
+      expect(handle.stop).not.toHaveBeenCalled()
+      for (let i = 0; i < 8; i++) handle.frame({ full: false, reason: null, ms: 600, busyMs: 150 })
+      expect(handle.stop).toHaveBeenCalled()
+    })
+
     it('turns a stream off when one full frame is too slow for the device', async () => {
       const stream = await startStreaming()
       const handle = stream.streams[0]

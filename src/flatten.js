@@ -332,12 +332,15 @@ export class Flattener {
           // With webgl, each frame also updates the view's texture.
           this.app._webgl?.feed(view, frame, options)
           const t = now()
-          if (frame.reason !== 'start') state.frames.push({ t, ms: frame.ms })
+          // busyMs: what the frame blocked the main thread, where the plugin says it; ms is wall
+          // time, and a frame captured in turns leaves the browser render in between.
+          const ms = frame.busyMs ?? frame.ms
+          if (frame.reason !== 'start') state.frames.push({ t, ms })
           state.frames = state.frames.filter(f => t - f.t < STREAM_WINDOW)
           const busy = state.frames.reduce((sum, f) => sum + f.ms, 0)
           // A keyframe (the plugin's full frame now and then, at idle) is not a slow device.
-          const slow = frame.full && frame.reason !== 'start' && frame.reason !== 'keyframe' && frame.ms > STREAM_SLOW_MS
-          if (slow) off(`full frames take ${Math.round(frame.ms)} ms`)
+          const slow = frame.full && frame.reason !== 'start' && frame.reason !== 'keyframe' && ms > STREAM_SLOW_MS
+          if (slow) off(`full frames take ${Math.round(ms)} ms`)
           else if (busy > STREAM_BUDGET * STREAM_WINDOW) off('keeping its photo current costs too much')
         }
       })
