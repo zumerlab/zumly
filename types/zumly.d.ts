@@ -181,15 +181,15 @@ export interface GesturesOptions {
 }
 
 /**
- * Views behind shown as a SnapDOM photo (flatten). SnapDOM and its stream plugin are optional
+ * Views behind shown as a SnapDOM photo (rasterize). SnapDOM and its stream plugin are optional
  * peer dependencies, passed in; snapdom may also come from its script build's global.
  */
-export interface FlattenOptions {
+export interface RasterizeOptions {
   /** The snapdom function from @zumer/snapdom. Default: the global snapdom. */
   snapdom?: (element: Element, options?: Record<string, unknown>) => Promise<{ toCanvas(): Promise<HTMLCanvasElement> }>
   /**
    * The stream function from @zumer/snapdom-plugins/stream. Keeps the photo of the current
-   * view current, so live views can be flattened too. Without it, only views that hold still
+   * view current, so live views can be rasterized too. Without it, only views that hold still
    * are.
    */
   stream?: (element: Element, options?: Record<string, unknown>) => { canvas: HTMLCanvasElement, ready: Promise<void>, stop(): void }
@@ -223,9 +223,10 @@ export interface WebGLEffect {
 
 /**
  * Zooms drawn in a WebGL canvas, the views behind as textures with their effects in a shader.
- * Needs flatten (its SnapDOM photos and stream). Without WebGL2, the views stay DOM.
+ * It brings rasterize with it, so it takes the same settings (snapdom, stream, minNodes, scale);
+ * with rasterize given too, rasterize's are used. Without WebGL2, the views stay DOM.
  */
-export interface WebGLOptions {
+export interface WebGLOptions extends RasterizeOptions {
   /** More effects by name, besides CSS's filter functions; one with a CSS name replaces it. */
   effects?: Record<string, WebGLEffect>
   /** Whether the photo of a view coming in or leaving keeps its backdrop-filter (slower). Default: false. */
@@ -343,13 +344,14 @@ export interface ZumlyOptions {
   labels?: false | LabelsOptions
   /**
    * Show views behind as a SnapDOM photo, for smooth zooms with heavy views:
-   * { snapdom, stream }, or true for the global snapdom. Per view: data-flatten="true" | "false".
+   * { snapdom, stream }, or true for the global snapdom. Per view: data-rasterize="true" | "false".
    * Default: false.
    */
-  flatten?: boolean | FlattenOptions
+  rasterize?: boolean | RasterizeOptions
   /**
    * Draw zooms with WebGL: the views behind as textures, with their effects in a shader
-   * (any CSS filter function, or one of your own in GLSL). Needs flatten. Default: false.
+   * (any CSS filter function, or one of your own in GLSL). Brings rasterize with it:
+   * { snapdom, stream }, or true for the global snapdom. Default: false.
    */
   webgl?: boolean | WebGLOptions
 }

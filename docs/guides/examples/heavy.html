@@ -31,10 +31,10 @@
     import { snapdom } from 'https://esm.sh/@zumer/snapdom'
     import { stream } from 'https://esm.sh/@zumer/snapdom-plugins/stream'
 
-    // ?flatten=0 runs the same board without it, for comparison; ?webgl=1 draws the zoom with WebGL.
+    // ?rasterize=0 runs the same board without it, for comparison; ?webgl=1 draws the zoom with WebGL.
     const query = new URLSearchParams(location.search)
-    const flatten = query.get('flatten') !== '0'
-    const webgl = flatten && query.get('webgl') === '1'
+    const webgl = query.get('webgl') === '1'
+    const rasterize = !webgl && query.get('rasterize') !== '0'
     const hues = [200, 280, 150, 30, 330, 180, 100, 240]
     const bars = n => Array.from({ length: n }, (_, i) => `<i style="height:${20 + ((i * 37) % 80)}%"></i>`).join('')
 
@@ -66,8 +66,9 @@
       views: { board: board(), detail },
       // Blur and dim the board behind: the costly part, on thousands of nodes and glass.
       transitions: { effects: ['blur(3px) brightness(.7)', 'blur(8px) brightness(.5)'] },
-      flatten: flatten && { snapdom, stream },
-      webgl
+      // webgl brings rasterize with it, with the same snapdom and stream.
+      rasterize: rasterize && { snapdom, stream },
+      webgl: webgl && { snapdom, stream }
     })
     app.init()
 

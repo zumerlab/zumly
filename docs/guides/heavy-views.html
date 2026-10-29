@@ -6,11 +6,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Heavy views — Zumly guide</title>
-  <meta name="description" content="Zooms with thousands of nodes or frosted glass can stutter. flatten shows the views behind as a SnapDOM photo, so the zoom moves pictures instead of DOM." />
+  <meta name="description" content="Zooms with thousands of nodes or frosted glass can stutter. rasterize shows the views behind as a SnapDOM photo, so the zoom moves pictures instead of DOM." />
   <link rel="canonical" href="https://zumerlab.com/zumly/guides/heavy-views.html" />
   <meta property="og:type" content="article" />
   <meta property="og:title" content="Heavy views — Zumly guide" />
-  <meta property="og:description" content="Zooms with thousands of nodes or frosted glass can stutter. flatten shows the views behind as a SnapDOM photo, so the zoom moves pictures instead of DOM." />
+  <meta property="og:description" content="Zooms with thousands of nodes or frosted glass can stutter. rasterize shows the views behind as a SnapDOM photo, so the zoom moves pictures instead of DOM." />
   <meta property="og:url" content="https://zumerlab.com/zumly/guides/heavy-views.html" />
   <meta property="og:image" content="https://zumerlab.com/zumly/zumly-logo.png" />
   <meta name="twitter:card" content="summary" />
@@ -43,11 +43,11 @@
     <header class="hero">
       <span class="hero-eyebrow">Guide</span>
       <h1 class="hero-title">Heavy views</h1>
-      <p class="hero-sub">A view with thousands of nodes, or with frosted glass, is costly to scale and blur on every frame. <code>flatten</code> keeps a photo of the view you are in, with SnapDOM, and moves the photo while the view sits behind; <code>webgl</code> also draws the zoom itself. Zoom into a bright tile with each one.</p>
+      <p class="hero-sub">A view with thousands of nodes, or with frosted glass, is costly to scale and blur on every frame. <code>rasterize</code> keeps a photo of the view you are in, with SnapDOM, and moves the photo while the view sits behind; <code>webgl</code> also draws the zoom itself. Zoom into a bright tile with each one.</p>
     </header>
 
     <div class="demo">
-      <div class="demo-bar"><span>Live example</span><label class="demo-switch"><input type="checkbox" id="flatten-on" checked> flatten</label><label class="demo-switch"><input type="checkbox" id="webgl-on"> webgl</label><a id="heavy-open" href="examples/heavy.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <div class="demo-bar"><span>Live example</span><label class="demo-switch"><input type="checkbox" id="rasterize-on" checked> rasterize</label><label class="demo-switch"><input type="checkbox" id="webgl-on"> webgl</label><a id="heavy-open" href="examples/heavy.html" target="_blank" rel="noopener">Open &#8599;</a></div>
       <iframe id="heavy-demo" src="examples/heavy.html" title="Heavy views: live example"></iframe>
     </div>
 
@@ -59,7 +59,7 @@
 import { snapdom } from '@zumer/snapdom'
 import { stream } from '@zumer/snapdom-plugins/stream'
 
-new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, stream } })</code></pre>
+new Zumly({ mount: '.canvas', initialView: 'home', views, rasterize: { snapdom, stream } })</code></pre>
       <p>Both are optional peer dependencies: <code>npm install zumly</code> alone does not bring them. Without a bundler, import them from a CDN, as the example does. If SnapDOM is missing, Zumly says so once in the console and the views stay as they are.</p>
     </section>
 
@@ -77,15 +77,15 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
       <h2>When it pays off</h2>
       <p>Three zooms in and three out, with a clock, spinners and numbers changing in every view. Chrome on a MacBook; a dropped frame is one the screen never got.</p>
       <div class="table-wrap"><table>
-        <thead><tr><th>Views</th><th>Without</th><th><code>animateEffects: false</code></th><th>With <code>flatten</code></th></tr></thead>
+        <thead><tr><th>Views</th><th>Without</th><th><code>animateEffects: false</code></th><th>With <code>rasterize</code></th></tr></thead>
         <tbody>
           <tr><td>Cards, about 3,000 nodes</td><td>6.8% dropped</td><td>5.2%</td><td>1.3%, no hitch</td></tr>
           <tr><td>Frosted glass</td><td>52% dropped, 48% at rest</td><td>48%, 48% at rest</td><td>0%, 0% at rest</td></tr>
           <tr><td>Orbit dials (light)</td><td>0.6%</td><td>0%</td><td>left alone</td></tr>
         </tbody>
       </table></div>
-      <p>With the processor four times slower, frosted glass drops 47% without and 0.6% with <code>flatten</code>.</p>
-      <p>A light view gains nothing, so <code>flatten</code> leaves it alone. It photographs a view with at least <code>minNodes</code> elements, or with <code>backdrop-filter</code> inside. Mark a view <code>data-flatten="true"</code> to photograph it anyway, or <code>data-flatten="false"</code> to keep it live behind (a video, a game). Views with an iframe stay live: SnapDOM can only draw a placeholder for it.</p>
+      <p>With the processor four times slower, frosted glass drops 47% without and 0.6% with <code>rasterize</code>.</p>
+      <p>A light view gains nothing, so <code>rasterize</code> leaves it alone. It photographs a view with at least <code>minNodes</code> elements, or with <code>backdrop-filter</code> inside. Mark a view <code>data-rasterize="true"</code> to photograph it anyway, or <code>data-rasterize="false"</code> to keep it live behind (a video, a game). Views with an iframe stay live: SnapDOM can only draw a placeholder for it.</p>
     </section>
 
     <section>
@@ -94,7 +94,7 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
         <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
         <tbody>
           <tr><td><code>snapdom</code></td><td>the global <code>snapdom</code></td><td>The <code>snapdom</code> function from <code>@zumer/snapdom</code>.</td></tr>
-          <tr><td><code>stream</code></td><td>none</td><td>The <code>stream</code> function from <code>@zumer/snapdom-plugins/stream</code>. It keeps the photo current; without it, only views that hold still are flattened.</td></tr>
+          <tr><td><code>stream</code></td><td>none</td><td>The <code>stream</code> function from <code>@zumer/snapdom-plugins/stream</code>. It keeps the photo current; without it, only views that hold still are rasterized.</td></tr>
           <tr><td><code>minNodes</code></td><td><code>800</code></td><td>Views with fewer elements are photographed only if they use <code>backdrop-filter</code>.</td></tr>
           <tr><td><code>scale</code></td><td><code>1</code></td><td>Resolution of the photo. The blur behind hides its softness; without effects, <code>2</code> keeps text behind sharp, for four times the memory.</td></tr>
         </tbody>
@@ -106,7 +106,7 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
       <ul>
         <li>A zoom never starts from old content. When keeping a photo current would cost more than half the main thread, that view simply moves as itself. What makes it costly: a value that changes often inside a box with no solid background, or over other content (a badge on top of cards). Give such a value a solid background and it costs a few milliseconds.</li>
         <li>Animations are not followed: a spinner shows the angle it had when its area was last repainted, and a CSS transition shows its end only after the next repaint there. Behind a blur, nobody notices.</li>
-        <li>Without <code>stream</code> there is one photo, taken again once the view stops changing. A view that changed since its photo moves as itself, so views with live data are not flattened.</li>
+        <li>Without <code>stream</code> there is one photo, taken again once the view stops changing. A view that changed since its photo moves as itself, so views with live data are not rasterized.</li>
         <li>A view behind stands still while it is there. When you come back, the real view takes its place with whatever changed meanwhile.</li>
         <li>Only views with triggers are photographed. A view without them never moves behind, so following it would cost frames for a photo nobody sees. One that gets a trigger later is followed from then on.</li>
         <li>A zoom-in starts a frame or two later: hiding the content of the view that grows takes a moment, about 25 ms on a laptop and 65 ms on a phone-class processor. The motion that follows is the smooth part.</li>
@@ -116,18 +116,18 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
 
     <section id="webgl">
       <h2>Draw the zoom with WebGL</h2>
-      <p><code>webgl: true</code> goes one step further. While views move, Zumly draws them in a WebGL canvas as textures, and the views behind stay textures at rest, with their blur and dimming done in a shader. Only the view you are in is DOM. It needs <code>flatten</code>: it uses its SnapDOM and its stream.</p>
-      <pre><code>new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, stream }, webgl: true })</code></pre>
+      <p><code>webgl</code> goes one step further. While views move, Zumly draws them in a WebGL canvas as textures, and the views behind stay textures at rest, with their blur and dimming done in a shader. Only the view you are in is DOM. It brings <code>rasterize</code> with it, so it takes the same <code>snapdom</code> and <code>stream</code>, and the same <code>minNodes</code> and <code>scale</code>.</p>
+      <pre><code>new Zumly({ mount: '.canvas', initialView: 'home', views, webgl: { snapdom, stream } })</code></pre>
       <ul>
         <li>Before a zoom-in moves, the view coming in is photographed: 30 to 45 ms on a laptop, while the trigger looks pressed. Past 300 ms a ring shows. With <code>hover: true</code> that happens while the pointer rests on the trigger, and the zoom starts in under 20 ms.</li>
-        <li>The views behind come from <code>flatten</code>'s stream, so the click does not wait for them.</li>
+        <li>The views behind come from <code>rasterize</code>'s stream, so the click does not wait for them.</li>
         <li>Siblings, a zoom-out that follows the finger and any number of levels go through WebGL too. Past the third level, everything behind stays as one picture, so nothing goes blank around the views you see.</li>
         <li>Clicks, focus, text and accessibility stay the browser's: WebGL only draws what is behind or moving.</li>
         <li>Without WebGL2, or when the browser takes the context away, the views go back to the DOM and zoom as before.</li>
       </ul>
       <p>The same board as above, Chrome on a MacBook, and the same board with the graphics drawn in software, as a GPU with nothing to spare:</p>
       <div class="table-wrap"><table>
-        <thead><tr><th></th><th>With <code>flatten</code></th><th>With <code>webgl</code></th></tr></thead>
+        <thead><tr><th></th><th>With <code>rasterize</code></th><th>With <code>webgl</code></th></tr></thead>
         <tbody>
           <tr><td>GPU while it zooms</td><td>40 to 70%</td><td>7 to 8%</td></tr>
           <tr><td>The same, processor four times slower</td><td>42 to 60%</td><td>1 to 2%</td></tr>
@@ -165,9 +165,9 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
       <h3>Good to know</h3>
       <ul>
         <li>Measured in Chrome. Safari and Firefox have WebGL2, but they are not measured yet.</li>
-        <li>A video or an iframe behind is a still picture, as with <code>flatten</code>.</li>
+        <li>A video or an iframe behind is a still picture, as with <code>rasterize</code>.</li>
         <li>Each view behind is a texture, and each level past the third keeps one more picture, about 4 MB at a pixel ratio of 2.</li>
-        <li>With live data on a slow processor, keeping the photo of the view you are in current can cost too much. Then <code>flatten</code> stops following it, and the next zoom-in waits for a photo of it.</li>
+        <li>With live data on a slow processor, keeping the photo of the view you are in current can cost too much. Then <code>rasterize</code> stops following it, and the next zoom-in waits for a photo of it.</li>
       </ul>
     </section>
 
@@ -177,17 +177,17 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
         <thead><tr><th>Your views</th><th>Use</th></tr></thead>
         <tbody>
           <tr><td>Light: few nodes, no glass</td><td>Nothing. They are smooth already, and WebGL would only add the wait for a photo.</td></tr>
-          <tr><td>Heavy, on laptops and desktops</td><td><code>flatten</code>. No dropped frames, live data included, and the zoom starts at once.</td></tr>
+          <tr><td>Heavy, on laptops and desktops</td><td><code>rasterize</code>. No dropped frames, live data included, and the zoom starts at once.</td></tr>
           <tr><td>Heavy, on tablets or small boards</td><td><code>webgl</code>. It is the one that holds when the GPU has little to spare.</td></tr>
           <tr><td>Effects CSS does not have</td><td><code>webgl</code>.</td></tr>
-          <tr><td>A video or an iframe that must stay live behind</td><td><code>flatten</code> with <code>data-flatten="false"</code> on that view, or nothing. <code>webgl</code> draws every view behind as a picture.</td></tr>
+          <tr><td>A video or an iframe that must stay live behind</td><td><code>rasterize</code> with <code>data-rasterize="false"</code> on that view, or nothing. <code>webgl</code> draws every view behind as a picture.</td></tr>
         </tbody>
       </table></div>
     </section>
 
     <section>
       <h2>Try the cheap fix first</h2>
-      <p><code>transitions: { animateEffects: false }</code> applies the blur at once instead of animating it. It needs nothing else, and with many nodes it already takes out part of the stutter. Chrome cannot run a blur animation on the compositor, so it redraws it from the main thread on every frame. Reach for <code>flatten</code> when that is not enough: frosted glass, thousands of nodes, or a slow device.</p>
+      <p><code>transitions: { animateEffects: false }</code> applies the blur at once instead of animating it. It needs nothing else, and with many nodes it already takes out part of the stutter. Chrome cannot run a blur animation on the compositor, so it redraws it from the main thread on every frame. Reach for <code>rasterize</code> when that is not enough: frosted glass, thousands of nodes, or a slow device.</p>
       <p>Two more that cost nothing:</p>
       <ul>
         <li>Use the <code>css</code> or <code>waapi</code> driver. They move views on the compositor; GSAP, Anime.js and Motion move them from the main thread, so any work there shows in the motion.</li>
@@ -256,20 +256,20 @@ app.on('afterZoomIn', still).on('afterZoomOut', still).on('afterLateral', still)
     </div>
   </footer>
   <script>
-    // Reloads the example with flatten and webgl on or off (webgl needs flatten)
+    // Reloads the example with rasterize and webgl on or off (webgl brings rasterize)
     ;(function () {
-      var flatten = document.getElementById('flatten-on')
+      var rasterize = document.getElementById('rasterize-on')
       var webgl = document.getElementById('webgl-on')
       var frame = document.getElementById('heavy-demo')
       var open = document.getElementById('heavy-open')
       function reload (event) {
-        if (event.target === webgl && webgl.checked) flatten.checked = true
-        if (event.target === flatten && !flatten.checked) webgl.checked = false
-        var src = 'examples/heavy.html' + (!flatten.checked ? '?flatten=0' : webgl.checked ? '?webgl=1' : '')
+        if (event.target === webgl && webgl.checked) rasterize.checked = true
+        if (event.target === rasterize && !rasterize.checked) webgl.checked = false
+        var src = 'examples/heavy.html' + (!rasterize.checked ? '?rasterize=0' : webgl.checked ? '?webgl=1' : '')
         frame.src = src
         open.href = src
       }
-      flatten.addEventListener('change', reload)
+      rasterize.addEventListener('change', reload)
       webgl.addEventListener('change', reload)
     })()
   </script>

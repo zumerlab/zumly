@@ -1,5 +1,7 @@
 # Fluidez con vistas pesadas
 
+> 29/10: la opción `flatten` ahora se llama `rasterize` (`data-rasterize` por vista), sin alias, y `webgl` la trae sola: `webgl: { snapdom, stream }`. En este reporte queda el nombre viejo, que era el de cuando se midió. En la demo de labs, el parámetro de URL sigue siendo `flatten=`.
+
 Sesión del 28/10/2026, sobre Zumly 1.1.0 (`main`, `d4484fc`). Martin pidió más fluidez en las transiciones con vistas pesadas: la guía [Heavy views](https://zumerlab.com/zumly/guides/heavy-views.html) todavía no llega a ser óptima. Antes de tocar código quiso ver los caminos posibles y lo que puede ganar cada uno. Después pidió evaluar tres ideas suyas de la época de Zircle UI y sumó una cuarta: preparar todo antes de animar, con un aviso si tarda. En la sesión no se cambió nada en `src/`; lo nuevo es esta carpeta `labs/`.
 
 ## Qué sistema usar (29/10, después de todos los experimentos)

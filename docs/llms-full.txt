@@ -185,13 +185,13 @@ new Zumly({
   },
 
   // ─── Heavy views ─────────────────────────
-  flatten: {                  // true = global snapdom (no stream); default false
+  rasterize: {                // true = global snapdom (no stream); default false
     snapdom,                  // import { snapdom } from '@zumer/snapdom'
     stream,                   // import { stream } from '@zumer/snapdom-plugins/stream': keeps the photo current
     minNodes: 800,            // Lighter views are photographed only if they use backdrop-filter
     scale: 1,                 // Resolution of the photo (1-4)
   },
-  webgl: {                    // true = defaults; needs flatten; default false
+  webgl: {                    // true = global snapdom; brings rasterize (same settings); default false
     effects: {},              // More effects for transitions.effects, by name, in GLSL
     glass: false,             // The photo of a view coming in keeps its backdrop-filter (slower)
     hover: false,             // Build and photograph a view while the pointer rests on its trigger
@@ -287,7 +287,7 @@ When the back button and the sibling bar share an edge, the bar is shifted aside
 
 With `follow: true`, the trackpad (two-finger scroll), a swipe left and a pinch (with `inputs.pinch`) carry a 0-1 progress instead of firing the zoom-out at once. The current view shrinks toward its trigger (taking the trigger's border-radius), the previous view loses its effect, the last view takes the previous-view effect. Release past `threshold` or flick → finish; otherwise everything returns. A mouse wheel notch (large or line-based delta) still zooms out at once; momentum after a release is ignored. Implemented with engine-owned Web Animations, then the end state settles with the none driver, so it works with every driver. Skipped under prefers-reduced-motion. Progress is reported by the `zoomOutProgress` event.
 
-#### `flatten`
+#### `rasterize`
 
 Views behind are shown as a SnapDOM photo while they sit there, so a zoom moves pictures instead of DOM. It pays off with heavy views (thousands of nodes, `backdrop-filter`): in Chrome, a frosted-glass board went from about half its frames dropped to none. Light views gain nothing and are left alone. SnapDOM (`@zumer/snapdom`) and its plugins (`@zumer/snapdom-plugins`) are optional peer dependencies, passed in.
 
@@ -296,14 +296,14 @@ Views behind are shown as a SnapDOM photo while they sit there, so a zoom moves 
 - Never during a transition or a gesture; no photo yet means the real view moves. A view gets a fresh photo on each visit.
 - Only views with triggers (`.zoom-me[data-to]`) are photographed or followed: a view without them never moves behind. One that gets a trigger later is followed from then on.
 - On zoom-in, the view that moves behind gets class `z-flat`: its children stay laid out but `visibility: hidden`, and a `<canvas class="z-flat-layer">` with the photo covers its border box. The view element still moves, takes the `effects` filter by CSS and answers sibling hit-tests, so geometry and every driver are unchanged. On a zoom-out (and during a followed zoom-out gesture) the view that shrinks away stays live. The views coming back stay photos until the motion ends. Then the real view crossfades in (160 ms) when it has an opaque background; a translucent view swaps at once, since a crossfade would show photo and view together.
-- Eligible: `data-flatten="true"`, or at least `minNodes` elements, or `backdrop-filter` inside. Never: `data-flatten="false"`, or an iframe inside. A photo that does not fit after a resize is dropped.
+- Eligible: `data-rasterize="true"`, or at least `minNodes` elements, or `backdrop-filter` inside. Never: `data-rasterize="false"`, or an iframe inside. A photo that does not fit after a resize is dropped.
 - Without SnapDOM, Zumly warns once and views stay live. `destroy()` stops streams and removes photos, observers, listeners and pending captures.
 
 #### `webgl`
 
-Zooms drawn in a WebGL2 canvas inside Zumly's canvas, under the views. While views move, each is a texture and the views themselves are hidden (opacity 0, so they still answer hit-tests). At rest the views behind stay textures, with the engine's effects in a fragment shader instead of a CSS filter; only the current view is DOM. Needs `flatten` (it uses its SnapDOM and stream); without it, Zumly warns and leaves it off. Without WebGL2, views stay DOM. Measured in Chrome on a MacBook: the GPU of a zoom drops from 40-70% (flatten) to 7-8%; with software rendering (a weak GPU), dropped frames go from 79-82% to 2-13%.
+Zooms drawn in a WebGL2 canvas inside Zumly's canvas, under the views. While views move, each is a texture and the views themselves are hidden (opacity 0, so they still answer hit-tests). At rest the views behind stay textures, with the engine's effects in a fragment shader instead of a CSS filter; only the current view is DOM. It brings `rasterize` with it and takes the same settings (`snapdom`, `stream`, `minNodes`, `scale`); with `rasterize` given too, those are used (`rasterize: false` does not turn WebGL off: it brings its own). Without WebGL2, views stay DOM. Measured in Chrome on a MacBook: the GPU of a zoom drops from 40-70% (rasterize) to 7-8%; with software rendering (a weak GPU), dropped frames go from 79-82% to 2-13%.
 
-- Textures: a view behind comes from flatten's stream; the view coming in is a SnapDOM photo taken right before the motion (30-45 ms on a laptop; the trigger looks pressed, a ring shows past 300 ms). Zoom-in, zoom-out, siblings and followed zoom-out gestures all go through WebGL. A transition without animation, `keepAlive: 'visible'` or a texture it could not get runs on the driver, with the views back to DOM.
+- Textures: a view behind comes from rasterize's stream; the view coming in is a SnapDOM photo taken right before the motion (30-45 ms on a laptop; the trigger looks pressed, a ring shows past 300 ms). Zoom-in, zoom-out, siblings and followed zoom-out gestures all go through WebGL. A transition without animation, `keepAlive: 'visible'` or a texture it could not get runs on the driver, with the views back to DOM.
 - `effects`: `transitions.effects` keeps CSS filter syntax; every CSS filter function is built in (blur as a two-pass Gaussian on mip levels). Custom effects: `{ none, uv?, color?, animate? }`. `uv` is GLSL that changes `st` (the point of the view read, 0-1); `color` changes `rgb` and `a`. Both get `v` (the first number) and `vs` (up to four, a `#hex` color counts as three), and can read `photo` (view size, CSS px), `focus` and `focusSize` (the trigger, 0-1), `progress` (zoom progress) and `time`. `animate: true` redraws views behind at rest while the effect shows.
 - `glass: false` photographs the view coming in without its `backdrop-filter` (much faster); the real view takes over when the zoom ends.
 - `hover: true`: on `pointerover` or `focusin` of a trigger in the current view, the engine resolves the view it opens (view functions run then) and WebGL photographs it out of sight; the click inserts that same node and uses its texture. One at a time; dropped, with its cleanups, when the pointer goes to another trigger or anything moves. Views with `mounted()`, custom elements and deferred views wait for the click.
@@ -1030,7 +1030,7 @@ Always include `zumly.css` (or `zumly.min.css`). This provides the canvas layout
 | `.has-effect-reverse` | Animating effect removal |
 | `.z-view-fade-in` | View fading in (hideTrigger: 'fade') |
 | `.z-view-fade-out` | View fading out on zoom-out |
-| `.z-flat` | View behind shown as a photo (`flatten`): children hidden, layout kept |
+| `.z-flat` | View behind shown as a photo (`rasterize`): children hidden, layout kept |
 | `.z-flat-layer` | The `<canvas>` with the photo, inside a `.z-flat` view |
 
 ### CSS Custom Properties

@@ -13,20 +13,27 @@ import { ViewResolver } from './view-resolver.js'
 import { disposeView } from './view-lifecycle.js'
 import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSyntax, isValidCssEasing } from './diagnostics.js'
 
-const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures', 'flatten', 'webgl']
+const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures', 'rasterize', 'webgl']
 const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'parallax', 'hideTrigger']
 const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings', 'swipe']
 const DEPTH_NAV_KEYS = ['position', 'style']
 const DEPTH_NAV_STYLES = ['button', 'title', 'rings']
 const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch', 'pinch']
 const GESTURE_KEYS = ['follow', 'threshold']
-const FLATTEN_KEYS = ['snapdom', 'stream', 'minNodes', 'scale']
-const WEBGL_KEYS = ['effects', 'glass', 'hover', 'ancestors']
+const RASTERIZE_KEYS = ['snapdom', 'stream', 'minNodes', 'scale']
+const WEBGL_KEYS = ['effects', 'glass', 'hover', 'ancestors', ...RASTERIZE_KEYS]
 const LABEL_KEYS = ['back', 'prev', 'next', 'goTo']
 /** Accessible names of the navigation controls. {title} and {name} name the target view. */
 const DEFAULT_LABELS = { back: 'Back to {title}', prev: 'Previous sibling view', next: 'Next sibling view', goTo: 'Go to {title}' }
 
 /** Warn once per unknown key, with the closest known key when there is one. */
+/** The keys of object that are in keys. */
+function pick (object, keys) {
+  const out = {}
+  for (const key of keys) if (object[key] !== undefined) out[key] = object[key]
+  return Object.keys(out).length ? out : {}
+}
+
 function warnUnknownKeys (object, known, path) {
   for (const key of unknownKeys(object, known)) {
     notification(false, `unknown option '${path}${key}' is ignored.${didYouMean(key, known)}`, 'warn')
@@ -222,7 +229,7 @@ export function checkParameters (parameters, instance) {
   if (parameters.inputs && typeof parameters.inputs === 'object') warnUnknownKeys(parameters.inputs, INPUT_KEYS, 'inputs.')
   if (parameters.labels && typeof parameters.labels === 'object') warnUnknownKeys(parameters.labels, LABEL_KEYS, 'labels.')
   if (parameters.gestures && typeof parameters.gestures === 'object') warnUnknownKeys(parameters.gestures, GESTURE_KEYS, 'gestures.')
-  if (parameters.flatten && typeof parameters.flatten === 'object') warnUnknownKeys(parameters.flatten, FLATTEN_KEYS, 'flatten.')
+  if (parameters.rasterize && typeof parameters.rasterize === 'object') warnUnknownKeys(parameters.rasterize, RASTERIZE_KEYS, 'rasterize.')
   if (parameters.webgl && typeof parameters.webgl === 'object') warnUnknownKeys(parameters.webgl, WEBGL_KEYS, 'webgl.')
 
   // Optional
@@ -457,41 +464,46 @@ export function checkParameters (parameters, instance) {
     notification(false, '\'gestures\' must be true, false or { follow, threshold }. Ignoring.', 'warn')
   }
 
-  // Flatten: views behind are shown as a SnapDOM photo (src/flatten.js). true reads the
-  // global snapdom; the instance checks that SnapDOM is there when it starts.
-  const flIn = parameters.flatten
-  instance.flatten = false
-  if (flIn === true || (flIn && typeof flIn === 'object')) {
-    const o = flIn === true ? {} : flIn
-    instance.flatten = { snapdom: null, stream: null, minNodes: 800, scale: 1 }
+  // Rasterize: views behind are shown as a SnapDOM photo (src/flatten.js). true reads the
+  // global snapdom; the instance checks that SnapDOM is there when it starts. webgl cannot go
+  // without it, so it brings it, with the same settings, unless rasterize is given as such.
+  const glIn = parameters.webgl
+  const glOn = glIn === true || (glIn && typeof glIn === 'object')
+  const raGiven = parameters.rasterize === true || (parameters.rasterize && typeof parameters.rasterize === 'object')
+  const fromGl = glOn && !raGiven
+  const raIn = fromGl ? (glIn === true ? true : pick(glIn, RASTERIZE_KEYS)) : parameters.rasterize
+  const path = fromGl ? 'webgl' : 'rasterize'
+  instance.rasterize = false
+  if (raIn === true || (raIn && typeof raIn === 'object')) {
+    const o = raIn === true ? {} : raIn
+    instance.rasterize = { snapdom: null, stream: null, minNodes: 800, scale: 1 }
     if (o.snapdom !== undefined) {
-      if (typeof o.snapdom === 'function') instance.flatten.snapdom = o.snapdom
-      else notification(false, '\'flatten.snapdom\' must be the snapdom function (import { snapdom } from \'@zumer/snapdom\'). Trying the global snapdom.', 'warn')
+      if (typeof o.snapdom === 'function') instance.rasterize.snapdom = o.snapdom
+      else notification(false, `'${path}.snapdom' must be the snapdom function (import { snapdom } from '@zumer/snapdom'). Trying the global snapdom.`, 'warn')
     }
     if (o.stream !== undefined) {
-      if (typeof o.stream === 'function') instance.flatten.stream = o.stream
-      else notification(false, '\'flatten.stream\' must be the stream function (import { stream } from \'@zumer/snapdom-plugins/stream\'). Going without it.', 'warn')
+      if (typeof o.stream === 'function') instance.rasterize.stream = o.stream
+      else notification(false, `'${path}.stream' must be the stream function (import { stream } from '@zumer/snapdom-plugins/stream'). Going without it.`, 'warn')
     }
     if (o.minNodes !== undefined) {
-      if (Number.isInteger(o.minNodes) && o.minNodes >= 0) instance.flatten.minNodes = o.minNodes
-      else notification(false, '\'flatten.minNodes\' must be a whole number of 0 or more. Falling back to 800.', 'warn')
+      if (Number.isInteger(o.minNodes) && o.minNodes >= 0) instance.rasterize.minNodes = o.minNodes
+      else notification(false, `'${path}.minNodes' must be a whole number of 0 or more. Falling back to 800.`, 'warn')
     }
     if (o.scale !== undefined) {
-      if (typeof o.scale === 'number' && o.scale > 0 && o.scale <= 4) instance.flatten.scale = o.scale
-      else notification(false, '\'flatten.scale\' must be a number above 0 and up to 4. Falling back to 1.', 'warn')
+      if (typeof o.scale === 'number' && o.scale > 0 && o.scale <= 4) instance.rasterize.scale = o.scale
+      else notification(false, `'${path}.scale' must be a number above 0 and up to 4. Falling back to 1.`, 'warn')
     }
-  } else if (flIn !== undefined && flIn !== false) {
-    notification(false, '\'flatten\' must be true, false or { snapdom, stream, minNodes, scale }. Ignoring.', 'warn')
+  } else if (raIn !== undefined && raIn !== false) {
+    notification(false, '\'rasterize\' must be true, false or { snapdom, stream, minNodes, scale }. Ignoring.', 'warn')
   }
 
   // WebGL: zooms drawn in a WebGL canvas, the views behind as textures (src/webgl.js). It
-  // takes its photos and textures from flatten, so it needs it.
-  const glIn = parameters.webgl
+  // takes its photos and textures from rasterize, which it brought along above.
   instance.webgl = false
-  if (glIn === true || (glIn && typeof glIn === 'object')) {
+  if (glOn) {
     const o = glIn === true ? {} : glIn
-    if (!instance.flatten) {
-      notification(false, '\'webgl\' needs flatten (its SnapDOM photos and stream). Ignoring.', 'warn')
+    if (!instance.rasterize) {
+      notification(false, '\'webgl\' needs rasterize, and rasterize could not start. Ignoring.', 'warn')
     } else {
       instance.webgl = { effects: {}, glass: false, hover: false, ancestors: true }
       if (o.effects !== undefined) {
@@ -514,7 +526,7 @@ export function checkParameters (parameters, instance) {
       }
     }
   } else if (glIn !== undefined && glIn !== false) {
-    notification(false, '\'webgl\' must be true, false or { effects, glass }. Ignoring.', 'warn')
+    notification(false, '\'webgl\' must be true, false or { snapdom, stream, effects, glass, hover, ancestors }. Ignoring.', 'warn')
   }
 }
 

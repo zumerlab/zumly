@@ -52,7 +52,7 @@ const app = new Zumly({
   transitions: { duration, ease: 'ease-in-out', effects, animateEffects, driver: q.get('driver') || 'css' },
   inputs: { wheel: false },
   // mode=core: the flatten option of the engine (src/flatten.js), not the prototype.
-  ...(mode === 'core' ? { flatten: { snapdom, stream } } : mode === 'core-nostream' ? { flatten: { snapdom } } : {}),
+  ...(mode === 'core' ? { rasterize: { snapdom, stream } } : mode === 'core-nostream' ? { rasterize: { snapdom } } : {}),
 })
 // Mark when the real driver starts and finishes moving views (wrapped before init, so the
 // compositor wraps this and a 'leave' capture counts before the motion starts). The

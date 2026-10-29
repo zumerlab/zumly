@@ -1,8 +1,8 @@
 /**
- * flatten: background views shown as a still photo while they are behind.
+ * rasterize: background views shown as a still photo while they are behind.
  *
  * Scaling and blurring a view with thousands of nodes, or with backdrop-filter, costs a lot
- * every frame. With the `flatten` option, Zumly keeps a photo of the current view with
+ * every frame. With the `rasterize` option, Zumly keeps a photo of the current view with
  * SnapDOM while the user is in it. When the view moves behind, its content is hidden (it
  * keeps its layout) and a canvas with the photo stands in for it. The view element itself
  * still moves, takes the effects filter and answers hit-tests, so geometry, sibling detection
@@ -18,8 +18,8 @@
  * following it would cost frames at rest for a photo nobody uses. Back in front, the photo
  * crossfades into the real view when the view is opaque, and just goes when it is not.
  *
- * SnapDOM is not a dependency: it is passed in (`flatten: { snapdom, stream }`) or read from
- * the global `snapdom` of its script build.
+ * SnapDOM is not a dependency: it is passed in (`rasterize: { snapdom, stream }`, or the same in
+ * `webgl`) or read from the global `snapdom` of its script build.
  */
 
 const FLAT = 'z-flat'
@@ -237,7 +237,7 @@ export class Flattener {
 
   /** Whether a photo pays off: heavy views (many nodes, backdrop-filter), unless the view opts out. */
   _eligible (view) {
-    const flag = view.dataset.flatten
+    const flag = view.dataset.rasterize
     if (flag === 'false') return false
     if (flag === 'true') return true
     // SnapDOM can only draw a placeholder for an iframe.
@@ -283,12 +283,12 @@ export class Flattener {
 
   /**
    * Only a view with triggers moves behind; one without them leaves by zoom-out or to a
-   * sibling, and moves as itself. data-flatten="true" photographs it anyway. (With webgl,
+   * sibling, and moves as itself. data-rasterize="true" photographs it anyway. (With webgl,
    * following every view would let any zoom-out start without a photo, but with live data the
    * stream costs frames at rest: 17 % on the lab's detail, for ~40 ms saved once.)
    */
   _canGoBehind (view) {
-    return view.dataset.flatten === 'true' || !!view.querySelector('.zoom-me[data-to]')
+    return view.dataset.rasterize === 'true' || !!view.querySelector('.zoom-me[data-to]')
   }
 
   /** Never start a capture during a transition or a gesture, or for a view that does not pay off. */
@@ -315,7 +315,7 @@ export class Flattener {
     const state = { view, frames: [], handle: null }
     const { options, ratio } = this._optionsFor(view)
     const off = (why) => {
-      this.app.notify(`flatten: view "${view.dataset.viewName}" stays live (${why}).`, 'info')
+      this.app.notify(`rasterize: view "${view.dataset.viewName}" stays live (${why}).`, 'info')
       this.live.add(view)
       this.photos.delete(view)
       this._stopStream()
@@ -345,7 +345,7 @@ export class Flattener {
         }
       })
     } catch (error) {
-      this.app.notify(`flatten: no stream of view "${view.dataset.viewName}": ${error.message}`, 'info')
+      this.app.notify(`rasterize: no stream of view "${view.dataset.viewName}": ${error.message}`, 'info')
       this.live.add(view)
       return
     }
@@ -381,7 +381,7 @@ export class Flattener {
       const canvas = await result.toCanvas()
       photo = { canvas, width: view.offsetWidth, height: view.offsetHeight, ratio, streaming: false }
     } catch (error) {
-      this.app.notify(`flatten: no photo of view "${view.dataset.viewName}": ${error.message}`, 'info')
+      this.app.notify(`rasterize: no photo of view "${view.dataset.viewName}": ${error.message}`, 'info')
     }
     this.nextCapture = now() + (now() - started) * DUTY
     if (this.destroyed || !photo || !view.isConnected) return
@@ -406,7 +406,7 @@ export class Flattener {
 
   /** Show the photo in place of the view's content, when there is one that still shows it. */
   _flat (view) {
-    if (!view || view.classList.contains(FLAT) || view.dataset.flatten === 'false') return
+    if (!view || view.classList.contains(FLAT) || view.dataset.rasterize === 'false') return
     const photo = this.photos.get(view)
     if (!photo || photo.streaming || this.stale.has(view) || !this._fits(photo, view)) return
     const layer = photo.canvas
@@ -497,7 +497,7 @@ export function createFlattener (app, options) {
   const snapdom = options.snapdom || globalThis.snapdom
   const stream = options.stream || null
   if (typeof snapdom !== 'function' && typeof stream !== 'function') {
-    app.notify('flatten needs SnapDOM: pass flatten: { snapdom, stream }, or load SnapDOM before Zumly. Views stay live.', 'warn')
+    app.notify('rasterize needs SnapDOM: pass rasterize: { snapdom, stream } (or the same in webgl), or load SnapDOM before Zumly. Views stay live.', 'warn')
     return null
   }
   if (typeof DOMMatrix !== 'function') return null

@@ -300,7 +300,7 @@ const app = new Zumly({
     ...(opt.ms ? { duration: `${opt.ms}ms` } : {}),
   },
   // The stream is wrapped to log its frames (window.streamLog), for debugging flatten.
-  flatten: opt.flatten && {
+  rasterize: opt.flatten && {
     snapdom,
     stream: (el, options) => stream(el, {
       ...options,

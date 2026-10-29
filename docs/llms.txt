@@ -23,8 +23,8 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 - **Events**: `viewChanged` fires after every navigation with `{ type, viewName, from, zoomLevel, node }`
 - **Back button** (`depthNav`): styles `'button'`, `'title'` (title of the view above) or `'rings'` (a ring per level, bands to jump several). Views name themselves with `title` or `data-title`
 - **Gestures**: `gestures: { follow: true }` makes trackpad, swipe and pinch (`inputs.pinch`) drive the zoom-out with their progress (`zoomOutProgress` event); `zoomOut(2)` / `zoomOut({ to })` climb several levels in one transition
-- **Flatten**: `flatten: { snapdom, stream }` shows views behind as a SnapDOM photo, for smooth zooms with heavy views. With SnapDOM's `stream` plugin the photo follows the view, so a zoom starts from what is on screen; a view whose photo would cost too much to keep current, light views and `data-flatten="false"` stay live. SnapDOM and its plugins are optional peer dependencies
-- **WebGL**: `webgl: true` (needs `flatten`) draws zooms in a WebGL canvas and keeps the views behind as textures, with effects in a shader (custom ones in GLSL). `hover: true` prepares a view while the pointer rests on its trigger; `ancestors` (on by default) keeps everything behind past the third level as one picture. For heavy views on weak GPUs.
+- **Rasterize**: `rasterize: { snapdom, stream }` shows views behind as a SnapDOM photo, for smooth zooms with heavy views. With SnapDOM's `stream` plugin the photo follows the view, so a zoom starts from what is on screen; a view whose photo would cost too much to keep current, light views and `data-rasterize="false"` stay live. SnapDOM and its plugins are optional peer dependencies
+- **WebGL**: `webgl: { snapdom, stream }` (rasterize included) draws zooms in a WebGL canvas and keeps the views behind as textures, with effects in a shader (custom ones in GLSL). `hover: true` prepares a view while the pointer rests on its trigger; `ancestors` (on by default) keeps everything behind past the third level as one picture. For heavy views on weak GPUs.
 - **Diagnostics**: the console explains typos in view names and options, and a canvas without size
 
 ## Quick start
@@ -56,7 +56,7 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 - Full LLM reference: https://zumerlab.com/zumly/llms-full.txt
 - Learn in six steps (each with a runnable single-file example): https://zumerlab.com/zumly/learn/
 - API reference: https://zumerlab.com/zumly/api.html
-- Heavy views (flatten with SnapDOM): https://zumerlab.com/zumly/guides/heavy-views.html
+- Heavy views (rasterize and WebGL, with SnapDOM): https://zumerlab.com/zumly/guides/heavy-views.html
 - Driver API: https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md
 - TypeScript types: https://github.com/zumerlab/zumly/blob/main/types/zumly.d.ts
 

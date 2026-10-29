@@ -79,7 +79,7 @@ const app = new Zumly({
   views: buildViews({ scene, levels: 6, live, animated: spin }),
   transitions: { duration: '700ms', ease: 'ease-in-out', effects: ['blur(3px)', 'blur(8px) saturate(0)'] },
   inputs: { wheel: false },
-  ...(VARIANTS[variant].core ? { flatten: { snapdom, ...VARIANTS[variant].core } } : {}),
+  ...(VARIANTS[variant].core ? { rasterize: { snapdom, ...VARIANTS[variant].core } } : {}),
 })
 let plugin = null
 if (VARIANTS[variant].options) {

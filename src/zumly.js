@@ -816,7 +816,7 @@ export class Zumly {
         // using the none driver can still inspect its completed DOM immediately.
         try {
           Promise.resolve(onComplete()).then(() => {
-            // Views now sit where they stay: the ones behind become photos (flatten).
+            // Views now sit where they stay: the ones behind become photos (rasterize).
             this._flattener?.settle()
             resolve()
           }, error => {
@@ -1118,8 +1118,8 @@ export class Zumly {
     this.currentStage = this.storedViews[this.storedViews.length - 1]
     this._recordCanvasSize()
     this._accessibility.sync(this.canvas)
-    if (this.flatten) {
-      this._flattener = createFlattener(this, this.flatten)
+    if (this.rasterize) {
+      this._flattener = createFlattener(this, this.rasterize)
       this._flattener?.settle()
     }
     if (this.webgl && this._flattener) {

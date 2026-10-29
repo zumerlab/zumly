@@ -1,5 +1,5 @@
 /**
- * flatten: views behind are shown as a SnapDOM photo while the real content keeps its layout.
+ * rasterize: views behind are shown as a SnapDOM photo while the real content keeps its layout.
  * Most tests use a fake snapdom that returns a canvas at once; one runs the real SnapDOM.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -83,14 +83,14 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function start ({ flatten = {}, transitions = {}, ...options } = {}) {
+async function start ({ rasterize = {}, transitions = {}, ...options } = {}) {
   snapdom = fakeSnapdom()
   app = new Zumly({
     mount: '.canvas',
     initialView: 'home',
     views,
     transitions: { driver: 'none', duration: '40ms', ease: 'linear', effects: ['blur(3px)', 'blur(8px)'], ...transitions },
-    flatten: flatten === false ? false : { snapdom, minNodes: 0, ...flatten },
+    rasterize: rasterize === false ? false : { snapdom, minNodes: 0, ...rasterize },
     ...options
   })
   await app.init()
@@ -131,7 +131,7 @@ async function zoomInto (name) {
   await settled()
 }
 
-describe('flatten', () => {
+describe('rasterize', () => {
   it('shows a photo of the view that moves behind; its content keeps its layout', async () => {
     await start()
     await zoomInto('a')
@@ -172,7 +172,7 @@ describe('flatten', () => {
 
   it('keeps the view live when the photo is not ready yet, and uses it once it is', async () => {
     await start()
-    // Straight away: no photo yet, so nothing is flattened and nothing waits.
+    // Straight away: no photo yet, so nothing is rasterized and nothing waits.
     await app.zoomIn(role('current').querySelector('.zoom-me[data-to="a"]'))
     await settled()
     expect(isFlat(role('previous'))).toBe(false)
@@ -258,8 +258,8 @@ describe('flatten', () => {
     ['gsap', () => gsapDriver(fakeGsap())]
   ])('works with the %s driver and leaves its transforms as they were', async (name, make) => {
     const driver = make ? make() : name
-    // The same navigation without flatten gives the reference transforms.
-    await start({ flatten: false, transitions: { driver } })
+    // The same navigation without rasterize gives the reference transforms.
+    await start({ rasterize: false, transitions: { driver } })
     await app.zoomIn(role('current').querySelector('.zoom-me[data-to="a"]'))
     await settled()
     await app.zoomIn(role('current').querySelector('.zoom-me[data-to="c"]'))
@@ -295,7 +295,7 @@ describe('flatten', () => {
     expect(app.canvas.querySelector(':scope > .z-view[data-view-name="a"]')).toBeNull()
   })
 
-  it('does not flatten views that do not pay off, or that opt out', async () => {
+  it('does not rasterize views that do not pay off, or that opt out', async () => {
     const light = Array.from({ length: 5 }, () => '<i></i>').join('')
     const heavy = Array.from({ length: 900 }, () => '<i></i>').join('')
     snapdom = fakeSnapdom()
@@ -306,12 +306,12 @@ describe('flatten', () => {
         light: view('light', ['heavy'], '', light),
         heavy: view('heavy', ['glass'], '', heavy),
         glass: view('glass', ['opted'], '', '<div style="backdrop-filter:blur(4px);width:20px;height:20px"></div>'),
-        opted: view('opted', ['framed'], 'data-flatten="false"', heavy),
+        opted: view('opted', ['framed'], 'data-rasterize="false"', heavy),
         framed: view('framed', ['end'], '', `${heavy}<iframe></iframe>`),
         end: view('end')
       },
       transitions: { driver: 'none' },
-      flatten: { snapdom }
+      rasterize: { snapdom }
     })
     await app.init()
     const visit = async (name) => {
@@ -377,7 +377,7 @@ describe('flatten', () => {
   describe('with stream', () => {
     async function startStreaming () {
       const stream = fakeStream()
-      await start({ flatten: { stream } })
+      await start({ rasterize: { stream } })
       await vi.waitFor(() => expect(stream.streams.length).toBe(1), { timeout: 3000, interval: 20 })
       await stream.streams[0].ready
       return stream
@@ -479,7 +479,7 @@ describe('flatten', () => {
         initialView: 'home',
         views,
         transitions: { driver: 'none', effects: ['blur(3px)', 'blur(8px)'] },
-        flatten: { snapdom: realSnapdom, stream: realStream, minNodes: 0 }
+        rasterize: { snapdom: realSnapdom, stream: realStream, minNodes: 0 }
       })
       await app.init()
       const home = role('current')
@@ -526,7 +526,7 @@ describe('flatten', () => {
       initialView: 'home',
       views: { ...views, home: view('home', ['a']).replace('width:400px;height:300px', 'width:50%;height:50%;position:absolute') },
       transitions: { driver: 'none' },
-      flatten: { snapdom, minNodes: 0 }
+      rasterize: { snapdom, minNodes: 0 }
     })
     await app.init()
     await zoomInto('a')
@@ -557,9 +557,9 @@ describe('flatten', () => {
     const saved = globalThis.snapdom
     delete globalThis.snapdom
     try {
-      app = new Zumly({ mount: '.canvas', initialView: 'home', views, transitions: { driver: 'none' }, flatten: true })
+      app = new Zumly({ mount: '.canvas', initialView: 'home', views, transitions: { driver: 'none' }, rasterize: true })
       await app.init()
-      expect(warned('flatten needs SnapDOM')).toBe(true)
+      expect(warned('rasterize needs SnapDOM')).toBe(true)
       await app.zoomIn(role('current').querySelector('.zoom-me[data-to="a"]'))
       await settled()
       expect(app.getCurrentViewName()).toBe('a')
@@ -569,15 +569,15 @@ describe('flatten', () => {
     }
   })
 
-  it('reads the global snapdom with flatten: true', async () => {
+  it('reads the global snapdom with rasterize: true', async () => {
     const global = fakeSnapdom()
     globalThis.snapdom = global
     try {
-      app = new Zumly({ mount: '.canvas', initialView: 'home', views, transitions: { driver: 'none' }, flatten: true })
+      app = new Zumly({ mount: '.canvas', initialView: 'home', views, transitions: { driver: 'none' }, rasterize: true })
       await app.init()
       // The default threshold skips these small views: the instance started, nothing to photograph.
       expect(app._flattener).toBeTruthy()
-      expect(warned('flatten')).toBe(false)
+      expect(warned('rasterize')).toBe(false)
     } finally {
       delete globalThis.snapdom
     }
@@ -585,7 +585,7 @@ describe('flatten', () => {
 
   it('keeps working when a capture fails', async () => {
     snapdom = vi.fn(async () => { throw new Error('boom') })
-    app = new Zumly({ mount: '.canvas', initialView: 'home', views, transitions: { driver: 'none' }, flatten: { snapdom, minNodes: 0 } })
+    app = new Zumly({ mount: '.canvas', initialView: 'home', views, transitions: { driver: 'none' }, rasterize: { snapdom, minNodes: 0 } })
     await app.init()
     await vi.waitFor(() => expect(snapdom).toHaveBeenCalled(), { timeout: 3000 })
     await app.zoomIn(role('current').querySelector('.zoom-me[data-to="a"]'))
@@ -595,11 +595,11 @@ describe('flatten', () => {
   })
 
   it('warns about wrong options and falls back', async () => {
-    app = new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom: 'yes', stream: 'yes', minNodes: -1, scale: 9, speed: 1 } })
-    for (const key of ['flatten.snapdom', 'flatten.stream', 'flatten.minNodes', 'flatten.scale', 'flatten.speed']) {
+    app = new Zumly({ mount: '.canvas', initialView: 'home', views, rasterize: { snapdom: 'yes', stream: 'yes', minNodes: -1, scale: 9, speed: 1 } })
+    for (const key of ['rasterize.snapdom', 'rasterize.stream', 'rasterize.minNodes', 'rasterize.scale', 'rasterize.speed']) {
       expect(warned(key)).toBe(true)
     }
-    expect(app.flatten).toMatchObject({ snapdom: null, stream: null, minNodes: 800, scale: 1 })
+    expect(app.rasterize).toMatchObject({ snapdom: null, stream: null, minNodes: 800, scale: 1 })
   })
 
   it('takes a real photo with SnapDOM', async () => {
@@ -608,7 +608,7 @@ describe('flatten', () => {
       initialView: 'home',
       views,
       transitions: { driver: 'none', effects: ['blur(3px)', 'blur(8px)'] },
-      flatten: { snapdom: realSnapdom, minNodes: 0 }
+      rasterize: { snapdom: realSnapdom, minNodes: 0 }
     })
     await app.init()
     const home = role('current')

@@ -42,13 +42,13 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
-async function start ({ webgl = true, flatten = {}, ...options } = {}) {
+async function start ({ webgl = true, rasterize = {}, ...options } = {}) {
   app = new Zumly({
     mount: '.canvas',
     initialView: 'home',
     views,
     transitions: { driver: 'none', duration: '40ms', ease: 'linear', effects: ['blur(3px) brightness(.7)', 'blur(8px)'] },
-    flatten: flatten === false ? false : { snapdom: fakeSnapdom(), minNodes: 0, ...flatten },
+    rasterize: rasterize === false ? false : { snapdom: fakeSnapdom(), minNodes: 0, ...rasterize },
     webgl,
     ...options
   })
@@ -82,11 +82,21 @@ describe('webgl: effect strings', () => {
 })
 
 describe('webgl: option', () => {
-  it('needs flatten: without it, it is left out with a warning', async () => {
-    await start({ flatten: false })
-    expect(app.webgl).toBe(false)
-    expect(app._webgl).toBeFalsy()
-    expect(warned('needs flatten')).toBe(true)
+  it('brings rasterize with it, with the same settings', async () => {
+    const snapdom = fakeSnapdom()
+    app = new Zumly({ mount: '.canvas', initialView: 'home', views, transitions: { driver: 'none' }, webgl: { snapdom, minNodes: 0, hover: true } })
+    await app.init()
+    expect(app.rasterize).toMatchObject({ snapdom, minNodes: 0 })
+    expect(app.webgl).toMatchObject({ hover: true })
+    expect(warned('webgl')).toBe(false)
+  })
+
+  it('brings its own rasterize when rasterize is false or left out', async () => {
+    const snapdom = fakeSnapdom()
+    app = new Zumly({ mount: '.canvas', initialView: 'home', views, transitions: { driver: 'none' }, rasterize: false, webgl: { snapdom } })
+    await app.init()
+    expect(app.rasterize).toMatchObject({ snapdom })
+    expect(app.webgl).not.toBe(false)
   })
 
   it('takes effects as GLSL by name, and warns about anything else', async () => {

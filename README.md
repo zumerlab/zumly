@@ -350,7 +350,7 @@ Every driver but `none` slides between siblings, with the same motion as `css` a
 
 ### Heavy views
 
-A view with thousands of nodes, or with frosted glass (`backdrop-filter`), is costly to scale and blur on every frame. `flatten` keeps a photo of the current view with [SnapDOM](https://github.com/zumerlab/snapdom), and moves the photo while the view sits behind:
+A view with thousands of nodes, or with frosted glass (`backdrop-filter`), is costly to scale and blur on every frame. `rasterize` keeps a photo of the current view with [SnapDOM](https://github.com/zumerlab/snapdom), and moves the photo while the view sits behind:
 
 ```sh
 npm install @zumer/snapdom @zumer/snapdom-plugins
@@ -360,19 +360,19 @@ npm install @zumer/snapdom @zumer/snapdom-plugins
 import { snapdom } from '@zumer/snapdom'
 import { stream } from '@zumer/snapdom-plugins/stream'
 
-new Zumly({ /* … */ flatten: { snapdom, stream } })
+new Zumly({ /* … */ rasterize: { snapdom, stream } })
 ```
 
 Both are optional peer dependencies: `npm install zumly` alone does not bring them.
 
-With `stream`, the photo follows the view, repainting only what changed, so a zoom always starts from what is on screen. If keeping it current costs too much, that view moves as itself. Without `stream` there is one photo, taken again once the view stops changing, and a view that changed since its photo moves as itself: live views are not flattened then. With script tags, load `https://unpkg.com/@zumer/snapdom/dist/snapdom.js` before Zumly and pass `flatten: true` (no stream).
+With `stream`, the photo follows the view, repainting only what changed, so a zoom always starts from what is on screen. If keeping it current costs too much, that view moves as itself. Without `stream` there is one photo, taken again once the view stops changing, and a view that changed since its photo moves as itself: live views are not rasterized then. With script tags, load `https://unpkg.com/@zumer/snapdom/dist/snapdom.js` before Zumly and pass `rasterize: true` (no stream).
 
-Photos are never taken during a transition; until one is ready, the view moves as itself. Light views are left alone (fewer than `minNodes` elements, 800, and no `backdrop-filter`), and `data-flatten="false"` keeps a view live behind. Try `animateEffects: false` first: it costs nothing and is often enough. The [heavy views guide](https://zumerlab.com/zumly/guides/heavy-views.html) has a live comparison and every option.
+Photos are never taken during a transition; until one is ready, the view moves as itself. Light views are left alone (fewer than `minNodes` elements, 800, and no `backdrop-filter`), and `data-rasterize="false"` keeps a view live behind. Try `animateEffects: false` first: it costs nothing and is often enough. The [heavy views guide](https://zumerlab.com/zumly/guides/heavy-views.html) has a live comparison and every option.
 
-`webgl: true` goes further: zooms are drawn in a WebGL canvas, and the views behind stay textures with their blur and dimming in a shader. Only the view you are in is DOM. It needs `flatten`. On a MacBook the GPU of a zoom drops from 40–70% to 7–8%, and on a GPU with little to spare it is the one that holds. A zoom-in waits 30–45 ms for a photo of the view coming in; with `hover: true` that happens while the pointer rests on the trigger. Past the third level everything behind stays as one picture (`ancestors`, on by default). `effects` adds your own effects in GLSL. Without WebGL2 the views stay DOM.
+`webgl` goes further: zooms are drawn in a WebGL canvas, and the views behind stay textures with their blur and dimming in a shader. Only the view you are in is DOM. It brings `rasterize` with it, so it takes the same `snapdom` and `stream`. On a MacBook the GPU of a zoom drops from 40–70% to 7–8%, and on a GPU with little to spare it is the one that holds. A zoom-in waits 30–45 ms for a photo of the view coming in; with `hover: true` that happens while the pointer rests on the trigger. Past the third level everything behind stays as one picture (`ancestors`, on by default). `effects` adds your own effects in GLSL. Without WebGL2 the views stay DOM.
 
 ```js
-new Zumly({ /* … */ flatten: { snapdom, stream }, webgl: { hover: true } })
+new Zumly({ /* … */ webgl: { snapdom, stream, hover: true } })
 ```
 
 ## With Orbit
@@ -438,8 +438,8 @@ Triggers are keyboard reachable. Background views are `inert` and hidden from as
 | `componentContext` | `new Map()` | Shared `context` for function and object views. |
 | `deferred` | `false` | Insert view content after the zoom. |
 | `debug` | `false` | Log navigation steps. |
-| `flatten` | `false` | Show views behind as a SnapDOM photo: `{ snapdom, stream, minNodes, scale }`, or `true` for the global `snapdom`. See [Heavy views](#heavy-views). |
-| `webgl` | `false` | Draw zooms with WebGL (needs `flatten`): `{ effects, glass, hover, ancestors }`, or `true`. See [Heavy views](#heavy-views). |
+| `rasterize` | `false` | Show views behind as a SnapDOM photo: `{ snapdom, stream, minNodes, scale }`, or `true` for the global `snapdom`. See [Heavy views](#heavy-views). |
+| `webgl` | `false` | Draw zooms with WebGL, `rasterize` included: `{ snapdom, stream, effects, glass, hover, ancestors }`, or `true` for the global `snapdom`. See [Heavy views](#heavy-views). |
 
 Full types are in [types/zumly.d.ts](types/zumly.d.ts). `destroy()` removes listeners, navigation UI and the views it put in the canvas, so a new instance can start there at once (React StrictMode, hot reload). Anything else in the canvas stays yours.
 
