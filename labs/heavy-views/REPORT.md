@@ -504,6 +504,11 @@ Martin: "eso es importante". La espera antes de un zoom-in con WebGL es armar la
   - **En el zoom-in en vivo** empeoraba: de 0,3 % a 2,7-5,3 %, con tramos de 2-3 cuadros seguidos. Las ventanas de un parche que ya estaba en marcha seguían capturando después de `stop()`, en pleno movimiento. La sesión de SnapDOM ya lo arregló: con eso, el zoom-in en vivo vuelve a 0,3-0,6 % sin tirones, y el tablero en reposo queda en 3,3-7 % ([`results/hover-tree-2.log`](results/hover-tree-2.log)).
   - **Con CPU 4×** el stream se sigue apagando: con `busyMs` igual pasa el 50 %. El zoom-in sigue en ~710 ms, y el tablero en reposo, en 44-46 % perdidos.
   - La palanca ahí es el costo de cada ventana (lo que cuesta vestir las tarjetas recortadas), del lado de SnapDOM. No subo el presupuesto de `flatten`: más de medio hilo principal en un equipo lento no es algo para esconder.
+- **Con el core nuevo de SnapDOM** (`@zumer/snapdom@3.6.1-dev.1`): cada ventana del stream cuesta 3,5 ms en vez de 5,9, con el mismo resultado al píxel. Medido con CPU 4× y en vivo ([`results/core-dev0-cpu4.log`](results/core-dev0-cpu4.log), [`results/core-dev1-cpu4.log`](results/core-dev1-cpu4.log)):
+  - **Headless, sin trace:** el stream del tablero ya no se apaga. Ocupa 31 % del hilo principal, bajo el presupuesto de 50 %. El zoom-in arranca en 15-23 ms en vez de 707.
+  - **Con ventana y trace:** de los zoom-ins después del primero, la foto del tablero pasa de 6 de 8 a 5 de 8. El arranque baja de 420-710 a 121-372 ms (medianas).
+  - El 31 % queda cerca del presupuesto, y el costo del trace lo pasa en algunas ventanas. Es una mejora grande, pero todavía sin margen con CPU 4×.
+  - El tablero en reposo con CPU 4× sigue en 41-49 % de cuadros perdidos.
 - **Pendiente:** que Martin lo pruebe a mano (`demo.html?gl=1&glass=0&hover=1`, y `&slow=300` para la vista lenta).
 
 ### Sin WebGL, con el stream nuevo (29/10)
@@ -521,6 +526,57 @@ Martin: "¿lograste mejorar la performance sin WebGL? Eso me interesa". `flatten
 - Tal cual, el zoom-out pasa de 3,2 % a 0 %.
 - Sin `flatten` no cambia nada (10-17 % en el zoom-out), como era de esperar.
 - El techo del DOM sigue: 39-43 % de GPU contra 7-8 % con WebGL.
+
+## Experimento 2: menos margen de GPU (29/10)
+
+Lo que el plan pedía: saber cuánto vale cada método cuando a la GPU no le sobra, como en una tablet o una Pi. No hay tablet a mano, así que hay dos aproximaciones ([`results/gpu-dpr3.log`](results/gpu-dpr3.log), [`results/gpu-big.log`](results/gpu-big.log), [`results/gpu-soft.log`](results/gpu-soft.log), [`results/gpu-soft-small.log`](results/gpu-soft-small.log), [`results/gpu-soft-none.log`](results/gpu-soft-none.log)).
+
+- **Más píxeles en la Mac** (dpr 3, o una ventana de 1920×1200): no cambia nada. `flatten` y WebGL siguen sin perder cuadros, y sin `flatten` el zoom-out pierde 6-16 %, como siempre.
+  - "gpu" en estas tablas es lo que trabaja el proceso de GPU de Chrome (los comandos), no el tiempo de los shaders en el chip. Por eso casi no se mueve con los píxeles.
+  - La GPU del M5 tiene margen de sobra.
+- **GPU por software** (`--soft-gpu`, SwiftShader: lo que haría la GPU lo hace la CPU). Con dpr 2 y 1280×800 todo se rompe: 63-97 % de cuadros perdidos. Es más duro que cualquier tablet. Con dpr 1 y 1024×768 (un quinto de los píxeles) se ve la diferencia:
+
+  | Cuadros perdidos, zoom-in / zoom-out | tal cual | en vivo |
+  |---|---|---|
+  | sin `flatten` | 90 / 95 % | 91 / 95 % |
+  | `flatten` | 79 / 82 % | 88 / 85 % |
+  | `flatten` sin efectos | 59 / 71 % | |
+  | WebGL | 13 / 2 % | 54 / 2,6 % |
+
+  - **Con una GPU sin margen, el DOM se rompe y WebGL aguanta.** El zoom-out casi perfecto, el zoom-in tal cual con 13 %.
+  - El zoom-in en vivo sufre porque el tablero en vivo ya satura la GPU en reposo: 91 % perdidos, también con `flatten`, por los vidrios de sus 48 tarjetas.
+  - **El experimento 9 (foto ya desenfocada) no alcanza.** Sin ningún efecto, `flatten` igual pierde 59-71 %. El blur pesa unos 20 puntos; lo que rompe `flatten` en una GPU floja es componer las vistas vivas que se mueven, con su vidrio. Queda descartado.
+- **Para el hardware de Pulse** esto es una aproximación. La respuesta firme sigue siendo medir en la tablet o en la Pi, con WebGL.
+
+## Experimento 5: la primera transición en frío (29/10)
+
+El 28/10, la primera corrida de un navegador nuevo perdía 14,5 % de cuadros en el primer zoom-in. [`cold.mjs`](cold.mjs) abre tres navegadores nuevos por método, sin calentar, y compara el primer zoom de cada uno con los demás ([`results/cold.log`](results/cold.log)):
+
+- **`flatten`:** el primer zoom-in y el primer zoom-out pierden 0 %, igual que los demás. El arranque, 3-4 ms.
+- **WebGL:** un cuadro (1,6 %) en el primer zoom-in, y a veces en el primer zoom-out. Arranca en 41-63 ms, contra 45 de los demás.
+
+Ya no hace falta calentar al cargar: los 14,5 % se fueron con los arreglos del motor del 28/10. El cuadro de WebGL es la primera vez que usa sus texturas de blur; no vale una cosa nueva en WebGL.
+
+## Experimento 8: un driver con View Transitions (29/10)
+
+[`vt-driver.js`](vt-driver.js) (`driver=vt` en la demo):
+- Las vistas toman el estado de partida del zoom, y `document.startViewTransition()` aplica el final.
+- El navegador captura cada vista como imagen, a su tamaño y sin su transform, y la anima con el transform de la vista. Es escalar una textura, como las fotos de `flatten`, sin SnapDOM.
+- La raíz no se captura, así que el resto de la página sigue vivo. Los hermanos van con `waapi`.
+
+Medido contra el mismo driver CSS, sin y con `flatten`. Medianas de dos corridas, dpr 2, con datos en vivo ([`results/vt.log`](results/vt.log); sin el fundido entre imagen vieja y nueva, [`results/vt-one.log`](results/vt-one.log)):
+
+| | CSS | View Transitions | `flatten` + CSS | `flatten` + View Transitions |
+|---|---|---|---|---|
+| Cuadros perdidos, zoom-in / zoom-out | 0 / 15 % | 52 / 0 % | 0 / 0,3 % | 0,8 / 0 % |
+| GPU del zoom-in | 64 % | 99 % | 37,5 % | 69 % |
+| Del clic al movimiento | 7,5 ms | 41,5 ms | 4 ms | 22,5 ms |
+
+- **Sin `flatten`, el zoom-out mejora (15 → 0 %), pero el zoom-in se rompe** (52 %, GPU 99 %). La imagen nueva de cada vista es viva: el blur del tablero cambia en cada cuadro, y con él se redibujan sus 48 vidrios.
+  - Sacar el fundido entre la imagen vieja y la nueva no cambia nada (49-51 %).
+- **Con `flatten`, no suma:** pierde lo mismo, con casi el doble de GPU en el zoom-in, y arranca 20-45 ms tarde, porque el navegador tiene que capturar antes de mover.
+- **Además:** las vistas se dibujan por encima de todo (no las recorta el lienzo), y durante la transición la página no responde a clics.
+- **Descartado.** Hace lo mismo que `flatten` con menos control, y queda lejos de WebGL.
 
 ## Plan
 
@@ -545,17 +601,17 @@ Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs 
 ### Experimentación: en labs
 
 1. **Preparar y después animar (idea 4).** Medido el 28/10 (ver Experimento 1): sin vidrio en la foto, la GPU del zoom-in baja de 39 % a 11 % y la del zoom-out de 39,5 % a 11,5 %, con ~40 ms de espera antes de arrancar y sin anillo. Falta mirarlo a ojo, cancelar con Escape y decidir si va al motor (en `flatten`, o como opción propia).
-2. **Medir con menos margen de GPU:** ventana grande o dpr 3, y una tablet. Sin esto no se sabe cuánto valen 1, 3, 4 y 7 en el hardware de Pulse.
-3. **Capa de vidrio (idea 1)** como forma de los efectos: 0 % en el zoom-out en todas las corridas, sin SnapDOM. Es la única que deja vivas las vistas de atrás, porque siguen siendo DOM. Martin (28/10): sin `flatten`, el zoom-in va fluido y el zoom-out "arrastra un poco".
+2. **Medir con menos margen de GPU:** ventana grande o dpr 3, y una tablet. Sin esto no se sabe cuánto valen 1, 3, 4 y 7 en el hardware de Pulse. Hecho el 29/10 (ver Experimento 2): con una GPU por software, el DOM pierde 60-95 % y WebGL 2-13 % tal cual. Falta la tablet real.
+3. **Capa de vidrio (idea 1).** Cerrado el 29/10. Martin: "no hace falta que continúe, WebGL demostró que es lo mejor por ahora". La lente fija entre la vista actual y las de atrás no se hace. Lo medido queda como referencia. Como forma de los efectos: 0 % en el zoom-out en todas las corridas, sin SnapDOM. Es la única que deja vivas las vistas de atrás, porque siguen siendo DOM. Martin (28/10): sin `flatten`, el zoom-in va fluido y el zoom-out "arrastra un poco".
     - **Causa:** cada zoom-out salta 5-6 cuadros (huecos de 33 ms en vez de 16), todos en la segunda mitad. Es la GPU: al achicarse el tablero entran cada vez más tarjetas con vidrio, y a eso se suman la capa y las 90 filas con vidrio del detalle que se va. El zoom-in no salta ninguno.
     - **Arreglo:** con la marca de movimiento (`moving=1`, sin vidrio en las tarjetas mientras se mueve) el zoom-out no salta ninguno, tal cual y en vivo. Falta que Martin mire cómo se ve que las tarjetas pierdan el vidrio durante el zoom.
     - **Trampa de medición:** esos cuadros no salen como perdidos en `measure.mjs` (Chrome no los marca como `affects_smoothness`), así que el 0 % los escondía. Para verlos hay que medir los huecos entre cuadros presentados. WebGL y `flatten` en el DOM no tienen huecos en ningún sentido.
 4. **Marca de movimiento (opción 2)** como receta de la guía: la GPU del zoom baja de ~60 % a ~17 %.
-5. **La primera transición en frío:** 14,5 % de cuadros perdidos en la primera corrida. Ver si se puede calentar al cargar.
+5. **La primera transición en frío:** 14,5 % de cuadros perdidos en la primera corrida. Ver si se puede calentar al cargar. Cerrado el 29/10 (ver Experimento 5): ya no pasa, 0 % con `flatten` y un cuadro con WebGL.
 6. **SnapDOM:** emular el vidrio una sola vez, gradientes como fondo sólido, tramos y `signal`. Abaratan el stream en vistas de vidrio. Y un contenedor grid scrolleado, que sale en una columna (ver Experimento 7). Se hace en su repo.
-7. **WebGL (idea 3).** Hecho de lleno el 28/10 y pasado al motor en `dev` (`src/webgl.js`, opción `webgl`; ver Experimento 7 y "WebGL en el motor"): GPU del zoom de ~40-70 % a 7-8,5 % en Chrome, y a 1-2 % con CPU 4×. Pasan por WebGL los hermanos, los gestos, tres niveles y efectos en GLSL. Falta decidir si va a `main` (docs, guía, Pulse). El movimiento en un worker no hace falta por ahora: durante un zoom WebGL, el hilo principal trabaja 4-7 % y se pierden 0-1,6 % de cuadros.
-8. **Driver con View Transitions (opción 1).**
-9. **Foto ya desenfocada y la vista de dos niveles atrás como velo (opciones 7 y 8)**, si las tablets lo piden.
+7. **WebGL (idea 3).** Martin (29/10): "dejémoslo todo listo, pero sin agregar cosas nuevas". Queda congelado en `dev` como está: opcional, sin ser el default. Para pasarlo a `main` falta la doc (guía y README). Hecho de lleno el 28/10 y pasado al motor en `dev` (`src/webgl.js`, opción `webgl`; ver Experimento 7 y "WebGL en el motor"): GPU del zoom de ~40-70 % a 7-8,5 % en Chrome, y a 1-2 % con CPU 4×. Pasan por WebGL los hermanos, los gestos, tres niveles y efectos en GLSL. Falta decidir si va a `main` (docs, guía, Pulse). El movimiento en un worker no hace falta por ahora: durante un zoom WebGL, el hilo principal trabaja 4-7 % y se pierden 0-1,6 % de cuadros.
+8. **Driver con View Transitions (opción 1).** Descartado el 29/10 (ver Experimento 8): sin `flatten` rompe el zoom-in, y con `flatten` no suma y arranca más tarde.
+9. **Foto ya desenfocada y la vista de dos niveles atrás como velo (opciones 7 y 8)**, si las tablets lo piden. Descartado el 29/10: con una GPU floja, `flatten` sin ningún efecto igual pierde 59-71 % (ver Experimento 2).
 10. **Preparar en el hover** (Martin, 28/10: "eso es importante"). Hecho el 29/10 como `webgl: { hover: true }` (ver Experimento 10): el zoom-in arranca en 7-17 ms en vez de 28-48, y una vista que tarda 300 ms en traer sus datos, en ~100. Con CPU 4× y en vivo falta que el tablero mantenga su stream (SnapDOM). Lo que sigue es el plan original: Con WebGL, la espera antes de moverse es la foto de la vista que entra (45-160 ms; 713 con CPU 4× y datos en vivo). El prefetcher ya resuelve la vista cuando el puntero o el foco pasan por un disparador, si es HTML o viene de una URL. La idea es armarla ahí mismo fuera de pantalla, sacarle la foto y subirla como textura, para que el clic arranque casi sin espera. Hay que ver:
     - las vistas que arma una función: hoy no se guardan, porque dependen del disparador y sus props;
     - el trabajo tirado cuando el puntero pasa y no hay clic: cancelar si se va, y no hacer más de una a la vez;

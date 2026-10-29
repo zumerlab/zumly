@@ -67,13 +67,15 @@
 import { Zumly } from '/src/entry-esm.js'
 import { snapdom } from '@zumer/snapdom'
 import { stream } from '/node_modules/@zumer/snapdom-plugins/stream.js'
+import { createViewTransitionDriver } from './vt-driver.js'
 
 // Variants, from the URL. Every change reloads the page, so each one starts clean.
 const q = new URLSearchParams(location.search)
 const opt = {
   flatten: q.get('flatten') !== '0',
   // filter: Zumly's effects, animated. instant: animateEffects: false. pane: no effects, fixed glass instead.
-  fx: ['instant', 'pane'].includes(q.get('fx')) ? q.get('fx') : 'filter',
+  // none: no effects at all (to see what the blur costs).
+  fx: ['instant', 'pane', 'none'].includes(q.get('fx')) ? q.get('fx') : 'filter',
   moving: q.get('moving') === '1', // option 2: data-z-moving on the canvas while views move
   wc: q.get('wc') === 'lean', // option 12: will-change only for what each view animates
   hold: q.get('hold') === '1', // idea 2: views behind keep will-change, so they are not re-rastered at their new scale
@@ -90,9 +92,9 @@ const opt = {
   levels: Math.min(10, Math.max(2, parseInt(q.get('levels'), 10) || 2)),
   hover: q.get('hover') === '1', // with gl: experiment 10, a zoom-in gets ready while the pointer is on its trigger
   slow: Math.max(0, parseInt(q.get('slow'), 10) || 0), // a detail takes that many ms to fetch its readings
-  driver: q.get('driver') || 'css',
+  driver: q.get('driver') || 'css', // vt: experiment 8, the View Transitions API (vt-driver.js)
 }
-const effects = opt.fx !== 'pane'
+const effects = opt.fx !== 'pane' && opt.fx !== 'none'
 
 // With gl=1, the views behind take any effect the shader knows: CSS's filter functions, and
 // these, which only WebGL draws. Each is a few lines of GLSL (see EFFECTS in gl.js): v is the
@@ -281,7 +283,8 @@ const app = new Zumly({
   initialView: 'board',
   views: { board: board(), detail, reading },
   transitions: {
-    driver: opt.driver,
+    // vt: the motion starts once the browser captured the old state, so its mark goes there.
+    driver: opt.driver === 'vt' ? createViewTransitionDriver({ one: q.get('vt') === 'one', onReady: () => performance.mark(`z:${stepIndex}:motion-start`) }) : opt.driver,
     // Blur and dim the board behind, as the guide does (with gl=1, the look chosen); with fx=pane
     // the glass does it.
     effects: effects ? (opt.gl && LOOKS[opt.look]) || LOOKS.css : ['none', 'none'],
@@ -484,7 +487,7 @@ app.transitionDriver = {
   runTransition (spec, done) {
     const step = stepIndex
     const go = (run = (s, cb) => real.runTransition(s, cb)) => {
-      performance.mark(`z:${step}:motion-start`)
+      if (opt.driver !== 'vt' || spec.type === 'lateral') performance.mark(`z:${step}:motion-start`)
       window.flatLog.push({
         step,
         type: spec.type,

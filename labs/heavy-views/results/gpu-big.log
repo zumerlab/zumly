@@ -1,0 +1,21 @@
+12 runs at dpr 2, 1920×1200, CPU 1×
+asis   nf          in     0%  out  22.2%  tail 0%/0%  hitches 1/6 (run 4)  start 10  lat 15/11  motion 1011/1029 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 70 viz 19  | out: main 4 impl 5 raster 0 gpu 60 viz 18
+asis   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 15  lat 23/12  motion 1017/1015 ms  rest 0%/0%  | in: main 5 impl 3 raster 0 gpu 40 viz 7  | out: main 4 impl 4 raster 0 gpu 39 viz 7
+asis   f-gl        in     1%  out   0.5%  tail 0%/0%  hitches 0/6 (run 1)  start 48 (photo 22, overflow 0)  lat 59/67  motion 1016/1016 ms  rest 0%/0%  | in: main 6 impl 4 raster 0 gpu 8 viz 2  | out: main 6 impl 5 raster 0 gpu 11 viz 3
+live   nf          in     0%  out   9.5%  tail 0%/0%  hitches 0/6 (run 2)  start 5  lat 9/12  motion 1004/1012 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 76 viz 18  | out: main 5 impl 5 raster 0 gpu 65 viz 18
+live   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 4  lat 15/12  motion 1013/1015 ms  rest 0%/2.7%  | in: main 4 impl 3 raster 0 gpu 35 viz 6  | out: main 4 impl 4 raster 0 gpu 34 viz 7
+live   f-gl        in   1.1%  out   1.6%  tail 8.3%/0%  hitches 0/6 (run 1)  start 38 (photo 16, overflow 0)  lat 48/59  motion 1012/1009 ms  rest 0%/2.7%  | in: main 6 impl 3 raster 0 gpu 8 viz 2  | out: main 6 impl 4 raster 0 gpu 9 viz 2
+asis   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 5  lat 9/10  motion 1004/1012 ms  rest 0%/0%  | in: main 4 impl 3 raster 0 gpu 40 viz 7  | out: main 4 impl 4 raster 0 gpu 37 viz 7
+asis   f-gl        in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 28 (photo 17, overflow 0)  lat 39/46  motion 1018/1009 ms  rest 0%/0%  | in: main 3 impl 1 raster 0 gpu 3 viz 1  | out: main 2 impl 1 raster 0 gpu 3 viz 1
+asis   nf          in   0.5%  out   9.5%  tail 0%/0%  hitches 1/6 (run 4)  start 4  lat 19/11  motion 1016/998 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 74 viz 19  | out: main 3 impl 4 raster 0 gpu 59 viz 18
+live   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 4  lat 14/11  motion 1025/1014 ms  rest 0%/2.7%  | in: main 5 impl 3 raster 0 gpu 40 viz 7  | out: main 5 impl 4 raster 0 gpu 41 viz 8
+live   f-gl        in   1.6%  out     1%  tail 15.4%/0%  hitches 0/6 (run 1)  start 35 (photo 17, overflow 0)  lat 44/59  motion 1010/1026 ms  rest 0%/2.7%  | in: main 6 impl 3 raster 0 gpu 10 viz 2  | out: main 7 impl 4 raster 0 gpu 11 viz 3
+live   nf          in     0%  out  17.7%  tail 0%/0%  hitches 1/6 (run 4)  start 5  lat 10/13  motion 1021/1015 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 77 viz 16  | out: main 5 impl 5 raster 0 gpu 67 viz 18
+
+Medians across runs
+asis   nf          in   0.3%  out  15.8%  tail 0%/0%  hitches 1/6 (run 4)  start 7  lat 17/11  motion 1013.5/1013.5 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 72 viz 19  | out: main 3.5 impl 4.5 raster 0 gpu 59.5 viz 18
+asis   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 10  lat 16/11  motion 1010.5/1013.5 ms  rest 0%/0%  | in: main 4.5 impl 3 raster 0 gpu 40 viz 7  | out: main 4 impl 4 raster 0 gpu 38 viz 7
+asis   f-gl        in   0.5%  out   0.3%  tail 0%/0%  hitches 0/6 (run 0.5)  start 38 (photo 19.5, overflow 0)  lat 49/56.5  motion 1017/1012.5 ms  rest 0%/0%  | in: main 4.5 impl 2.5 raster 0 gpu 5.5 viz 1.5  | out: main 4 impl 3 raster 0 gpu 7 viz 2
+live   nf          in     0%  out  13.6%  tail 0%/0%  hitches 0.5/6 (run 3)  start 5  lat 9.5/12.5  motion 1012.5/1013.5 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 76.5 viz 17  | out: main 5 impl 5 raster 0 gpu 66 viz 18
+live   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 4  lat 14.5/11.5  motion 1019/1014.5 ms  rest 0%/2.7%  | in: main 4.5 impl 3 raster 0 gpu 37.5 viz 6.5  | out: main 4.5 impl 4 raster 0 gpu 37.5 viz 7.5
+live   f-gl        in   1.4%  out   1.3%  tail 11.9%/0%  hitches 0/6 (run 1)  start 36.5 (photo 16.5, overflow 0)  lat 46/59  motion 1011/1017.5 ms  rest 0%/2.7%  | in: main 6 impl 3 raster 0 gpu 9 viz 2  | out: main 6.5 impl 4 raster 0 gpu 10 viz 2.5

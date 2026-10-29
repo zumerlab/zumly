@@ -1,0 +1,27 @@
+16 runs at dpr 2, 1280×800, CPU 1×
+asis   nf          in     0%  out  16.8%  tail 0%/0%  hitches 2/6 (run 4)  start 8  lat 16/12  motion 1015/1030 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 61 viz 18  | out: main 4 impl 4 raster 0 gpu 64 viz 20
+asis   nf-vt       in  48.5%  out     0%  tail 0%/0%  hitches 3/6 (run 4)  start 47  lat 61/54  motion 1048/1017 ms  rest 0%/0%  | in: main 2 impl 3 raster 0 gpu 99 viz 28  | out: main 4 impl 4 raster 0 gpu 76 viz 18
+asis   f           in   1.1%  out     0%  tail 0%/0%  hitches 0/6 (run 1)  start 15  lat 23/11  motion 1021/1014 ms  rest 0%/0%  | in: main 3 impl 3 raster 0 gpu 39 viz 7  | out: main 4 impl 4 raster 0 gpu 44 viz 8
+asis   f-vt        in   0.5%  out     0%  tail 0%/0%  hitches 0/6 (run 1)  start 38  lat 44/44  motion 1009/999 ms  rest 0%/0%  | in: main 3 impl 3 raster 0 gpu 68 viz 11  | out: main 4 impl 3 raster 0 gpu 37 viz 8
+live   nf          in     0%  out  13.2%  tail 0%/0%  hitches 1/6 (run 4)  start 8  lat 14/11  motion 1019/1013 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 66 viz 18  | out: main 4 impl 5 raster 0 gpu 66 viz 19
+live   nf-vt       in  51.3%  out     0%  tail 0%/0%  hitches 3/6 (run 4)  start 39  lat 45/74  motion 1027/1016 ms  rest 0%/0%  | in: main 3 impl 3 raster 0 gpu 99 viz 29  | out: main 4 impl 4 raster 0 gpu 76 viz 17
+live   f           in     0%  out   0.5%  tail 0%/0%  hitches 0/6 (run 1)  start 4  lat 12/11  motion 1001/1013 ms  rest 0%/1.4%  | in: main 3 impl 3 raster 0 gpu 37 viz 6  | out: main 4 impl 4 raster 0 gpu 40 viz 8
+live   f-vt        in   1.1%  out     0%  tail 0%/0%  hitches 0/6 (run 1)  start 20  lat 30/44  motion 1020/1017 ms  rest 0%/4%  | in: main 5 impl 3 raster 0 gpu 69 viz 12  | out: main 5 impl 4 raster 0 gpu 37 viz 8
+asis   nf-vt       in  48.5%  out     0%  tail 0%/0%  hitches 3/6 (run 4)  start 42  lat 44/68  motion 1040/1020 ms  rest 0%/0%  | in: main 3 impl 3 raster 0 gpu 99 viz 29  | out: main 4 impl 4 raster 0 gpu 78 viz 19
+asis   f           in   0.5%  out     0%  tail 14.3%/0%  hitches 0/6 (run 1)  start 14  lat 24/10  motion 1018/1028 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 36 viz 8  | out: main 4 impl 4 raster 0 gpu 41 viz 9
+asis   f-vt        in     0%  out     0%  tail 10%/9.1%  hitches 0/6 (run 0)  start 38  lat 43/45  motion 1022/1014 ms  rest 0%/0%  | in: main 4 impl 3 raster 0 gpu 59 viz 9  | out: main 4 impl 3 raster 0 gpu 37 viz 8
+asis   nf          in     0%  out  17.2%  tail 0%/6.3%  hitches 2/6 (run 4)  start 8  lat 17/11  motion 1016/1013 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 63 viz 20  | out: main 4 impl 5 raster 0 gpu 74 viz 19
+live   nf-vt       in  52.1%  out     0%  tail 8.3%/0%  hitches 3/6 (run 4)  start 44  lat 46/66  motion 1014/1020 ms  rest 0%/0%  | in: main 3 impl 3 raster 0 gpu 100 viz 28  | out: main 5 impl 5 raster 0 gpu 82 viz 20
+live   f           in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 4  lat 9/11  motion 1024/997 ms  rest 0%/6.6%  | in: main 4 impl 4 raster 0 gpu 38 viz 7  | out: main 4 impl 4 raster 0 gpu 41 viz 8
+live   f-vt        in   0.5%  out     0%  tail 0%/6.3%  hitches 0/6 (run 1)  start 25  lat 42/44  motion 1003/998 ms  rest 0%/1.4%  | in: main 4 impl 3 raster 0 gpu 69 viz 12  | out: main 5 impl 4 raster 0 gpu 39 viz 8
+live   nf          in     0%  out  16.9%  tail 0%/0%  hitches 2/6 (run 4)  start 7  lat 11/12  motion 1021/1025 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 63 viz 18  | out: main 4 impl 5 raster 0 gpu 67 viz 20
+
+Medians across runs
+asis   nf          in     0%  out    17%  tail 0%/3.1%  hitches 2/6 (run 4)  start 8  lat 16.5/11.5  motion 1015.5/1021.5 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 62 viz 19  | out: main 4 impl 4.5 raster 0 gpu 69 viz 19.5
+asis   nf-vt       in  48.5%  out     0%  tail 0%/0%  hitches 3/6 (run 4)  start 44.5  lat 52.5/61  motion 1044/1018.5 ms  rest 0%/0%  | in: main 2.5 impl 3 raster 0 gpu 99 viz 28.5  | out: main 4 impl 4 raster 0 gpu 77 viz 18.5
+asis   f           in   0.8%  out     0%  tail 7.2%/0%  hitches 0/6 (run 1)  start 14.5  lat 23.5/10.5  motion 1019.5/1021 ms  rest 0%/0%  | in: main 3.5 impl 3.5 raster 0 gpu 37.5 viz 7.5  | out: main 4 impl 4 raster 0 gpu 42.5 viz 8.5
+asis   f-vt        in   0.3%  out     0%  tail 5%/4.5%  hitches 0/6 (run 0.5)  start 38  lat 43.5/44.5  motion 1015.5/1006.5 ms  rest 0%/0%  | in: main 3.5 impl 3 raster 0 gpu 63.5 viz 10  | out: main 4 impl 3 raster 0 gpu 37 viz 8
+live   nf          in     0%  out    15%  tail 0%/0%  hitches 1.5/6 (run 4)  start 7.5  lat 12.5/11.5  motion 1020/1019 ms  rest 0%/0%  | in: main 4 impl 4 raster 0 gpu 64.5 viz 18  | out: main 4 impl 5 raster 0 gpu 66.5 viz 19.5
+live   nf-vt       in  51.7%  out     0%  tail 4.2%/0%  hitches 3/6 (run 4)  start 41.5  lat 45.5/70  motion 1020.5/1018 ms  rest 0%/0%  | in: main 3 impl 3 raster 0 gpu 99.5 viz 28.5  | out: main 4.5 impl 4.5 raster 0 gpu 79 viz 18.5
+live   f           in     0%  out   0.3%  tail 0%/0%  hitches 0/6 (run 0.5)  start 4  lat 10.5/11  motion 1012.5/1005 ms  rest 0%/4%  | in: main 3.5 impl 3.5 raster 0 gpu 37.5 viz 6.5  | out: main 4 impl 4 raster 0 gpu 40.5 viz 8
+live   f-vt        in   0.8%  out     0%  tail 0%/3.1%  hitches 0/6 (run 1)  start 22.5  lat 36/44  motion 1011.5/1007.5 ms  rest 0%/2.7%  | in: main 4.5 impl 3 raster 0 gpu 69 viz 12  | out: main 5 impl 4 raster 0 gpu 38 viz 8

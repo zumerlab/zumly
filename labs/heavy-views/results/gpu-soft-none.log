@@ -1,0 +1,3 @@
+2 runs at dpr 1, SwiftShader, 1024×768, CPU 1×
+asis   f-none      in    59%  out  70.8%  tail 0%/11.1%  hitches 6/6 (run 6)  start 3  lat 11/6  motion 1044/1027 ms  rest 0%/0%  | in: main 1 impl 1 raster 0 gpu 100 viz 6  | out: main 1 impl 1 raster 0 gpu 99 viz 6
+asis   f           in  78.7%  out  82.5%  tail 45%/76.7%  hitches 6/6 (run 12)  start 5  lat 18/5  motion 1042/1024 ms  rest 0%/0%  | in: main 1 impl 1 raster 0 gpu 100 viz 3  | out: main 1 impl 1 raster 0 gpu 100 viz 4

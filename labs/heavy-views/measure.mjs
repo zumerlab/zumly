@@ -10,6 +10,8 @@
 //   --hover rests the pointer that many ms on a trigger before each zoom-in.
 //   --stream-from ../snapdom serves the stream plugin from a SnapDOM working tree, to measure
 //   a fix before it is published.
+//   --dpr 3 and --size 1920x1200 give the GPU more pixels (experiment 2, less GPU headroom).
+//   --soft-gpu draws with SwiftShader: the GPU's work on the CPU, as a GPU with no headroom.
 //   --channel chrome measures in the installed Google Chrome instead of Playwright's Chromium.
 //
 // --threads prints the top-level trace events of each thread group, to check the attribution.
@@ -35,7 +37,9 @@ const showThreads = args.includes('--threads')
 const channel = arg('--channel', undefined)
 const hover = +arg('--hover', 0)
 const streamFrom = arg('--stream-from', null)
-const viewport = { width: 1280, height: 800 }
+const [vw, vh] = arg('--size', '1280x800').split('x').map(Number)
+const viewport = { width: vw, height: vh }
+const dpr = +arg('--dpr', 2)
 
 for (const name of variantNames) if (!VARIANTS[name]) throw new Error(`unknown variant "${name}"`)
 
@@ -46,7 +50,8 @@ const port = server.address().port
 const browser = await chromium.launch({
   headless: false,
   channel,
-  args: ['--enable-gpu-rasterization', '--ignore-gpu-blocklist', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--disable-background-timer-throttling'],
+  args: ['--enable-gpu-rasterization', '--ignore-gpu-blocklist', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows', '--disable-background-timer-throttling',
+    ...(args.includes('--soft-gpu') ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : [])],
 })
 
 // ── Threads: busy time of top-level tasks, per group ──────────────────
@@ -212,7 +217,7 @@ const line = (cond, variant, s) => [
 // ── Runs ──────────────────────────────────────────────────────────────
 
 async function measure (run, cond, variant) {
-  const page = await browser.newPage({ viewport, deviceScaleFactor: 2 })
+  const page = await browser.newPage({ viewport, deviceScaleFactor: dpr })
   try {
     page.on('pageerror', e => console.error(`[${variant}] pageerror`, e.message))
     page.on('response', r => { if (r.status() >= 400 && !r.url().endsWith('favicon.ico')) console.error(`[${variant}] ${r.status()} ${r.url()}`) })
@@ -236,7 +241,7 @@ async function measure (run, cond, variant) {
     const launches = await page.evaluate(() => window.launchLog.filter(e => e.type === 'zoomIn'))
     const summary = { ...summarise(result), photoIn: median(launches.map(e => e.photoMs ?? 0)), overflowIn: median(launches.map(e => e.overflowMs ?? 0)), early: launches.filter(e => e.early).length }
     console.log(line(cond, variant, summary))
-    return { run, cond, variant, query: VARIANTS[variant] + CONDS[cond], cpu: throttle, hover, summary, launches, ...result }
+    return { run, cond, variant, query: VARIANTS[variant] + CONDS[cond], cpu: throttle, dpr, viewport, hover, summary, launches, ...result }
   } catch (e) {
     // Chromium windows sometimes close on their own in long runs: note it and go on.
     console.error(`! ${cond} ${variant}: ${e.message.split('\n')[0]}`)
@@ -257,7 +262,7 @@ for (let run = 0; run < runs; run++) {
 // A fresh browser pays for cold caches and shader compilation on its first page (14.5% dropped
 // on the first zoom-in of 28/10): one untraced round first, so no variant is measured cold.
 if (!args.includes('--no-warmup')) {
-  const page = await browser.newPage({ viewport, deviceScaleFactor: 2 })
+  const page = await browser.newPage({ viewport, deviceScaleFactor: dpr })
   try {
     await page.goto(`http://localhost:${port}/labs/heavy-views/demo.html?${VARIANTS.f}`)
     await page.waitForFunction(() => window.ready, null, { timeout: 30000 })
@@ -268,7 +273,7 @@ if (!args.includes('--no-warmup')) {
     await page.close().catch(() => {})
   }
 }
-console.log(`${jobs.length} runs at dpr 2, ${viewport.width}×${viewport.height}, CPU ${throttle}×${channel ? `, ${channel}` : ''}${streamFrom ? `, stream from ${streamFrom}` : ''}`)
+console.log(`${jobs.length} runs at dpr ${dpr}${args.includes('--soft-gpu') ? ', SwiftShader' : ''}, ${viewport.width}×${viewport.height}, CPU ${throttle}×${channel ? `, ${channel}` : ''}${streamFrom ? `, stream from ${streamFrom}` : ''}`)
 const results = []
 for (const job of jobs) {
   const r = await measure(job.run, job.cond, job.variant)

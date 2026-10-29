@@ -1,0 +1,5 @@
+4 runs at dpr 2, 1280×800, CPU 1×
+asis   nf-vt-one   in    49%  out   0.5%  tail 0%/0%  hitches 3/6 (run 4)  start 36  lat 43/59  motion 1028/1009 ms  rest 0%/0%  | in: main 2 impl 3 raster 0 gpu 100 viz 28  | out: main 4 impl 4 raster 0 gpu 76 viz 18
+asis   f-vt-one    in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 37  lat 43/43  motion 1023/1018 ms  rest 0%/0%  | in: main 3 impl 3 raster 0 gpu 67 viz 9  | out: main 4 impl 3 raster 0 gpu 36 viz 6
+live   nf-vt-one   in  50.8%  out     0%  tail 0%/0%  hitches 2/6 (run 3)  start 43  lat 45/61  motion 1012/1017 ms  rest 0%/0%  | in: main 2 impl 3 raster 0 gpu 99 viz 29  | out: main 4 impl 4 raster 0 gpu 74 viz 17
+live   f-vt-one    in     0%  out     0%  tail 0%/0%  hitches 0/6 (run 0)  start 21  lat 25/45  motion 1008/1012 ms  rest 0%/4%  | in: main 4 impl 3 raster 0 gpu 68 viz 10  | out: main 5 impl 4 raster 0 gpu 40 viz 7

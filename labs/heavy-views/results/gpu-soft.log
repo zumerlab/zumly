@@ -1,0 +1,7 @@
+6 runs at dpr 2, SwiftShader, 1280×800, CPU 1×
+asis   nf          in  93.1%  out  96.9%  tail 97.5%/94.5%  hitches 6/6 (run 72)  start 4  lat 15/11  motion 1194/1047 ms  rest 0%/0%  | in: main 1 impl 0 raster 0 gpu 99 viz 7  | out: main 1 impl 0 raster 0 gpu 100 viz 30
+asis   f           in  85.7%  out    85%  tail 65.4%/86.8%  hitches 6/6 (run 49)  start 5  lat 21/10  motion 1075/1098 ms  rest 0%/35.6%  | in: main 1 impl 1 raster 0 gpu 100 viz 3  | out: main 1 impl 1 raster 0 gpu 100 viz 5
+asis   f-gl        in  72.2%  out  63.2%  tail 43.8%/10%  hitches 6/6 (run 26)  start 33 (photo 17, overflow 0)  lat 48/64  motion 1058/1046 ms  rest 0%/0%  | in: main 1 impl 0 raster 0 gpu 100 viz 0  | out: main 2 impl 0 raster 0 gpu 100 viz 0
+live   nf          in  92.9%  out    97%  tail 98.8%/95.8%  hitches 6/6 (run 80)  start 2  lat 57/110  motion 1361/1462 ms  rest 0%/0%  | in: main 1 impl 0 raster 0 gpu 100 viz 5  | out: main 1 impl 0 raster 0 gpu 100 viz 21
+live   f           in  92.4%  out  85.4%  tail 76.5%/85.2%  hitches 6/6 (run 29)  start 5  lat 133/11  motion 1387/1143 ms  rest 0%/93.7%  | in: main 1 impl 0 raster 0 gpu 100 viz 3  | out: main 1 impl 1 raster 0 gpu 100 viz 5
+live   f-gl        in  92.8%  out    69%  tail 60.7%/28.6%  hitches 6/6 (run 33)  start 174 (photo 14, overflow 0)  lat 364/42  motion 1216/1037 ms  rest 0%/93.7%  | in: main 1 impl 0 raster 0 gpu 100 viz 0  | out: main 1 impl 0 raster 0 gpu 100 viz 0

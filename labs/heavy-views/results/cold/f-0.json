@@ -1,0 +1,339 @@
+[
+  {
+    "run": 0,
+    "cond": "asis",
+    "variant": "f",
+    "query": "flatten=1",
+    "cpu": 1,
+    "dpr": 2,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "hover": 0,
+    "summary": {
+      "inDropped": 0,
+      "outDropped": 0,
+      "inTail": 0,
+      "hoverDropped": null,
+      "outTail": 0,
+      "hitches": 0,
+      "zooms": 6,
+      "worstRun": 0,
+      "latencyIn": 16,
+      "latencyOut": 9,
+      "startIn": 5,
+      "motionIn": 997,
+      "motionOut": 997,
+      "restDetail": 0,
+      "restBoard": 0,
+      "busyIn": {
+        "main": 3,
+        "impl": 3,
+        "raster": 0,
+        "gpu": 37,
+        "viz": 8
+      },
+      "busyOut": {
+        "main": 3,
+        "impl": 3,
+        "raster": 0,
+        "gpu": 35,
+        "viz": 8
+      },
+      "preBusyIn": {
+        "main": 64,
+        "impl": 5,
+        "raster": 0,
+        "gpu": 23,
+        "viz": 18
+      },
+      "busyRest": {
+        "main": 0.5,
+        "impl": 1,
+        "raster": 0,
+        "gpu": 1,
+        "viz": 1
+      },
+      "photoIn": null,
+      "overflowIn": null,
+      "early": 0
+    },
+    "launches": [],
+    "steps": [
+      {
+        "kind": "in",
+        "hoverDropped": 0,
+        "hoverPresented": 0,
+        "motionMs": 997,
+        "tailDropped": 0,
+        "tailPresented": 2,
+        "tailRun": 0,
+        "tailBusy": {
+          "main": 3,
+          "impl": 1,
+          "gpu": 9,
+          "viz": 1
+        },
+        "presented": 60,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "latencyMs": 16,
+        "startMs": 4,
+        "busy": {
+          "main": 4,
+          "impl": 3,
+          "gpu": 33,
+          "viz": 8
+        },
+        "preBusy": {
+          "main": 93,
+          "impl": 6,
+          "gpu": 23,
+          "viz": 18
+        }
+      },
+      {
+        "kind": "out",
+        "hoverDropped": 0,
+        "hoverPresented": 0,
+        "motionMs": 1024,
+        "tailDropped": 0,
+        "tailPresented": 4,
+        "tailRun": 0,
+        "tailBusy": {
+          "main": 40,
+          "impl": 1,
+          "gpu": 8,
+          "viz": 1
+        },
+        "presented": 63,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "latencyMs": 3,
+        "startMs": 3,
+        "busy": {
+          "main": 3,
+          "gpu": 34,
+          "viz": 8,
+          "impl": 3
+        },
+        "preBusy": {
+          "main": 99,
+          "impl": 0
+        }
+      },
+      {
+        "kind": "in",
+        "hoverDropped": 0,
+        "hoverPresented": 0,
+        "motionMs": 996,
+        "tailDropped": 0,
+        "tailPresented": 2,
+        "tailRun": 0,
+        "tailBusy": {
+          "main": 1,
+          "impl": 1,
+          "gpu": 7,
+          "viz": 1
+        },
+        "presented": 60,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "latencyMs": 19,
+        "startMs": 7,
+        "busy": {
+          "main": 3,
+          "impl": 3,
+          "gpu": 37,
+          "viz": 9
+        },
+        "preBusy": {
+          "main": 57,
+          "gpu": 41,
+          "viz": 26,
+          "impl": 5
+        }
+      },
+      {
+        "kind": "out",
+        "hoverDropped": 0,
+        "hoverPresented": 0,
+        "motionMs": 995,
+        "tailDropped": 0,
+        "tailPresented": 3,
+        "tailRun": 0,
+        "tailBusy": {
+          "main": 40,
+          "impl": 1,
+          "gpu": 10,
+          "viz": 2
+        },
+        "presented": 60,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "latencyMs": 9,
+        "startMs": 0,
+        "busy": {
+          "main": 3,
+          "impl": 3,
+          "gpu": 35,
+          "viz": 8
+        },
+        "preBusy": {
+          "main": 35,
+          "impl": 7,
+          "viz": 15,
+          "gpu": 50
+        }
+      },
+      {
+        "kind": "in",
+        "hoverDropped": 0,
+        "hoverPresented": 0,
+        "motionMs": 1005,
+        "tailDropped": 0,
+        "tailPresented": 2,
+        "tailRun": 0,
+        "tailBusy": {
+          "main": 1,
+          "impl": 1,
+          "gpu": 7,
+          "viz": 1
+        },
+        "presented": 61,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "latencyMs": 9,
+        "startMs": 5,
+        "busy": {
+          "main": 3,
+          "viz": 8,
+          "gpu": 38,
+          "impl": 3
+        },
+        "preBusy": {
+          "main": 64
+        }
+      },
+      {
+        "kind": "out",
+        "hoverDropped": 0,
+        "hoverPresented": 0,
+        "motionMs": 997,
+        "tailDropped": 0,
+        "tailPresented": 4,
+        "tailRun": 0,
+        "tailBusy": {
+          "main": 40,
+          "impl": 1,
+          "gpu": 9,
+          "viz": 1
+        },
+        "presented": 61,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "latencyMs": 10,
+        "startMs": 0,
+        "busy": {
+          "main": 4,
+          "impl": 4,
+          "gpu": 37,
+          "viz": 9
+        },
+        "preBusy": {
+          "main": 39,
+          "impl": 8,
+          "viz": 17,
+          "gpu": 45
+        }
+      }
+    ],
+    "rests": [
+      {
+        "on": "detail",
+        "presented": 11,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "busy": {
+          "main": 0,
+          "gpu": 0,
+          "viz": 0,
+          "impl": 0
+        }
+      },
+      {
+        "on": "board",
+        "presented": 16,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "busy": {
+          "main": 1,
+          "viz": 0,
+          "gpu": 0,
+          "impl": 1
+        }
+      },
+      {
+        "on": "detail",
+        "presented": 11,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "busy": {
+          "main": 0,
+          "gpu": 5,
+          "viz": 1,
+          "impl": 0
+        }
+      },
+      {
+        "on": "board",
+        "presented": 16,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "busy": {
+          "main": 1,
+          "viz": 1,
+          "gpu": 1,
+          "impl": 1
+        }
+      },
+      {
+        "on": "detail",
+        "presented": 11,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "busy": {
+          "main": 0,
+          "gpu": 5,
+          "viz": 1,
+          "impl": 1
+        }
+      },
+      {
+        "on": "board",
+        "presented": 16,
+        "dropped": 0,
+        "maxDroppedRun": 0,
+        "runAt": null,
+        "busy": {
+          "main": 1,
+          "gpu": 1,
+          "viz": 1,
+          "impl": 1
+        }
+      }
+    ]
+  }
+]

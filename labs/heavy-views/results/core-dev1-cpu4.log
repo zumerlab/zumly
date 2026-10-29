@@ -1,0 +1,10 @@
+  "version": "3.6.1-dev.1",
+4 runs at dpr 2, 1280×800, CPU 4×
+live   f-gl        in   0.5%  out   1.1%  tail 0%/0%  hover 28.6%  hitches 0/6 (run 1)  start 112 (photo 61, overflow 0)  lat 118/110  motion 1015/1000 ms  rest 0%/40.6%  | in: main 3 impl 0 raster 0 gpu 1 viz 0  | out: main 3 impl 1 raster 0 gpu 2 viz 0
+live   f-gl-hover  in     0%  out   1.6%  tail 0%/0%  hover 42.1%  hitches 0/6 (run 1)  start 34 (photo 0, overflow 0, 3 ready on hover)  lat 41/111  motion 985/1015 ms  rest 0%/42.9%  | in: main 2 impl 0 raster 0 gpu 1 viz 0  | out: main 7 impl 1 raster 0 gpu 2 viz 0
+live   f-gl-hover  in   0.5%  out   1.6%  tail 0%/0%  hover 38.9%  hitches 0/6 (run 1)  start 709 (photo 0, overflow 0, 3 ready on hover)  lat 720/110  motion 1013/1017 ms  rest 0%/48.6%  | in: main 3 impl 0 raster 0 gpu 2 viz 0  | out: main 3 impl 1 raster 0 gpu 1 viz 0
+live   f-gl        in   0.5%  out   0.5%  tail 0%/0%  hover 35.7%  hitches 0/6 (run 1)  start 131 (photo 60, overflow 0)  lat 133/105  motion 1007/1022 ms  rest 0%/43.2%  | in: main 4 impl 0 raster 0 gpu 1 viz 0  | out: main 5 impl 1 raster 0 gpu 1 viz 0
+
+Medians across runs
+live   f-gl        in   0.5%  out   0.8%  tail 0%/0%  hover 32.2%  hitches 0/6 (run 1)  start 121.5 (photo 60.5, overflow 0)  lat 125.5/107.5  motion 1011/1011 ms  rest 0%/41.9%  | in: main 3.5 impl 0 raster 0 gpu 1 viz 0  | out: main 4 impl 1 raster 0 gpu 1.5 viz 0
+live   f-gl-hover  in   0.3%  out   1.6%  tail 0%/0%  hover 40.5%  hitches 0/6 (run 1)  start 371.5 (photo 0, overflow 0, 3 ready on hover)  lat 380.5/110.5  motion 999/1016 ms  rest 0%/45.8%  | in: main 2.5 impl 0 raster 0 gpu 1.5 viz 0  | out: main 5 impl 1 raster 0 gpu 1.5 viz 0
