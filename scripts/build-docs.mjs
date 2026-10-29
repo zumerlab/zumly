@@ -27,7 +27,7 @@ function nav (to, section) {
   const cur = name => section === name ? ' aria-current="page"' : ''
   return `<nav class="site-nav">
     <div class="nav-inner">
-      <a href="${to('')}" class="nav-brand"><img src="${to('fish-160.png')}" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a href="${to('')}" class="nav-brand" aria-label="Zumly home"><img src="${to('fish-160.png')}" alt="" width="30" height="30"><span>ZUMLY</span></a>
       <a class="nav-link" href="${to('learn/')}"${cur('learn')}>Learn</a>
       <a class="nav-link" href="${to('learn/#guides')}"${cur('guides')}>Guides</a>
       <a class="nav-link" href="${to('api.html')}"${cur('api')}>API</a>
@@ -45,14 +45,14 @@ function footer (to) {
     <div class="footer-inner">
       <div class="footer-grid">
         <div>
-          <h4>Learn</h4>
+          <h2>Learn</h2>
           <ul>
             ${STEPS.map(([file, title]) => li(to(`learn/${file}.html`), title)).join('\n            ')}
             ${li(to('guides/navigation.html'), 'Navigation controls')}
           </ul>
         </div>
         <div>
-          <h4>Frameworks</h4>
+          <h2>Frameworks</h2>
           <ul>
             ${li(to('integrations/react.html'), 'React')}
             ${li(to('integrations/vue.html'), 'Vue')}
@@ -62,7 +62,7 @@ function footer (to) {
           </ul>
         </div>
         <div>
-          <h4>Drivers</h4>
+          <h2>Drivers</h2>
           <ul>
             ${li(to('drivers/gsap.html'), 'GSAP')}
             ${li(to('drivers/anime.html'), 'Anime.js')}
@@ -71,7 +71,7 @@ function footer (to) {
           </ul>
         </div>
         <div>
-          <h4>Zumly</h4>
+          <h2>Zumly</h2>
           <ul>
             ${li(to(''), 'Live demo')}
             ${li(to('api.html'), 'API reference')}

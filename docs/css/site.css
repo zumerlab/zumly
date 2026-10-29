@@ -42,17 +42,17 @@ html.light {
   --line: rgba(20, 70, 130, 0.13);
   --line-strong: rgba(20, 100, 180, 0.32);
   --fish: #2f8fd8;
-  --accent: #1a6fb5;
+  --accent: #155f9e;
   --lure: #0b4f8a;
   --glow: rgba(50, 140, 220, 0.12);
   --text: #0a1f33;
   --text-mid: rgba(10, 31, 51, 0.76);
-  --text-dim: rgba(10, 31, 51, 0.52);
+  --text-dim: rgba(10, 31, 51, 0.66);
   --code-bg: #e8f1fa;
   --code-text: #13324f;
   --tok-key: #1a5fa8;
   --tok-str: #1f7a3a;
-  --tok-com: rgba(19, 50, 79, 0.5);
+  --tok-com: rgba(19, 50, 79, 0.7);
   --tok-tag: #b04a14;
   --nav-bg: rgba(243, 248, 253, 0.86);
   color-scheme: light;
@@ -248,6 +248,7 @@ section > table { display: block; overflow-x: auto; }
 .step-dots a.is-done { background: var(--line-strong); }
 .step-dots a[aria-current="step"] { background: var(--fish); }
 .demo {
+  position: relative;
   border: 1px solid var(--line-strong); border-radius: var(--radius);
   overflow: hidden; margin: 8px 0 28px; background: var(--abyss);
   box-shadow: 0 10px 50px rgba(0, 0, 0, 0.25);
@@ -255,7 +256,7 @@ section > table { display: block; overflow-x: auto; }
 .demo-bar {
   display: flex; align-items: center; gap: 10px;
   padding: 7px 12px; border-bottom: 1px solid var(--line);
-  font-size: 0.78rem; color: var(--text-dim); background: var(--surface);
+  font-size: 0.78rem; color: var(--text-mid); background: var(--surface);
 }
 .demo-bar span { margin-right: auto; }
 .demo-bar a, .demo-bar button {
@@ -264,6 +265,11 @@ section > table { display: block; overflow-x: auto; }
 }
 .demo-switch { display: flex; align-items: center; gap: 5px; font-weight: 600; color: var(--text); cursor: pointer; }
 .demo iframe { display: block; width: 100%; height: 420px; border: 0; background: #fff; }
+.demo-run {
+  position: absolute; left: 50%; top: calc(50% + 18px); transform: translate(-50%, -50%);
+  padding: 10px 18px; border-radius: 99px; border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--text); font: 600 0.9rem var(--font); cursor: pointer;
+}
 .demo-hint { font-size: 0.86rem; color: var(--text-dim); margin: -18px 0 28px; }
 
 /* Option pickers under a live example (guides/navigation.html) */
@@ -325,7 +331,8 @@ section > table { display: block; overflow-x: auto; }
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px;
   margin-bottom: 28px;
 }
-.footer-grid h4 {
+.footer-grid h2, .footer-grid h4 {
+  margin-top: 0;
   font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px;
 }
@@ -342,6 +349,8 @@ section > table { display: block; overflow-x: auto; }
 .nav-sponsor { margin-left: 4px; padding: 6px 12px; border-radius: 99px; font-size: 0.84rem; font-weight: 600; color: #e0447a; border: 1px solid color-mix(in srgb, #e0447a 40%, transparent); }
 .nav-sponsor:hover { background: color-mix(in srgb, #e0447a 12%, transparent); }
 .nav-sponsor span, .home-sponsor span { color: #e0447a; }
+/* The light theme's background needs a darker pink for 4.5:1. */
+html.light .nav-sponsor, html.light .nav-sponsor span, html.light .home-sponsor span, html.light .footer-bottom .footer-sponsor { color: #b8285f; }
 
 @media (max-width: 720px) {
   .footer-grid { grid-template-columns: 1fr 1fr; }

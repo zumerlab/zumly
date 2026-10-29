@@ -20,7 +20,8 @@
   <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" /></noscript>
   <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
   <link rel="stylesheet" href="../css/site.css" />
   <script src="../js/site.js" defer></script>
@@ -28,7 +29,7 @@
 <body>
   <nav class="site-nav">
     <div class="nav-inner">
-      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a href="../" class="nav-brand" aria-label="Zumly home"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
       <a class="nav-link" href="../learn/">Learn</a>
       <a class="nav-link" href="../learn/#guides" aria-current="page">Guides</a>
       <a class="nav-link" href="../api.html">API</a>
@@ -150,7 +151,7 @@ nextButton.onclick = () =&gt; app.goTo('midnight', { mode: 'lateral' })</code></
     <div class="footer-inner">
       <div class="footer-grid">
         <div>
-          <h4>Learn</h4>
+          <h2>Learn</h2>
           <ul>
             <li><a href="../learn/first-app.html">Your first app</a></li>
             <li><a href="../learn/depth.html">Going deeper</a></li>
@@ -162,7 +163,7 @@ nextButton.onclick = () =&gt; app.goTo('midnight', { mode: 'lateral' })</code></
           </ul>
         </div>
         <div>
-          <h4>Frameworks</h4>
+          <h2>Frameworks</h2>
           <ul>
             <li><a href="../integrations/react.html">React</a></li>
             <li><a href="../integrations/vue.html">Vue</a></li>
@@ -172,7 +173,7 @@ nextButton.onclick = () =&gt; app.goTo('midnight', { mode: 'lateral' })</code></
           </ul>
         </div>
         <div>
-          <h4>Drivers</h4>
+          <h2>Drivers</h2>
           <ul>
             <li><a href="../drivers/gsap.html">GSAP</a></li>
             <li><a href="../drivers/anime.html">Anime.js</a></li>
@@ -181,7 +182,7 @@ nextButton.onclick = () =&gt; app.goTo('midnight', { mode: 'lateral' })</code></
           </ul>
         </div>
         <div>
-          <h4>Zumly</h4>
+          <h2>Zumly</h2>
           <ul>
             <li><a href="../">Live demo</a></li>
             <li><a href="../api.html">API reference</a></li>

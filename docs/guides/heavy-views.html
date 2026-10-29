@@ -20,7 +20,8 @@
   <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" /></noscript>
   <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
   <link rel="stylesheet" href="../css/site.css" />
   <script src="../js/site.js" defer></script>
@@ -28,7 +29,7 @@
 <body>
   <nav class="site-nav">
     <div class="nav-inner">
-      <a href="../" class="nav-brand"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a href="../" class="nav-brand" aria-label="Zumly home"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
       <a class="nav-link" href="../learn/">Learn</a>
       <a class="nav-link" href="../learn/#guides" aria-current="page">Guides</a>
       <a class="nav-link" href="../api.html">API</a>
@@ -48,7 +49,8 @@
 
     <div class="demo">
       <div class="demo-bar"><span>Live example</span><label class="demo-switch"><input type="checkbox" id="rasterize-on" checked> rasterize</label><label class="demo-switch"><input type="checkbox" id="webgl-on"> webgl</label><a id="heavy-open" href="examples/heavy.html" target="_blank" rel="noopener">Open &#8599;</a></div>
-      <iframe id="heavy-demo" src="examples/heavy.html" title="Heavy views: live example"></iframe>
+      <iframe id="heavy-demo" data-src="examples/heavy.html" title="Heavy views: live example"></iframe>
+      <button class="demo-run" id="heavy-run" type="button" hidden>Run the live example</button>
     </div>
 
     <section>
@@ -127,7 +129,7 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, rasterize: { snapdom, 
       </ul>
       <p>The same board as above, Chrome on a MacBook, and the same board with the graphics drawn in software, as a GPU with nothing to spare:</p>
       <div class="table-wrap"><table>
-        <thead><tr><th></th><th>With <code>rasterize</code></th><th>With <code>webgl</code></th></tr></thead>
+        <thead><tr><th>Measure</th><th>With <code>rasterize</code></th><th>With <code>webgl</code></th></tr></thead>
         <tbody>
           <tr><td>GPU while it zooms</td><td>40 to 70%</td><td>7 to 8%</td></tr>
           <tr><td>The same, processor four times slower</td><td>42 to 60%</td><td>1 to 2%</td></tr>
@@ -208,7 +210,7 @@ app.on('afterZoomIn', still).on('afterZoomOut', still).on('afterLateral', still)
     <div class="footer-inner">
       <div class="footer-grid">
         <div>
-          <h4>Learn</h4>
+          <h2>Learn</h2>
           <ul>
             <li><a href="../learn/first-app.html">Your first app</a></li>
             <li><a href="../learn/depth.html">Going deeper</a></li>
@@ -220,7 +222,7 @@ app.on('afterZoomIn', still).on('afterZoomOut', still).on('afterLateral', still)
           </ul>
         </div>
         <div>
-          <h4>Frameworks</h4>
+          <h2>Frameworks</h2>
           <ul>
             <li><a href="../integrations/react.html">React</a></li>
             <li><a href="../integrations/vue.html">Vue</a></li>
@@ -230,7 +232,7 @@ app.on('afterZoomIn', still).on('afterZoomOut', still).on('afterLateral', still)
           </ul>
         </div>
         <div>
-          <h4>Drivers</h4>
+          <h2>Drivers</h2>
           <ul>
             <li><a href="../drivers/gsap.html">GSAP</a></li>
             <li><a href="../drivers/anime.html">Anime.js</a></li>
@@ -239,7 +241,7 @@ app.on('afterZoomIn', still).on('afterZoomOut', still).on('afterLateral', still)
           </ul>
         </div>
         <div>
-          <h4>Zumly</h4>
+          <h2>Zumly</h2>
           <ul>
             <li><a href="../">Live demo</a></li>
             <li><a href="../api.html">API reference</a></li>
@@ -263,12 +265,25 @@ app.on('afterZoomIn', still).on('afterZoomOut', still).on('afterLateral', still)
       var webgl = document.getElementById('webgl-on')
       var frame = document.getElementById('heavy-demo')
       var open = document.getElementById('heavy-open')
+      var run = document.getElementById('heavy-run')
+      function current () {
+        return 'examples/heavy.html' + (!rasterize.checked ? '?rasterize=0' : webgl.checked ? '?webgl=1' : '')
+      }
+      function start () {
+        frame.src = current()
+        run.hidden = true
+      }
+      // The example is heavy on purpose: on a phone it waits for a tap instead of loading with the page.
+      if (matchMedia('(min-width: 760px)').matches) start()
+      else {
+        run.hidden = false
+        run.addEventListener('click', start)
+      }
       function reload (event) {
         if (event.target === webgl && webgl.checked) rasterize.checked = true
         if (event.target === rasterize && !rasterize.checked) webgl.checked = false
-        var src = 'examples/heavy.html' + (!rasterize.checked ? '?rasterize=0' : webgl.checked ? '?webgl=1' : '')
-        frame.src = src
-        open.href = src
+        open.href = current()
+        start()
       }
       rasterize.addEventListener('change', reload)
       webgl.addEventListener('change', reload)
