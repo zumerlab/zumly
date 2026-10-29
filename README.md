@@ -302,10 +302,10 @@ app.on('viewChanged', ({ type, viewName, from, zoomLevel, node }) => {
 | --- | --- |
 | `viewChanged` | After every navigation and after `init()`: `type` (`'init'`, `'zoomIn'`, `'zoomOut'`, `'lateral'`), `viewName`, `from`, `zoomLevel`, `node`. |
 | `viewMounted` | A view was inserted: `viewName`, `node`. |
-| `beforeZoomIn` / `afterZoomIn` | `viewName`, and `zoomLevel` after. |
+| `beforeZoomIn` / `zoomInStart` / `afterZoomIn` | `viewName`, and `zoomLevel` from the start of the motion. `zoomInStart` fires when the new view is in place and starts to move. |
 | `beforeZoomOut` / `afterZoomOut` | `viewName` (the view returned to), `from`, `zoomLevel`, and `levels` when climbing several. |
 | `zoomOutProgress` | A followed gesture: `phase` (`'start'`, `'move'`, `'commit'`, `'cancel'`, `'end'`), `progress` 0–1, `duration` on release, `viewName`, `from`, `source`. |
-| `beforeLateral` / `afterLateral` | `viewName`, `from`, `isBack`. |
+| `beforeLateral` / `lateralStart` / `afterLateral` | `viewName`, `from`, `isBack`. `lateralStart` fires when the sibling starts to move in. |
 | `destroy` | The instance is being destroyed. |
 
 `on()` and `off()` are chainable; `off(event)` removes every handler for that event.
@@ -369,6 +369,12 @@ With `stream`, the photo follows the view, repainting only what changed, so a zo
 
 Photos are never taken during a transition; until one is ready, the view moves as itself. Light views are left alone (fewer than `minNodes` elements, 800, and no `backdrop-filter`), and `data-flatten="false"` keeps a view live behind. Try `animateEffects: false` first: it costs nothing and is often enough. The [heavy views guide](https://zumerlab.com/zumly/guides/heavy-views.html) has a live comparison and every option.
 
+`webgl: true` goes further: zooms are drawn in a WebGL canvas, and the views behind stay textures with their blur and dimming in a shader. Only the view you are in is DOM. It needs `flatten`. On a MacBook the GPU of a zoom drops from 40–70% to 7–8%, and on a GPU with little to spare it is the one that holds. A zoom-in waits 30–45 ms for a photo of the view coming in; with `hover: true` that happens while the pointer rests on the trigger. Past the third level everything behind stays as one picture (`ancestors`, on by default). `effects` adds your own effects in GLSL. Without WebGL2 the views stay DOM.
+
+```js
+new Zumly({ /* … */ flatten: { snapdom, stream }, webgl: { hover: true } })
+```
+
 ## With Orbit
 
 [Orbit](https://zumerlab.com/orbit/) places elements around a center. Its arcs, rings and satellites work inside Zumly views without glue code: put a `.bigbang` in a view, and make satellites (or their capsules) triggers.
@@ -397,7 +403,7 @@ app.use(Zumly.Router)              // script tag
 // import { ZumlyRouter } from 'zumly'; app.use(ZumlyRouter)
 ```
 
-The router writes the path to the hash (`#/home/rooms/kitchen`; a view opened from a trigger with data, such as `data-id`, carries it: `#/house/room?id=kitchen`) and makes the browser back button navigate back, laterally or out. Forward and opening a deep URL directly are not supported: a zoom needs the trigger it comes from. Options: `prefix` (default `'/'`) and `separator` (default `'/'`). Hash entries the router did not write are left alone.
+The router writes the path to the hash as a zoom-in or a move to a sibling starts, so a browser back during the motion returns to the view it left (`#/home/rooms/kitchen`; a view opened from a trigger with data, such as `data-id`, carries it: `#/house/room?id=kitchen`) and makes the browser back button navigate back, laterally or out. Forward and opening a deep URL directly are not supported: a zoom needs the trigger it comes from. Options: `prefix` (default `'/'`) and `separator` (default `'/'`). Hash entries the router did not write are left alone.
 
 ## Troubleshooting
 
@@ -433,6 +439,7 @@ Triggers are keyboard reachable. Background views are `inert` and hidden from as
 | `deferred` | `false` | Insert view content after the zoom. |
 | `debug` | `false` | Log navigation steps. |
 | `flatten` | `false` | Show views behind as a SnapDOM photo: `{ snapdom, stream, minNodes, scale }`, or `true` for the global `snapdom`. See [Heavy views](#heavy-views). |
+| `webgl` | `false` | Draw zooms with WebGL (needs `flatten`): `{ effects, glass, hover, ancestors }`, or `true`. See [Heavy views](#heavy-views). |
 
 Full types are in [types/zumly.d.ts](types/zumly.d.ts). `destroy()` removes listeners, navigation UI and the views it put in the canvas, so a new instance can start there at once (React StrictMode, hot reload). Anything else in the canvas stays yours.
 

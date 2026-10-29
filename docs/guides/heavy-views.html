@@ -43,11 +43,11 @@
     <header class="hero">
       <span class="hero-eyebrow">Guide</span>
       <h1 class="hero-title">Heavy views</h1>
-      <p class="hero-sub">A view with thousands of nodes, or with frosted glass, is costly to scale and blur on every frame. <code>flatten</code> keeps a photo of the view you are in, with SnapDOM, and moves the photo while the view sits behind. Zoom into a bright tile with it on, then off.</p>
+      <p class="hero-sub">A view with thousands of nodes, or with frosted glass, is costly to scale and blur on every frame. <code>flatten</code> keeps a photo of the view you are in, with SnapDOM, and moves the photo while the view sits behind; <code>webgl</code> also draws the zoom itself. Zoom into a bright tile with each one.</p>
     </header>
 
     <div class="demo">
-      <div class="demo-bar"><span>Live example</span><label class="demo-switch"><input type="checkbox" id="flatten-on" checked> flatten</label><a id="heavy-open" href="examples/heavy.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <div class="demo-bar"><span>Live example</span><label class="demo-switch"><input type="checkbox" id="flatten-on" checked> flatten</label><label class="demo-switch"><input type="checkbox" id="webgl-on"> webgl</label><a id="heavy-open" href="examples/heavy.html" target="_blank" rel="noopener">Open &#8599;</a></div>
       <iframe id="heavy-demo" src="examples/heavy.html" title="Heavy views: live example"></iframe>
     </div>
 
@@ -114,6 +114,77 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
       </ul>
     </section>
 
+    <section id="webgl">
+      <h2>Draw the zoom with WebGL</h2>
+      <p><code>webgl: true</code> goes one step further. While views move, Zumly draws them in a WebGL canvas as textures, and the views behind stay textures at rest, with their blur and dimming done in a shader. Only the view you are in is DOM. It needs <code>flatten</code>: it uses its SnapDOM and its stream.</p>
+      <pre><code>new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, stream }, webgl: true })</code></pre>
+      <ul>
+        <li>Before a zoom-in moves, the view coming in is photographed: 30 to 45 ms on a laptop, while the trigger looks pressed. Past 300 ms a ring shows. With <code>hover: true</code> that happens while the pointer rests on the trigger, and the zoom starts in under 20 ms.</li>
+        <li>The views behind come from <code>flatten</code>'s stream, so the click does not wait for them.</li>
+        <li>Siblings, a zoom-out that follows the finger and any number of levels go through WebGL too. Past the third level, everything behind stays as one picture, so nothing goes blank around the views you see.</li>
+        <li>Clicks, focus, text and accessibility stay the browser's: WebGL only draws what is behind or moving.</li>
+        <li>Without WebGL2, or when the browser takes the context away, the views go back to the DOM and zoom as before.</li>
+      </ul>
+      <p>The same board as above, Chrome on a MacBook, and the same board with the graphics drawn in software, as a GPU with nothing to spare:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th></th><th>With <code>flatten</code></th><th>With <code>webgl</code></th></tr></thead>
+        <tbody>
+          <tr><td>GPU while it zooms</td><td>40 to 70%</td><td>7 to 8%</td></tr>
+          <tr><td>The same, processor four times slower</td><td>42 to 60%</td><td>1 to 2%</td></tr>
+          <tr><td>Dropped frames on a weak GPU, in / out</td><td>79% / 82%</td><td>13% / 2%</td></tr>
+          <tr><td>From the click to the motion</td><td>4 to 14 ms</td><td>30 to 45 ms; under 20 with <code>hover</code></td></tr>
+        </tbody>
+      </table></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Option</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>effects</code></td><td style="white-space: nowrap"><code>{}</code></td><td>More effects for <code>transitions.effects</code>, by name, in GLSL. See below.</td></tr>
+          <tr><td><code>glass</code></td><td style="white-space: nowrap"><code>false</code></td><td>Whether the photo of a view coming in keeps its <code>backdrop-filter</code>. Much slower to take; the real view, glass and all, takes over when the zoom ends.</td></tr>
+          <tr><td><code>hover</code></td><td style="white-space: nowrap"><code>false</code></td><td>Build and photograph the view a trigger opens while the pointer or the focus rests on it. View functions run then, and their work is thrown away if no click follows. A view that fetches its data does it on hover too. Views with <code>mounted()</code>, custom elements and deferred views wait for the click.</td></tr>
+          <tr><td><code>ancestors</code></td><td style="white-space: nowrap"><code>true</code></td><td>Past the third level, keep everything behind as one picture. <code>false</code> lets the oldest view go, as without WebGL.</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Effects in the shader</h3>
+      <p><code>transitions.effects</code> works as before, in CSS filter syntax, and every CSS filter function is there. Your own are a few lines of GLSL: <code>uv</code> moves the point of the view that is read, <code>color</code> changes the color read there.</p>
+      <pre><code>new Zumly({
+  ...,
+  transitions: { effects: ['pixelate(6px) brightness(.8)', 'pixelate(12px) brightness(.6)'] },
+  webgl: {
+    effects: {
+      // Squares of v CSS px.
+      pixelate: { none: 0, uv: 'vec2 cell = v / photo; st = (floor(st / cell) + 0.5) * cell;' }
+    }
+  }
+})</code></pre>
+      <ul>
+        <li><code>none</code> is the value that leaves a view as it is. An effect takes up to four numbers, <code>v</code> and <code>vs</code> (a <code>vec4</code>); a <code>#hex</code> color counts as three.</li>
+        <li>In <code>uv</code>, <code>st</code> is the point of the view, from 0 to 1. In <code>color</code>, <code>rgb</code> and <code>a</code> are the color.</li>
+        <li>Both can read <code>photo</code> (the view's size in CSS px), <code>focus</code> and <code>focusSize</code> (the trigger, from 0 to 1), <code>progress</code> (how far the zoom has gone) and <code>time</code>.</li>
+        <li><code>animate: true</code> keeps a view behind redrawn at rest, for an effect that moves with <code>time</code>.</li>
+      </ul>
+      <h3>Good to know</h3>
+      <ul>
+        <li>Measured in Chrome. Safari and Firefox have WebGL2, but they are not measured yet.</li>
+        <li>A video or an iframe behind is a still picture, as with <code>flatten</code>.</li>
+        <li>Each view behind is a texture, and each level past the third keeps one more picture, about 4 MB at a pixel ratio of 2.</li>
+        <li>With live data on a slow processor, keeping the photo of the view you are in current can cost too much. Then <code>flatten</code> stops following it, and the next zoom-in waits for a photo of it.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Which one to use</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Your views</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr><td>Light: few nodes, no glass</td><td>Nothing. They are smooth already, and WebGL would only add the wait for a photo.</td></tr>
+          <tr><td>Heavy, on laptops and desktops</td><td><code>flatten</code>. No dropped frames, live data included, and the zoom starts at once.</td></tr>
+          <tr><td>Heavy, on tablets or small boards</td><td><code>webgl</code>. It is the one that holds when the GPU has little to spare.</td></tr>
+          <tr><td>Effects CSS does not have</td><td><code>webgl</code>.</td></tr>
+          <tr><td>A video or an iframe that must stay live behind</td><td><code>flatten</code> with <code>data-flatten="false"</code> on that view, or nothing. <code>webgl</code> draws every view behind as a picture.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
     <section>
       <h2>Try the cheap fix first</h2>
       <p><code>transitions: { animateEffects: false }</code> applies the blur at once instead of animating it. It needs nothing else, and with many nodes it already takes out part of the stutter. Chrome cannot run a blur animation on the compositor, so it redraws it from the main thread on every frame. Reach for <code>flatten</code> when that is not enough: frosted glass, thousands of nodes, or a slow device.</p>
@@ -122,6 +193,14 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
         <li>Use the <code>css</code> or <code>waapi</code> driver. They move views on the compositor; GSAP, Anime.js and Motion move them from the main thread, so any work there shows in the motion.</li>
         <li>A heavy view that comes in can grow empty: <code>data-deferred</code> on its trigger (or <code>deferred: true</code>) adds its content when the zoom ends.</li>
       </ul>
+      <p>And one for frosted glass: drop it while views move. Each pane of glass blurs what is under it again on every frame, and under it everything is moving. A mark on the canvas during the motion is enough:</p>
+      <pre><code>const canvas = document.querySelector('.canvas')
+const moving = () => { canvas.dataset.moving = '' }
+const still = () => { delete canvas.dataset.moving }
+app.on('zoomInStart', moving).on('beforeZoomOut', moving).on('lateralStart', moving)
+app.on('afterZoomIn', still).on('afterZoomOut', still).on('afterLateral', still)</code></pre>
+      <pre><code>.canvas[data-moving] .card { backdrop-filter: none; }</code></pre>
+      <p>On the example's board the GPU of a zoom goes from about 60% to 17%. The glass is back as soon as the view stops.</p>
     </section>
   </main>
   <footer class="site-footer">
@@ -177,16 +256,21 @@ new Zumly({ mount: '.canvas', initialView: 'home', views, flatten: { snapdom, st
     </div>
   </footer>
   <script>
-    // Reloads the example with flatten on or off
+    // Reloads the example with flatten and webgl on or off (webgl needs flatten)
     ;(function () {
-      var input = document.getElementById('flatten-on')
+      var flatten = document.getElementById('flatten-on')
+      var webgl = document.getElementById('webgl-on')
       var frame = document.getElementById('heavy-demo')
       var open = document.getElementById('heavy-open')
-      input.addEventListener('change', function () {
-        var src = 'examples/heavy.html' + (input.checked ? '' : '?flatten=0')
+      function reload (event) {
+        if (event.target === webgl && webgl.checked) flatten.checked = true
+        if (event.target === flatten && !flatten.checked) webgl.checked = false
+        var src = 'examples/heavy.html' + (!flatten.checked ? '?flatten=0' : webgl.checked ? '?webgl=1' : '')
         frame.src = src
         open.href = src
-      })
+      }
+      flatten.addEventListener('change', reload)
+      webgl.addEventListener('change', reload)
     })()
   </script>
 </body>

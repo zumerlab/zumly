@@ -65,6 +65,7 @@
             <tr><td><code>gestures</code></td><td>boolean | object</td><td></td><td><code>false</code></td><td>Zoom-out that follows the trackpad, a swipe or a pinch. See <a href="#opt-gestures">gestures</a></td></tr>
             <tr><td><code>labels</code></td><td>object | false</td><td></td><td>English labels</td><td>Accessible names of the back button, arrows and dots. See <a href="#opt-labels">labels</a></td></tr>
             <tr><td><code>flatten</code></td><td>boolean | object</td><td></td><td><code>false</code></td><td>Views behind shown as a SnapDOM photo, for smooth zooms with heavy views: <code>{ snapdom, stream, minNodes, scale }</code>, or <code>true</code> for the global <code>snapdom</code>. Per view: <code>data-flatten</code>. See <a href="guides/heavy-views.html">Heavy views</a></td></tr>
+            <tr><td><code>webgl</code></td><td>boolean | object</td><td></td><td><code>false</code></td><td>Zooms drawn in a WebGL canvas, and the views behind kept as textures with their effects in a shader. Needs <code>flatten</code>. <code>{ effects, glass, hover, ancestors }</code>: more effects in GLSL, the photo of a view coming in with its glass, views made ready while the pointer rests on their trigger, and everything behind kept past the third level (<code>true</code> by default). Without WebGL2 the views stay DOM. See <a href="guides/heavy-views.html#webgl">Heavy views</a></td></tr>
           </tbody>
         </table>
       </div>
@@ -384,12 +385,14 @@ console.log(app.getCurrentViewName());  // 'detail'
           <tbody>
             <tr><td><code>viewChanged</code></td><td><code>{ type, viewName, from, zoomLevel, node }</code></td><td>After every navigation and after <code>init()</code>; <code>type</code> is <code>'init'</code>, <code>'zoomIn'</code>, <code>'zoomOut'</code> or <code>'lateral'</code></td></tr>
             <tr><td><code>viewMounted</code></td><td><code>{ viewName, node }</code></td><td>View inserted into DOM and mounted() hook (if any) complete</td></tr>
-            <tr><td><code>beforeZoomIn</code></td><td><code>{ viewName }</code></td><td>Just before zoom-in animation starts</td></tr>
+            <tr><td><code>beforeZoomIn</code></td><td><code>{ viewName }</code></td><td>Before the view is resolved and the zoom-in starts</td></tr>
+            <tr><td><code>zoomInStart</code></td><td><code>{ viewName, zoomLevel }</code></td><td>The new view is in place and starts to move; <code>getCurrentViewName()</code> already names it</td></tr>
             <tr><td><code>afterZoomIn</code></td><td><code>{ viewName, zoomLevel }</code></td><td>After zoom-in animation completes</td></tr>
             <tr><td><code>beforeZoomOut</code></td><td><code>{ zoomLevel, viewName, from, levels? }</code></td><td>Just before zoom-out starts; <code>viewName</code> is the view returned to, <code>levels</code> when climbing several</td></tr>
             <tr><td><code>afterZoomOut</code></td><td><code>{ zoomLevel, viewName, from, levels? }</code></td><td>After zoom-out completes</td></tr>
             <tr><td><code>zoomOutProgress</code></td><td><code>{ phase, progress, duration?, viewName, from, source }</code></td><td>A zoom-out driven by a gesture (<code>gestures.follow</code>): <code>'start'</code> and <code>'move'</code> carry the 0–1 progress, <code>'commit'</code> or <code>'cancel'</code> fire on release with the <code>duration</code> left, <code>'end'</code> when the views settle. <code>source</code> is <code>'wheel'</code>, <code>'swipe'</code> or <code>'pinch'</code></td></tr>
             <tr><td><code>beforeLateral</code></td><td><code>{ viewName, from, isBack }</code></td><td>Before lateral navigation animation</td></tr>
+            <tr><td><code>lateralStart</code></td><td><code>{ viewName, from, isBack }</code></td><td>The sibling is in place and starts to move in</td></tr>
             <tr><td><code>afterLateral</code></td><td><code>{ viewName, from, isBack }</code></td><td>After lateral navigation animation</td></tr>
             <tr><td><code>destroy</code></td><td><code>{}</code></td><td>When destroy() is called</td></tr>
           </tbody>
@@ -406,10 +409,12 @@ console.log(app.getCurrentViewName());  // 'detail'
 
 <pre><code>app.on('viewMounted',  ({ viewName, node }) => { /* ... */ });
 app.on('beforeZoomIn', ({ viewName }) => { /* ... */ });
+app.on('zoomInStart',  ({ viewName, zoomLevel }) => { /* ... */ });
 app.on('afterZoomIn',  ({ viewName, zoomLevel }) => { /* ... */ });
 app.on('beforeZoomOut', ({ zoomLevel }) => { /* ... */ });
 app.on('afterZoomOut',  ({ zoomLevel }) => { /* ... */ });
 app.on('beforeLateral', ({ viewName, from, isBack }) => { /* ... */ });
+app.on('lateralStart',  ({ viewName, from, isBack }) => { /* ... */ });
 app.on('afterLateral',  ({ viewName, from, isBack }) => { /* ... */ });
 app.on('zoomOutProgress', ({ phase, progress }) => {
   backButton.style.setProperty('--progress', progress);  // follow the gesture
