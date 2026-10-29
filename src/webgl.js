@@ -256,7 +256,7 @@ function compile (gl, type, source) {
  *   glass: whether the photo of a view coming in or leaving keeps its backdrop-filter (slower to take).
  * @returns {object|null} null without WebGL2: the views stay DOM.
  */
-export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlass = false, hover = false }) {
+export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlass = false, hover = false, ancestors = false }) {
   const log = msg => app.notify(`webgl: ${msg}`, 'info')
   const flattener = () => app._flattener
   const canvas = document.createElement('canvas')
@@ -418,6 +418,8 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     lost = true
     if (early?.node) disposeView(early.node)
     early = null
+    deep = null
+    deeps.length = 0
     log('context lost, views back to DOM.')
     release()
   })
@@ -791,6 +793,11 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
         if (!app.canvas.dataset.zGlMoving && !scrub) draw(last)
       })
     }
+    paint(layers)
+  }
+
+  /** The layers on the screen, or into a texture (into: { fbo, width, height, ratio }). */
+  function paint (layers, into = null) {
     // Blurs first: they draw into their own framebuffers. CSS blurs a view in its own pixels,
     // before its transform, so σ is in texels of the photo.
     const textures = layers.map(({ rec, effect, alpha }) => {
@@ -798,12 +805,14 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
       if (alpha <= 0 || sigma < 0.5) return null
       return blurred(rec, sigma)
     })
+    const [width, height, ratio] = into ? [into.width, into.height, into.ratio] : [canvas.width, canvas.height, dpr]
     gl.useProgram(view.program)
-    gl.viewport(0, 0, canvas.width, canvas.height)
+    if (into) gl.bindFramebuffer(gl.FRAMEBUFFER, into.fbo)
+    gl.viewport(0, 0, width, height)
     gl.clearColor(0, 0, 0, 0)
     gl.clear(gl.COLOR_BUFFER_BIT)
-    gl.uniform2f(u.size, canvas.width / dpr, canvas.height / dpr)
-    gl.uniform1f(u.yDir, -1)
+    gl.uniform2f(u.size, width / ratio, height / ratio)
+    gl.uniform1f(u.yDir, into ? 1 : -1)
     gl.uniform1f(u.time, performance.now() / 1000)
     layers.forEach(({ rec, matrix: k, origin, pos, box, effect, alpha, progress, focus }, i) => {
       if (alpha <= 0) return
@@ -826,10 +835,80 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
         // Sharp: the mip level the screen scale needs, so a view that shrinks does not shimmer.
         mips(rec)
         gl.bindTexture(gl.TEXTURE_2D, rec.texture)
-        gl.uniform1f(u.lod, Math.max(0, Math.log2(rec.ratio / ((Math.hypot(k.a, k.b) || 1) * dpr))))
+        gl.uniform1f(u.lod, Math.max(0, Math.log2(rec.ratio / ((Math.hypot(k.a, k.b) || 1) * ratio))))
       }
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     })
+    if (into) gl.bindFramebuffer(gl.FRAMEBUFFER, null)
+  }
+
+  /**
+   * ancestors: the engine keeps three views, and a zoom-in to a fourth level takes the oldest
+   * out; what showed of it around the others went blank. Instead, the views WebGL no longer
+   * draws (that one, and the picture of all before it) are drawn once into one picture the size
+   * of the canvas, at half the screen's pixels (it is behind, blurred), and it moves with the
+   * scene, behind everything. One per level past the third: a zoom-out goes back to the one
+   * before, and sync() keeps as many as views the engine took out.
+   */
+  let deep = null // { rec, matrix }: the picture, and where it is on the canvas (CSS px)
+  const deeps = [] // the ones before it, oldest first
+  // view → its layer the last time it was drawn at rest: the view a zoom-in takes out is
+  // detached by then, with no layout to read.
+  const rested = new WeakMap()
+  const DEEP = {}
+  const screenOf = (pos, origin, m) => new DOMMatrix().translate(pos[0] + origin[0], pos[1] + origin[1]).multiply(m).translate(-origin[0], -origin[1])
+  const deepLayer = (d, matrix) => ({ view: DEEP, deep: true, rec: d.rec, matrix, origin: [0, 0], pos: [0, 0], box: d.rec.rect.slice(2), effect: NONE, alpha: 1, progress: 1, focus: [0, 0, 0, 0] })
+
+  function compose (layers) {
+    const w = canvas.width / dpr
+    const h = canvas.height / dpr
+    const ratio = Math.max(1, dpr / 2)
+    const width = Math.ceil(w * ratio)
+    const height = Math.ceil(h * ratio)
+    const texture = gl.createTexture()
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    gl.texStorage2D(gl.TEXTURE_2D, Math.floor(Math.log2(Math.max(width, height))) + 1, gl.RGBA8, width, height)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+    const fbo = gl.createFramebuffer()
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo)
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
+    paint(layers, { fbo, width, height, ratio })
+    gl.deleteFramebuffer(fbo)
+    return { texture, width, height, ratio, rect: [0, 0, w, h], dirty: true }
+  }
+
+  function dropDeep (d) {
+    if (!d) return
+    dropTargets(d.rec)
+    gl.deleteTexture(d.rec.texture)
+  }
+
+  function dropDeeps () {
+    for (const d of deeps) dropDeep(d)
+    deeps.length = 0
+    dropDeep(deep)
+    deep = null
+  }
+
+  /**
+   * The picture moving as the scene does: ref is a view behind that moves in this navigation
+   * (from, to, its origin); the picture takes the same move on the canvas. at(t) its layer,
+   * end() leaves it where the move ends.
+   */
+  function deepMotion (ref) {
+    if (!deep || !ref) return null
+    const own = deep
+    const pos = [ref.view.offsetLeft, ref.view.offsetTop]
+    const screen = m => screenOf(pos, ref.origin, m)
+    const back = screen(ref.from).inverse()
+    const start = own.matrix
+    const move = t => screen(interpolateMatrix(ref.from, ref.to, t)).multiply(back).multiply(start)
+    return {
+      at: t => deepLayer(own, move(t)),
+      end: () => { own.matrix = move(1) }
+    }
   }
 
   const views = () => [...app.canvas.children].filter(v => v.classList.contains('z-view'))
@@ -885,6 +964,15 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
       const effect = restEffect(view)
       shown.set(view, effect)
       layers.push(layer(view, rec, m, origin, effect))
+      rested.set(view, layers[layers.length - 1])
+    }
+    if (ancestors) {
+      const out = Math.max(0, app.zoomLevel() - 3)
+      while (deep && deeps.length + 1 > out) {
+        dropDeep(deep)
+        deep = deeps.pop() || null
+      }
+      if (deep) layers.unshift(deepLayer(deep, deep.matrix))
     }
     draw(layers)
   }
@@ -1058,11 +1146,14 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     })).sort((a, b) => a.z - b.z)
     const ms = parseDurationMs(spec.duration)
     const curve = cssEasing(spec.ease) || (t => t)
+    const motion = ancestors ? deepMotion(layers.find(l => l.view === backView)) : null
     const at = (elapsed) => {
       const t = curve(clamp01(elapsed / ms))
-      return layers.map(l => layer(l.view, l.rec, interpolateMatrix(l.from, l.to, t), l.origin, l.effect, l.fade ? lerp(l.fade[0], l.fade[1], t) : 1))
+      const drawn = layers.map(l => layer(l.view, l.rec, interpolateMatrix(l.from, l.to, t), l.origin, l.effect, l.fade ? lerp(l.fade[0], l.fade[1], t) : 1))
+      return motion ? [motion.at(t), ...drawn] : drawn
     }
     play(ms, at, () => {
+      motion?.end()
       // The views behind stay drawn where they end; the sibling is DOM from now on.
       draw(at(ms).filter(l => l.view !== incoming && l.view !== outgoing))
       incoming.style.transform = incomingEnd
@@ -1102,6 +1193,16 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
         if (scripted(animation)) animation.cancel()
       }
     }
+    const out = forward && currentStage.views[3]?.detachedNode
+    if (ancestors && out && rested.has(out)) {
+      // What WebGL drew and no longer will: the view the engine took out, and the picture behind it.
+      const gone = deep ? [deepLayer(deep, deep.matrix), rested.get(out)] : [rested.get(out)]
+      if (deep) deeps.push(deep)
+      deep = { rec: compose(gone), matrix: new DOMMatrix() }
+    } else if (ancestors && deep && !forward) {
+      // The view the engine puts back for a zoom-out is in the picture until it ends.
+      for (const view of views()) if (!entries.some(e => e.view === view)) view.classList.add(OFF)
+    }
     const order = views()
     for (const { view } of entries) focusOf(view)
     const layers = entries.map(({ view, state, role }) => {
@@ -1123,18 +1224,23 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     const stagger = currentStage.stagger || 0
     const curve = cssEasing(spec.ease) || (t => t)
     const total = ms + stagger * (layers.length - 1)
+    const motion = ancestors ? deepMotion(layers.find(l => l.role === 1)) : null
     const at = (elapsed) => {
       const fxT = curve(clamp01(elapsed / ms))
-      return layers.map(l => {
+      const drawn = layers.map(l => {
         const t = curve(clamp01((elapsed - l.role * stagger) / ms))
         const alpha = !forward && l.role === 0 ? clamp01((1 - clamp01(elapsed / ms)) / FADE) : 1
         return layer(l.view, l.rec, interpolateMatrix(l.from, l.to, t), l.origin, mixEffect(l.fx[0], l.fx[1], fxT), alpha, forward ? fxT : 1 - fxT)
       })
+      return motion ? [motion.at(curve(clamp01((elapsed - stagger) / ms))), ...drawn] : drawn
     }
     play(total, at, () => {
+      motion?.end()
       if (forward) {
         // The views behind stay drawn where they end; the one in front is DOM from now on.
-        draw(at(total).filter(l => l.view !== currentView))
+        const behindNow = at(total).filter(l => l.view !== currentView)
+        for (const l of behindNow) if (!l.deep) rested.set(l.view, l)
+        draw(behindNow)
         showViews(currentView, previousView, lastView)
         for (const { view } of entries) applyZoomInEndState(view, currentStage)
         show(currentView)
@@ -1334,6 +1440,8 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     return {
       runTransition (spec, done) {
         const dom = () => {
+          // A navigation WebGL does not draw leaves the pictures of ancestors out of step.
+          if (ancestors && (spec.type === 'zoomIn' || spec.type === 'zoomOut')) dropDeeps()
           release()
           driver.runTransition(spec, () => {
             done()
@@ -1382,12 +1490,15 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     }
     for (const { view } of layers) view.classList.add(OFF)
     app.canvas.dataset.zGlMoving = 'scrub'
-    scrub = { layers, progress: 0 }
+    scrub = { layers, progress: 0, deep: ancestors ? deepMotion(layers[0]) : null }
     draw(scrubLayers(scrub, 0))
     return true
   }
 
-  const scrubLayers = (own, p) => own.layers.map(l => layer(l.view, l.rec, interpolateMatrix(l.from, l.to, p), l.origin, mixEffect(l.fx[0], l.fx[1], p), 1, 1 - p))
+  const scrubLayers = (own, p) => {
+    const drawn = own.layers.map(l => layer(l.view, l.rec, interpolateMatrix(l.from, l.to, p), l.origin, mixEffect(l.fx[0], l.fx[1], p), 1, 1 - p))
+    return own.deep ? [own.deep.at(p), ...drawn] : drawn
+  }
 
   /** The gesture moved: progress 0 (where it started) to 1 (the zoom-out done). */
   function scrubTo (progress) {
@@ -1416,8 +1527,10 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
         scrub = null
         // Put back, it is at rest as before; done, it stays drawn until the engine's zoom-out,
         // instant now, hands the views to the DOM.
-        if (commit) draw(scrubLayers(own, 1))
-        else sync()
+        if (commit) {
+          draw(scrubLayers(own, 1))
+          own.deep?.end()
+        } else sync()
       }, resolve, false)
     })
   }
@@ -1435,6 +1548,7 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     app.canvas.removeEventListener('pointerover', onHover)
     app.canvas.removeEventListener('focusin', onHover)
     dropEarly()
+    dropDeeps()
     observer.disconnect()
     clearTimeout(retextureTimer)
     cancelAnimationFrame(alive)

@@ -36,6 +36,10 @@
   .reading .nexts { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 8px; }
   .reading .next { width: 64px; height: 44px; border-radius: 10px; display: grid; place-items: center; font: 700 16px ui-monospace, monospace; background: hsl(var(--h, 205) 60% 40% / .5); border: 1px solid hsl(var(--h, 205) 70% 70% / .6); cursor: pointer; }
   .reading .big { font: 700 72px/1 ui-monospace, monospace; margin: 18px 0 0; }
+  /* big=1: the first next takes most of its reading, so each level zooms ~1.5× and the views
+     two or three levels back still show around the current one. */
+  .big-next .reading .next:first-child { width: 210px; height: 140px; font-size: 40px; }
+  .big-next .reading .big { display: none; }
   .row { height: 22px; border-radius: 6px; padding: 0 8px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; background: hsl(var(--h) 60% 50% / .18); backdrop-filter: blur(4px); }
 
   /* live=1: a big counter. A zoom that opens on an old photo shows here, by eye. */
@@ -91,10 +95,14 @@ const opt = {
   // down to level N. Without it, two levels: board and detail.
   levels: Math.min(10, Math.max(2, parseInt(q.get('levels'), 10) || 2)),
   hover: q.get('hover') === '1', // with gl: experiment 10, a zoom-in gets ready while the pointer is on its trigger
+  ancestors: q.get('ancestors') === '1', // with gl: every view behind stays, as one picture (try with levels=6)
+  ms: parseInt(q.get('ms'), 10) || 0, // the length of a zoom, in ms (Zumly's own without it)
+  bigNext: q.get('big') === '1', // with levels: small zooms, where the views far behind show
   slow: Math.max(0, parseInt(q.get('slow'), 10) || 0), // a detail takes that many ms to fetch its readings
   driver: q.get('driver') || 'css', // vt: experiment 8, the View Transitions API (vt-driver.js)
 }
 const effects = opt.fx !== 'pane' && opt.fx !== 'none'
+document.documentElement.classList.toggle('big-next', opt.bigNext)
 
 // With gl=1, the views behind take any effect the shader knows: CSS's filter functions, and
 // these, which only WebGL draws. Each is a few lines of GLSL (see EFFECTS in gl.js): v is the
@@ -289,6 +297,7 @@ const app = new Zumly({
     // the glass does it.
     effects: effects ? (opt.gl && LOOKS[opt.look]) || LOOKS.css : ['none', 'none'],
     animateEffects: opt.fx !== 'instant',
+    ...(opt.ms ? { duration: `${opt.ms}ms` } : {}),
   },
   // The stream is wrapped to log its frames (window.streamLog), for debugging flatten.
   flatten: opt.flatten && {
@@ -302,7 +311,7 @@ const app = new Zumly({
     }),
   },
   // gl=1 (experiment 7, now in src/webgl.js): zooms drawn with WebGL, with the look's effects.
-  webgl: opt.gl && { effects: GL_EFFECTS, glass: opt.glass, hover: opt.hover },
+  webgl: opt.gl && { effects: GL_EFFECTS, glass: opt.glass, hover: opt.hover, ancestors: opt.ancestors },
   gestures: { follow: opt.follow },
 })
 window.streamLog = []

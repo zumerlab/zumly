@@ -91,7 +91,7 @@ describe('webgl: option', () => {
 
   it('takes effects as GLSL by name, and warns about anything else', async () => {
     await start({ webgl: { effects: { pixelate: { none: 0, uv: 'st = st;' } }, glass: true } })
-    expect(app.webgl).toEqual({ effects: { pixelate: { none: 0, uv: 'st = st;' } }, glass: true, hover: false })
+    expect(app.webgl).toEqual({ effects: { pixelate: { none: 0, uv: 'st = st;' } }, glass: true, hover: false, ancestors: false })
     app.destroy()
     await start({ webgl: { effects: { bad: { uv: 1 } } } })
     expect(app.webgl.effects).toEqual({})
@@ -230,6 +230,19 @@ describe.runIf(hasWebGL2)('webgl', () => {
     await app.zoomIn(role('current').querySelector('.zoom-me[data-to="b"]'))
     await settled()
     expect(role('current').dataset.viewName).toBe('b')
+  })
+
+  it('ancestors: past the third level, the views behind stay as one picture, and go back', async () => {
+    await start({ webgl: { ancestors: true }, views: { ...views, c: view('c', ['d']), d: view('d') } })
+    for (const to of ['a', 'c', 'd']) {
+      await app.zoomIn(role('current').querySelector(`.zoom-me[data-to="${to}"]`))
+      await settled()
+    }
+    await expect.poll(() => app._webgl.layers.some(l => l.deep)).toBe(true)
+    await app.zoomOut()
+    await settled()
+    expect(role('current').dataset.viewName).toBe('c')
+    await expect.poll(() => app._webgl.layers.some(l => l.deep)).toBe(false)
   })
 
   it('takes its canvas and hidden views away on destroy', async () => {

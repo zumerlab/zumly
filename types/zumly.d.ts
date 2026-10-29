@@ -237,6 +237,12 @@ export interface WebGLOptions {
    * deferred views wait for the click as before. Default: false.
    */
   hover?: boolean
+  /**
+   * Experimental. Zumly keeps three views; a zoom-in to a fourth level takes the oldest out, and
+   * what showed of it goes blank. With ancestors, every view behind the two it draws stays, as
+   * one picture that moves with the zoom. Default: false.
+   */
+  ancestors?: boolean
 }
 
 /** Options for goTo(). */

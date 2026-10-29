@@ -21,7 +21,7 @@ const DEPTH_NAV_STYLES = ['button', 'title', 'rings']
 const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch', 'pinch']
 const GESTURE_KEYS = ['follow', 'threshold']
 const FLATTEN_KEYS = ['snapdom', 'stream', 'minNodes', 'scale']
-const WEBGL_KEYS = ['effects', 'glass', 'hover']
+const WEBGL_KEYS = ['effects', 'glass', 'hover', 'ancestors']
 const LABEL_KEYS = ['back', 'prev', 'next', 'goTo']
 /** Accessible names of the navigation controls. {title} and {name} name the target view. */
 const DEFAULT_LABELS = { back: 'Back to {title}', prev: 'Previous sibling view', next: 'Next sibling view', goTo: 'Go to {title}' }
@@ -493,7 +493,7 @@ export function checkParameters (parameters, instance) {
     if (!instance.flatten) {
       notification(false, '\'webgl\' needs flatten (its SnapDOM photos and stream). Ignoring.', 'warn')
     } else {
-      instance.webgl = { effects: {}, glass: false, hover: false }
+      instance.webgl = { effects: {}, glass: false, hover: false, ancestors: false }
       if (o.effects !== undefined) {
         const amount = n => typeof n === 'number' || (Array.isArray(n) && n.length <= 4 && n.every(x => typeof x === 'number'))
         const valid = o.effects && typeof o.effects === 'object' && Object.values(o.effects).every(e => e && amount(e.none) && (typeof e.uv === 'string' || typeof e.color === 'string'))
@@ -507,6 +507,10 @@ export function checkParameters (parameters, instance) {
       if (o.hover !== undefined) {
         if (typeof o.hover === 'boolean') instance.webgl.hover = o.hover
         else notification(false, '\'webgl.hover\' must be true or false. Falling back to false.', 'warn')
+      }
+      if (o.ancestors !== undefined) {
+        if (typeof o.ancestors === 'boolean') instance.webgl.ancestors = o.ancestors
+        else notification(false, '\'webgl.ancestors\' must be true or false. Falling back to false.', 'warn')
       }
     }
   } else if (glIn !== undefined && glIn !== false) {

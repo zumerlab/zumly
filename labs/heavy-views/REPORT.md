@@ -2,6 +2,39 @@
 
 Sesión del 28/10/2026, sobre Zumly 1.1.0 (`main`, `d4484fc`). Martin pidió más fluidez en las transiciones con vistas pesadas: la guía [Heavy views](https://zumerlab.com/zumly/guides/heavy-views.html) todavía no llega a ser óptima. Antes de tocar código quiso ver los caminos posibles y lo que puede ganar cada uno. Después pidió evaluar tres ideas suyas de la época de Zircle UI y sumó una cuarta: preparar todo antes de animar, con un aviso si tarda. En la sesión no se cambió nada en `src/`; lo nuevo es esta carpeta `labs/`.
 
+## Qué sistema usar (29/10, después de todos los experimentos)
+
+Depende de dos cosas que se pueden medir: cuán pesadas son las vistas y cuánta GPU tiene el equipo. La capa fija es otra cosa: no es una forma de dibujar el zoom, sino de poner los efectos (ver abajo).
+
+| Caso | Lo mejor | Por qué |
+|---|---|---|
+| Vistas livianas (pocos nodos, sin vidrio) | CSS solo | Ya es fluido. WebGL sumaría 30-45 ms de espera y SnapDOM, para nada. |
+| Vistas pesadas, equipo bueno | CSS + `flatten` | Con el stream nuevo, 0 % de cuadros perdidos, también en vivo. Arranca en 4-14 ms. |
+| Vistas pesadas, equipo flojo (tablet, Pi, Pulse) | WebGL | Es el único que aguanta: 2-13 % perdidos, contra 60-95 % del DOM. |
+| Efectos que CSS no tiene | WebGL | Pixelado, goma, cualquier shader. |
+| Video o iframes vivos atrás | CSS sin `flatten` | SnapDOM no los captura; WebGL los mostraría congelados. |
+| Un fondo vivo (video, iframes, datos) y desenfocado detrás | CSS + capa fija | Las vistas de atrás siguen siendo DOM y se mueven bajo el vidrio. |
+
+- **Para Zumly como librería:** CSS por defecto (sin dependencias, anda en todos lados), `flatten` para vistas pesadas y WebGL como opción de arriba. Es lo que hay hoy en `dev`.
+- **Para Pulse:** WebGL. Tableros en vivo, con vidrio, en hardware modesto.
+- **Para que WebGL sea el default** (con vistas pesadas y SnapDOM) falta:
+  - medirlo en Safari y Firefox (todo lo medido fue Chrome);
+  - probarlo en la tablet real;
+  - que el tablero en vivo en reposo con CPU 4× deje de perder 41-49 %.
+
+**La capa fija.** Un vidrio quieto entre la vista actual y las de atrás, en vez de que cada vista de atrás tenga su propio blur que crece con ella (experimento 3, `fx=pane`).
+- **Medido con CSS:**
+  - el zoom-in va fluido;
+  - el zoom-out arrastra en la segunda mitad, porque la GPU no llega con la capa, los vidrios del tablero y los del detalle;
+  - con la marca de movimiento (`moving=1`) deja de arrastrar;
+  - en una GPU floja es arriesgada: un `backdrop-filter` del tamaño del lienzo es de lo más caro.
+- **Su nicho:** es la única forma de tener el fondo vivo y desenfocado sin SnapDOM. `flatten` y WebGL convierten el fondo en foto o textura.
+- **En WebGL** sería barata (una pasada sobre la pantalla), pero ahí el fondo ya es textura y se pierde lo vivo.
+- **Cambia el look:** vidrio esmerilado quieto, en vez de una imagen borrosa que crece. Es una decisión de diseño.
+- **Para fluidez no suma**, y por eso quedó descartada el 29/10. Vuelve solo si alguien necesita un fondo vivo desenfocado.
+
+En una línea: CSS de base, `flatten` en el medio para equipos buenos, WebGL de techo, y la capa fija solo para fondos vivos.
+
 ## Dónde estamos
 
 `flatten` (1.1.0) muestra las vistas de atrás como una foto de SnapDOM, que `stream` mantiene al día, y la foto se mueve como una textura. En el banco de vidrio de `experiments/snapdom-compositor/`, en vivo y con dpr 2, los cuadros perdidos bajaron de 54,8 % a 6,1 %.
@@ -577,6 +610,26 @@ Medido contra el mismo driver CSS, sin y con `flatten`. Medianas de dos corridas
 - **Con `flatten`, no suma:** pierde lo mismo, con casi el doble de GPU en el zoom-in, y arranca 20-45 ms tarde, porque el navegador tiene que capturar antes de mover.
 - **Además:** las vistas se dibujan por encima de todo (no las recorta el lienzo), y durante la transición la página no responde a clics.
 - **Descartado.** Hace lo mismo que `flatten` con menos control, y queda lejos de WebGL.
+
+## Experimento 11: todas las vistas de atrás, en una sola imagen (29/10)
+
+Martin: "en los zoom-in se ven las vistas previas; ahora hay hasta dos, y al ir más hondo la última se elimina y aparece un vacío. ¿Una sola vista compuesta de todo lo anterior?"
+
+- **Qué pasa hoy:** el motor tiene como mucho tres vistas: la actual y dos atrás. Un zoom-in a un nivel más saca del lienzo la más vieja al arrancar (`src/zumly.js`, `removeView`). Lo que se veía de ella alrededor de las otras queda en blanco de golpe.
+  - Solo se nota cuando cada nivel acerca poco: disparadores grandes o vistas chicas.
+  - En la demo de niveles normal cada nivel acerca 5×, y la vista de dos niveles atrás ya tapa todo.
+- **`webgl: { ancestors: true }`:** cuando el motor saca la vista más vieja, WebGL dibuja una vez, en una sola imagen del tamaño del lienzo, esa vista más la imagen de todo lo que había detrás. Esa imagen se mueve con la escena y queda atrás de todo.
+  - Va a la mitad de los píxeles de la pantalla, porque queda atrás y borrosa.
+  - Hay una por nivel pasado el tercero (~4 MB cada una a dpr 2). Un zoom-out vuelve a la anterior.
+  - La vista que el motor vuelve a poner queda escondida hasta que termina el zoom-out, para que no aparezca quieta.
+  - También sigue a los hermanos y al gesto.
+  - Una navegación que WebGL no dibuja (sin animación, `keepAlive: 'visible'`) corta la cadena: se tiran las imágenes y vuelve el vacío.
+- **Visto a ojo** (headless, `demo.html?gl=1&levels=8&big=1&ms=300&ancestors=1`; `big=1` hace que cada nivel acerque ~1,5×):
+  - sin la opción, en el nivel 6 se ve la vista actual, la de atrás y la anterior, y el resto es fondo vacío;
+  - con la opción, alrededor se ven los niveles de antes, cada vez más borrosos, y se mueven con el zoom en los dos sentidos;
+  - el nivel 5 al entrar y al volver del 6 queda idéntico.
+- **Costo:** una pasada más por zoom-in, solo cuando el motor saca una vista, y la memoria de las imágenes. No está medido con trace.
+- **Pendiente:** que Martin lo mire a mano, y decidir el look. Hoy cada imagen guarda el efecto con que se dibujó; se podría oscurecer o desenfocar más a cada nivel.
 
 ## Plan
 
