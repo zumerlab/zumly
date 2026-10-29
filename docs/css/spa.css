@@ -133,16 +133,9 @@ html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143
 .sc-label h4 { font-size: 0.95rem; margin: 2px 0 0; }
 .sc-label p { font-size: 0.8rem; color: var(--text-dim); margin: 3px 0 6px; }
 .sc-label a { font-size: 0.78rem; color: var(--accent); }
-/* The Phone showcase runs on its own page (WebGL, its own Zumly): its card is a drawing of it. */
-.sc-phone { display: grid; place-items: center; background: radial-gradient(circle at 30% 20%, #232a52, #0b0d16 70%); }
-.sc-phone-body { height: 82%; aspect-ratio: 390 / 844; padding: 2.4%; border-radius: 14% / 6.5%; background: #2b2e36; box-shadow: 0 8px 30px #0008; }
-.sc-phone-screen {
-  position: relative; height: 100%; border-radius: 12% / 5.6%; overflow: hidden; padding: 22% 9% 0;
-  display: grid; grid-template-columns: repeat(4, 1fr); align-content: start; gap: 9% 12%;
-  background: radial-gradient(circle at 15% 8%, #ff8a5c, transparent 55%), radial-gradient(circle at 95% 45%, #7b5cff, transparent 55%), radial-gradient(circle at 25% 100%, #19b4ff, transparent 55%), #1b1238;
-}
-.sc-phone-screen i { aspect-ratio: 1; border-radius: 24%; }
-.sc-phone-screen b { position: absolute; left: 6%; right: 6%; bottom: 3%; height: 11%; border-radius: 30%; background: #ffffff40; }
+/* The Phone showcase runs on its own page (WebGL, its own Zumly): its card is a screenshot of it. */
+.sc-phone { display: block; position: relative; background: radial-gradient(circle at 30% 20%, #232a52, #0b0d16 70%); }
+.sc-phone img { position: absolute; top: 7%; left: 50%; height: 86%; width: auto; transform: translateX(-50%); }
 
 /* ━━━ API view ━━━ */
 .v-doc { background: var(--bg); }

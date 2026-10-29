@@ -24,7 +24,10 @@
   <link rel="help" type="text/plain" href="llms-full.txt" title="LLM-friendly full reference" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <!-- The home view's fish is the largest thing on screen: fetch it before the view arrives. -->
+  <link rel="preload" as="image" href="fish-480.png" fetchpriority="high" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" /></noscript>
   <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
   <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
   <link rel="stylesheet" href="css/site.css" />
@@ -54,10 +57,9 @@
 
     // The Phone showcase draws its zooms with WebGL on its own page: its card opens that page.
     function phoneCard () {
-      var colors = ['#111', '#fff', '#ffd60a', '#8e8e96', '#fa233b', '#5ac46b', '#c7c7cc', '#0a84ff', '#111', '#333', '#ffffff55', '#fff']
-      var icons = colors.map(function (c) { return '<i style="background:' + c + '"></i>' }).join('')
       return '<div class="sc-card">' +
-        '<a class="sc-preview sc-phone" href="showcases/phone.html" target="_blank" rel="noopener" aria-label="Open Phone"><div class="sc-phone-body"><div class="sc-phone-screen">' + icons + '<b></b></div></div></a>' +
+        '<a class="sc-preview sc-phone" href="showcases/phone.html" target="_blank" rel="noopener" aria-label="Open Phone">' +
+        '<img src="showcases/phone-preview.webp" alt="" width="168" height="361" loading="lazy" decoding="async"></a>' +
         '<div class="sc-label"><span class="sc-tag">WebGL</span><h4>Phone</h4><p>An iOS-style home screen: every app opens with a zoom from its icon. Change how often SnapDOM captures the screen and watch the zoom.</p>' +
         '<a href="showcases/phone.html" target="_blank" rel="noopener">Open full screen &#8599;</a></div></div>'
     }

@@ -16,7 +16,8 @@
   <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
   <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
   <style>
     * { box-sizing: border-box; }
@@ -71,7 +72,7 @@
     .widget.weather .temp { font-size: 12cqw; font-weight: 300; line-height: 1.1; }
     .widget.weather small { margin-top: auto; font-size: 3.2cqw; opacity: .9; }
     .widget.calendar { background: #fff; color: #111; }
-    .widget.calendar .day { color: #fa3b30; font-weight: 700; font-size: 3.4cqw; line-height: 1; text-transform: uppercase; }
+    .widget.calendar .day { color: #e0261c; font-weight: 700; font-size: 3.4cqw; line-height: 1; text-transform: uppercase; }
     .widget.calendar .date { font-size: 12cqw; font-weight: 300; line-height: 1.1; }
     .widget.calendar small { margin-top: auto; font-size: 3.2cqw; color: #555; border-left: 1cqw solid #34c759; padding-left: 1.6cqw; }
     .widget-label { text-align: center; font-size: 3cqw; margin-top: 1.4cqw; }
@@ -101,7 +102,7 @@
     .ic-photos { background: #fff !important; }
     .ic-photos::before { content: ''; position: absolute; inset: 2.6cqw; border-radius: 50%; background: conic-gradient(#f9c74f, #f9844a, #f94144, #c9184a, #7209b7, #4361ee, #4cc9f0, #43aa8b, #90be6d, #f9c74f); }
     .ic-calendar { background: #fff !important; color: #111 !important; display: flex !important; flex-direction: column; justify-content: center; gap: .6cqw; }
-    .ic-calendar em { font-size: 2.4cqw; font-weight: 700; line-height: 1; color: #fa3b30; font-style: normal; text-transform: uppercase; }
+    .ic-calendar em { font-size: 2.4cqw; font-weight: 700; line-height: 1; color: #e0261c; font-style: normal; text-transform: uppercase; }
     .ic-calendar strong { font-size: 7.6cqw; font-weight: 300; line-height: 1; }
     .ic-notes { background: linear-gradient(#ffd60a 0 26%, #fff 26%) !important; }
     .ic-notes::before { content: ''; position: absolute; inset: 7cqw 2.6cqw 2.6cqw; background: repeating-linear-gradient(#ddd 0 .3cqw, transparent .3cqw 2cqw); }
@@ -202,10 +203,7 @@
     .control small { display: block; color: #8b91a6; margin-top: 4px; font-size: 13px; }
     .modes { display: flex; gap: 6px; margin: 6px 0 4px; }
     .modes a { flex: 1; text-align: center; padding: 7px 0; border-radius: 9px; border: 1px solid #2c3350; color: #c8cde0; text-decoration: none; font-weight: 600; font-size: 14px; }
-    .modes a.on { background: #6d8dff; border-color: #6d8dff; color: #fff; }
-    .stats { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 18px 0; padding: 14px 16px; border-radius: 12px; background: #ffffff0d; font-size: 14px; }
-    .stats dt { color: #8b91a6; }
-    .stats dd { margin: 0; font-variant-numeric: tabular-nums; }
+    .modes a.on { background: #4562d6; border-color: #4562d6; color: #fff; }
     .links { font-size: 14px; }
     .links a { color: #8fb4ff; }
     @media (max-width: 760px) {
@@ -234,18 +232,17 @@
 
     <aside class="panel">
       <h1>Phone</h1>
-      <p>Tap an app: it opens with a zoom from its icon. The bar at the bottom takes you back, and so do a swipe, a pinch or the trackpad. Folders, Photos, Settings and Notes go deeper.</p>
+      <p>Tap an app. The bar at the bottom takes you back.</p>
 
       <div class="control">
         <label for="rate">Capture rate <output id="rate-out">10 per second</output></label>
         <input id="rate" type="range" min="1" max="30" step="1" value="10" />
-        <small>How often SnapDOM may repaint its picture of the screen you are on; it repaints only when something changed. Open the Clock: its stopwatch never stops, so the captures follow this rate. A zoom out of it starts from that picture, so at 1 per second the stopwatch it shrinks can be a second behind.</small>
+        <small>How often SnapDOM captures the screen you are on.</small>
       </div>
 
       <div class="control">
         <label for="speed">Zoom <output id="speed-out">550 ms</output></label>
         <input id="speed" type="range" min="150" max="3000" step="50" value="550" />
-        <small>Slow it down to watch the screens behind.</small>
       </div>
 
       <div class="control">
@@ -255,14 +252,7 @@
           <a href="?mode=rasterize" data-mode="rasterize">Rasterize</a>
           <a href="?mode=dom" data-mode="dom">DOM</a>
         </div>
-        <small id="mode-note"></small>
       </div>
-
-      <dl class="stats">
-        <dt>Captures</dt><dd id="st-rate">—</dd>
-        <dt>Last one</dt><dd id="st-busy">—</dd>
-        <dt>Following</dt><dd id="st-view">—</dd>
-      </dl>
 
       <p class="links"><a href="../guides/heavy-views.html#webgl">How it works</a> · <a href="../">Zumly</a></p>
     </aside>
@@ -296,19 +286,12 @@
       for (const t of root.querySelectorAll('.js-temp')) t.textContent = `${72 + Math.round(Math.sin(now / 9000) * 2)}°`
     }
     const mode = ['webgl', 'rasterize', 'dom'].includes(new URLSearchParams(location.search).get('mode')) ? new URLSearchParams(location.search).get('mode') : 'webgl'
-    const NOTES = {
-      webgl: 'Zooms drawn in WebGL, from SnapDOM pictures of each screen. The one that holds best on a modest GPU.',
-      rasterize: 'SnapDOM pictures of the screens behind, moved by the browser. No WebGL.',
-      dom: 'The screens move as they are, nothing captured. The capture rate does nothing here.'
-    }
 
     // ── The capture rate ─────────────────────────────────────────────
     // rasterize starts SnapDOM's stream on the screen you are on, and keeps its canvas as that
     // screen's picture. The rate is fixed when a stream starts, so a new rate starts a new one;
     // this canvas stays the same, so the picture rasterize holds stays current.
     let following = null
-    const captures = []
-    let lastBusy = null
 
     function streamAtRate (element, options) {
       const out = document.createElement('canvas')
@@ -325,18 +308,13 @@
       }
       const onFrame = (frame) => {
         copy(frame)
-        if (frame.reason !== 'start') {
-          captures.push(performance.now())
-          lastBusy = frame.busyMs ?? frame.ms
-        }
         options.onFrame?.({ ...frame, canvas: out })
       }
       const own = {
         start () {
           inner?.stop()
           inner = stream(element, { ...options, fps: +$('#rate').value, onFrame })
-        },
-        name: element.dataset.title || element.dataset.viewName.replace(/^./, c => c.toUpperCase())
+        }
       }
       own.start()
       following = own
@@ -565,7 +543,6 @@
       app.duration = `${$('#speed').value}ms`
     })
     for (const a of document.querySelectorAll('.modes a')) a.classList.toggle('on', a.dataset.mode === mode)
-    $('#mode-note').textContent = NOTES[mode]
 
     // ── What is alive: the time, the clock, the stopwatch and the temperature ──
     function tick () {
@@ -576,18 +553,6 @@
     tick()
     setInterval(tick, 1000)
     setInterval(() => { for (const w of document.querySelectorAll('.js-stopwatch')) w.textContent = stopwatch() }, 30)
-
-    // ── What the capture is doing ───────────────────────────────────
-    setInterval(() => {
-      const now = performance.now()
-      while (captures.length && now - captures[0] > 1000) captures.shift()
-      const on = mode !== 'dom' && following
-      $('#st-rate').textContent = mode === 'dom' ? 'none (DOM)'
-        : on ? `${captures.length} in the last second`
-          : app.blockEvents ? 'paused while it moves' : 'none: a screen that opens nothing is not followed'
-      $('#st-busy').textContent = on && lastBusy != null ? `${Math.round(lastBusy)} ms of main thread` : '—'
-      $('#st-view').textContent = on ? following.name : '—'
-    }, 250)
   </script>
 </body>
 </html>
