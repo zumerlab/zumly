@@ -404,7 +404,7 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
   async function retexture () {
     if (lost || app.blockEvents || scrub || app.canvas.dataset.zGlMoving) return
     const bare = views().filter(v => (v.classList.contains('is-previous-view') || v.classList.contains('is-last-view')) && !behind(v))
-    for (const view of bare) await snapshot(view, false).catch(error => log(`no photo of a view behind (${error.message}).`))
+    for (const view of bare) await snapshot(view, false, true).catch(error => log(`no photo of a view behind (${error.message}).`))
     if (bare.length && !app.blockEvents && !app.canvas.dataset.zGlMoving) sync()
   }
   const observer = new ResizeObserver(resize)
@@ -551,12 +551,12 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
   }
 
   /**
-   * A photo of a view, uploaded. One behind is read where it is, at its own size (its root
-   * scale undone) and without the engine's effect, which the shader draws; it keeps its glass,
-   * since it is in sight while SnapDOM reads it.
+   * A photo of a view, uploaded. One already behind (back) is read where it is, at its own size
+   * (its root scale undone) and without the engine's effect, which the shader draws; it keeps
+   * its glass, since it is in sight while SnapDOM reads it, and that is slow (411 ms against 86
+   * on the lab's board): only for a view behind that lost its texture.
    */
-  async function snapshot (view, offscreen) {
-    const back = !offscreen && (view.classList.contains('is-previous-view') || view.classList.contains('is-last-view'))
+  async function snapshot (view, offscreen, back = false) {
     const k = offscreen ? 1 : rootScale(view)
     const options = back
       ? { scale: 1 / k, glass: true, excludeStyleProps: prop => prop.startsWith('outline') || (prop === 'filter' && view.classList.contains('has-effect')) }
@@ -907,7 +907,8 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
       // flatten's photo keeps the view's glass; the zoom's own photo, as the glass option says.
       const glass = flattener()?.photos.has(view) || undefined
       if (!r) {
-        const shot = await snapshot(view, false)
+        // The view going behind in a zoom-in is still in front; any other is behind already.
+        const shot = await snapshot(view, false, !(type === 'zoomIn' && view === previousView))
         r = shot.rec
         info.shot = (info.shot || 0) + shot.ms
       }

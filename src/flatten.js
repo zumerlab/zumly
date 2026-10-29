@@ -283,11 +283,12 @@ export class Flattener {
 
   /**
    * Only a view with triggers moves behind; one without them leaves by zoom-out or to a
-   * sibling, and moves as itself. data-flatten="true" photographs it anyway. With webgl every
-   * view is followed: its texture lets a zoom-out, or a gesture, start without a photo.
+   * sibling, and moves as itself. data-flatten="true" photographs it anyway. (With webgl,
+   * following every view would let any zoom-out start without a photo, but with live data the
+   * stream costs frames at rest: 17 % on the lab's detail, for ~40 ms saved once.)
    */
   _canGoBehind (view) {
-    return view.dataset.flatten === 'true' || !!view.querySelector('.zoom-me[data-to]') || !!this.app._webgl
+    return view.dataset.flatten === 'true' || !!view.querySelector('.zoom-me[data-to]')
   }
 
   /** Never start a capture during a transition or a gesture, or for a view that does not pay off. */

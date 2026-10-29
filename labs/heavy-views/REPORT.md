@@ -442,11 +442,26 @@ new Zumly({ ..., flatten: { snapdom, stream }, webgl: true })            // o { 
 - **Necesita `flatten`.** Usa su SnapDOM para las fotos, y cada cuadro de su stream actualiza la textura de la vista. `streamTexture` está escrito adentro, así que no suma dependencias. Sin WebGL2, las vistas quedan en el DOM, como antes.
 - **Cada navegación pasa por WebGL:** zoom-in, zoom-out y hermanos. Mientras se sacan las texturas, el disparador se ve apretado, y si tarda más de 300 ms aparece un anillo (lo del experimento 1, ahora en el motor). Lo demás va al driver, con las vistas devueltas al DOM: una transición sin animación (movimiento reducido), `keepAlive: 'visible'` o una textura que no se pudo sacar.
 - **Gestos:** en un zoom-out que sigue la rueda, el swipe o el pinch, la vista bajo el dedo sigue en el DOM (como antes, con WAAPI), y WebGL mueve las de atrás con el mismo progreso, el mismo largo y la misma curva al soltar. Probado yendo hasta el final y volviendo.
-- **El zoom-out arranca sin foto.** Con `webgl`, `flatten` sigue con stream también a las vistas sin disparadores, y el zoom-out sale de esa textura: 0 ms de foto, contra ~25-45.
+- **El zoom-out sin foto, probado y descartado.** Con `webgl`, `flatten` seguía con stream también a las vistas sin disparadores, y el zoom-out salía de esa textura: arrancaba en 8-11 ms en vez de ~50. Pero con datos en vivo ese stream cuesta en reposo: 16,7 % de cuadros perdidos sobre el detalle, contra 0. Una foto de 25-45 ms en el momento del zoom-out sale más barata que seguir todo el tiempo una vista que cambia. Las vistas que `flatten` ya sigue (pesadas, con disparadores) siguen arrancando sin foto.
 - **Tres niveles:** probado tablero → detalle → lectura y vuelta (`levels=3` en la demo). Había un error: el efecto de la vista que pasa de previa a última (de 3 a 8 px) saltaba de golpe, porque el motor ya había escrito el efecto nuevo. Ahora arranca del último efecto con que se dibujó en reposo.
 - **Contexto perdido:** las vistas vuelven al DOM; cuando vuelve el contexto, WebGL rearma programas y texturas y vuelve a fotografiar las vistas de atrás.
 - **Redimensionar:** en reposo, una vista cuya foto ya no entra vuelve al DOM, y cuando el tamaño se queda quieto se fotografía de nuevo donde está, sin su efecto y a su tamaño. Probado redimensionando a mitad de un zoom-in y de un zoom-out.
 - **Efectos:** aceptan hasta cuatro números, y un color `#hex` cuenta como tres (`tint(#ff0066 .5)`). `animate: true` sigue redibujando mientras uno de esos efectos esté en pantalla: la demo trae `ripple`, que ondula el tablero de atrás todo el tiempo (look `liquid`), y deja de dibujar cuando el tablero vuelve al frente.
+- **Medido en el motor** (mediana de dos corridas, dpr 2). `flatten` en el DOM sale de [`results/gl-src-chrome.log`](results/gl-src-chrome.log) y [`results/gl-src-cpu4.log`](results/gl-src-cpu4.log); WebGL, de [`results/gl-src-chrome-2.log`](results/gl-src-chrome-2.log) y [`results/gl-src-cpu4-2.log`](results/gl-src-cpu4-2.log), que miden después del arreglo de abajo:
+
+  | | `flatten`, Chrome 156 | WebGL, Chrome 156 | `flatten`, CPU 4× | WebGL, CPU 4× |
+  |---|---|---|---|---|
+  | GPU zoom-in / zoom-out, tal cual | 42,5 / 43,5 % | 8 / 8 % | 42,5 / 42 % | 1 / 1 % |
+  | GPU zoom-in / zoom-out, en vivo | 69 / 71 % | 7 / 8,5 % | 57,5 / 60,5 % | 2 / 1 % |
+  | Cuadros perdidos, zoom-in / zoom-out, tal cual | 1,4 / 0 % | 0,3 / 1,6 % | 0 / 9,4 % | 0 / 0,8 % |
+  | Cuadros perdidos, zoom-in / zoom-out, en vivo | 2,4 / 9 % | 0 / 1,1 % | 0 / 10,1 % | 0 / 0 % |
+  | Tirones en vivo | 2 de 6 | 0 de 6 | 1 de 6 | 0 de 6 |
+  | Del clic al movimiento, zoom-in, tal cual | 14 ms | 46,5 ms | 12 ms | 99,5 ms (el primero, en frío, 840) |
+  | Del clic al movimiento, zoom-in, en vivo | 7 ms | 159 ms | 10,5 ms | 713 ms |
+  | Del clic al movimiento, zoom-out | 10,5 ms | 57-67 ms | 9,5 ms | 111 ms |
+
+  En Chrome real da lo mismo que en el Chromium de Playwright. Con la CPU 4× más lenta, la GPU de WebGL baja todavía más (1-2 %), porque cada cuadro tiene menos que dibujar que lo que el DOM tiene que recomponer, y los cuadros perdidos del zoom-out pasan de 9-10 % a 0-1 %. El costo es la espera: con CPU 4× y datos en vivo, el tablero necesita una foto en cada zoom-in (su stream se apaga por el vidrio) y pasa de 300 ms, así que aparece el anillo y la espera llega a 713 ms. Es el pendiente de SnapDOM con el vidrio; con eso, el tablero tendría textura y el zoom-in arrancaría en ~100 ms.
+- **Un error que encontró la medición:** al preparar un zoom-in, el motor ya marcó el tablero como vista previa, y el arreglo de redimensionar lo trataba como una vista que ya está atrás. Lo fotografiaba con vidrio y sin escala: 411 ms en vez de 106, y en vivo cada zoom-in después del primero esperaba 708 ms. Ahora ese trato es solo para una vista que ya está atrás y perdió su textura.
 - **Tests:** [`__tests__/webgl.test.js`](../../__tests__/webgl.test.js) prueba la opción, las cadenas de efectos y, donde hay WebGL2 (el Chromium headless no lo tiene, así que corren con ventana), los zooms, un hermano, un gesto hasta el final y de vuelta, tres niveles, el contexto perdido y `destroy`. La suite completa sigue en verde.
 
 ## Plan
@@ -477,7 +492,7 @@ Dos listas: lo que hay que arreglar en el motor y lo que hay que probar en labs 
 4. **Marca de movimiento (opción 2)** como receta de la guía: la GPU del zoom baja de ~60 % a ~17 %.
 5. **La primera transición en frío:** 14,5 % de cuadros perdidos en la primera corrida. Ver si se puede calentar al cargar.
 6. **SnapDOM:** emular el vidrio una sola vez, gradientes como fondo sólido, tramos y `signal`. Abaratan el stream en vistas de vidrio. Y un contenedor grid scrolleado, que sale en una columna (ver Experimento 7). Se hace en su repo.
-7. **WebGL (idea 3).** Hecho de lleno el 28/10, en `dev` (ver Experimento 7): GPU del zoom de ~40 % a 5,5-6,5 %, y en vivo de ~65 % a 5-6,5 %, con la misma espera del experimento 1. Martin lo vio muy fluido. Ya pasan por WebGL los hermanos y los efectos que se le ocurran en GLSL. Falta gestos, más de dos niveles y pérdida de contexto. Después: el movimiento en un worker.
+7. **WebGL (idea 3).** Hecho de lleno el 28/10 y pasado al motor en `dev` (`src/webgl.js`, opción `webgl`; ver Experimento 7 y "WebGL en el motor"): GPU del zoom de ~40-70 % a 7-8,5 % en Chrome, y a 1-2 % con CPU 4×. Pasan por WebGL los hermanos, los gestos, tres niveles y efectos en GLSL. Falta decidir si va a `main` (docs, guía, Pulse). El movimiento en un worker no hace falta por ahora: durante un zoom WebGL, el hilo principal trabaja 4-7 % y se pierden 0-1,6 % de cuadros.
 8. **Driver con View Transitions (opción 1).**
 9. **Foto ya desenfocada y la vista de dos niveles atrás como velo (opciones 7 y 8)**, si las tablets lo piden.
 
