@@ -13,7 +13,7 @@ import { ViewResolver } from './view-resolver.js'
 import { disposeView } from './view-lifecycle.js'
 import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSyntax, isValidCssEasing } from './diagnostics.js'
 
-const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures', 'flatten']
+const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures', 'flatten', 'webgl']
 const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'parallax', 'hideTrigger']
 const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings', 'swipe']
 const DEPTH_NAV_KEYS = ['position', 'style']
@@ -21,6 +21,7 @@ const DEPTH_NAV_STYLES = ['button', 'title', 'rings']
 const INPUT_KEYS = ['click', 'keyboard', 'wheel', 'touch', 'pinch']
 const GESTURE_KEYS = ['follow', 'threshold']
 const FLATTEN_KEYS = ['snapdom', 'stream', 'minNodes', 'scale']
+const WEBGL_KEYS = ['effects', 'glass']
 const LABEL_KEYS = ['back', 'prev', 'next', 'goTo']
 /** Accessible names of the navigation controls. {title} and {name} name the target view. */
 const DEFAULT_LABELS = { back: 'Back to {title}', prev: 'Previous sibling view', next: 'Next sibling view', goTo: 'Go to {title}' }
@@ -222,6 +223,7 @@ export function checkParameters (parameters, instance) {
   if (parameters.labels && typeof parameters.labels === 'object') warnUnknownKeys(parameters.labels, LABEL_KEYS, 'labels.')
   if (parameters.gestures && typeof parameters.gestures === 'object') warnUnknownKeys(parameters.gestures, GESTURE_KEYS, 'gestures.')
   if (parameters.flatten && typeof parameters.flatten === 'object') warnUnknownKeys(parameters.flatten, FLATTEN_KEYS, 'flatten.')
+  if (parameters.webgl && typeof parameters.webgl === 'object') warnUnknownKeys(parameters.webgl, WEBGL_KEYS, 'webgl.')
 
   // Optional
   instance.preload = Array.isArray(parameters.preload) ? parameters.preload : []
@@ -480,6 +482,30 @@ export function checkParameters (parameters, instance) {
     }
   } else if (flIn !== undefined && flIn !== false) {
     notification(false, '\'flatten\' must be true, false or { snapdom, stream, minNodes, scale }. Ignoring.', 'warn')
+  }
+
+  // WebGL: zooms drawn in a WebGL canvas, the views behind as textures (src/webgl.js). It
+  // takes its photos and textures from flatten, so it needs it.
+  const glIn = parameters.webgl
+  instance.webgl = false
+  if (glIn === true || (glIn && typeof glIn === 'object')) {
+    const o = glIn === true ? {} : glIn
+    if (!instance.flatten) {
+      notification(false, '\'webgl\' needs flatten (its SnapDOM photos and stream). Ignoring.', 'warn')
+    } else {
+      instance.webgl = { effects: {}, glass: false }
+      if (o.effects !== undefined) {
+        const valid = o.effects && typeof o.effects === 'object' && Object.values(o.effects).every(e => e && typeof e.none === 'number' && (typeof e.uv === 'string' || typeof e.color === 'string'))
+        if (valid) instance.webgl.effects = o.effects
+        else notification(false, '\'webgl.effects\' must map names to { none, uv?, color? }, with GLSL in uv or color. Going with CSS\'s.', 'warn')
+      }
+      if (o.glass !== undefined) {
+        if (typeof o.glass === 'boolean') instance.webgl.glass = o.glass
+        else notification(false, '\'webgl.glass\' must be true or false. Falling back to false.', 'warn')
+      }
+    }
+  } else if (glIn !== undefined && glIn !== false) {
+    notification(false, '\'webgl\' must be true, false or { effects, glass }. Ignoring.', 'warn')
   }
 }
 

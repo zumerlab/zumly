@@ -1,23 +1,26 @@
-// gl=1 (experiment 7, all in): zooms drawn with WebGL. One WebGL canvas sits in Zumly's canvas,
-// under the views. While views move, each one is a texture in it and the views themselves are
-// hidden (opacity 0, so they still answer hit-tests). At rest the views behind stay textures,
-// with the engine's effects in the shader instead of a CSS filter, and only the current view is
-// DOM. The effects are the engine's strings (transitions.effects), in CSS filter syntax; any
-// function the shader knows works, CSS's or one of its own (see EFFECTS).
-//
-// Textures: a view behind comes from flatten's stream through streamTexture, which uploads only
-// the rects each frame changed; the view coming in, or leaving a zoom-out, is a photo taken
-// right before the motion (experiment 1). Without either, the view is photographed on the spot.
-//
-// The geometry is the engine's: the same matrices the anime and Motion drivers interpolate,
-// applied around each view's transform-origin, from its layout position.
+/**
+ * WebGL renderer (option `webgl`). One WebGL canvas sits in Zumly's canvas, under the views.
+ * While views move, each one is a texture in it and the views themselves are hidden (opacity 0,
+ * so they still answer hit-tests). At rest the views behind stay textures, with the engine's
+ * effects in the shader instead of a CSS filter, and only the current view is DOM. The effects
+ * are the engine's strings (transitions.effects), in CSS filter syntax; any function the shader
+ * knows works, CSS's or one of its own (see EFFECTS).
+ *
+ * Textures: a view behind comes from flatten's stream, uploading only the rects each frame
+ * changed; the view coming in, or leaving, is a SnapDOM photo taken right before the motion
+ * (the trigger looks pressed meanwhile). Without either, the view is photographed on the spot.
+ * The geometry is the engine's: the same matrices the anime and Motion drivers interpolate,
+ * applied around each view's transform-origin, from its layout position.
+ *
+ * Measured in labs/heavy-views (REPORT.md, experiment 7): the GPU of a zoom goes from ~40 % to
+ * 5.5-8 %, and from ~65 % to 6.5-8 % with live data, for a photo of ~45 ms before it moves.
+ */
 
-import { streamTexture } from '/node_modules/@zumer/snapdom-plugins/stream.js'
 import {
   parseDurationMs, showViews, applyZoomInEndState, applyZoomOutPreviousState, applyZoomOutLastState,
-  removeViewFromCanvas, interpolateMatrix, lerp, cssEasing,
-} from '/src/drivers/driver-helpers.js'
-import { readTransitionMatrix } from '/src/drivers/transform-matrix.js'
+  removeViewFromCanvas, interpolateMatrix, lerp, cssEasing
+} from './drivers/driver-helpers.js'
+import { readTransitionMatrix } from './drivers/transform-matrix.js'
 
 /** The engine's zoom-out fade into the trigger: the last third, linear (ZOOM_OUT_FADE in zumly.js). */
 const FADE = 1 / 3
@@ -106,8 +109,8 @@ export const EFFECTS = {
   rgb = vec3(
     dot(vec3(0.213 + k * 0.787 - s * 0.213, 0.715 - k * 0.715 - s * 0.715, 0.072 - k * 0.072 + s * 0.928), rgb),
     dot(vec3(0.213 - k * 0.213 + s * 0.143, 0.715 + k * 0.285 + s * 0.140, 0.072 - k * 0.072 - s * 0.283), rgb),
-    dot(vec3(0.213 - k * 0.213 - s * 0.787, 0.715 - k * 0.715 + s * 0.715, 0.072 + k * 0.928 + s * 0.072), rgb));`,
-  },
+    dot(vec3(0.213 - k * 0.213 - s * 0.787, 0.715 - k * 0.715 + s * 0.715, 0.072 + k * 0.928 + s * 0.072), rgb));`
+  }
 }
 
 const glslName = name => 'fx_' + name.replace(/[^a-zA-Z0-9]/g, '_')
@@ -148,14 +151,14 @@ ${colors.map(fx => `  if (${on(fx)}) { ${glslName(fx[0])}_color(rgb, a, st, ${gl
 }
 
 const NONE = {}
-const UNITS = { '': 1, px: 1, '%': 0.01, deg: 1, turn: 360, rad: 180 / Math.PI }
+const UNITS = { '': 1, px: 1, deg: 1, turn: 360, rad: 180 / Math.PI }
 
 /** An effect string as amounts by name: 'blur(3px) brightness(70%)' → { blur: 3, brightness: 0.7 }. */
 export function parseEffect (value) {
   const fx = {}
   if (!value || value === 'none') return fx
   for (const [, name, number, unit = ''] of value.matchAll(/([a-z][\w-]*)\(\s*(-?[\d.]+)\s*(px|%|deg|turn|rad)?\s*\)/gi)) {
-    fx[name.toLowerCase()] = +number * UNITS[unit.toLowerCase()]
+    fx[name.toLowerCase()] = unit === '%' ? number / 100 : number * UNITS[unit.toLowerCase()]
   }
   return fx
 }
@@ -165,6 +168,51 @@ const rootScale = view => {
   const m = new DOMMatrix(getComputedStyle(view).transform)
   return Math.hypot(m.a, m.b) || 1
 }
+
+/**
+ * A texture fed by a SnapDOM stream: uploads only the rects a frame changed. WebGL2 reads a
+ * sub-rectangle of a canvas through the unpack parameters, so a patch costs its own pixels.
+ * (The same as streamTexture in @zumer/snapdom-plugins/stream, without depending on it.)
+ */
+function streamTexture (gl) {
+  const texture = gl.createTexture()
+  gl.bindTexture(gl.TEXTURE_2D, texture)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+  const state = { texture, width: 0, height: 0, update }
+  function update (frame) {
+    const c = frame.canvas
+    gl.bindTexture(gl.TEXTURE_2D, texture)
+    if (frame.full || c.width !== state.width || c.height !== state.height) {
+      state.width = c.width
+      state.height = c.height
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c)
+      return
+    }
+    gl.pixelStorei(gl.UNPACK_ROW_LENGTH, c.width)
+    for (const r of frame.rects) {
+      gl.pixelStorei(gl.UNPACK_SKIP_PIXELS, r.x)
+      gl.pixelStorei(gl.UNPACK_SKIP_ROWS, r.y)
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, r.width, r.height, gl.RGBA, gl.UNSIGNED_BYTE, c)
+    }
+    gl.pixelStorei(gl.UNPACK_ROW_LENGTH, 0)
+    gl.pixelStorei(gl.UNPACK_SKIP_PIXELS, 0)
+    gl.pixelStorei(gl.UNPACK_SKIP_ROWS, 0)
+  }
+  return state
+}
+
+/** SnapDOM options for a photo: a root scale is kept (outerTransforms: false), outlines left out. */
+const PHOTO = { outerTransforms: false, outerShadows: false, fast: true, excludeStyleProps: prop => prop.startsWith('outline') }
+/** While the photo of the view coming in is taken, the trigger looks pressed; past RING_AFTER_MS a ring turns over it, shown at least RING_MIN_MS. */
+const RING_AFTER_MS = 300
+const RING_MIN_MS = 400
+const afterFrame = () => new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)))
+/* global CSSAnimation, CSSTransition */
+/** A Web Animation of the engine's own (a zoom-out's fade), not a CSS animation or transition. */
+const scripted = a => !(typeof CSSAnimation === 'function' && a instanceof CSSAnimation) && !(typeof CSSTransition === 'function' && a instanceof CSSTransition)
 
 function compile (gl, type, source) {
   const shader = gl.createShader(type)
@@ -176,24 +224,54 @@ function compile (gl, type, source) {
 
 /**
  * @param {object} app - the Zumly instance
- * @param {{ photo: (view: HTMLElement, offscreen: boolean, options?: object) => Promise<{canvas: HTMLCanvasElement, ms: number}>, flattener: () => object|null, log: (msg: string) => void, effects?: Record<string, { none: number, uv?: string, color?: string }> }} deps
- *   effects: more effects for the shader, by name (see EFFECTS); one with the name of a CSS one replaces it
+ * @param {{ snapdom: Function, effects: Record<string, { none: number, uv?: string, color?: string }>, glass: boolean }} options
+ *   effects: more effects for the shader, by name (see EFFECTS); one with the name of a CSS one replaces it.
+ *   glass: whether the photo of a view coming in or leaving keeps its backdrop-filter (slower to take).
+ * @returns {object|null} null without WebGL2: the views stay DOM.
  */
-export function createGL (app, { photo, flattener, log, effects: more = {} }) {
+export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlass = false }) {
+  const log = msg => app.notify(`webgl: ${msg}`, 'info')
+  const flattener = () => app._flattener
   const canvas = document.createElement('canvas')
   canvas.className = 'z-gl'
   canvas.setAttribute('aria-hidden', 'true')
-  app.canvas.prepend(canvas)
   const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false })
-  if (!gl) {
-    canvas.remove()
-    log('gl: no WebGL2, views stay DOM')
+  if (!gl || typeof snapdom !== 'function') {
+    if (!gl) log('no WebGL2, views stay DOM.')
     return null
   }
-  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
-  gl.enable(gl.BLEND)
-  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+  app.canvas.prepend(canvas)
 
+  /**
+   * A SnapDOM photo of a view. One coming in goes out of sight while SnapDOM reads it, at scale
+   * 1: the engine hands it over hidden (.hide is opacity 0), and SnapDOM would copy that opacity.
+   * One in place is read where it is. glass: false leaves out its backdrop-filters, the slow part.
+   * options: more SnapDOM options (a clip); wait: false reads it without waiting a frame.
+   */
+  async function photo (view, offscreen, { glass = keepGlass, wait = true, ...options } = {}) {
+    const transform = view.style.transform
+    const hidden = view.classList.contains('hide')
+    if (offscreen) {
+      view.style.transform = 'translate(-200vw, 0)'
+      view.style.contentVisibility = 'visible'
+      view.classList.remove('hide')
+    }
+    if (!glass) view.classList.add('z-gl-noglass')
+    try {
+      if (wait) await afterFrame()
+      const t = performance.now()
+      const result = await snapdom(view, { ...PHOTO, ...options })
+      const shot = await result.toCanvas()
+      return { canvas: shot, ms: Math.round(performance.now() - t) }
+    } finally {
+      view.classList.remove('z-gl-noglass')
+      view.classList.toggle('hide', hidden)
+      view.style.transform = transform
+      if (offscreen) view.style.removeProperty('content-visibility')
+    }
+  }
+
+  let view, blurPass, u, effects, fxList
   const link = (vert, frag, names) => {
     const program = gl.createProgram()
     gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, vert))
@@ -209,17 +287,31 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
   }
   const base = ['rect', 'origin', 'm', 'move', 'pos', 'size', 'yDir', 'tex', 'lod', 'alpha', 'photo', 'focus', 'focusSize', 'progress', 'time']
   const linkView = fx => link(VERT, fragment(fx), [...base, ...Object.keys(fx).map(glslName)])
-  let effects = { ...EFFECTS, ...more }
-  let view
-  try {
-    view = linkView(effects)
-  } catch (error) {
-    // A slip in an effect's GLSL leaves CSS's effects, not a page without WebGL.
-    log(`gl: effects left out (${error.message.trim()})`)
-    effects = { ...EFFECTS }
-    view = linkView(effects)
+  /** Programs, the quad and the state everything draws with: at start, and when a lost context comes back. */
+  function setup () {
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true)
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA)
+    effects = { ...EFFECTS, ...more }
+    try {
+      view = linkView(effects)
+    } catch (error) {
+      // A slip in an effect's GLSL leaves CSS's effects, not a page without WebGL.
+      log(`effects left out (${error.message.trim()}).`)
+      effects = { ...EFFECTS }
+      view = linkView(effects)
+    }
+    fxList = Object.entries(effects).filter(([name]) => name !== 'blur')
+    blurPass = link(BLUR_VERT, BLUR_FRAG, ['tex', 'lod', 'dir', 'sigma'])
+    u = view.u
+    const quad = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW)
+    gl.enableVertexAttribArray(0)
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
+    gl.activeTexture(gl.TEXTURE0)
   }
-  const fxList = Object.entries(effects).filter(([name]) => name !== 'blur')
+  setup()
   const unknown = new Set()
   /** An effect into the view's shader: each one at its amount, or at none. */
   const setEffect = (effect) => {
@@ -227,7 +319,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     for (const name in effect) {
       if (effects[name] || unknown.has(name)) continue
       unknown.add(name)
-      log(`gl: no effect "${name}"`)
+      log(`no effect "${name}".`)
     }
   }
   const mixEffect = (a, b, t) => {
@@ -238,25 +330,22 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     }
     return out
   }
-  const blurPass = link(BLUR_VERT, BLUR_FRAG, ['tex', 'lod', 'dir', 'sigma'])
-  const u = view.u
-  const quad = gl.createBuffer()
-  gl.bindBuffer(gl.ARRAY_BUFFER, quad)
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW)
-  gl.enableVertexAttribArray(0)
-  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
-  gl.activeTexture(gl.TEXTURE0)
 
+  // Each map holds textures of the current context: a lost one takes them all (see restore).
   /** view → { st }: the texture its stream keeps current. */
-  const streams = new WeakMap()
+  let streams = new WeakMap()
   /** view → { texture, width, height, ratio, source }: a photo uploaded once. */
-  const photos = new WeakMap()
+  let photos = new WeakMap()
   /** view behind → { texture, width, height, ratio, rect, box }: its texture with what its overflow hides. */
-  const wide = new WeakMap()
+  let wide = new WeakMap()
   /** texture record → the two textures and framebuffers its blur passes draw into. */
-  const targets = new WeakMap()
+  let targets = new WeakMap()
   let last = []
   let lost = false
+  /** A gesture in progress (see beginScrub). */
+  let scrub = null
+  /** Called when a zoom WebGL draws starts and ends moving: ('start' | 'end', spec, info). For instruments. */
+  let motion = null
   let dpr = devicePixelRatio || 1
 
   const resize = () => {
@@ -268,13 +357,26 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     canvas.height = height
     draw(last)
   }
-  new ResizeObserver(resize).observe(app.canvas)
+  const observer = new ResizeObserver(resize)
+  observer.observe(app.canvas)
 
+  // A lost context (the GPU reset, too many contexts) takes every texture: the views go back to
+  // DOM, and when it comes back WebGL starts over with what flatten still has.
   canvas.addEventListener('webglcontextlost', (event) => {
     event.preventDefault()
     lost = true
-    log('gl: context lost, views back to DOM')
+    log('context lost, views back to DOM.')
     release()
+  })
+  canvas.addEventListener('webglcontextrestored', () => {
+    streams = new WeakMap()
+    photos = new WeakMap()
+    wide = new WeakMap()
+    targets = new WeakMap()
+    setup()
+    lost = false
+    resize()
+    sync()
   })
 
   function mips (rec) {
@@ -438,7 +540,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
       { x: x0, y: y0, w: x1 - x0, h: st - y0 },
       { x: x0, y: st + ch, w: x1 - x0, h: y1 - st - ch },
       { x: x0, y: st, w: sl - x0, h: ch },
-      { x: sl + cw, y: st, w: x1 - sl - cw, h: ch },
+      { x: sl + cw, y: st, w: x1 - sl - cw, h: ch }
     ].filter(b => b.w >= 1 && b.h >= 1).map(b => ({ ...b, bx: el.clientLeft - sl + b.x, by: el.clientTop - st + b.y })).filter(b => {
       const left = front[0] + b.bx
       const top = front[1] + b.by
@@ -677,6 +779,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
 
   /** Every view back to DOM, nothing drawn: for a transition WebGL does not draw. */
   function release () {
+    scrub = null
     for (const view of views()) show(view)
     draw([])
   }
@@ -717,13 +820,15 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     const { type, currentView, previousView, lastView } = spec
     const recs = new Map()
     const info = { photoMs: 0 }
-    const { rec, ms } = await snapshot(currentView, type === 'zoomIn')
+    // The view leaving a zoom-out: its stream's texture, if flatten follows it, is already current.
+    const followed = type === 'zoomOut' && flattener()?.photos.get(currentView) ? behind(currentView) : null
+    const { rec, ms } = followed ? { rec: followed, ms: 0 } : await snapshot(currentView, type === 'zoomIn')
     recs.set(currentView, rec)
     info.photoMs = ms
     for (const view of [previousView, lastView]) {
       if (!view) continue
       let r = behind(view)
-      // flatten's photo keeps the view's glass; the zoom's own photo, the demo's choice.
+      // flatten's photo keeps the view's glass; the zoom's own photo, as the glass option says.
       const glass = flattener()?.photos.has(view) || undefined
       if (!r) {
         const shot = await snapshot(view, false)
@@ -733,7 +838,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
       // The view going behind grows: what its overflow hides comes into sight.
       if (type === 'zoomIn' && view === previousView) {
         const { backwardState: from, forwardState: to } = spec.currentStage.views[1]
-        const wider = await widen(view, r, glass, from.origin, new DOMMatrix(to.transform)).catch(error => log(`gl: no overflow (${error.message})`))
+        const wider = await widen(view, r, glass, from.origin, new DOMMatrix(to.transform)).catch(error => log(`no overflow (${error.message}).`))
         if (wider) {
           wide.set(view, wider.rec)
           r = wider.rec
@@ -781,7 +886,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
       const glass = flattener()?.photos.has(backView) || undefined
       const origin = getComputedStyle(backView).transformOrigin
       const wider = await widen(backView, recs.get(backView), glass, origin, new DOMMatrix(spec.backViewState.transformEnd), true)
-        .catch(error => log(`gl: no overflow (${error.message})`))
+        .catch(error => log(`no overflow (${error.message}).`))
       if (wider) {
         wide.set(backView, wider.rec)
         recs.set(backView, wider.rec)
@@ -798,9 +903,10 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
 
   /**
    * Draw at(elapsed) every frame for total ms, then end() and hand over to the DOM and the
-   * engine (done), even if end() fails. A hidden tab, without frames, still ends.
+   * engine (done), even if end() fails. A hidden tab, without frames, still ends. settle: draw
+   * what is at rest a frame later, once the engine has settled the roles.
    */
-  function play (total, at, end, done) {
+  function play (total, at, end, done, settle = true) {
     let raf = 0
     let start = null
     let finished = false
@@ -812,12 +918,12 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
       try {
         end()
       } catch (error) {
-        log(`gl: ${error.message}`)
+        log(error.message)
       }
       delete app.canvas.dataset.zGlMoving
       done()
       // flatten settles a microtask after the engine completes: read the roles a frame later.
-      requestAnimationFrame(sync)
+      if (settle) requestAnimationFrame(sync)
     }
     const deadline = setTimeout(finish, total + 1000)
     const tick = (now) => {
@@ -841,7 +947,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     const incomingEnd = spec.incomingTransformEnd || v0.forwardState.transform
     const moves = [
       { view: incoming, origin: v0.forwardState.origin, from: spec.incomingTransformStart, to: incomingEnd, fade: [0, 1] },
-      { view: outgoing, origin: outgoing.style.transformOrigin, from: spec.outgoingTransform, to: spec.outgoingTransformEnd, fade: [1, 0] },
+      { view: outgoing, origin: outgoing.style.transformOrigin, from: spec.outgoingTransform, to: spec.outgoingTransformEnd, fade: [1, 0] }
     ]
     if (backView && backViewState) moves.push({ view: backView, origin: backView.style.transformOrigin, from: backViewState.transformStart, to: backViewState.transformEnd })
     if (lastView && lastViewState) moves.push({ view: lastView, origin: lastView.style.transformOrigin, from: lastViewState.transformStart, to: lastViewState.transformEnd })
@@ -861,7 +967,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
       origin: getComputedStyle(view).transformOrigin.split(' ').map(parseFloat),
       effect: fade ? NONE : restEffect(view),
       rec: prepared.recs.get(view),
-      z: order.indexOf(view),
+      z: order.indexOf(view)
     })).sort((a, b) => a.z - b.z)
     const ms = parseDurationMs(spec.duration)
     const curve = cssEasing(spec.ease) || (t => t)
@@ -906,7 +1012,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     // that is hidden anyway, goes.
     if (!forward) {
       for (const animation of currentView.getAnimations()) {
-        if (!(animation instanceof CSSAnimation) && !(animation instanceof CSSTransition)) animation.cancel()
+        if (scripted(animation)) animation.cancel()
       }
     }
     const order = views()
@@ -958,7 +1064,7 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     }, done)
   }
 
-  /** Feed a stream frame of a view into its texture (from the demo's stream wrapper). */
+  /** Feed a stream frame of a view into its texture (flatten calls it for each frame). */
   function feed (view, frame, options) {
     if (lost) return
     let s = streams.get(view)
@@ -974,5 +1080,198 @@ export function createGL (app, { photo, flattener, log, effects: more = {} }) {
     s.rec.dirty = true
   }
 
-  return { canvas, gl, feed, prepare, run, sync, release, get lost () { return lost }, get layers () { return last } }
+  /** The trigger looks pressed while the zoom gets ready; a ring turns over it if that takes long. */
+  function press (trigger) {
+    const r = trigger.getBoundingClientRect()
+    const c = app.canvas.getBoundingClientRect()
+    const pressed = document.createElement('div')
+    pressed.className = 'z-gl-press'
+    pressed.setAttribute('aria-hidden', 'true')
+    Object.assign(pressed.style, {
+      left: `${r.left - c.left - app.canvas.clientLeft}px`,
+      top: `${r.top - c.top - app.canvas.clientTop}px`,
+      width: `${r.width}px`,
+      height: `${r.height}px`,
+      borderRadius: getComputedStyle(trigger).borderRadius
+    })
+    const ring = document.createElement('i')
+    ring.className = 'z-gl-ring'
+    ring.style.animationDelay = `${RING_AFTER_MS}ms, 0ms`
+    pressed.append(ring)
+    app.canvas.append(pressed)
+    return pressed
+  }
+
+  /**
+   * The engine starts the effects of the views behind with the zoom, and the fade of a zoom-out
+   * into its trigger: while the zoom gets ready they wait where they are.
+   */
+  function hold (held, moving) {
+    for (const view of held) {
+      view.style.filter = getComputedStyle(view).filter
+      view.style.transition = 'none'
+    }
+    const fades = moving.getAnimations().filter(scripted)
+    for (const fade of fades) fade.pause()
+    return () => {
+      for (const view of held) {
+        view.style.removeProperty('filter')
+        view.style.removeProperty('transition')
+      }
+      for (const fade of fades) fade.play()
+    }
+  }
+
+  /** The textures of a zoom, with the trigger pressed and everything waiting meanwhile. Null: it moves as DOM. */
+  async function ready (spec) {
+    const t0 = performance.now()
+    const trigger = spec.type === 'zoomIn' ? spec.previousView.querySelector('.zoom-me.zoomed') : null
+    const pressed = trigger ? press(trigger) : null
+    const free = hold([spec.previousView, spec.lastView].filter(Boolean), spec.currentView)
+    let prepared = null
+    try {
+      prepared = await prepare(spec)
+    } catch (error) {
+      log(`${error.message}; this one moves as DOM.`)
+    }
+    // Once the ring shows, it stays a moment, so it does not flicker.
+    const waited = performance.now() - t0
+    if (waited > RING_AFTER_MS && waited < RING_AFTER_MS + RING_MIN_MS) {
+      await new Promise(resolve => setTimeout(resolve, RING_AFTER_MS + RING_MIN_MS - waited))
+    }
+    pressed?.remove()
+    free()
+    return prepared
+  }
+
+  /**
+   * The driver WebGL puts in front of the engine's: zooms in and out and moves to a sibling get
+   * their textures and WebGL draws them. Anything else (no animation, keepAlive 'visible', a
+   * texture it could not get) runs on the driver, with every view back to DOM until it ends.
+   */
+  function wrap (driver) {
+    return {
+      runTransition (spec, done) {
+        const dom = () => {
+          release()
+          driver.runTransition(spec, () => {
+            done()
+            requestAnimationFrame(sync)
+          })
+        }
+        const kinds = ['zoomIn', 'zoomOut', 'lateral']
+        if (lost || !kinds.includes(spec.type) || !(parseDurationMs(spec.duration) > 0)) return dom()
+        ready(spec).then((prepared) => {
+          if (!prepared || lost) return dom()
+          motion?.('start', spec, prepared.info)
+          run(spec, prepared, () => {
+            motion?.('end', spec, prepared.info)
+            done()
+          })
+        })
+      }
+    }
+  }
+
+  /**
+   * A zoom-out that follows a gesture: the engine moves the view under the finger, as DOM, and
+   * WebGL the views behind it, from the same progress. False when it cannot (a lost context, a
+   * view behind without a texture): the engine moves them as DOM then, after release().
+   * stage: the stage the zoom-out leaves; lastEffect: the effect the view behind the previous one
+   * takes once that one is in front.
+   */
+  function beginScrub ({ previous, last: lastView, stage, lastEffect }) {
+    if (lost) return false
+    const entries = [{ view: previous, entry: stage.views[1], to: NONE }]
+    if (lastView && stage.views[2]) entries.push({ view: lastView, entry: stage.views[2], to: parseEffect(lastEffect) })
+    const layers = []
+    for (const { view, entry, to } of entries) {
+      const rec = behind(view)
+      if (!rec) return false
+      // readTransitionMatrix writes the transform it reads: the engine's own stays.
+      const { transform, transformOrigin } = view.style
+      const origin = entry.forwardState.origin
+      const from = readTransitionMatrix(view, origin, transform || 'none')
+      const target = readTransitionMatrix(view, origin, entry.backwardState.transform || 'none')
+      const at = getComputedStyle(view).transformOrigin.split(' ').map(parseFloat)
+      view.style.transform = transform
+      view.style.transformOrigin = transformOrigin
+      layers.push({ view, rec, from, to: target, origin: at, fx: [restEffect(view), to] })
+    }
+    for (const { view } of layers) view.classList.add(OFF)
+    app.canvas.dataset.zGlMoving = 'scrub'
+    scrub = { layers, progress: 0 }
+    draw(scrubLayers(0))
+    return true
+  }
+
+  const scrubLayers = p => scrub.layers.map(l => layer(l.view, l.rec, interpolateMatrix(l.from, l.to, p), l.origin, mixEffect(l.fx[0], l.fx[1], p), 1, 1 - p))
+
+  /** The gesture moved: progress 0 (where it started) to 1 (the zoom-out done). */
+  function scrubTo (progress) {
+    if (!scrub || lost) return
+    scrub.progress = progress
+    draw(scrubLayers(progress))
+  }
+
+  /**
+   * The gesture let go: the views behind go on to the end, or back, as the engine's release
+   * does (same duration and curve). Resolves when they get there.
+   */
+  function endScrub (commit, duration, ease = 'cubic-bezier(.2,.8,.2,1)') {
+    if (!scrub) return Promise.resolve()
+    const own = scrub
+    const from = own.progress
+    const target = commit ? 1 : 0
+    const curve = cssEasing(ease) || (t => t)
+    return new Promise((resolve) => {
+      play(duration, (elapsed) => {
+        if (scrub !== own) return last
+        own.progress = lerp(from, target, curve(clamp01(elapsed / duration)))
+        return scrubLayers(own.progress)
+      }, () => {
+        if (scrub !== own) return
+        scrub = null
+        // Put back, it is at rest as before; done, it stays drawn until the engine's zoom-out,
+        // instant now, hands the views to the DOM.
+        if (commit) draw(scrubLayers(1))
+        else sync()
+      }, resolve, false)
+    })
+  }
+
+  /** The gesture ended some other way (a navigation, destroy): WebGL draws what is at rest. */
+  function stopScrub () {
+    if (!scrub) return
+    scrub = null
+    delete app.canvas.dataset.zGlMoving
+    sync()
+  }
+
+  /** Everything back to DOM, the canvas out. */
+  function destroy () {
+    observer.disconnect()
+    release()
+    delete app.canvas.dataset.zGlMoving
+    canvas.remove()
+    gl.getExtension('WEBGL_lose_context')?.loseContext()
+  }
+
+  return {
+    canvas,
+    gl,
+    feed,
+    wrap,
+    sync,
+    release,
+    beginScrub,
+    scrubTo,
+    endScrub,
+    stopScrub,
+    destroy,
+    get onMotion () { return motion },
+    set onMotion (fn) { motion = fn },
+    get lost () { return lost },
+    get layers () { return last }
+  }
 }

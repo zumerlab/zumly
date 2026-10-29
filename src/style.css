@@ -75,6 +75,65 @@
   pointer-events: none;
 }
 
+/* webgl: the WebGL canvas under the views (src/webgl.js). A view it draws is hidden but still
+   answers hit-tests; its effects are in the shader, so the CSS filter and its transition are off. */
+.zumly-canvas > .z-gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.z-view.z-gl-off {
+  opacity: 0 !important;
+  filter: none !important;
+  transition: none !important;
+}
+
+/* A photo without glass (webgl.glass: false): backdrop-filter is the slow part of it. */
+.z-gl-noglass * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* The nav is glass, and glass over a WebGL canvas that changes every frame makes the GPU wait
+   for the canvas each frame (a zoom-out from 7 % to 21 %). While WebGL moves the views, the
+   nav goes without blur, a little more opaque. */
+.zumly-canvas[data-z-gl-moving] :is(.z-nav-back, .z-depth-band, .z-lateral-nav) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgb(20 22 28 / 0.72) !important;
+}
+
+/* While the zoom gets ready (its photo), the trigger looks pressed; past 300 ms a ring turns. */
+.z-gl-press {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+  box-sizing: border-box;
+  background: rgb(0 0 0 / 0.22);
+  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.55);
+}
+
+.z-gl-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 3px solid rgb(255 255 255 / 0.25);
+  border-top-color: #fff;
+  opacity: 0;
+  animation: z-gl-ring-in 120ms forwards, z-gl-ring-spin 700ms linear infinite;
+}
+
+@keyframes z-gl-ring-in { to { opacity: 1; } }
+@keyframes z-gl-ring-spin { to { transform: rotate(1turn); } }
+
 .zoom-current-view,
 .zoom-current-view-reverse,
 .zoom-previous-view,

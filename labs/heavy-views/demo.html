@@ -51,14 +51,7 @@
   .z-launch-ring { position: absolute; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; box-sizing: border-box; border-radius: 50%; border: 3px solid rgb(255 255 255 / .25); border-top-color: #fff; opacity: 0; animation: z-ring-in 120ms forwards, z-ring-spin 700ms linear infinite; }
   @keyframes z-ring-in { to { opacity: 1 } }
   @keyframes z-ring-spin { to { transform: rotate(1turn) } }
-  /* gl=1: views drawn with WebGL (gl.js) are hidden but still answer hit-tests; their effects
-     are in the shader, so the CSS filter and its transition are off. */
-  .zumly-canvas > .z-gl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-  .z-view.z-gl-off { opacity: 0 !important; filter: none !important; transition: none !important; }
-  /* Zumly's nav is glass too, and glass over a WebGL canvas that changes every frame makes the
-     GPU wait for the canvas each frame (zoom-out GPU 21 % → 7 %). While WebGL moves the views
-     the nav goes without blur, a little more opaque. */
-  .zumly-canvas[data-z-gl-moving] :is(.z-nav-back, .z-depth-band, .z-lateral-nav) { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: rgb(20 22 28 / .72) !important; }
+  /* gl=1: the WebGL styles are Zumly's own now (src/style.css, src/webgl.js). */
 </style>
 </head>
 <body>
@@ -68,7 +61,6 @@
 import { Zumly } from '/src/entry-esm.js'
 import { snapdom } from '@zumer/snapdom'
 import { stream } from '/node_modules/@zumer/snapdom-plugins/stream.js'
-import { createGL } from './gl.js'
 
 // Variants, from the URL. Every change reloads the page, so each one starts clean.
 const q = new URLSearchParams(location.search)
@@ -252,21 +244,20 @@ const app = new Zumly({
     effects: effects ? (opt.gl && LOOKS[opt.look]) || LOOKS.css : ['none', 'none'],
     animateEffects: opt.fx !== 'instant',
   },
-  // The stream is wrapped to log its frames (window.streamLog), for debugging flatten; with gl=1
-  // each frame also goes into the view's texture.
+  // The stream is wrapped to log its frames (window.streamLog), for debugging flatten.
   flatten: opt.flatten && {
     snapdom,
     stream: (el, options) => stream(el, {
       ...options,
       onFrame (frame) {
         window.streamLog.push({ t: Math.round(performance.now()), view: el.dataset.viewName, reason: frame.reason, full: frame.full, ms: Math.round(frame.ms) })
-        glr?.feed(el, frame, options)
         options.onFrame?.(frame)
       },
     }),
   },
+  // gl=1 (experiment 7, now in src/webgl.js): zooms drawn with WebGL, with the look's effects.
+  webgl: opt.gl && { effects: GL_EFFECTS, glass: opt.glass },
 })
-let glr = null
 window.streamLog = []
 
 const parseMs = (d) => {
@@ -467,20 +458,6 @@ app.transitionDriver = {
         done()
       })
     }
-    // gl=1: WebGL draws zooms in and out, and moves to a sibling, once their textures are ready.
-    // Anything else (textures it could not get, keepAlive 'visible') runs on the real driver,
-    // with every view back to DOM until it ends.
-    const dom = () => {
-      glr.release()
-      return go((s, cb) => real.runTransition(s, () => { cb(); requestAnimationFrame(() => glr.sync()) }))
-    }
-    if (glr && !glr.lost && (spec.type === 'zoomIn' || spec.type === 'zoomOut' || spec.type === 'lateral')) {
-      launch.prepare(spec, step, s => glr.prepare(s))
-        .catch(error => { window.notes.push({ t: Math.round(performance.now()), msg: `gl: ${error.message}` }) })
-        .then(prepared => prepared ? go((s, cb) => glr.run(s, prepared, cb)) : dom())
-      return
-    }
-    if (glr) return dom()
     // The view leaving a zoom-out is removed at the end, photo and all. Whatever happens while
     // preparing, the zoom still moves.
     if (opt.launch && (spec.type === 'zoomIn' || (opt.out && spec.type === 'zoomOut'))) {
@@ -489,13 +466,14 @@ app.transitionDriver = {
   },
 }
 await app.init()
-if (opt.gl) {
-  glr = createGL(app, {
-    photo: (view, offscreen, options) => launch.photo(view, offscreen, options),
-    flattener: () => app._flattener,
-    log: msg => window.notes.push({ t: Math.round(performance.now()), msg }),
-    effects: GL_EFFECTS,
-  })
+// With gl=1 the engine's WebGL draws the zooms without calling the driver above: the same marks
+// come from it, when the motion starts (after the photos) and ends.
+const glr = app._webgl
+if (glr) {
+  glr.onMotion = (phase, spec, info) => {
+    performance.mark(`z:${stepIndex}:motion-${phase}`)
+    if (phase === 'start') window.launchLog.push({ step: stepIndex, type: spec.type, ...info })
+  }
 }
 
 // Something alive on the board, as a real dashboard has.

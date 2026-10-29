@@ -23,6 +23,7 @@ import { removeViewFromCanvas } from './drivers/driver-helpers.js'
 import { DepthNav } from './depth-nav.js'
 import { applyResizeCorrection } from './resize-correction.js'
 import { createFlattener } from './flatten.js'
+import { createWebGL } from './webgl.js'
 import { hideViewContent, showViewContent, restoreViewContent } from './view-visibility.js'
 import { disposeView, activateView } from './view-lifecycle.js'
 import { ViewAccessibility, isNativeControl, isEditable } from './view-accessibility.js'
@@ -828,7 +829,9 @@ export class Zumly {
         }
       }
       const reducedMotion = this._prefersReducedMotion?.() || spec.instant
-      const driver = reducedMotion ? getDriver('none') : this.transitionDriver
+      const chosen = reducedMotion ? getDriver('none') : this.transitionDriver
+      // With webgl, WebGL draws the zoom, or hands it to the driver with the views back in the DOM.
+      const driver = this._webgl ? this._webgl.wrap(chosen) : chosen
       const transitionSpec = reducedMotion
         ? { ...spec, duration: '0s', currentStage: { ...spec.currentStage, stagger: 0 } }
         : spec
@@ -1119,6 +1122,10 @@ export class Zumly {
       this._flattener = createFlattener(this, this.flatten)
       this._flattener?.settle()
     }
+    if (this.webgl && this._flattener) {
+      this._webgl = createWebGL(this, { ...this.webgl, snapdom: this._flattener.snapdom })
+      this._webgl?.sync()
+    }
 
     // Install plugins
     this._initialized = true
@@ -1137,6 +1144,8 @@ export class Zumly {
     if (this._destroyed) return
     this._destroyed = true
     this._emit('destroy')
+    this._webgl?.destroy()
+    this._webgl = null
     this._flattener?.destroy()
     this._flattener = null
     this._cancelNavigation()
@@ -2306,6 +2315,11 @@ export class Zumly {
       entry.animation.pause()
       entry.animation.currentTime = 0
     }
+    // With webgl, the views behind move in WebGL from the same progress; the one under the
+    // gesture stays DOM. If WebGL cannot draw them, they move as DOM.
+    if (this._webgl && !this._webgl.beginScrub({ previous, last: last && !last.classList.contains('hide') ? last : null, stage, lastEffect })) {
+      this._webgl.release()
+    }
 
     this.blockEvents = true
     this.prefetcher?.pause()
@@ -2325,6 +2339,7 @@ export class Zumly {
     if (p === scrub.progress) return
     scrub.progress = p
     for (const { animation } of scrub.layers) animation.currentTime = p * 1000
+    this._webgl?.scrubTo(p)
     this._depthNav?.setProgress(p, this.gestures.threshold)
     this._emit('zoomOutProgress', { phase: 'move', progress: p, viewName: scrub.to, from: scrub.from, source: scrub.source })
   }
@@ -2367,6 +2382,7 @@ export class Zumly {
       entry.animation = animation
       return animation.finished.catch(() => {})
     })
+    if (this._webgl) settle.push(this._webgl.endScrub(commit, duration))
     this._scrubLayers = scrub.layers
     return Promise.all(settle).then(async () => {
       if (this._destroyed || this._scrubLayers !== scrub.layers) return
@@ -2379,6 +2395,7 @@ export class Zumly {
       } else {
         this._stopScrubAnimations()
         this._flattener?.settle()
+        this._webgl?.sync()
       }
       this._depthNav?.setProgress(null)
       this._emit('zoomOutProgress', { phase: 'end', progress: commit ? 1 : 0, viewName: scrub.to, from: scrub.from, source: scrub.source })
@@ -2392,6 +2409,7 @@ export class Zumly {
     this._scrub = null
     this._scrubLayers = null
     for (const { animation } of layers ?? []) animation?.cancel()
+    this._webgl?.stopScrub()
   }
 
   /**

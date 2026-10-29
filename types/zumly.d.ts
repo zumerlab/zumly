@@ -199,6 +199,34 @@ export interface FlattenOptions {
   scale?: number
 }
 
+/**
+ * An effect the WebGL renderer draws, by the name it takes in an effect string
+ * (transitions.effects, CSS filter syntax: 'pixelate(10px) brightness(.6)'). GLSL run on each
+ * pixel of a view behind, with v (the amount, on its way from none to its value), st (the point
+ * of the view read, 0 to 1 across it), photo (the view's size in CSS px), focus and focusSize
+ * (the trigger zoomed into, in st), progress (how far the zoom has gone, 0 to 1; 1 at rest),
+ * time (s), and tex and lod (the view's texture).
+ */
+export interface WebGLEffect {
+  /** The value that leaves a view as it is. */
+  none: number
+  /** May move st, the point of the view read. */
+  uv?: string
+  /** May change rgb and a (not premultiplied), and read tex again around st. */
+  color?: string
+}
+
+/**
+ * Zooms drawn in a WebGL canvas, the views behind as textures with their effects in a shader.
+ * Needs flatten (its SnapDOM photos and stream). Without WebGL2, the views stay DOM.
+ */
+export interface WebGLOptions {
+  /** More effects by name, besides CSS's filter functions; one with a CSS name replaces it. */
+  effects?: Record<string, WebGLEffect>
+  /** Whether the photo of a view coming in or leaving keeps its backdrop-filter (slower). Default: false. */
+  glass?: boolean
+}
+
 /** Options for goTo(). */
 export interface GoToOptions {
   /** Navigation mode. Default: 'depth'. */
@@ -301,6 +329,11 @@ export interface ZumlyOptions {
    * Default: false.
    */
   flatten?: boolean | FlattenOptions
+  /**
+   * Draw zooms with WebGL: the views behind as textures, with their effects in a shader
+   * (any CSS filter function, or one of your own in GLSL). Needs flatten. Default: false.
+   */
+  webgl?: boolean | WebGLOptions
 }
 
 // ─── Events ─────────────────────────────────────────────────────────
