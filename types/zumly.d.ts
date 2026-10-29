@@ -230,6 +230,13 @@ export interface WebGLOptions {
   effects?: Record<string, WebGLEffect>
   /** Whether the photo of a view coming in or leaving keeps its backdrop-filter (slower). Default: false. */
   glass?: boolean
+  /**
+   * Experimental. Build and photograph the view a trigger opens while the pointer or the focus
+   * is on it, so its zoom-in starts without waiting. View functions run then, on hover, and
+   * their work is thrown away if no click follows. Views with mounted(), custom elements and
+   * deferred views wait for the click as before. Default: false.
+   */
+  hover?: boolean
 }
 
 /** Options for goTo(). */

@@ -21,6 +21,7 @@ import {
   removeViewFromCanvas, interpolateMatrix, lerp, cssEasing
 } from './drivers/driver-helpers.js'
 import { readTransitionMatrix } from './drivers/transform-matrix.js'
+import { disposeView } from './view-lifecycle.js'
 
 /** The engine's zoom-out fade into the trigger: the last third, linear (ZOOM_OUT_FADE in zumly.js). */
 const FADE = 1 / 3
@@ -255,7 +256,7 @@ function compile (gl, type, source) {
  *   glass: whether the photo of a view coming in or leaving keeps its backdrop-filter (slower to take).
  * @returns {object|null} null without WebGL2: the views stay DOM.
  */
-export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlass = false }) {
+export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlass = false, hover = false }) {
   const log = msg => app.notify(`webgl: ${msg}`, 'info')
   const flattener = () => app._flattener
   const canvas = document.createElement('canvas')
@@ -415,6 +416,8 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
   canvas.addEventListener('webglcontextlost', (event) => {
     event.preventDefault()
     lost = true
+    if (early?.node) disposeView(early.node)
+    early = null
     log('context lost, views back to DOM.')
     release()
   })
@@ -898,9 +901,16 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     const info = { photoMs: 0 }
     // The view leaving a zoom-out: its stream's texture, if flatten follows it, is already current.
     const followed = type === 'zoomOut' && flattener()?.photos.get(currentView) ? behind(currentView) : null
-    const { rec, ms } = followed ? { rec: followed, ms: 0 } : await snapshot(currentView, type === 'zoomIn')
+    // The view coming in, photographed on hover (if it still has the size it had then).
+    const early = type === 'zoomIn' && readied.get(currentView)
+    readied.delete(currentView)
+    const fits = early && early[0] === currentView.offsetWidth && early[1] === currentView.offsetHeight && photos.get(currentView)?.ratio === dpr
+    const { rec, ms } = followed || fits
+      ? { rec: followed || photos.get(currentView), ms: 0 }
+      : await snapshot(currentView, type === 'zoomIn')
     recs.set(currentView, rec)
     info.photoMs = ms
+    if (early) info.early = !!fits
     for (const view of [previousView, lastView]) {
       if (!view) continue
       let r = behind(view)
@@ -1158,6 +1168,100 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
   }
 
   /** The trigger looks pressed while the zoom gets ready; a ring turns over it if that takes long. */
+  /**
+   * hover: a zoom-in gets ready while the pointer or the focus is on its trigger. The view it
+   * opens is built then, as the engine would build it on the click, and photographed out of
+   * sight; the click takes that node and its texture (take), so the zoom starts without either.
+   * A view that fetches its data does it on hover, too. One at a time: another trigger, any
+   * move or a lost context drops it.
+   */
+  let early = null
+  /** view → its size when it was photographed on hover, until its zoom-in takes the photo. */
+  const readied = new WeakMap()
+  const propsOf = trigger => JSON.stringify(trigger.dataset)
+
+  function dropEarly () {
+    const e = early
+    early = null
+    // One still being photographed is dropped when its photo comes back.
+    if (e?.rec) {
+      gl.deleteTexture(e.rec.texture)
+      disposeView(e.node)
+    }
+  }
+
+  async function prepareEarly (trigger) {
+    if (lost || app.blockEvents || app.canvas.dataset.zGlMoving) return
+    const from = trigger.closest('.z-view')
+    if (from?.parentElement !== app.canvas || !from.classList.contains('is-current-view')) return
+    const to = trigger.dataset.to
+    if (early?.trigger === trigger && early.to === to && early.props === propsOf(trigger)) return
+    // Only what the engine builds from its views, as on the click: not a custom element or a
+    // view with mounted() (both run once inserted), nor deferred content.
+    const definition = Object.prototype.hasOwnProperty.call(app.views, to) ? app.views[to] : undefined
+    if (definition === undefined || typeof definition?.mounted === 'function') return
+    if (app.deferred || trigger.dataset.deferred !== undefined) return
+    dropEarly()
+    const mine = { trigger, to, props: propsOf(trigger) }
+    early = mine
+    mine.ready = (async () => {
+      const node = await app.prefetcher.get(to, app._createViewContext({ ...trigger.dataset }, trigger))
+      if (early !== mine || !(node instanceof HTMLElement)) return disposeView(node)
+      // Dressed as prepareAndInsertView will dress it, in the canvas only for the photo.
+      node.classList.add('z-view')
+      node.dataset.viewName = to
+      node.style.transformOrigin = '0 0'
+      node.style.position = 'absolute'
+      node.inert = true
+      app.canvas.append(node)
+      let shot
+      const size = [node.offsetWidth, node.offsetHeight]
+      try {
+        shot = (await photo(node, true)).canvas
+      } finally {
+        node.remove()
+        node.inert = false
+      }
+      if (early !== mine || lost) return disposeView(node)
+      mine.node = node
+      mine.size = size
+      mine.rec = upload(shot, dpr)
+      mips(mine.rec)
+    })().catch((error) => {
+      if (early === mine) early = null
+      log(`no view ready on hover (${error.message}).`)
+    })
+  }
+
+  /**
+   * The view a zoom-in from this trigger opens, if it got ready on hover: the engine inserts it
+   * instead of building it again. One still getting ready is waited for.
+   */
+  async function take (trigger, to) {
+    const e = early
+    if (!e) return null
+    if (e.trigger !== trigger || e.to !== to || e.props !== propsOf(trigger)) {
+      dropEarly()
+      return null
+    }
+    await e.ready
+    if (early !== e || !e.rec) return null
+    early = null
+    dropPhoto(e.node)
+    photos.set(e.node, e.rec)
+    readied.set(e.node, e.size)
+    return e.node
+  }
+
+  const onHover = (event) => {
+    const trigger = event.target.closest?.('.zoom-me[data-to]')
+    if (trigger) prepareEarly(trigger)
+  }
+  if (hover) {
+    app.canvas.addEventListener('pointerover', onHover, { passive: true })
+    app.canvas.addEventListener('focusin', onHover, { passive: true })
+  }
+
   function press (trigger) {
     const r = trigger.getBoundingClientRect()
     const c = app.canvas.getBoundingClientRect()
@@ -1236,6 +1340,7 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
             requestAnimationFrame(sync)
           })
         }
+        dropEarly()
         const kinds = ['zoomIn', 'zoomOut', 'lateral']
         if (lost || !kinds.includes(spec.type) || !(parseDurationMs(spec.duration) > 0)) return dom()
         ready(spec).then((prepared) => {
@@ -1327,6 +1432,9 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
 
   /** Everything back to DOM, the canvas out. */
   function destroy () {
+    app.canvas.removeEventListener('pointerover', onHover)
+    app.canvas.removeEventListener('focusin', onHover)
+    dropEarly()
     observer.disconnect()
     clearTimeout(retextureTimer)
     cancelAnimationFrame(alive)
@@ -1348,6 +1456,7 @@ export function createWebGL (app, { snapdom, effects: more = {}, glass: keepGlas
     endScrub,
     stopScrub,
     destroy,
+    take,
     get onMotion () { return motion },
     set onMotion (fn) { motion = fn },
     get lost () { return lost },

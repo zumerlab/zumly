@@ -1274,7 +1274,8 @@ export class Zumly {
         while (node.firstChild) deferredContent.appendChild(node.firstChild)
         currentView = await prepareAndInsertView(node, targetViewName, canvas, false, {}, this.componentContext, this._adoptView)
       } else {
-        const node = await this.prefetcher.get(targetViewName, context)
+        // webgl.hover: the view may be built already, from the pointer resting on its trigger.
+        const node = (el && await this._webgl?.take(el, targetViewName)) || await this.prefetcher.get(targetViewName, context)
         if (this._destroyed) { disposeView(node); return }
         this._scanView(node, context)
         currentView = await prepareAndInsertView(node, targetViewName, canvas, false, this.views, this.componentContext, this._adoptView)

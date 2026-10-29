@@ -91,7 +91,7 @@ describe('webgl: option', () => {
 
   it('takes effects as GLSL by name, and warns about anything else', async () => {
     await start({ webgl: { effects: { pixelate: { none: 0, uv: 'st = st;' } }, glass: true } })
-    expect(app.webgl).toEqual({ effects: { pixelate: { none: 0, uv: 'st = st;' } }, glass: true })
+    expect(app.webgl).toEqual({ effects: { pixelate: { none: 0, uv: 'st = st;' } }, glass: true, hover: false })
     app.destroy()
     await start({ webgl: { effects: { bad: { uv: 1 } } } })
     expect(app.webgl.effects).toEqual({})
@@ -187,6 +187,49 @@ describe.runIf(hasWebGL2)('webgl', () => {
     await settled()
     expect(role('current').dataset.viewName).toBe('a')
     await expect.poll(() => app._webgl.layers.map(l => l.view.dataset.viewName)).toEqual(['home'])
+  })
+
+  const over = el => el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
+
+  it('hover: builds the view on its trigger, and the click zooms with it and its photo', async () => {
+    let built = 0
+    const a = ({ target }) => {
+      built++
+      target.className = 'z-view'
+      target.style.cssText = 'width:400px;height:300px'
+      target.innerHTML = '<p>a</p>'
+    }
+    await start({ webgl: { hover: true }, views: { ...views, a } })
+    const infos = []
+    app._webgl.onMotion = (phase, spec, info) => { if (phase === 'start') infos.push(info) }
+    const trigger = role('current').querySelector('.zoom-me[data-to="a"]')
+    over(trigger)
+    await expect.poll(() => built).toBe(1)
+    await app.zoomIn(trigger)
+    await settled()
+    expect(built).toBe(1)
+    expect(infos[0]).toMatchObject({ early: true, photoMs: 0 })
+    expect(role('current').dataset.viewName).toBe('a')
+    expect(app.canvas.querySelectorAll(':scope > .z-view')).toHaveLength(2)
+  })
+
+  it('hover: leaving a trigger for another throws its view away, cleanups and all', async () => {
+    let cleaned = 0
+    const a = ({ target, onCleanup }) => {
+      onCleanup(() => cleaned++)
+      target.className = 'z-view'
+      target.innerHTML = '<p>a</p>'
+    }
+    await start({ webgl: { hover: true }, views: { ...views, a } })
+    over(role('current').querySelector('.zoom-me[data-to="a"]'))
+    await new Promise(resolve => setTimeout(resolve, 100))
+    over(role('current').querySelector('.zoom-me[data-to="b"]'))
+    await expect.poll(() => cleaned).toBe(1)
+    // The view of the second trigger is in the canvas only while it is photographed.
+    await expect.poll(() => app.canvas.querySelectorAll(':scope > .z-view').length).toBe(1)
+    await app.zoomIn(role('current').querySelector('.zoom-me[data-to="b"]'))
+    await settled()
+    expect(role('current').dataset.viewName).toBe('b')
   })
 
   it('takes its canvas and hidden views away on destroy', async () => {
