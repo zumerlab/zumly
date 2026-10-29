@@ -86,8 +86,13 @@ export const ZumlyRouter = {
     function pushHash () { setHash('pushState') }
     function replaceHash () { setHash('replaceState') }
 
-    instance.on('afterZoomIn', pushHash)
-    instance.on('afterLateral', pushHash)
+    // A zoom-in or a move to a sibling writes its entry as it starts: a browser back during
+    // the motion then comes back to the view it left, instead of the entry before it (which
+    // can be outside the app). Its end only keeps the hash right.
+    instance.on('zoomInStart', pushHash)
+    instance.on('lateralStart', pushHash)
+    instance.on('afterZoomIn', replaceHash)
+    instance.on('afterLateral', replaceHash)
     instance.on('afterZoomOut', replaceHash)
 
     // ─── Popstate → Zumly (back only) ───────────────────────
@@ -150,6 +155,13 @@ export const ZumlyRouter = {
         syncing = false
         processing = false
       }
+      // A navigation of the user's while the back was applied did not write its hash: the
+      // hash follows where the view ended up, as a new entry if it went further in.
+      if (!destroyed) {
+        const path = window.location.hash.slice(1 + prefix.length)
+        const now = buildPath(instance, sep)
+        setHash(path && now.startsWith(path + sep) ? 'pushState' : 'replaceState')
+      }
     }
 
     function onPopState () {
@@ -175,8 +187,10 @@ export const ZumlyRouter = {
     instance.on('destroy', function () {
       destroyed = true
       pendingTarget = null
-      instance.off('afterZoomIn', pushHash)
-      instance.off('afterLateral', pushHash)
+      instance.off('zoomInStart', pushHash)
+      instance.off('lateralStart', pushHash)
+      instance.off('afterZoomIn', replaceHash)
+      instance.off('afterLateral', replaceHash)
       instance.off('afterZoomOut', replaceHash)
       window.removeEventListener('popstate', onPopState)
     })

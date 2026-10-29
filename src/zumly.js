@@ -643,8 +643,8 @@ export class Zumly {
 
   /**
    * Register a lifecycle hook.
-   * Events: 'beforeZoomIn', 'afterZoomIn', 'beforeZoomOut', 'afterZoomOut',
-   *         'beforeLateral', 'afterLateral', 'viewMounted', 'destroy'
+   * Events: 'beforeZoomIn', 'zoomInStart', 'afterZoomIn', 'beforeZoomOut', 'afterZoomOut',
+   *         'beforeLateral', 'lateralStart', 'afterLateral', 'viewMounted', 'destroy'
    * @param {string} event
    * @param {function} fn
    * @returns {this} For chaining
@@ -1567,6 +1567,10 @@ export class Zumly {
       this._emitViewChanged('zoomIn', fromName)
       this.tracing('ended')
     }
+    // The stack already has the new view: whatever follows the URL can write it now, so a
+    // browser back during the motion has an entry of its own to go back from.
+    this._emit('zoomInStart', { viewName: targetViewName, zoomLevel: this.zoomLevel() })
+    if (this._destroyed) return
     await this._runNavigationTransition(spec, complete)
     if (this._destroyed && deferredContent) disposeView(deferredContent)
   }
@@ -1873,6 +1877,8 @@ export class Zumly {
       this._emitViewChanged('lateral', currentName)
       this.tracing('ended')
     }
+    this._emit('lateralStart', { viewName: targetViewName, from: currentName, isBack })
+    if (this._destroyed) return
     return this._runNavigationTransition(spec, complete)
   }
 

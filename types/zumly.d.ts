@@ -353,11 +353,15 @@ export interface ZumlyOptions {
 export interface ZumlyEventMap {
   viewMounted: { viewName: string; node: HTMLElement }
   beforeZoomIn: { viewName: string }
+  /** The new view is in the stack and starts to move in (getCurrentViewName() names it). */
+  zoomInStart: { viewName: string; zoomLevel: number }
   afterZoomIn: { viewName: string; zoomLevel: number }
   /** viewName is the view being returned to; from is the view being left. */
   beforeZoomOut: { zoomLevel: number; viewName: string | null; from: string | null; levels?: number }
   afterZoomOut: { zoomLevel: number; viewName: string | null; from: string | null; levels?: number }
   beforeLateral: { viewName: string; from: string; isBack: boolean }
+  /** The sibling is in the stack and starts to move in. */
+  lateralStart: { viewName: string; from: string; isBack: boolean }
   afterLateral: { viewName: string; from: string; isBack: boolean }
   /**
    * A zoom-out driven by a gesture (gestures.follow). 'start' and 'move' carry

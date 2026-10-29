@@ -125,6 +125,43 @@ describe('ZumlyRouter plugin', () => {
     }
   })
 
+  it('writes the entry as a zoom-in or a sibling starts, so a back during the motion comes back', async () => {
+    const app = createApp()
+    app.use(ZumlyRouter)
+    await app.init()
+    const pending = []
+    const none = getDriver('none')
+    app.transitionDriver = {
+      runTransition (spec, complete) { pending.push(() => none.runTransition(spec, complete)) },
+    }
+    try {
+      const navigation = app.zoomTo('detail')
+      await vi.waitFor(() => expect(pending).toHaveLength(1))
+      expect(window.location.hash).toBe('#/home/detail')
+      // A browser back while it moves: Chrome delivers it later, onto the entry just written.
+      const popped = new Promise(resolve => window.addEventListener('popstate', resolve, { once: true }))
+      window.history.back()
+      await popped
+      expect(window.location.hash).toBe('#/home')
+      pending.shift()()
+      await navigation
+      await vi.waitFor(() => expect(pending).toHaveLength(1))
+      pending.shift()()
+      await vi.waitFor(() => expect(app.getCurrentViewName()).toBe('home'))
+      expect(window.location.hash).toBe('#/home')
+
+      const detail = app.zoomTo('detail')
+      await vi.waitFor(() => expect(pending).toHaveLength(1))
+      pending.shift()()
+      await detail
+      const lateral = app.goTo('other', { mode: 'lateral' })
+      await vi.waitFor(() => expect(pending).toHaveLength(1))
+      expect(window.location.hash).toBe('#/home/other')
+      pending.shift()()
+      await lateral
+    } finally { app.destroy() }
+  })
+
   it('waits for a running navigation and consumes the latest popstate target', async () => {
     const app = createApp()
     app.use(ZumlyRouter)
