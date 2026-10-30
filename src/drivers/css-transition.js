@@ -220,41 +220,48 @@ function runZoomOut (currentView, previousView, lastView, currentStage, duration
   const v2 = lastView && currentStage.views[2] ? currentStage.views[2] : null
   const stagger = currentStage.stagger || 0
 
+  // The zoom-in keyframes, played forward from where each view is to where it goes back to.
+  // Played in reverse, the ease ran backwards too: a zoom-out barely moved for the first
+  // third of its time and rushed at the end.
   setCSSVars(currentView, duration, ease, {
-    '--current-view-transform-start': v0.backwardState.transform,
-    '--current-view-transform-end': v0.forwardState.transform,
+    '--current-view-transform-start': v0.forwardState.transform,
+    '--current-view-transform-end': v0.backwardState.transform,
   })
   if (stagger > 0) currentView.style.setProperty('animation-delay', '0ms')
   setCSSVars(previousView, duration, ease, {
-    '--previous-view-transform-start': v1.backwardState.transform,
-    '--previous-view-transform-end': v1.forwardState.transform,
+    '--previous-view-transform-start': v1.forwardState.transform,
+    '--previous-view-transform-end': v1.backwardState.transform,
   })
   if (stagger > 0) previousView.style.setProperty('animation-delay', `${stagger}ms`)
   if (lastView && v2) {
     setCSSVars(lastView, duration, ease, {
-      '--last-view-transform-start': v2.backwardState.transform,
-      '--last-view-transform-end': v2.forwardState.transform,
+      '--last-view-transform-start': v2.forwardState.transform,
+      '--last-view-transform-end': v2.backwardState.transform,
     })
     if (stagger > 0) lastView.style.setProperty('animation-delay', `${stagger * 2}ms`)
   }
 
-  // Trigger reverse animations
+  const elements = lastView ? [currentView, previousView, lastView] : [currentView, previousView]
+  // Inline, over the stylesheet's reverse: a zumly.css older than this file still has it.
+  elements.forEach(el => el.style.setProperty('animation-direction', 'normal'))
   currentView.classList.add('zoom-current-view-reverse')
   previousView.classList.add('zoom-previous-view-reverse')
   if (lastView) lastView.classList.add('zoom-last-view-reverse')
 
-  const elements = lastView ? [currentView, previousView, lastView] : [currentView, previousView]
   let pending = elements.length
   const durationMs = parseDurationMs(duration)
   const maxDelay = lastView ? stagger * 2 : stagger
   const budgetMs = durationMs + maxDelay + SAFETY_BUFFER_MS
-  // animationend carries the keyframes name: the -reverse classes run the zoom-in keyframes
-  // backwards. With the class names, every zoom-out waited for the safety timer.
+  // animationend carries the keyframes name: the -reverse classes run the zoom-in keyframes.
+  // With the class names, every zoom-out waited for the safety timer.
   const zoomAnims = new Set(['zoom-current-view', 'zoom-previous-view', 'zoom-last-view'])
 
   const { finish, extend } = createFinishGuard(() => {
     cleanupAnimListeners(elements, handleEnd, handleStart)
-    elements.forEach(el => el.style.removeProperty('animation-delay'))
+    elements.forEach(el => {
+      el.style.removeProperty('animation-delay')
+      el.style.removeProperty('animation-direction')
+    })
     // Safety path: apply end states so the outgoing view is removed and the
     // remaining views are restored even when animationend never arrived.
     elements.forEach(el => {

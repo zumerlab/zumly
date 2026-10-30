@@ -192,6 +192,9 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* The -reverse classes run the zoom-in keyframes for a zoom-out. The CSS driver swaps their
+   ends and sets animation-direction: normal inline, so the ease runs forward; reverse here
+   is for a zumly.js older than this stylesheet. */
 .zoom-current-view-reverse {
   animation-name: zoom-current-view;
   animation-duration: var(--zoom-duration);

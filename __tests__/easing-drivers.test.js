@@ -1,12 +1,13 @@
 /**
- * Shared CSS easing and the library drivers (Anime.js v3/v4, GSAP, Motion).
+ * Shared CSS easing, the CSS driver's zoom-out curve and the library drivers
+ * (Anime.js v3/v4, GSAP, Motion).
  * Fake libraries stand in for the real ones; the curve and library API shapes
  * match what the real libraries call (checked by hand against their CDN builds).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Zumly } from '../src/zumly.js'
 import { cssEasing } from '../src/drivers/driver-helpers.js'
-import { animeDriver, gsapDriver, motionDriver } from '../src/drivers/index.js'
+import { animeDriver, cssTransition, gsapDriver, motionDriver } from '../src/drivers/index.js'
 import '../src/style.css'
 
 describe('cssEasing', () => {
@@ -70,6 +71,44 @@ async function zoomWith (driver, ease = 'cubic-bezier(.2,.8,.2,1)') {
   await app.zoomOut()
   expect(app.getCurrentViewName()).toBe('home')
 }
+
+describe('CSS driver', () => {
+  it('a zoom-out follows the ease forward, as a zoom-in does', async () => {
+    document.body.innerHTML = `
+      <div class="zumly-canvas" style="width:400px;height:300px">
+        <div class="z-view is-previous-view" style="width:400px;height:300px"></div>
+        <div class="z-view is-current-view" style="width:400px;height:300px"></div>
+      </div>`
+    const canvas = document.querySelector('.zumly-canvas')
+    const [previousView, currentView] = canvas.children
+    const state = scale => ({ origin: '0 0', transform: `scale(${scale})` })
+    const ease = 'cubic-bezier(.2,.8,.2,1)'
+    const done = new Promise(resolve => cssTransition({
+      type: 'zoomOut',
+      currentView,
+      previousView,
+      lastView: null,
+      currentStage: { stagger: 0, views: [{ forwardState: state(1), backwardState: state(0.2) }, { forwardState: state(5), backwardState: state(1) }] },
+      duration: '1000ms',
+      ease,
+      canvas
+    }, resolve))
+    const animations = [currentView, previousView].map(el => el.getAnimations()[0])
+    for (const animation of animations) {
+      animation.pause()
+      animation.currentTime = 300
+    }
+    // At 30 % of the time each view has gone ease(0.3) ≈ 83 % of the way. Played in
+    // reverse, it had gone 1 %.
+    const covered = cssEasing(ease)(0.3)
+    const scaleOf = el => new DOMMatrix(getComputedStyle(el).transform).a
+    expect(scaleOf(currentView)).toBeCloseTo(1 - 0.8 * covered, 1)
+    expect(scaleOf(previousView)).toBeCloseTo(5 - 4 * covered, 1)
+    for (const animation of animations) animation.finish()
+    await done
+    expect(previousView.style.getPropertyValue('animation-direction')).toBe('')
+  })
+})
 
 /** Drives onUpdate at progress 0.5 and then completes, recording the call. */
 function progressRecorder () {
