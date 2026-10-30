@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Analytics, cookie consent and events for zumerlab.com -->
+  <script async src="/zumerlab.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architecture — Zumly guide</title>
+  <meta name="description" content="How Zumly is built, explored with Zumly: seven layers from the toolchain to the DOM, every file with what it exposes and depends on, the navigation flows step by step, every option and the public API." />
+  <link rel="canonical" href="https://zumerlab.com/zumly/guides/architecture.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Architecture — Zumly guide" />
+  <meta property="og:description" content="How Zumly is built, explored with Zumly: seven layers from the toolchain to the DOM, every file with what it exposes and depends on, the navigation flows step by step, every option and the public API." />
+  <meta property="og:url" content="https://zumerlab.com/zumly/guides/architecture.html" />
+  <meta property="og:image" content="https://zumerlab.com/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preload" href="../fonts/roboto-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="../css/fonts.css" />
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+  <style>
+    /* The map needs height: a sheet and the views behind it. */
+    .demo.map iframe { height: min(760px, 82vh); background: var(--bg); }
+    @media (max-width: 720px) { .demo.map iframe { height: 70vh; } }
+  </style>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand" aria-label="Zumly home"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/">Learn</a>
+      <a class="nav-link" href="../learn/#guides" aria-current="page">Guides</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../#/home/showcases">Showcases</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
+    </div>
+  </nav>
+
+  <div class="docs">
+  <aside class="docs-side">
+    <button type="button" class="docs-side-toggle" aria-expanded="false">Contents</button>
+    <nav class="docs-nav" aria-label="Docs">
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Learn</button>
+        <div class="docs-items">
+          <a href="../learn/">Overview</a>
+          <a href="../learn/first-app.html">Your first app</a>
+          <a href="../learn/depth.html">Going deeper</a>
+          <a href="../learn/siblings.html">Siblings</a>
+          <a href="../learn/views.html">Where views come from</a>
+          <a href="../learn/navigate.html">Navigating from code</a>
+          <a href="../learn/motion.html">Motion and gestures</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="true">Guides</button>
+        <div class="docs-items">
+          <a href="../guides/navigation.html">Navigation controls</a>
+          <a href="../guides/architecture.html" aria-current="page">Architecture</a>
+          <a href="../guides/heavy-views.html">Heavy views</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Frameworks</button>
+        <div class="docs-items">
+          <a href="../integrations/react.html">React</a>
+          <a href="../integrations/vue.html">Vue</a>
+          <a href="../integrations/svelte.html">Svelte</a>
+          <a href="../integrations/angular.html">Angular</a>
+          <a href="../integrations/orbit-css.html">Orbit CSS</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Drivers</button>
+        <div class="docs-items">
+          <a href="../drivers/gsap.html">GSAP</a>
+          <a href="../drivers/anime.html">Anime.js</a>
+          <a href="../drivers/motion.html">Motion</a>
+          <a href="../drivers/custom.html">Write your own</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Reference</button>
+        <div class="docs-items">
+          <a href="../api.html">API reference</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <span class="hero-eyebrow">Guide</span>
+      <h1 class="hero-title">Architecture</h1>
+      <p class="hero-sub">How Zumly is built, explored with Zumly. The library is a stack of seven layers: the toolchain at the bottom, the engine in the middle, the DOM the browser paints at the top. Open a layer to see its files, open a file to see what it exposes and what it depends on, and follow a navigation step by step through the layers it crosses.</p>
+    </header>
+
+    <div class="demo map">
+      <div class="demo-bar"><span>Live map · runs on Zumly</span><a href="examples/architecture.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="architecture-map" src="examples/architecture.html" title="Zumly architecture: a map you navigate by zooming"></iframe>
+    </div>
+    <p class="demo-hint">Click a card to enter. Click outside the current view, scroll, press <kbd>&larr;</kbd> or swipe to go back. The breadcrumb at the top jumps to any level.</p>
+
+    <section>
+      <h2>How to read it</h2>
+      <ul>
+        <li><strong>The stack.</strong> Every layer uses the ones below it. <code>Z0</code> is packaging, build, tests and docs; <code>Z1</code> the entry points of the package; <code>Z2</code> the <code>Zumly</code> class and its helpers; <code>Z3</code> turns a value in <code>views</code> into a DOM node; <code>Z4</code> the transition drivers; <code>Z5</code> the optional rasterize and WebGL renderers; <code>Z6</code> what is in the document while an app runs.</li>
+        <li><strong>The strip.</strong> Each sheet shows the seven layers as a strip. The bright one is where you are; the medium ones are the layers that sheet is wired to.</li>
+        <li><strong>Across the layers.</strong> Flows, Options and API are not layers: they say how the layers work together, and every chip in them links back to a file in the stack. Chips carry the number of their layer.</li>
+        <li><strong>Lines.</strong> The number on a file is its line count in <code>src/</code> at the version shown on the root view.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>What the map itself uses</h2>
+      <p>The page is a plain Zumly app: one <code>views</code> object whose entries are functions that build each sheet from a small data set, triggers with <code>data-to</code> and <code>data-title</code>, and the built-in controls.</p>
+      <pre><code>new Zumly({
+  mount: '#app',
+  initialView: 'root',
+  views,
+  transitions: {
+    duration: '750ms',
+    ease: 'cubic-bezier(.2,.8,.2,1)',
+    hideTrigger: 'fade',
+    effects: ['brightness(.8)', 'brightness(.55)']
+  },
+  depthNav: { style: 'title' },
+  lateralNav: { arrows: true, dots: true },
+  gestures: { follow: true },
+  inputs: { pinch: true }
+})</code></pre>
+      <p>Two details worth copying. The chips inside a sheet carry <code>data-sibling="false"</code>, so only the cards of a layer form the sibling bar and a link does not become a dot. And the effects behind use <code>brightness</code> without <code>blur</code>: a chain of small triggers scales the views behind many times over, and a blur on a layer that large costs the whole frame budget.</p>
+    </section>
+
+    <section>
+      <h2>Keep reading</h2>
+      <p>The <a href="../api.html">API reference</a> lists every option, method and event. <a href="https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md">DRIVER_API.md</a> describes the contract a driver receives, and <a href="heavy-views.html">Heavy views</a> covers the rasterize and WebGL layers in depth.</p>
+    </section>
+  </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h2>Learn</h2>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+            <li><a href="../guides/navigation.html">Navigation controls</a></li>
+            <li><a href="../guides/architecture.html">Architecture</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Frameworks</h2>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Drivers</h2>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Zumly</h2>
+          <ul>
+            <li><a href="../#/home/showcases">Showcases</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License · <a href="/privacy.html">Privacy</a><span data-cookie-settings hidden> · <a href="#">Cookies</a></span></span>
+        <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

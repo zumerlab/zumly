@@ -42,7 +42,7 @@ function nav (to, section) {
 // On api.html its sections hang under it.
 const SIDEBAR = [
   ['Learn', [['learn/', 'Overview'], ...STEPS.map(([file, title]) => [`learn/${file}.html`, title])]],
-  ['Guides', [['guides/navigation.html', 'Navigation controls'], ['guides/heavy-views.html', 'Heavy views']]],
+  ['Guides', [['guides/navigation.html', 'Navigation controls'], ['guides/architecture.html', 'Architecture'], ['guides/heavy-views.html', 'Heavy views']]],
   ['Frameworks', [
     ['integrations/react.html', 'React'], ['integrations/vue.html', 'Vue'], ['integrations/svelte.html', 'Svelte'],
     ['integrations/angular.html', 'Angular'], ['integrations/orbit-css.html', 'Orbit CSS']
@@ -85,6 +85,7 @@ function footer (to) {
           <ul>
             ${STEPS.map(([file, title]) => li(to(`learn/${file}.html`), title)).join('\n            ')}
             ${li(to('guides/navigation.html'), 'Navigation controls')}
+            ${li(to('guides/architecture.html'), 'Architecture')}
           </ul>
         </div>
         <div>

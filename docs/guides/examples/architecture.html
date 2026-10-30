@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Architecture</title>
+  <meta name="robots" content="noindex">
+  <link rel="preload" href="../../fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="../../css/fonts.css">
+  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+  <style>
+/* ─── The app: a ZUI that walks through the library's own architecture ─── */
+/* The site's tokens (css/site.css), so the example matches the pages around it. */
+:root {
+  --bg: #04101d; --surface: rgba(120, 190, 255, 0.05); --surface-2: rgba(120, 190, 255, 0.09); --ink: #e4effa; --muted: rgba(214, 232, 250, 0.74); --line: rgba(120, 190, 255, 0.16);
+  --accent: #6cc2ff; --accent-ink: #021220; --gold: #ffd36a; --gold-soft: rgba(255, 211, 106, 0.18);
+  --l0: #8e9bb0; --l1: #4fc1d6; --l2: #6cc2ff; --l3: #5cc98a; --l4: #ffb38a; --l5: #e07ac0; --l6: #ffd36a;
+  --tint: 16%; --shadow: 0 14px 40px rgba(0, 0, 0, 0.45); --card: #071a2e;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+html.light {
+  --bg: #f3f8fd; --surface: rgba(20, 90, 160, 0.05); --surface-2: rgba(20, 90, 160, 0.09); --ink: #0a1f33; --muted: rgba(10, 31, 51, 0.72); --line: rgba(20, 70, 130, 0.16);
+  --accent: #155f9e; --accent-ink: #ffffff; --gold: #9a6f00; --gold-soft: rgba(154, 111, 0, 0.14);
+  --l0: #5b6474; --l1: #1f7a8c; --l2: #155f9e; --l3: #2e7d4f; --l4: #b85c1e; --l5: #a2357a; --l6: #9a6f00;
+  --tint: 10%; --shadow: 0 14px 40px rgba(10, 31, 51, 0.16); --card: #ffffff;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); display: flex; flex-direction: column; overflow: hidden; padding: 10px 12px; gap: 8px; -webkit-font-smoothing: antialiased; }
+button, code, pre { font-family: var(--font); }
+button { font-size: inherit; color: inherit; }
+code { font-size: .95em; }
+
+.bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-height: 34px; }
+.bar h1 { font-size: 18px; font-weight: 700; margin: 0; white-space: nowrap; }
+/* One line, scrolling sideways: a path that wraps would resize the canvas mid-transition. */
+.crumbs { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; font-size: 13px; color: var(--muted); min-width: 0; flex: 1; }
+.crumbs button { white-space: nowrap; flex-shrink: 0; }
+.crumbs button { border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 3px 10px; cursor: pointer; font-weight: 500; font-size: 12.5px; }
+.crumbs button[aria-current="page"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); cursor: default; }
+.crumbs .sep { opacity: .5; }
+.tip { margin-left: auto; font-size: 12px; color: var(--muted); }
+@media (max-width: 700px) { .tip { display: none; } }
+
+.stage { position: relative; flex: 1; min-height: 0; border-radius: 10px; border: 1px solid var(--line); overflow: clip; background: var(--bg); }
+.zumly-canvas { background: transparent; }
+
+/* views */
+.z-view { display: grid; place-items: center; left: 0; top: 0; width: 100%; height: 100%; padding: 24px; }
+/* Views start at the canvas origin: Zumly centers them over the trigger with its own transform. */
+.z-view.sheet { width: min(100%, 1040px); height: min(100%, 720px); padding: 0; }
+.sheet > .card { width: 100%; height: 100%; border-radius: 12px; background: var(--card); border: 1px solid color-mix(in srgb, var(--lc, var(--accent)) 50%, var(--line)); box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; }
+.card .head { padding: 16px 22px 12px; border-bottom: 1px solid var(--line); border-top: 6px solid var(--lc, var(--accent)); background: color-mix(in srgb, var(--lc, var(--accent)) 6%, var(--surface)); display: flex; align-items: baseline; gap: 10px 14px; flex-wrap: wrap; }
+.card .head h2 { font-size: clamp(18px, 2.2vw, 24px); font-weight: 700; margin: 0; line-height: 1.2; }
+.card .head .z { font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--card); background: var(--lc, var(--accent)); border-radius: 4px; padding: 4px 7px; }
+.card .head p { margin: 4px 0 0; flex-basis: 100%; color: var(--muted); max-width: 80ch; }
+.card .body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 22px 20px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; border-radius: 4px; padding: 3px 8px; font-size: 12px; font-weight: 500; background: var(--surface-2); border: 1px solid var(--line); }
+h3.k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 16px 0 6px; font-weight: 700; }
+ul.exp { margin: 0; padding-left: 18px; } ul.exp li { margin: 0 0 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 4px 10px 4px 4px; font-size: 12.5px; cursor: zoom-in; display: inline-flex; gap: 8px; align-items: center; }
+.chip i { font-style: normal; font-size: 10px; font-weight: 700; color: var(--card); background: var(--lc, var(--accent)); border-radius: 4px; padding: 3px 5px; line-height: 1; }
+.chip:hover { border-color: var(--lc, var(--accent)); }
+.chip.flow { padding-left: 10px; border-color: color-mix(in srgb, var(--gold) 60%, var(--line)); }
+
+/* root: a Z axis with the stack, and the references beside it */
+.root { padding: 0; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, 1fr); grid-template-rows: auto 1fr; gap: 0 28px; align-items: start; overflow-y: auto; align-content: start; }
+.root .intro { grid-column: 1 / -1; padding: 22px 26px 6px; }
+.root .intro h1 { font-size: clamp(20px, 2.4vw, 26px); font-weight: 700; line-height: 1.15; margin: 0 0 6px; }
+.root .intro p { margin: 0; color: var(--muted); max-width: 90ch; }
+.axiswrap { display: grid; grid-template-columns: 64px 1fr; gap: 0 10px; padding: 10px 0 22px 26px; align-items: stretch; }
+.axis { position: relative; display: flex; flex-direction: column; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); text-align: center; padding: 6px 0; }
+.axis::before { content: ""; position: absolute; left: 50%; top: 42px; bottom: 42px; width: 2px; background: linear-gradient(var(--l6), var(--l0)); border-radius: 1px; }
+.axis span { background: var(--bg); padding: 2px 0; line-height: 1.25; }
+.stack { display: flex; flex-direction: column; gap: 6px; }
+.layer-card { position: relative; display: grid; grid-template-columns: 44px 1fr auto; grid-template-rows: auto auto; gap: 2px 12px; align-items: center; text-align: left; border: 1px solid var(--line); border-left: 6px solid var(--lc); border-radius: 6px; padding: 9px 14px 9px 10px; background: var(--card); cursor: zoom-in; }
+.layer-card:hover { border-color: var(--lc); background: color-mix(in srgb, var(--lc) 8%, var(--surface)); }
+.layer-card b { grid-column: 2; grid-row: 1; }
+.layer-card .mini { grid-column: 2; grid-row: 2; }
+.layer-card .z { grid-column: 1; grid-row: 1 / 3; width: 44px; height: 44px; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--card); background: var(--lc); border-radius: 6px; letter-spacing: .04em; }
+.layer-card b { font-size: 15px; font-weight: 700; }
+.layer-card .count { grid-column: 3; grid-row: 1 / 3; font-size: 12px; color: var(--muted); text-align: right; white-space: nowrap; }
+.layer-card .mini { display: flex; flex-wrap: wrap; gap: 4px; }
+.layer-card .mini span { font-size: 10.5px; line-height: 1; padding: 3px 6px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); }
+.refs { padding: 10px 26px 22px 0; display: flex; flex-direction: column; gap: 8px; }
+.refs h2 { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 6px 0 2px; }
+.refs .why { font-size: 12.5px; color: var(--muted); margin: 0 0 6px; }
+.extra { display: grid; grid-template-columns: 1fr; gap: 6px; text-align: left; border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; background: var(--card); cursor: zoom-in; }
+.extra:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.extra b { font-size: 15px; } .extra span { color: var(--muted); font-size: 12.5px; }
+.extra .mini { display: flex; gap: 3px; }
+.extra .mini i { height: 6px; flex: 1; border-radius: 2px; background: var(--c); opacity: .9; }
+@media (max-width: 760px) { .root { grid-template-columns: 1fr; } .axiswrap { padding: 6px 18px 10px; grid-template-columns: 1fr; } .axis { display: none; } .refs { padding: 0 18px 18px; } .layer-card .mini { display: none; } .root .intro { padding: 18px 18px 6px; } }
+
+/* where you are in the stack: a strip of the seven layers on every sheet */
+.strip { display: flex; gap: 3px; align-items: center; margin: 2px 0 0; flex-basis: 100%; }
+.strip i { flex: 1; height: 7px; border-radius: 2px; background: var(--c); opacity: .3; }
+.strip i.on { opacity: 1; height: 10px; outline: 2px solid color-mix(in srgb, var(--c) 40%, transparent); outline-offset: 1px; }
+.strip i.part { opacity: .75; }
+.strip small { font-size: 11px; color: var(--muted); margin-left: 8px; white-space: nowrap; }
+
+/* layer: grid of modules */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.mod { position: relative; text-align: left; border: 1px solid color-mix(in srgb, var(--lc) 50%, var(--line)); border-radius: 8px; padding: 12px 14px 10px; background: var(--card); cursor: zoom-in; display: flex; flex-direction: column; gap: 2px; min-height: 92px; }
+.mod:hover { border-color: var(--lc); }
+.mod.big { grid-column: 1 / -1; background: color-mix(in srgb, var(--lc) var(--tint), var(--surface)); }
+.mod.ext { border-style: dashed; background: var(--surface-2); }
+.mod b { font-size: 15px; font-weight: 700; line-height: 1.2; }
+.mod .f { font-size: 11.5px; color: var(--muted); }
+.mod .n { position: absolute; right: 12px; top: 10px; font-size: 11px; color: color-mix(in srgb, var(--lc) 80%, var(--ink)); }
+.mod .tag { margin-top: auto; align-self: flex-start; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--lc); font-weight: 700; }
+
+/* flows and options */
+.flowgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.flowcard { text-align: left; border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: var(--card); cursor: zoom-in; }
+.flowcard:hover { border-color: var(--gold); }
+.flowcard b { font-size: 16px; display: block; margin-bottom: 4px; } .flowcard span { color: var(--muted); font-size: 12.5px; } .flowcard em { display: block; margin-top: 8px; font-style: normal; font-size: 11px; font-weight: 700; color: var(--gold); }
+ol.steps { list-style: none; padding: 0; margin: 0; counter-reset: s; display: grid; gap: 8px; }
+.step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; background: var(--surface-2); }
+.step::before { counter-increment: s; content: counter(s); font-size: 12px; font-weight: 700; line-height: 24px; width: 24px; height: 24px; border-radius: 50%; text-align: center; background: var(--gold); color: var(--card); }
+.step .chips { margin-top: 6px; }
+.optgroup { font-weight: 700; font-size: 14px; margin: 14px 0 6px; }
+.opt { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; margin-bottom: 6px; background: var(--surface-2); }
+.opt .k { font-size: 13px; font-weight: 700; } .opt .d { font-size: 12px; color: var(--muted); text-align: right; } .opt .s { grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); }
+.opt .chips { grid-column: 1 / -1; }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; } th, td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; } td code { white-space: nowrap; }
+pre { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; font-size: 12px; line-height: 1.5; margin: 6px 0 10px; white-space: pre; }
+.tablewrap { overflow-x: auto; }
+
+.zumly-canvas .z-nav-back, .zumly-canvas .z-depth-band, .zumly-canvas .z-lateral-nav { color: var(--ink); }
+.zoom-me:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+  </style>
+</head>
+<body>
+<div class="bar">
+  <h1>Zumly architecture</h1>
+  <nav class="crumbs" id="crumbs" aria-label="Path"></nav>
+  <span class="tip">Click to enter. Click outside, scroll, press Left or swipe to go back. Pinch and trackpad follow the gesture.</span>
+</div>
+<div class="stage"><div class="zumly-canvas" id="app"></div></div>
+
+<script>
+// ─── Data ─────────────────────────────────────────────────────────────────
+const LAYERS = [
+  { id: 'tools', name: 'Distribution and tooling', color: 'var(--l0)',
+    desc: 'Everything around the source: packaging, build, tests, documentation and labs. None of it reaches the end user except what esbuild leaves in dist/.' },
+  { id: 'entries', name: 'Public entry points', color: 'var(--l1)',
+    desc: 'Where a user of the library comes in: the IIFE bundle for a script tag, ESM/CJS for bundlers, the types, the stylesheet and the router plugin.' },
+  { id: 'core', name: 'Engine: the Zumly class', color: 'var(--l2)',
+    desc: 'The orchestrator. zumly.js keeps the view stack (storedViews), listens to clicks, keys, wheel and touch, computes the geometry of every zoom, builds the snapshot the driver receives and maintains the navigation UI. The modules around it are pure math, state and controls.' },
+  { id: 'pipeline', name: 'View pipeline', color: 'var(--l3)',
+    desc: 'How a value in `views` becomes a DOM node: the prefetcher decides what to cache, the resolver interprets the source type, the cache stores clones, and the lifecycle registers onCleanup/onActivate per node.' },
+  { id: 'drivers', name: 'Transition drivers', color: 'var(--l4)',
+    desc: 'The engine computes what moves and where; the driver decides how. All of them honor the same contract: runTransition(spec, onComplete), calling onComplete exactly once.' },
+  { id: 'render', name: 'Heavy rendering (optional)', color: 'var(--l5)',
+    desc: 'For views with thousands of nodes or glass: rasterize shows the views behind as a SnapDOM photo, and webgl draws the whole zoom in WebGL2 with the effects in a shader. Optional external dependency: @zumer/snapdom.' },
+  { id: 'dom', name: 'Runtime DOM', color: 'var(--l6)',
+    desc: 'What lives in the document while the app runs: the canvas with at most three views (current, previous and last), the navigation controls and, when enabled, the WebGL canvas and the photo layers.' }
+]
+
+const NODES = [
+  { id: 'pkg', layer: 'tools', x: 14, y: 28, label: 'package.json', file: 'exports · peerDeps', tag: 'npm',
+    sum: 'Defines what is published and how it is imported. No runtime dependencies; SnapDOM and its plugins are optional peer dependencies.',
+    exp: ['"." → dist/zumly.mjs (import) · dist/zumly.cjs (require)', '"./style.css" and "./css" → dist/zumly.css', '"./drivers" → src/drivers/index.js (uncompiled)', '"./driver-helpers" → src/drivers/driver-helpers.js', 'files: dist, types, src/drivers, view-visibility, view-lifecycle, DRIVER_API.md', 'scripts: compile, dev (serve :9090), test, test:browsers, test:pack, bump, build'] },
+  { id: 'build', layer: 'tools', x: 38, y: 28, label: 'esbuild.config.mjs', file: 'compile → dist/', n: 125, tag: 'build',
+    sum: 'Four parallel esbuild builds with a version banner. The IIFE is required for the classic script tag: without it the minified variables would collide with other scripts.',
+    exp: ['dist/zumly.js · minified es2020 IIFE (entry.js, assigns window.Zumly)', 'dist/zumly.mjs · ESM (entry-esm.js)', 'dist/zumly.cjs · CommonJS', 'dist/zumly.css and zumly.min.css (style.css)', 'Copied to public/dist/'] },
+  { id: 'tests', layer: 'tools', x: 62, y: 28, label: 'Tests', file: '__tests__/ · 39 files · 482 tests', tag: 'vitest',
+    sum: 'Vitest in real browsers through Playwright (Chromium with WebGL2, Firefox, WebKit). They cover geometry, drivers, navigation, gestures, router, rasterize, webgl, accessibility and teardown.',
+    exp: ['vitest.config.js · include __tests__/**, BROWSER=chromium|firefox|webkit|all', 'npm test · headless, verbose reporter', 'npm run test:coverage · v8 over src/**', 'Reference screenshots in __tests__/__screenshots__'] },
+  { id: 'scripts', layer: 'tools', x: 86, y: 28, label: 'scripts/', file: 'build-docs · verify-package · test-browsers', tag: 'node',
+    sum: 'Maintenance helpers: regenerate the docs nav and examples, verify the tarball as an outside consumer, run the suite in all three browsers.',
+    exp: ['build-docs.mjs · shared nav/footer and <pre data-example> from learn/examples', 'verify-package.mjs · npm pack + offline install + checks the exports', 'test-browsers.mjs · BROWSER=all'] },
+  { id: 'docs', layer: 'tools', x: 14, y: 72, label: 'docs/', file: 'GitHub Pages · zumerlab.com/zumly', tag: 'site',
+    sum: 'The public site: demo, Learn in six steps, guides (navigation, heavy views), integrations (React, Vue, Svelte, Angular, Orbit), drivers, showcases, API and llms.txt for assistants.',
+    exp: ['learn/ · first-app, depth, siblings, views, navigate, motion', 'guides/ · navigation, heavy-views', 'integrations/ · react, vue, svelte, angular, orbit-css', 'drivers/ · anime, gsap, motion, custom', 'api.html · DRIVER_API.md · geometry-optimization.md · roadMap.md', 'llms.txt / llms-full.txt'] },
+  { id: 'demos', layer: 'tools', x: 38, y: 72, label: 'demos/', file: '7 single-file pages', tag: 'html',
+    sum: 'Each demo is one file you read top to bottom; they load the local build (npm run dev).',
+    exp: ['00-hello · 01-depth · 02-lateral · 03-views', '04-drivers (switch live) · 05-router · orbit-dial', 'partials/remote.html · a view loaded by URL'] },
+  { id: 'labs', layer: 'tools', x: 62, y: 72, label: 'labs/ · experiments/', file: 'heavy-views · snapdom-compositor', tag: 'measurements',
+    sum: 'Ideas tried before they reach src/: smoothness with heavy views, Chromium traces (dropped frames), filmstrips and comparisons. rasterize and webgl came out of here. Not published.',
+    exp: ['labs/heavy-views · demo, measure, trace, variants, REPORT.md', 'experiments/snapdom-compositor · bench, fluidity, filmstrip, REPORT.md', 'labs/serve.mjs · :9292, also serves ../snapdom and ../orbit'] },
+  { id: 'skills', layer: 'tools', x: 86, y: 72, label: '.claude/skills', file: 'zumly-guide · new-driver', tag: 'agents',
+    sum: 'Guides for assistants: architecture patterns for apps built with Zumly, and a generator for custom drivers with a template and tests.',
+    exp: ['zumly-guide.md · mental model, depth vs lateral, view sources, frameworks', 'new-driver.md · driver contract and WAAPI/GSAP templates'] },
+
+  { id: 'entry', layer: 'entries', x: 20, y: 30, label: 'entry.js', file: 'src/entry.js', n: 6, tag: 'IIFE',
+    sum: 'Entry of the script-tag bundle: puts Zumly on window and attaches the router as Zumly.Router.', exp: ['window.Zumly', 'Zumly.Router = ZumlyRouter'] },
+  { id: 'entryesm', layer: 'entries', x: 50, y: 30, label: 'entry-esm.js', file: 'src/entry-esm.js', n: 8, tag: 'ESM/CJS',
+    sum: 'Entry for bundlers. Exports the class, the router and the driver factories bound to a library instance (no globals).',
+    exp: ['export { Zumly, ZumlyRouter }', 'export { animeDriver, gsapDriver, motionDriver }', 'export default Zumly'] },
+  { id: 'types', layer: 'entries', x: 80, y: 30, label: 'zumly.d.ts', file: 'types/zumly.d.ts', n: 523, tag: 'TypeScript',
+    sum: 'Public types: constructor options, ViewContext, TransitionSpec/ZoomSnapshot for drivers, events and methods.',
+    exp: ['ZumlyOptions · TransitionOptions · LateralNavOptions · DepthNavOptions', 'InputsOptions · GesturesOptions · LabelsOptions · RasterizeOptions · WebGLOptions', 'ViewContext · ViewFunction · ViewObject · ViewSource', 'TransitionSpec · ZoomSnapshot · ViewEntry · DriverFunction', 'GoToOptions · ZoomOutOptions · ZoomToOptions · StackEntry'] },
+  { id: 'style', layer: 'entries', x: 30, y: 74, label: 'style.css', file: 'src/style.css', n: 577, tag: 'CSS',
+    sum: 'The stylesheet that makes the canvas work: clipping with overflow: clip, view states, background effects through CSS variables, the css driver keyframes, navigation controls and the rasterize/webgl classes.',
+    exp: ['.zumly-canvas · absolute, overflow clip, contain strict, perspective', '.z-view + is-current-view / is-previous-view / is-last-view / hide / has-no-events', '.has-effect · filter: var(--z-effect-filter) with --zoom-duration/--zoom-ease', '@keyframes zoom-current-view / zoom-previous-view / zoom-last-view / zoom-lateral-*', '.z-trigger-hidden / .z-trigger-fade · .z-view-fade-in/out', '.z-depth-nav (button, title, rings, fan) · .z-lateral-nav (arrows, dots)', '.z-flat / .z-flat-layer · .z-gl / .z-gl-off / .z-gl-press', '@media (prefers-reduced-motion) · durations set to 0'] },
+  { id: 'router', layer: 'entries', x: 68, y: 74, label: 'ZumlyRouter', file: 'src/plugins/router.js', n: 198, tag: 'plugin',
+    sum: 'Keeps the hash in sync with the navigation stack. Writes the entry as the zoom starts (zoomInStart/lateralStart) so a browser back during the motion returns to the previous view. Back only: no cold deep links, because the zoom origin depends on a trigger that does not exist without context.',
+    exp: ['install(instance, { separator: "/", prefix: "/" })', 'buildPath: one viewKey per level → #/house/room?id=kitchen', 'popstate → reconcile: zoomOut(n) or lateral back(), awaiting _navigationTask', 'Uninstalls itself on the destroy hook'],
+    opts: ['use(plugin, options)'] },
+
+  { id: 'zumly', layer: 'core', x: 50, y: 50, big: true, label: 'class Zumly', file: 'src/zumly.js', n: 3067, tag: 'orchestrator',
+    sum: 'State, inputs, the geometry of every zoom, snapshots, lateral navigation, gestures that follow the finger, navigation UI, hooks and plugins. Every navigation runs inside _runNavigation, which blocks events and promises to finish even if a driver or a view never settles (8 s safety timer).',
+    exp: ['State: storedViews (stack of snapshots), currentStage, lateralHistory per level, blockEvents, _navigationTask, _scrub', 'Navigation: init, zoomIn, zoomOut(n|{to}), zoomTo, goTo, back, canGoBack, destroy', 'Inputs: onZoom (mouseup/touchend), onKeyDown/Up, onWheel, onTouchStart/Move/End, prefetch on hover/focus, resize + ResizeObserver', 'Gestures: _beginZoomOutScrub / _scrubZoomOut / _endZoomOutScrub (wheel, swipe, pinch)', 'Lateral: _performLateral, _siblingGroup, _findSiblingTriggerAtPoint, keepAlive', 'UI: _updateNav, _updateDepthNav, _updateLateralNav, _layoutNav', 'Hooks: on/off/_emit · plugins: use/_installPlugin', 'Constants: BLOCK_EVENTS_SAFETY_MS 8000 · WHEEL_FOLLOW_DISTANCE 400 · SWIPE_FOLLOW_WIDTH .6 · PINCH_FOLLOW_CLOSE .6 · ZOOM_OUT_FADE ⅓'],
+    opts: ['transitions.*', 'lateralNav', 'depthNav', 'inputs', 'gestures', 'labels', 'deferred', 'debug', 'componentContext', 'rasterize', 'webgl'] },
+  { id: 'utils', layer: 'core', x: 15, y: 22, label: 'utils.js', file: 'src/utils.js', n: 546, tag: 'options + insertion',
+    sum: 'Validates and normalizes every constructor option with safe defaults and "Did you mean…" warnings. Also inserts the resolved view into the canvas and calls mounted() only after that.',
+    exp: ['checkParameters(options, instance) · defaults and a warning per key', 'prepareAndInsertView(node, name, canvas, isInit, views, ctx, onInsert)', 'normalizeDuration · normalizeEase · formatLabel · definitionTitle', 'notification(debug, msg, type) · console output with the Zumly label'],
+    opts: ['all of them (validation)'] },
+  { id: 'geometry', layer: 'core', x: 85, y: 22, label: 'geometry.js', file: 'src/geometry.js', n: 292, tag: 'pure math',
+    sum: 'DOM-free functions that compute the transforms of the three layers. computeChildRectAfterParentTransformChange replaces a getBoundingClientRect after a transform change without forcing a reflow. Poses (uniform scale plus translation) compose, so a whole scene moves as one in zoomOut(n).',
+    exp: ['computeCoverScale(trigger, view, cover)', 'computeCurrentViewStart/EndTransform · computePreviousViewOrigin/EndTransform', 'computeLastViewEndTransform · computeLastViewIntermediateTransform', 'parseOrigin · splitTranslate · parseTranslateScale', 'poseFromTransform · composePoses · invertPose · poseToTransform'],
+    opts: ['transitions.cover', 'transitions.parallax'] },
+  { id: 'snapshots', layer: 'core', x: 85, y: 52, label: 'snapshots.js', file: 'src/snapshots.js', n: 75, tag: 'state',
+    sum: 'The shape of the snapshot stored per level: up to four entries (current, previous, last, detached), each with a backwardState and a forwardState.',
+    exp: ['createViewEntry(name, backwardState, forwardState)', 'createZoomSnapshot(level, current, previous, last, removed)', 'createRemovedViewEntry(node) · getDetachedNode(snapshot)', 'INDEX_CURRENT 0 · INDEX_PREVIOUS 1 · INDEX_LAST 2 · INDEX_REMOVED 3'] },
+  { id: 'identity', layer: 'core', x: 85, y: 82, label: 'view-identity.js', file: 'src/view-identity.js', n: 66, tag: 'siblings',
+    sum: 'Which view a trigger opens: its name plus the data params that set it apart. data-to="room" data-id="kitchen" and data-id="bedroom" are two siblings with different keys.',
+    exp: ['identityParams(props) · ignores to, title, with*, sibling, deferred…', 'viewKey(name, params) → "room?id=kitchen"', 'parseViewKey(key)'] },
+  { id: 'depthnav', layer: 'core', x: 15, y: 52, label: 'DepthNav', file: 'src/depth-nav.js', n: 248, tag: 'control',
+    sum: 'The back button in three styles: button (a dot in its ring), title (plus the name of the view above) and rings (one ring per level, with a fan to jump several on hover, long press or arrow keys). Reflects gesture progress through --z-progress.',
+    exp: ['new DepthNav({ onBack, onJump })', 'update({ position, style, label, levels })', 'setProgress(p, threshold) · open · close · destroy', 'Classes per level: z-depth-ring--up-1, z-depth-band--depth-0'],
+    opts: ['depthNav.position', 'depthNav.style', 'labels.back'] },
+  { id: 'resize', layer: 'core', x: 15, y: 82, label: 'resize-correction.js', file: 'src/resize-correction.js', n: 124, tag: 'correction',
+    sum: 'When the canvas changes size, rescales the translations and pixel origins of every snapshot and visible view, leaving scale() untouched. During a transition it waits until the motion ends.',
+    exp: ['applyResizeCorrection(instance, prevW, prevH, newW, newH)', 'scaleZumlyTransform · scalePixelOrigin · parseZumlyTransform'] },
+  { id: 'a11y', layer: 'core', x: 50, y: 14, label: 'view-accessibility.js', file: 'src/view-accessibility.js', n: 61, tag: 'a11y',
+    sum: 'Triggers get role=button, tabindex and an aria-label; background views become inert and aria-hidden until they are current again. The canvas is role=application with aria-live.',
+    exp: ['prepareViewTriggers(node)', 'class ViewAccessibility · sync(canvas) · restore(view) · destroy()', 'isNativeControl · isEditable'] },
+  { id: 'diag', layer: 'core', x: 50, y: 86, label: 'diagnostics.js', file: 'src/diagnostics.js', n: 85, tag: 'DX',
+    sum: 'Messages that point at the likely mistake: edit distance to suggest the closest key or option, validation of CSS times and easings with CSS.supports.',
+    exp: ['suggest · didYouMean · unknownViewMessage · unknownKeys', 'CSS_TIME · isCssEasingSyntax · isValidCssEasing'] },
+
+  { id: 'prefetcher', layer: 'pipeline', x: 30, y: 34, label: 'ViewPrefetcher', file: 'src/view-prefetcher.js', n: 229, tag: 'step 1',
+    sum: 'Orchestrates resolution and caching. Three strategies: preload on init, hover/focus over a trigger, and a scan of the triggers of the view that becomes active. Only HTML and URLs are cached; functions and objects resolve fresh. Paused while a navigation runs.',
+    exp: ['get(name, ctx) → node (a clone when it comes from the cache)', 'preloadEager(keys) · prefetch(name) · scanAndPrefetch(node)', 'cachedTitle(name) · pause() · resume() · destroy()', 'LRU of 64 entries · concurrency 2 · queue 32 · REMOTE_TTL 5 min'],
+    opts: ['views', 'preload'] },
+  { id: 'resolver', layer: 'pipeline', x: 64, y: 34, label: 'ViewResolver', file: 'src/view-resolver.js', n: 163, tag: 'source types',
+    sum: 'Turns a source into an element. Keys of `views` win, so a hyphenated name is not mistaken for a web component. A result with several roots is wrapped in a .z-view.',
+    exp: ['html · a string with "<" → htmlToElement', 'url · fetch with AbortController, 10 s', 'function · ctx.target, props, context, onCleanup, onActivate', 'object · render(ctx) (utils calls mounted afterwards)', 'element · cloneNode(true)', 'webcomponent · customElements.whenDefined, 10 s'],
+    opts: ['views', 'componentContext'] },
+  { id: 'cache', layer: 'pipeline', x: 18, y: 74, label: 'ViewCache', file: 'src/view-cache.js', n: 94, tag: 'LRU + TTL',
+    sum: 'An ordered Map with an entry limit and optional expiry. get() returns a clone and refreshes the order; has() and peek() do not.',
+    exp: ['set(key, node, ttl) · adopt(key, node, ttl)', 'get · has · peek · invalidate · clear'] },
+  { id: 'lifecycle', layer: 'pipeline', x: 52, y: 76, label: 'view-lifecycle.js', file: 'src/view-lifecycle.js', n: 100, tag: 'lifecycle',
+    sum: 'Registers callbacks per node under Symbol.for("zumly.viewLifecycles"), shared between the bundle and helpers imported separately. disposeView walks the subtree with a TreeWalker and runs cleanups in reverse order.',
+    exp: ['createViewLifecycle() · onCleanup · onActivate · attach · dispose', 'disposeView(node) · activateView(node)'] },
+  { id: 'visibility', layer: 'pipeline', x: 84, y: 74, label: 'view-visibility.js', file: 'src/view-visibility.js', n: 43, tag: 'content-visibility',
+    sum: 'Single source of truth for content-visibility during transitions: hides content while preparing, shows it while moving and restores the host policy at the end.',
+    exp: ['hideViewContent · showViewContent · restoreViewContent'] },
+
+  { id: 'dindex', layer: 'drivers', x: 50, y: 16, label: 'drivers/index.js', file: 'getDriver(option)', n: 54, tag: 'factory',
+    sum: 'Returns { runTransition } for a name, or wraps a custom function. Re-exports the helpers for community drivers (the "zumly/drivers" export).',
+    exp: ['getDriver("css"|"waapi"|"none"|"anime"|"gsap"|"motion"|fn)', 'cssTransition · waapiTransition · noneTransition · …', 'animeDriver(lib) · gsapDriver(lib) · motionDriver(lib)'],
+    opts: ['transitions.driver'] },
+  { id: 'css', layer: 'drivers', x: 11, y: 46, label: 'css', file: 'css-transition.js', n: 329, tag: 'default',
+    sum: 'No JS per frame: it writes CSS variables (--current-view-transform-start/end…) and zoom-*-view classes; the @keyframes in style.css do the rest. Lateral moves animate with zoom-lateral-in/out/back.',
+    exp: ['runTransition · runZoomIn · runZoomOut · runLateral', 'setCSSVars · cleanupAnimListeners'] },
+  { id: 'waapi', layer: 'drivers', x: 27, y: 46, label: 'waapi', file: 'waapi-transition.js', n: 238, tag: 'native',
+    sum: 'element.animate() with transform keyframes; lateral moves animate with a fade and a slide. A zoom-out starts on the next frame.',
+    exp: ['runZoomIn · runZoomOut · runLateralAnimated · cancelAll'] },
+  { id: 'none', layer: 'drivers', x: 43, y: 46, label: 'none', file: 'none-transition.js', n: 54, tag: 'instant',
+    sum: 'Applies the end state and calls onComplete synchronously. Used in tests, with prefers-reduced-motion, and as the fallback when another driver throws.',
+    exp: ['runTransition(spec, onComplete)'] },
+  { id: 'anime', layer: 'drivers', x: 59, y: 46, label: 'anime', file: 'anime-transition.js', n: 65, tag: 'library',
+    sum: 'Anime.js v3 or v4 (global or animeDriver(lib)). Animates a 0→1 progress and leaves the painting to progress-tween.', exp: ['runTransition(spec, onComplete, lib) · animeDriver(anime)'] },
+  { id: 'motion', layer: 'drivers', x: 75, y: 46, label: 'motion', file: 'motion-transition.js', n: 57, tag: 'library',
+    sum: 'Motion (motion.dev) with its own easings or CSS curves. Same progress core as anime.', exp: ['runTransition(spec, onComplete, lib) · motionDriver({ animate })'] },
+  { id: 'gsap', layer: 'drivers', x: 91, y: 46, label: 'gsap', file: 'gsap-transition.js', n: 216, tag: 'library',
+    sum: 'GSAP timelines over the same states; a CSS easing follows the same curve as the css driver, anything else is a GSAP ease name (power3.inOut). The timeline is guarded with createFinishGuard.',
+    exp: ['runZoomIn · runZoomOut · runLateral · guardedTimeline · gsapDriver(gsap)'] },
+  { id: 'helpers', layer: 'drivers', x: 18, y: 80, label: 'driver-helpers.js', file: 'zumly/driver-helpers', n: 343, tag: 'contract',
+    sum: 'What every driver needs: apply end states, remove the outgoing view, show contents, an instant lateral move and the guard that guarantees onComplete runs once.',
+    exp: ['parseDurationMs/Sec · showViews · removeViewFromCanvas', 'applyZoomInEndState · applyZoomOutPreviousState · applyZoomOutLastState', 'runLateralInstant · createFinishGuard · SAFETY_BUFFER_MS 150', 'identityMatrix · parseMatrixString · interpolateMatrix · lerp · readComputedMatrix'] },
+  { id: 'tween', layer: 'drivers', x: 44, y: 80, label: 'progress-tween.js', file: 'runProgressTransition', n: 196, tag: '0→1 core',
+    sum: 'Reads the start and end matrices of each layer once and interpolates them per frame with a per-layer easing, so a stagger delays without distorting the curve.',
+    exp: ['runProgressTransition(spec, onComplete, tween)', 'warnMissingLibrary(name, message)'] },
+  { id: 'easing', layer: 'drivers', x: 70, y: 80, label: 'easing.js', file: 'cssEasing(ease) → f(t)', n: 143, tag: 'curves',
+    sum: 'Turns a CSS timing function (keywords, cubic-bezier, steps, linear()) into a progress function, so every driver gives the same curve.',
+    exp: ['cubicBezier(x1, y1, x2, y2) · steps(n, position) · cssEasing(ease)'] },
+  { id: 'matrix', layer: 'drivers', x: 92, y: 80, label: 'transform-matrix.js', file: 'readTransitionMatrix', n: 35, tag: 'reading',
+    sum: 'Reads the computed matrix of a state with its transform-origin, to interpolate without intermediate reflows.', exp: ['readTransitionMatrix(element, origin, transform)'] },
+
+  { id: 'flatten', layer: 'render', x: 26, y: 46, label: 'Flattener (rasterize)', file: 'src/flatten.js', n: 505, tag: 'SnapDOM photos',
+    sum: 'While the user is in a view with triggers it takes a photo of it (or follows it with the stream plugin at 10 fps). When the view moves behind, its content is hidden with visibility and a canvas with the photo takes its place: the view still moves, takes the filter and answers hit-tests. If the photo goes stale or the stream costs more than 50% of the main thread, the view moves as itself.',
+    exp: ['before(spec) · settle() · reveal(view) · resized() · beginGesture() · destroy()', '_eligible: at least minNodes nodes or a backdrop-filter · data-rasterize="true|false"', 'QUIET_MS 300 · STREAM_FPS 10 · STREAM_BUDGET .5 · MAX_STALE 3 · FADE_MS 160', 'createFlattener(app, { snapdom, stream, minNodes: 800, scale: 1 })'],
+    opts: ['rasterize.snapdom', 'rasterize.stream', 'rasterize.minNodes', 'rasterize.scale'] },
+  { id: 'webgl', layer: 'render', x: 62, y: 46, label: 'createWebGL', file: 'src/webgl.js', n: 1579, tag: 'WebGL2 + GLSL',
+    sum: 'A WebGL2 canvas under the views. During a zoom each view is a texture (the rasterize photos, or the stream by changed rects) and the elements stay at opacity 0 but still answer hit-tests. The transitions.effects strings are evaluated in the shader (separable blur per mip, brightness, saturate, hue-rotate…) and custom GLSL effects can be added. It wraps the driver: either draws the zoom itself or hands the views back to the DOM.',
+    exp: ['wrap(driver) · sync() · release() · feed(view, frame) · take(trigger, to)', 'beginScrub · scrubTo(p) · endScrub(commit, ms) · stopScrub · destroy', 'EFFECTS: blur, brightness, contrast, saturate, grayscale, sepia, invert, opacity, hue-rotate', 'parseEffect("blur(3px) brightness(70%)") · custom effects { none, uv, color, animate }', 'hover: prepares the target view while the pointer rests on the trigger · pressed look + ring after 300 ms'],
+    opts: ['webgl.effects', 'webgl.glass', 'webgl.hover', 'webgl.ancestors'] },
+  { id: 'snapdom', layer: 'render', x: 88, y: 46, ext: true, label: '@zumer/snapdom', file: 'optional peer dependency', tag: 'external',
+    sum: 'Captures DOM to canvas. Passed in as a function (rasterize: { snapdom, stream }) or read from the global snapdom. Not a runtime dependency of Zumly.',
+    exp: ['snapdom(el, options).toCanvas()', 'stream(el, { fps, onFrame }) from @zumer/snapdom-plugins'] },
+
+  { id: 'canvas', layer: 'dom', x: 50, y: 14, label: '.zumly-canvas', file: 'mount · role=application · tabindex=0', tag: 'root',
+    sum: 'The `mount` element. Absolute, fills its positioned ancestor, clips with overflow: clip and receives every event. Zumly adds tabindex, role, aria-roledescription and aria-live, and restores them in destroy().' },
+  { id: 'lastv', layer: 'dom', x: 18, y: 44, label: '.z-view.is-last-view', file: 'two levels up · hide + inert', tag: 'background',
+    sum: 'The grandparent, heavily enlarged and dimmed with the second effects filter. Beyond three levels, nodes are detached from the DOM and live in snapshot.views[3].detachedNode.' },
+  { id: 'prevv', layer: 'dom', x: 50, y: 44, label: '.z-view.is-previous-view', file: 'the parent · .zoom-me.zoomed inside', tag: 'background',
+    sum: 'The parent, scaled so its trigger (.zoomed) covers the current view. pointer-events: none, inert. A click on it outside the current view zooms out; on another sibling trigger, it navigates laterally.' },
+  { id: 'currv', layer: 'dom', x: 82, y: 44, label: '.z-view.is-current-view', file: 'the active view · data-view-name', tag: 'current',
+    sum: 'The only interactive view. It arrives with is-new-current-view, has-no-events and hide; the driver reveals it. It receives focus when the transition ends.' },
+  { id: 'gl', layer: 'dom', x: 14, y: 78, label: 'canvas.z-gl', file: 'only with webgl', tag: 'optional',
+    sum: 'WebGL2 canvas prepended to the Zumly canvas. The views it draws carry .z-gl-off (opacity 0, no filter).' },
+  { id: 'flat', layer: 'dom', x: 38, y: 78, label: '.z-flat-layer', file: 'only with rasterize', tag: 'optional',
+    sum: 'The canvas with the photo, a child of a .z-flat view: its real content gets visibility: hidden but keeps its layout.' },
+  { id: 'dnav', layer: 'dom', x: 62, y: 78, label: '.z-depth-nav', file: 'button · title · rings', tag: 'control',
+    sum: 'The back button, bottom or top left. With rings, a .z-depth-fan with one band per level to jump several at once.' },
+  { id: 'lnav', layer: 'dom', x: 86, y: 78, label: '.z-lateral-nav', file: 'arrows + dots', tag: 'control',
+    sum: 'The sibling bar, centered at the bottom or top. Built from the parent triggers or from lateralNav.siblings; _layoutNav moves it aside when it collides with the back button.' }
+]
+
+const EDGES = [
+  ['zumly','utils'],['zumly','geometry'],['zumly','snapshots'],['zumly','prefetcher'],['zumly','dindex'],['zumly','helpers'],['zumly','depthnav'],['zumly','resize'],['zumly','flatten'],['zumly','webgl'],['zumly','visibility'],['zumly','lifecycle'],['zumly','a11y'],['zumly','diag'],['zumly','identity'],
+  ['utils','resolver'],['utils','lifecycle'],['utils','diag'],
+  ['prefetcher','resolver'],['prefetcher','cache'],['prefetcher','a11y'],
+  ['resolver','lifecycle'],['resolver','diag'],
+  ['resize','geometry'],
+  ['webgl','helpers'],['webgl','matrix'],['webgl','lifecycle'],
+  ['dindex','css'],['dindex','none'],['dindex','waapi'],['dindex','anime'],['dindex','gsap'],['dindex','motion'],['dindex','helpers'],
+  ['css','helpers'],['waapi','helpers'],['none','helpers'],['gsap','helpers'],['gsap','easing'],['gsap','tween'],['anime','tween'],['motion','tween'],
+  ['tween','helpers'],['tween','easing'],['tween','matrix'],['matrix','helpers'],['helpers','easing'],['helpers','lifecycle'],['helpers','visibility'],
+  ['router','identity'],
+  ['entry','zumly'],['entry','router'],['entryesm','zumly'],['entryesm','router'],['entryesm','dindex'],
+  ['flatten','snapdom'],['webgl','snapdom'],
+  ['build','entry','build'],['build','entryesm','build'],['build','style','build'],['pkg','build','build'],['tests','zumly','build'],['types','zumly','build'],['scripts','docs','build'],['demos','entry','build'],['labs','zumly','build'],
+  ['zumly','canvas','dom'],['utils','currv','dom'],['zumly','prevv','dom'],['zumly','lastv','dom'],['depthnav','dnav','dom'],['zumly','lnav','dom'],['webgl','gl','dom'],['flatten','flat','dom'],['style','canvas','dom'],['css','currv','dom']
+]
+
+const OPTIONS = [
+  { g: 'Required' },
+  { k: 'mount', d: 'string | HTMLElement', s: 'Selector or element of the canvas. It needs the zumly-canvas class (added with a warning otherwise).', c: ['utils','zumly','canvas'] },
+  { k: 'initialView', d: 'string', s: 'Name of the root view. A key of views, or a raw source (HTML, URL, tag).', c: ['utils','zumly','prefetcher'] },
+  { k: 'views', d: '{ name: source }', s: 'HTML string, URL, function (ctx), object { render, mounted, title }, HTMLElement or a custom element tag.', c: ['resolver','prefetcher','cache'] },
+  { g: 'General' },
+  { k: 'preload', d: '[]', s: 'Views resolved and cached during init(). HTML and URLs only.', c: ['prefetcher'] },
+  { k: 'deferred', d: 'false', s: 'Detaches the view content before animating and puts it back afterwards. Per trigger: data-deferred.', c: ['zumly'] },
+  { k: 'componentContext', d: 'new Map()', s: 'Shared object the views receive as ctx.context (store, API, auth).', c: ['resolver','zumly'] },
+  { k: 'debug', d: 'false', s: 'Traces every navigation in the console and logs storedViews.', c: ['zumly','utils'] },
+  { g: 'transitions' },
+  { k: 'transitions.driver', d: '"css"', s: '"css" | "waapi" | "none" | "anime" | "gsap" | "motion" | function(spec, onComplete).', c: ['dindex','css','waapi','none','anime','gsap','motion'] },
+  { k: 'transitions.duration', d: '"1s"', s: 'CSS time or milliseconds. Per trigger: data-with-duration.', c: ['utils','zumly'] },
+  { k: 'transitions.ease', d: '"ease-in-out"', s: 'CSS easing (checked with CSS.supports) or a name from the driver library. Per trigger: data-with-ease.', c: ['utils','easing','diag'] },
+  { k: 'transitions.cover', d: '"width"', s: '"width" | "height": which trigger dimension sets the scale. Per trigger: data-with-cover.', c: ['geometry'] },
+  { k: 'transitions.effects', d: '["none","none"]', s: 'CSS filters for [previous view, last view], e.g. ["blur(2px)", "blur(6px) saturate(.5)"]. Per trigger: data-with-effects="a | b". With webgl they run in the shader.', c: ['zumly','style','webgl'] },
+  { k: 'transitions.animateEffects', d: 'true', s: 'false applies the filter at once instead of transitioning it (cheaper with heavy views).', c: ['zumly'] },
+  { k: 'transitions.stagger', d: '0', s: 'Delay in ms between layers: current, previous (+1x), last (+2x). Per trigger: data-with-stagger.', c: ['zumly','tween','css'] },
+  { k: 'transitions.hideTrigger', d: 'false', s: 'true hides the trigger during the zoom; "fade" crossfades trigger and view. Per trigger: data-hide-trigger.', c: ['zumly','style'] },
+  { k: 'transitions.parallax', d: '0 (reserved)', s: 'Accepted but pinned to 0; the geometry already supports it.', c: ['geometry'] },
+  { g: 'lateralNav · false or {…}' },
+  { k: 'lateralNav.mode', d: '"always"', s: '"auto" hides the bar when the current view covers the whole canvas.', c: ['zumly','lnav'] },
+  { k: 'lateralNav.arrows / dots', d: 'true / true', s: 'Arrows and dots of the sibling bar.', c: ['zumly','lnav'] },
+  { k: 'lateralNav.keepAlive', d: 'false', s: 'true keeps sibling views in the DOM (is-lateral-hidden); "visible" leaves them visible for CSS crossfades.', c: ['zumly'] },
+  { k: 'lateralNav.position', d: '"bottom-center"', s: 'or "top-center".', c: ['zumly','lnav'] },
+  { k: 'lateralNav.siblings', d: 'null', s: 'Declared order: ["a","b"] or { parent: ["a","b"] }. Accepts keys such as "room?id=kitchen".', c: ['zumly','identity'] },
+  { k: 'lateralNav.swipe', d: 'false', s: 'A horizontal swipe moves between siblings instead of zooming out.', c: ['zumly'] },
+  { g: 'depthNav · false or {…}' },
+  { k: 'depthNav.position', d: '"bottom-left"', s: 'or "top-left".', c: ['depthnav','dnav'] },
+  { k: 'depthNav.style', d: '"button"', s: '"button" | "title" | "rings".', c: ['depthnav','dnav'] },
+  { g: 'inputs · false or {…}' },
+  { k: 'inputs.click / keyboard / wheel / touch', d: 'true', s: 'Each input can be turned off on its own.', c: ['zumly'] },
+  { k: 'inputs.pinch', d: 'false', s: 'Opt-in: two fingers closing zoom out (it competes with page zoom).', c: ['zumly'] },
+  { g: 'gestures · true, false or {…}' },
+  { k: 'gestures.follow', d: 'false', s: 'Trackpad, swipe and pinch drive the zoom-out with their progress; on release it finishes or goes back.', c: ['zumly','depthnav','webgl','flatten'] },
+  { k: 'gestures.threshold', d: '0.5', s: 'Progress (0–1) past which releasing completes the zoom-out.', c: ['zumly','depthnav'] },
+  { g: 'labels · false or {…}' },
+  { k: 'labels.back / prev / next / goTo', d: '"Back to {title}" …', s: 'aria-label of the controls: a template with {title} and {name}, a function ({ name, title }) or false.', c: ['utils','zumly','depthnav'] },
+  { g: 'rasterize · true or {…}' },
+  { k: 'rasterize.snapdom / stream', d: 'global snapdom / null', s: 'The SnapDOM functions. Without stream there is one photo, retaken once the view holds still.', c: ['flatten','snapdom'] },
+  { k: 'rasterize.minNodes', d: '800', s: 'A view is photographed when it has at least this many nodes or a backdrop-filter. Per view: data-rasterize="true|false".', c: ['flatten'] },
+  { k: 'rasterize.scale', d: '1', s: 'Photo scale (up to 4), multiplied by devicePixelRatio.', c: ['flatten'] },
+  { g: 'webgl · true or {…} (brings rasterize along)' },
+  { k: 'webgl.effects', d: '{}', s: 'Custom GLSL effects: { name: { none, uv?, color?, animate? } }.', c: ['webgl'] },
+  { k: 'webgl.glass', d: 'false', s: 'true keeps backdrop-filters in the photos (the slow part).', c: ['webgl'] },
+  { k: 'webgl.hover', d: 'false', s: 'Prepares the target view and its texture while the pointer rests on the trigger.', c: ['webgl'] },
+  { k: 'webgl.ancestors', d: 'true', s: 'Also draws the ancestors in WebGL.', c: ['webgl'] }
+]
+
+const TRIGGER_ATTRS = [
+  ['data-to', 'Target view (required).'], ['data-*', 'Any other data attribute reaches the view as ctx.props and tells siblings apart (data-id).'],
+  ['data-title', 'Readable name for the sibling bar and the back button.'], ['data-with-duration / -ease / -cover / -stagger / -effects', 'Override transitions for that trigger.'],
+  ['data-hide-trigger[="fade"]', 'Hides or fades the trigger during the zoom.'], ['data-deferred', 'Renders the content after the animation.'],
+  ['data-sibling="false"', 'Keeps the trigger out of the sibling group.'], ['data-no-swipe', 'A horizontal drag inside does not zoom out.'], ['data-rasterize (on the view)', '"true" or "false" forces or prevents the photo.']
+]
+
+const FLOWS = [
+  { id: 'zoomin', name: 'Zoom in', desc: 'A click on a .zoom-me[data-to] trigger. The new view grows out of the trigger.', steps: [
+    ['mouseup, touchend or Enter on the trigger → onZoom() → zoomIn(el)', ['zumly','currv']],
+    ['_runNavigation: blockEvents = true, the prefetcher pauses, a task with its promise is created', ['zumly','prefetcher']],
+    ['beforeZoomIn hook. The ViewContext is built: target, props = the trigger dataset, trigger, context', ['zumly','resolver']],
+    ['prefetcher.get(name): a clone from the cache, or ViewResolver.resolve() by source type; onCleanup/onActivate get registered', ['prefetcher','cache','resolver','lifecycle']],
+    ['prepareAndInsertView: .z-view, data-view-name, aria-label, the is-new-current-view/has-no-events/hide classes, append, mounted() → viewMounted hook', ['utils','a11y','currv']],
+    ['Geometry: one batch of rect reads, then pure math: cover scale, start and end transform of the new view, origin and end of the parent, end of the grandparent', ['geometry','zumly']],
+    ['Snapshot: createZoomSnapshot(current, previous, last, detached) → storedViews.push; effects and hideTrigger as CSS variables', ['snapshots','style','prevv','lastv']],
+    ['zoomInStart hook (the router writes the hash). _runNavigationTransition: flattener.before() puts the photos in place, webgl.wrap() decides who draws, safety timer, driver.runTransition(spec, complete)', ['router','flatten','webgl','dindex','css']],
+    ['complete: deferred content reattached, blockEvents = false, content-visibility restored, background inert, focus to the view, DepthNav and sibling bar, afterZoomIn and viewChanged hooks, flattener.settle()', ['zumly','visibility','a11y','depthnav','dnav','lnav','flatten']]
+  ] },
+  { id: 'zoomout', name: 'Zoom out', desc: 'A click outside the current view, wheel, ArrowLeft, swipe, the back button, or zoomOut(n | { to }).', steps: [
+    ['Input → zoomOut(). _zoomOutLevels decides how many levels; more than one goes through _performZoomOutLevels with "passengers"', ['zumly','depthnav','dnav']],
+    ['beforeZoomOut hook. .zoomed is removed from the trigger and its visibility restored; with "fade" the outgoing view fades out', ['zumly','style','prevv']],
+    ['Role swap: previous → current, last → previous; the detached node from the snapshot returns to the canvas as the last view', ['snapshots','visibility','lastv']],
+    ['_fadeIntoTrigger: a WAAPI opacity animation over the last third, independent of the driver', ['zumly']],
+    ['Driver runTransition of type zoomOut (forwardState → backwardState); with several levels the poses compose and the passengers follow the shrinking view every frame', ['dindex','geometry','flatten','webgl']],
+    ['complete: storedViews.pop(), the lateral history of the parent level returns, activateView() runs onActivate, afterZoomOut and viewChanged hooks', ['zumly','lifecycle','router']]
+  ] },
+  { id: 'lateral', name: 'Lateral (siblings)', desc: 'A click on another parent trigger, the sibling bar, a swipe with lateralNav.swipe, or goTo(name, { mode: "lateral" }).', steps: [
+    ['Input → _doLateral(key). _findSiblingTriggerAtPoint hit-tests the parent triggers (which receive no events)', ['zumly','prevv','lnav']],
+    ['Identity: viewKey(name, params) tells "room?id=kitchen" from "room?id=bedroom"; matchIdentity finds current and target among the triggers', ['identity']],
+    ['keepAlive: the .is-lateral-hidden node is reused when present; otherwise prefetcher.get + prepareAndInsertView', ['prefetcher','utils','currv']],
+    ['Lateral geometry: the slide follows the declared order or the trigger positions; _lateralTargetGeometry recomputes the poses of the three layers and the scale', ['geometry','zumly']],
+    ['History: the outgoing entry is stored with a copy of the stage (and the node when keepAlive); back() consumes it before zooming out', ['snapshots','zumly']],
+    ['Driver runTransition of type lateral: css and waapi animate the slide with a fade; the others use runLateralInstant', ['dindex','css','waapi','helpers']],
+    ['complete: the outgoing view is hidden or removed, sibling bar updated, afterLateral and viewChanged hooks', ['zumly','lnav','router']]
+  ] },
+  { id: 'gesture', name: 'Gesture that follows the finger', desc: 'With gestures.follow: trackpad, swipe or pinch drive the zoom-out with their progress.', steps: [
+    ['Wheel with small deltas, a swipe to the left or a closing pinch → _beginZoomOutScrub(source)', ['zumly']],
+    ['Layers: for current, previous and last, a paused WAAPI animation (transform, filter, trigger radius) from forwardState toward backwardState', ['zumly','snapshots','currv','prevv']],
+    ['Every move: _scrubZoomOut(p) sets currentTime = p·1000 ms; webgl.scrubTo, DepthNav.setProgress (--z-progress) and the zoomOutProgress hook', ['webgl','depthnav','dnav']],
+    ['Release: _endZoomOutScrub(commit) by threshold or a flick; the layers keep decelerating to the end and then zoomOut({ instant: true }) settles the state, or everything goes back', ['zumly','flatten']]
+  ] },
+  { id: 'life', name: 'init and destroy', desc: 'How an instance starts and how it cleans up.', steps: [
+    ['new Zumly(options): checkParameters validates and normalizes; the canvas is found; getDriver; events are bound; the ViewPrefetcher is created', ['utils','dindex','prefetcher','canvas']],
+    ['init(): preload, resolve and prepare initialView, root snapshot, a11y.sync, Flattener and WebGL when requested, plugin install, viewChanged "init"', ['zumly','resolver','flatten','webgl','router']],
+    ['destroy(): destroy hook, webgl and flattener, cancel the running navigation, timers, listeners, nav UI, disposeView of everything (onCleanup), restore the canvas attributes and class', ['zumly','lifecycle','depthnav','a11y']]
+  ] }
+]
+
+const API_METHODS = [
+  ['init()', 'Promise. Resolves the initial view and installs plugins.'], ['destroy()', 'Leaves the canvas as it was. The instance becomes inert.'],
+  ['zoomIn(el)', 'Zoom from a real trigger.'], ['zoomTo(name, { duration, ease, props })', 'Programmatic zoom from a centered synthetic origin.'],
+  ['zoomOut(n | { to, levels, duration, ease })', 'One level, several, or up to an ancestor, in one transition.'], ['goTo(name, { mode, props })', '"depth" (zoomTo) or "lateral".'],
+  ['back()', 'Undoes the last lateral move of the level; otherwise zooms out.'], ['canGoBack()', 'Whether back() would do anything.'],
+  ['zoomLevel() / getZoomLevel()', 'Depth = storedViews.length.'], ['getCurrentViewName()', 'Name of the current view.'],
+  ['getViewTitle(name) · getViewStack()', 'Titles, and the stack root → current with params.'], ['on(event, fn) · off(event, fn?)', 'Chainable hooks.'], ['use(plugin, opts)', 'install(instance, opts) during init(), or at once if already started.']
+]
+const API_EVENTS = [
+  ['beforeZoomIn · zoomInStart · afterZoomIn', '{ viewName, zoomLevel }'], ['beforeZoomOut · afterZoomOut', '{ zoomLevel, viewName, from, levels? }'],
+  ['beforeLateral · lateralStart · afterLateral', '{ viewName, from, isBack }'], ['viewMounted', '{ viewName, node }'],
+  ['viewChanged', '{ type: init|zoomIn|zoomOut|lateral, viewName, from, zoomLevel, node }'], ['zoomOutProgress', '{ phase: start|move|commit|cancel|end, progress, source }'], ['destroy', '—']
+]
+
+// ─── Views ────────────────────────────────────────────────────────────────
+const byId = Object.fromEntries(NODES.map(n => [n.id, n]))
+const layerIndex = Object.fromEntries(LAYERS.map((l, i) => [l.id, i]))
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const lc = id => LAYERS[layerIndex[id]].color
+const modChip = id => { const n = byId[id]; return `<button type="button" class="zoom-me chip" data-to="mod-${id}" data-title="${esc(n.label)}" data-sibling="false" style="--lc:${lc(n.layer)}"><i>Z${layerIndex[n.layer]}</i>${esc(n.label)}</button>` }
+// The seven layers as a strip; `on` is the layer you are in, `part` the layers that take part.
+const strip = (on, part = [], note = '') => `<div class="strip" aria-label="Layers">${LAYERS.map(l => `<i style="--c:${l.color}" class="${l.id === on ? 'on' : part.includes(l.id) ? 'part' : ''}" title="Z${layerIndex[l.id]} ${esc(l.name)}"></i>`).join('')}${note ? `<small>${esc(note)}</small>` : ''}</div>`
+const layersOf = ids => [...new Set(ids.map(id => byId[id].layer))]
+const flowChip = id => { const f = FLOWS.find(x => x.id === id); return `<button type="button" class="zoom-me chip flow" data-to="flow-${id}" data-title="${esc(f.name)}" data-sibling="false">${esc(f.name)}</button>` }
+const sheet = (title, color, inner) => `<div class="z-view sheet" data-title="${esc(title)}" style="--lc:${color}"><div class="card">${inner}</div></div>`
+
+const views = {}
+
+views.root = () => `<div class="z-view root" data-title="Zumly">
+  <div class="intro">
+    <h1>Zumly, layer by layer</h1>
+    <p>The library is a stack. The browser sees the top layer; the tooling sits at the bottom; every layer uses the ones below it. Open a layer to see its files, open a file to see what it does and what it depends on. This page runs on Zumly itself.</p>
+  </div>
+  <div class="axiswrap">
+    <div class="axis"><span>Browser<br>↑</span><span>Z axis</span><span>↓<br>Toolchain</span></div>
+    <div class="stack">${[...LAYERS].reverse().map(l => { const i = layerIndex[l.id]; const mods = NODES.filter(n => n.layer === l.id); const lines = mods.reduce((t, n) => t + (n.n || 0), 0)
+      return `<button type="button" class="zoom-me layer-card" data-to="layer-${l.id}" data-title="Z${i} ${esc(l.name)}" style="--lc:${l.color}"><span class="z">Z${i}</span><b>${esc(l.name)}</b><span class="count">${mods.length} parts${lines ? `<br>${lines.toLocaleString('en')} lines` : ''}</span><span class="mini">${mods.map(n => `<span>${esc(n.label)}</span>`).join('')}</span></button>` }).join('')}
+    </div>
+  </div>
+  <div class="refs">
+    <h2>Across the layers</h2>
+    <p class="why">The stack says where the code lives. These three say how it works together: each one links back into the files of the stack.</p>
+    <button type="button" class="zoom-me extra" data-to="flows" data-title="Flows"><b>Flows</b><span>A zoom in, a zoom out, a lateral move, a gesture, init and destroy: the steps each one takes, and the file that runs each step.</span><span class="mini">${LAYERS.map(l => `<i style="--c:${l.color}"></i>`).join('')}</span></button>
+    <button type="button" class="zoom-me extra" data-to="options" data-title="Options"><b>Options</b><span>Every key of new Zumly({ … }) with its default, and the files that read it.</span><span class="mini">${LAYERS.map(l => `<i style="--c:${l.color}"></i>`).join('')}</span></button>
+    <button type="button" class="zoom-me extra" data-to="api" data-title="API"><b>API</b><span>Instance methods, events, the view context and the driver contract.</span><span class="mini">${['entries','core','drivers'].map(id => `<i style="--c:${lc(id)}"></i>`).join('')}</span></button>
+  </div>
+</div>`
+
+for (const l of LAYERS) {
+  const i = layerIndex[l.id]
+  views['layer-' + l.id] = () => sheet(`Z${i} ${l.name}`, l.color, `
+    <div class="head"><span class="z">Z${i}</span><h2>${esc(l.name)}</h2>${strip(l.id, [], `layer ${i + 1} of 7, bottom to top`)}<p>${esc(l.desc)}</p></div>
+    <div class="body"><div class="grid">${NODES.filter(n => n.layer === l.id).map(n => `<button type="button" class="zoom-me mod${n.big ? ' big' : ''}${n.ext ? ' ext' : ''}" data-to="mod-${n.id}" data-title="${esc(n.label)}" style="--lc:${l.color}"><b>${esc(n.label)}</b><span class="f">${esc(n.file)}</span>${n.n ? `<span class="n">${n.n}</span>` : ''}<span class="tag">${esc(n.tag || '')}</span></button>`).join('')}</div></div>`)
+}
+
+for (const n of NODES) {
+  views['mod-' + n.id] = () => {
+    const deps = EDGES.filter(e => e[0] === n.id).map(e => e[1])
+    const users = EDGES.filter(e => e[1] === n.id).map(e => e[0])
+    const flows = FLOWS.filter(f => f.steps.some(s => s[1].includes(n.id)))
+    return sheet(n.label, lc(n.layer), `
+      <div class="head"><span class="z">Z${layerIndex[n.layer]}</span><h2>${esc(n.label)}</h2>${strip(n.layer, layersOf([...deps, ...users]), deps.length || users.length ? 'its layer, and the layers it is wired to' : 'its layer')}<p>${esc(n.sum)}</p></div>
+      <div class="body">
+        <div class="meta"><span class="pill"><span style="width:8px;height:8px;border-radius:2px;background:${lc(n.layer)};display:inline-block"></span>${esc(LAYERS[layerIndex[n.layer]].name)}</span><span class="pill">${esc(n.file)}</span>${n.n ? `<span class="pill">${n.n.toLocaleString('en')} lines</span>` : ''}${n.tag ? `<span class="pill">${esc(n.tag)}</span>` : ''}</div>
+        ${n.exp ? `<h3 class="k">Exposes / contains</h3><ul class="exp">${n.exp.map(e => `<li><code>${esc(e)}</code></li>`).join('')}</ul>` : ''}
+        ${n.opts ? `<h3 class="k">Options it reads</h3><div class="chips">${n.opts.map(o => `<span class="pill">${esc(o)}</span>`).join('')}</div>` : ''}
+        ${deps.length ? `<h3 class="k">Depends on. Open one to follow the chain</h3><div class="chips">${deps.map(modChip).join('')}</div>` : ''}
+        ${users.length ? `<h3 class="k">Used by</h3><div class="chips">${users.map(modChip).join('')}</div>` : ''}
+        ${flows.length ? `<h3 class="k">Appears in these flows</h3><div class="chips">${flows.map(f => flowChip(f.id)).join('')}</div>` : ''}
+      </div>`)
+  }
+}
+
+views.flows = () => sheet('Flows', 'var(--gold)', `
+  <div class="head"><h2>Flows</h2>${strip(null, LAYERS.map(l => l.id), 'a navigation crosses most layers')}<p>Five walks through the engine. Each step names the files involved, with the layer they belong to; open one to keep going.</p></div>
+  <div class="body"><div class="flowgrid">${FLOWS.map(f => `<button type="button" class="zoom-me flowcard" data-to="flow-${f.id}" data-title="${esc(f.name)}"><b>${esc(f.name)}</b><span>${esc(f.desc)}</span><em>${f.steps.length} steps · ${layersOf(f.steps.flatMap(st => st[1])).length} layers</em></button>`).join('')}</div></div>`)
+
+for (const f of FLOWS) {
+  views['flow-' + f.id] = () => sheet(f.name, 'var(--gold)', `
+    <div class="head"><h2>${esc(f.name)}</h2>${strip(null, layersOf(f.steps.flatMap(st => st[1])), 'layers this flow touches')}<p>${esc(f.desc)}</p></div>
+    <div class="body"><ol class="steps">${f.steps.map(s => `<li class="step"><div>${esc(s[0])}<div class="chips">${s[1].map(modChip).join('')}</div></div></li>`).join('')}</ol></div>`)
+}
+
+views.options = () => sheet('Options', 'var(--accent)', `
+  <div class="head"><h2>Options</h2>${strip(null, layersOf(OPTIONS.flatMap(o => o.c || [])), 'layers that read options')}<p>Every key of new Zumly({ … }) with its default as checkParameters sets it. Under each option, the files that read it.</p></div>
+  <div class="body">${OPTIONS.map(o => o.g ? `<div class="optgroup">${esc(o.g)}</div>` : `<div class="opt"><span class="k">${esc(o.k)}</span><span class="d">${esc(o.d)}</span><span class="s">${esc(o.s)}</span><div class="chips">${o.c.map(modChip).join('')}</div></div>`).join('')}
+    <h3 class="k">Attributes per trigger and per view</h3><div class="tablewrap"><table><tbody>${TRIGGER_ATTRS.map(([k, v]) => `<tr><td><code>${esc(k)}</code></td><td>${esc(v)}</td></tr>`).join('')}</tbody></table></div></div>`)
+
+views.api = () => sheet('API', 'var(--accent)', `
+  <div class="head"><h2>API</h2>${strip(null, ['entries', 'core', 'drivers'], 'entry points, engine, drivers')}<p>What the package exports and what a driver receives.</p></div>
+  <div class="body">
+    <h3 class="k">Instance methods</h3><div class="tablewrap"><table><tbody>${API_METHODS.map(([k, v]) => `<tr><td><code>${esc(k)}</code></td><td>${esc(v)}</td></tr>`).join('')}</tbody></table></div>
+    <h3 class="k">Events (on / off)</h3><div class="tablewrap"><table><tbody>${API_EVENTS.map(([k, v]) => `<tr><td><code>${esc(k)}</code></td><td><code>${esc(v)}</code></td></tr>`).join('')}</tbody></table></div>
+    <h3 class="k">Context of a function or object view</h3><pre>({ target, props, trigger, context, onCleanup, onActivate }) =>
+  string | HTMLElement | void   // void: target is the view</pre>
+    <h3 class="k">Driver contract</h3><pre>runTransition(spec, onComplete)
+spec.type: 'zoomIn' | 'zoomOut' | 'lateral'
+spec.currentStage.views[i]: { viewName, backwardState, forwardState }
+zoomIn:  backward → forward · zoomOut: forward → backward
+onComplete(): exactly once, always</pre>
+    <h3 class="k">What this page asks of Zumly</h3><pre>new Zumly({
+  mount: '#app', initialView: 'root', views,
+  transitions: { duration: '750ms', ease: 'cubic-bezier(.2,.8,.2,1)', hideTrigger: 'fade',
+                 effects: ['brightness(.8)', 'brightness(.55)'] },
+  depthNav: { style: 'title' }, lateralNav: { arrows: true, dots: true },
+  gestures: { follow: true }, inputs: { pinch: true }
+})</pre>
+    <h3 class="k">Modules this page relies on</h3><div class="chips">${['zumly','utils','geometry','resolver','dindex','css','depthnav'].map(modChip).join('')}</div>
+  </div>`)
+
+// ─── The instance ─────────────────────────────────────────────────────────
+const app = new Zumly({
+  mount: '#app',
+  initialView: 'root',
+  views,
+  // No blur in the effects: a blur on a layer scaled 100x (deep chains of small triggers) costs the whole frame budget.
+  transitions: { duration: '750ms', ease: 'cubic-bezier(.2,.8,.2,1)', hideTrigger: 'fade', effects: ['brightness(.8)', 'brightness(.55)'] },
+  depthNav: { style: 'title', position: 'bottom-left' },
+  lateralNav: { arrows: true, dots: true, position: 'bottom-center' },
+  gestures: { follow: true },
+  inputs: { pinch: true }
+})
+
+const crumbs = document.getElementById('crumbs')
+function renderCrumbs () {
+  const stack = app.getViewStack()
+  crumbs.innerHTML = stack.map((v, i) => `${i ? '<span class="sep">›</span>' : ''}<button type="button" data-name="${esc(v.name)}" ${i === stack.length - 1 ? 'aria-current="page"' : ''}>${esc(v.title)}</button>`).join('')
+}
+crumbs.addEventListener('click', e => {
+  const b = e.target.closest('button[data-name]'); if (!b || b.getAttribute('aria-current')) return
+  app.zoomOut({ to: b.dataset.name })
+})
+app.on('viewChanged', renderCrumbs)
+app.init()
+</script>
+<script>
+  // Follow the site's theme toggle (the parent page writes zumly-theme in localStorage)
+  window.addEventListener('storage', function (e) {
+    if (e.key === 'zumly-theme') document.documentElement.classList.toggle('light', e.newValue === 'light')
+  })
+</script>
+</body>
+</html>
