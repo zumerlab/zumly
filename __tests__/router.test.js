@@ -125,6 +125,66 @@ describe('ZumlyRouter plugin', () => {
     }
   })
 
+  it('does not zoom over a back the browser already animated', async () => {
+    const app = createApp()
+    app.use(ZumlyRouter)
+    await app.init()
+    await app.zoomTo('detail')
+    await app.zoomTo('other')
+    const runTransition = vi.fn((spec, complete) => complete())
+    app.transitionDriver = { runTransition }
+    const popstate = (hash, hasUAVisualTransition) => {
+      window.history.replaceState(null, '', hash)
+      const event = new PopStateEvent('popstate')
+      Object.defineProperty(event, 'hasUAVisualTransition', { value: hasUAVisualTransition })
+      window.dispatchEvent(event)
+    }
+
+    popstate('#/home/detail', true)
+    await vi.waitFor(() => expect(app.getCurrentViewName()).toBe('detail'))
+    expect(runTransition).not.toHaveBeenCalled()
+
+    // The next back, from the toolbar button of a browser that does not animate it, zooms.
+    popstate('#/home', false)
+    await vi.waitFor(() => expect(app.getCurrentViewName()).toBe('home'))
+    expect(runTransition).toHaveBeenCalledTimes(1)
+    app.destroy()
+  })
+
+  it('skips a zoom of several levels when the browser animated the back', async () => {
+    const app = createApp()
+    app.use(ZumlyRouter)
+    await app.init()
+    await app.zoomTo('detail')
+    await app.zoomTo('other')
+    const runTransition = vi.fn((spec, complete) => complete())
+    app.transitionDriver = { runTransition }
+    window.history.replaceState(null, '', '#/home')
+    const event = new PopStateEvent('popstate')
+    Object.defineProperty(event, 'hasUAVisualTransition', { value: true })
+    window.dispatchEvent(event)
+    await vi.waitFor(() => expect(app.getCurrentViewName()).toBe('home'))
+    expect(runTransition).not.toHaveBeenCalled()
+    app.destroy()
+  })
+
+  it('skips the move between siblings when the browser animated the back', async () => {
+    const app = createApp()
+    app.use(ZumlyRouter)
+    await app.init()
+    await app.zoomTo('detail')
+    await app.goTo('other', { mode: 'lateral' })
+    const runTransition = vi.fn((spec, complete) => complete())
+    app.transitionDriver = { runTransition }
+    window.history.replaceState(null, '', '#/home/detail')
+    const event = new PopStateEvent('popstate')
+    Object.defineProperty(event, 'hasUAVisualTransition', { value: true })
+    window.dispatchEvent(event)
+    await vi.waitFor(() => expect(app.getCurrentViewName()).toBe('detail'))
+    expect(runTransition).not.toHaveBeenCalled()
+    app.destroy()
+  })
+
   it('writes the entry as a zoom-in or a sibling starts, so a back during the motion comes back', async () => {
     const app = createApp()
     app.use(ZumlyRouter)

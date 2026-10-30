@@ -279,7 +279,7 @@ labels: { back: 'Volver a {title}', goTo: view => `Ir a ${view.title}`, prev: fa
 
 ### Gestures
 
-A swipe to the left zooms out, except when it starts on a text field, a slider, an element that scrolls horizontally, or inside an element with `data-no-swipe`. Use `data-no-swipe` on your own drag areas (a knob, a carousel). `inputs: { wheel: false, touch: false, keyboard: false, click: false }` turns an input off, and `inputs: { pinch: true }` adds closing two fingers to zoom out.
+A swipe to the left zooms out, except when it starts on a text field, a slider, an element that scrolls horizontally, or inside an element with `data-no-swipe`. While there is a view to go back to, a touch in the 16px at either side of the screen belongs to Zumly instead of the browser's own swipe (Safari on iOS), unless it lands on a link or a control, and a swipe to the right from the left edge zooms out too. `inputs.touch: false` leaves those edges to the browser. Use `data-no-swipe` on your own drag areas (a knob, a carousel). `inputs: { wheel: false, touch: false, keyboard: false, click: false }` turns an input off, and `inputs: { pinch: true }` adds closing two fingers to zoom out.
 
 By default a gesture fires the whole zoom-out at once. With `gestures: { follow: true }`, the trackpad, a swipe and a pinch move it as they go: the current view shrinks toward its trigger (rounding to its shape) while the one behind loses its blur. Releasing past `threshold` (default `0.5`) or flicking finishes it; otherwise everything returns. A mouse wheel notch still zooms out at once. `zoomOutProgress` reports the progress, so your own back button can follow along:
 
@@ -402,7 +402,7 @@ app.use(Zumly.Router)              // script tag
 // import { ZumlyRouter } from 'zumly'; app.use(ZumlyRouter)
 ```
 
-The router writes the path to the hash as a zoom-in or a move to a sibling starts, so a browser back during the motion returns to the view it left (`#/home/rooms/kitchen`; a view opened from a trigger with data, such as `data-id`, carries it: `#/house/room?id=kitchen`) and makes the browser back button navigate back, laterally or out. Forward and opening a deep URL directly are not supported: a zoom needs the trigger it comes from. Options: `prefix` (default `'/'`) and `separator` (default `'/'`). Hash entries the router did not write are left alone.
+The router writes the path to the hash as a zoom-in or a move to a sibling starts, so a browser back during the motion returns to the view it left (`#/home/rooms/kitchen`; a view opened from a trigger with data, such as `data-id`, carries it: `#/house/room?id=kitchen`) and makes the browser back button navigate back, laterally or out. When the browser animates a back of its own (a swipe in Safari), the views land without zooming over it. Forward and opening a deep URL directly are not supported: a zoom needs the trigger it comes from. Options: `prefix` (default `'/'`) and `separator` (default `'/'`). Hash entries the router did not write are left alone.
 
 ## Troubleshooting
 

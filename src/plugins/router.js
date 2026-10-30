@@ -68,6 +68,7 @@ export const ZumlyRouter = {
     let syncing = false // guard against circular updates
     let processing = false
     let pendingTarget = null
+    let pendingSkipMotion = false
     let destroyed = false
 
     // ─── Zumly → Hash sync ──────────────────────────────────
@@ -111,6 +112,9 @@ export const ZumlyRouter = {
           if (destroyed) return
           if (pendingTarget) continue
 
+          // The browser slid the page to this entry (a swipe back in Safari). A zoom on top
+          // would bring the view it just left back on screen, so the views only catch up.
+          instance._skipMotion = pendingSkipMotion
           let current = buildPath(instance, sep).split(sep).filter(Boolean)
           if (target.join(sep) === current.join(sep)) continue
 
@@ -152,6 +156,7 @@ export const ZumlyRouter = {
           }
         }
       } finally {
+        instance._skipMotion = false
         syncing = false
         processing = false
       }
@@ -164,7 +169,7 @@ export const ZumlyRouter = {
       }
     }
 
-    function onPopState () {
+    function onPopState (event) {
       if (destroyed) return
       // A hash this router did not write (another part of the page, or an
       // entry from before the app started) is left alone.
@@ -173,6 +178,7 @@ export const ZumlyRouter = {
       if (target.length && (target[0] !== instance.storedViews[0]?.views?.[0]?.viewName ||
         target.some(key => !Object.prototype.hasOwnProperty.call(instance.views, parseViewKey(key).name)))) return
       pendingTarget = target
+      pendingSkipMotion = !!event.hasUAVisualTransition
       void reconcile()
     }
 
