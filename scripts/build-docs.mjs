@@ -49,6 +49,7 @@ function footer (to) {
           <ul>
             ${STEPS.map(([file, title]) => li(to(`learn/${file}.html`), title)).join('\n            ')}
             ${li(to('guides/navigation.html'), 'Navigation controls')}
+            ${li(to('guides/architecture.html'), 'Architecture')}
           </ul>
         </div>
         <div>
