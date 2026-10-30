@@ -463,6 +463,8 @@ export class Zumly {
   }
 
   _prefersReducedMotion () {
+    // The router sets it when the browser already animated a back of its own.
+    if (this._skipMotion) return true
     return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
   }
 

@@ -402,7 +402,7 @@ app.use(Zumly.Router)              // script tag
 // import { ZumlyRouter } from 'zumly'; app.use(ZumlyRouter)
 ```
 
-The router writes the path to the hash as a zoom-in or a move to a sibling starts, so a browser back during the motion returns to the view it left (`#/home/rooms/kitchen`; a view opened from a trigger with data, such as `data-id`, carries it: `#/house/room?id=kitchen`) and makes the browser back button navigate back, laterally or out. Forward and opening a deep URL directly are not supported: a zoom needs the trigger it comes from. Options: `prefix` (default `'/'`) and `separator` (default `'/'`). Hash entries the router did not write are left alone.
+The router writes the path to the hash as a zoom-in or a move to a sibling starts, so a browser back during the motion returns to the view it left (`#/home/rooms/kitchen`; a view opened from a trigger with data, such as `data-id`, carries it: `#/house/room?id=kitchen`) and makes the browser back button navigate back, laterally or out. When the browser animates a back of its own (a swipe in Safari), the views land without zooming over it. Forward and opening a deep URL directly are not supported: a zoom needs the trigger it comes from. Options: `prefix` (default `'/'`) and `separator` (default `'/'`). Hash entries the router did not write are left alone.
 
 ## Troubleshooting
 
