@@ -64,7 +64,7 @@ Save this as `index.html` and open it in a browser. Click the Earth, the O of WO
     .z-view { display: grid; place-items: center; }
     .hello { width: 100%; height: 100%; }
     /* The O and the view it opens are both the Earth, so one grows into the other */
-    .earth { border-radius: 50%; background: #000 url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/500px-The_Earth_seen_from_Apollo_17.jpg) center / 108%; }
+    .earth { border-radius: 50%; background: #000 url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/500px-The_Earth_seen_from_Apollo_17.jpg) center / 120%; }
     .zoom-me { display: inline-block; width: 0.9em; height: 0.9em; vertical-align: -0.12em; cursor: zoom-in; }
     .world { width: 320px; height: 320px; color: white; font-weight: 600; text-shadow: 0 1px 8px #000; }
   </style>
