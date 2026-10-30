@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v1.2.3](https://github.com/zumerlab/zumly/compare/v1.2.2...v1.2.3)
+
+> 30 October 2026
+
+**Fixes**
+
+- **touch:** a swipe from a screen edge zooms out instead of sliding the page [`38995fc`](https://github.com/zumerlab/zumly/commit/38995fc3553193eb1c97cdac7deca607bafea007)
+- **router:** do not zoom over a back the browser already animated [`6ef03ef`](https://github.com/zumerlab/zumly/commit/6ef03ef04ed27ec0eecd919e61e0bf7ee208eadf)
+
+**Docs**
+
+- architecture guide, the library explored with itself [`b182df7`](https://github.com/zumerlab/zumly/commit/b182df7948177862fc80b4a95d0f25943cdc32b8)
+- the home lists every docs page, the same rows as the sidebar [`1c9fa2f`](https://github.com/zumerlab/zumly/commit/1c9fa2ff50f004bf8fe132cb57ba5e2a750e03ce)
+- drop the npm and Guides links under the home buttons [`9155382`](https://github.com/zumerlab/zumly/commit/9155382a1b74f3d65eac1139bc0e77f7718c019b)
+- room and a rule above the credit line on the home [`f9d8b9d`](https://github.com/zumerlab/zumly/commit/f9d8b9d160fcede9ee229729609775a902f63ae9)
+- architecture guide, the library explored with itself [`d87517e`](https://github.com/zumerlab/zumly/commit/d87517eeed703d5550032fd8751e1fbbbe37810e)
+
+**Other**
+
+- Swipe from a screen edge zooms out instead of sliding the page in Safari [`#19`](https://github.com/zumerlab/zumly/pull/19)
+
 #### [v1.2.2](https://github.com/zumerlab/zumly/compare/v1.2.1...v1.2.2)
 
 > 30 October 2026
