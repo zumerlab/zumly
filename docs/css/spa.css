@@ -110,7 +110,7 @@ body { overflow: hidden; line-height: 1.6; background: var(--abyss); }
   max-width: 760px; font-size: 0.9rem; color: var(--text-dim);
 }
 .home-footer + .home-footer { margin-top: 10px; }
-.home-footer:last-child { margin-top: 26px; font-size: 0.76rem; }
+.home-footer:last-child { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 0.76rem; }
 .home-footer strong { font-weight: 500; color: var(--text-mid); }
 .home-footer a { color: var(--text-dim); text-decoration: none; }
 .home-footer a:hover { color: var(--accent); }
