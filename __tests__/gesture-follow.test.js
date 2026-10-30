@@ -312,3 +312,88 @@ describe('lateralNav.swipe', () => {
     app.destroy()
   })
 })
+
+describe('swipe from a screen edge', () => {
+  const siblingViews = {
+    ...views,
+    home: `<div class="z-view" style="width:400px;height:300px">
+      <span class="zoom-me" data-to="a" style="position:absolute;left:20px;top:60px;width:80px;height:60px">a</span>
+      <span class="zoom-me" data-to="b" style="position:absolute;left:120px;top:60px;width:80px;height:60px">b</span>
+    </div>`,
+    a: '<div class="z-view" style="width:400px;height:300px"><p>a</p></div>',
+    b: '<div class="z-view" style="width:400px;height:300px"><p>b</p></div>'
+  }
+  const right = () => window.innerWidth - 5
+
+  beforeEach(() => { document.body.innerHTML = '' })
+
+  it('keeps a swipe at either edge from the browser while there is a view to go back to', async () => {
+    const app = await atDetail()
+    expect(touch(app, 'touchstart', [[5, 300]]).defaultPrevented).toBe(true)
+    touch(app, 'touchend', [[5, 300]])
+    expect(touch(app, 'touchstart', [[right(), 300]]).defaultPrevented).toBe(true)
+    touch(app, 'touchend', [[right(), 300]])
+    expect(touch(app, 'touchstart', [[300, 300]]).defaultPrevented).toBe(false)
+    touch(app, 'touchend', [[300, 300]])
+    app.destroy()
+  })
+
+  it('leaves it to the browser at the root, where its back leaves the app', async () => {
+    const app = createApp()
+    await app.init()
+    expect(touch(app, 'touchstart', [[5, 300]]).defaultPrevented).toBe(false)
+    touch(app, 'touchend', [[5, 300]])
+    app.destroy()
+  })
+
+  it('leaves the tap of a control at the edge alone', async () => {
+    const detail = '<div class="z-view" style="width:400px;height:300px"><button style="position:absolute;inset:0">ok</button></div>'
+    const app = await atDetail({ views: { ...views, detail } })
+    const button = app.canvas.querySelector('button')
+    const t = new Touch({ identifier: 0, target: button, screenX: 5, screenY: 300, clientX: 5, clientY: 300 })
+    const event = new TouchEvent('touchstart', { bubbles: true, cancelable: true, touches: [t], changedTouches: [t] })
+    button.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(false)
+    app.destroy()
+  })
+
+  it('follows the finger to the right from the left edge', async () => {
+    const app = await atDetail()
+    const progress = []
+    app.on('zoomOutProgress', e => progress.push(e))
+    touch(app, 'touchstart', [[5, 300]])
+    touch(app, 'touchmove', [[305, 300]])
+    expect(progress.at(-1)).toMatchObject({ phase: 'move', source: 'swipe' })
+    expect(progress.at(-1).progress).toBeGreaterThan(0.5)
+    touch(app, 'touchend', [[305, 300]])
+    await until(() => expect(app.getCurrentViewName()).toBe('home'))
+    app.destroy()
+  })
+
+  it('zooms out without gestures.follow', async () => {
+    const app = await atDetail({ gestures: undefined })
+    touch(app, 'touchstart', [[5, 300]])
+    touch(app, 'touchend', [[300, 300]])
+    await until(() => expect(app.getCurrentViewName()).toBe('home'))
+    app.destroy()
+  })
+
+  it('zooms out instead of moving between siblings', async () => {
+    const app = createApp({ views: siblingViews, lateralNav: { swipe: true }, gestures: undefined })
+    await app.init()
+    await app.zoomIn(app.canvas.querySelectorAll('.zoom-me')[1])
+    touch(app, 'touchstart', [[5, 300]])
+    touch(app, 'touchend', [[300, 300]])
+    await until(() => expect(app.getCurrentViewName()).toBe('home'))
+    app.destroy()
+  })
+
+  it('does not zoom out on a touch that runs along the edge', async () => {
+    const app = await atDetail({ gestures: undefined })
+    touch(app, 'touchstart', [[5, 100]])
+    touch(app, 'touchend', [[60, 400]])
+    await new Promise(resolve => setTimeout(resolve, 30))
+    expect(app.getCurrentViewName()).toBe('detail')
+    app.destroy()
+  })
+})

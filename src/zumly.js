@@ -43,6 +43,10 @@ const WHEEL_FOLLOW_DISTANCE = 400
 const WHEEL_RELEASE_MS = 140
 /** Fraction of the canvas width a swipe travels for a full zoom-out. */
 const SWIPE_FOLLOW_WIDTH = 0.6
+/** Width in px of the screen edges where a touch would start the browser's own swipe. */
+const EDGE_SWIPE_WIDTH = 16
+/** Controls that keep their tap at a screen edge: claiming the touch would drop their click. */
+const EDGE_SWIPE_EXEMPT = 'a, button, input, select, textarea, label, [role="button"]'
 /** Fraction of the starting finger distance a pinch closes for a full zoom-out. */
 const PINCH_FOLLOW_CLOSE = 0.6
 /** Last part of a zoom-out (0-1) over which the view shrinking into its trigger fades out. */
@@ -212,7 +216,7 @@ export class Zumly {
     canvas.setAttribute('aria-live', 'polite')
     canvas.addEventListener('mouseup', this._onZoom, false)
     canvas.addEventListener('touchend', this._onZoom, false)
-    canvas.addEventListener('touchstart', this._onTouchStart, { passive: true })
+    canvas.addEventListener('touchstart', this._onTouchStart, { passive: false })
     canvas.addEventListener('touchmove', this._onTouchMove, { passive: false })
     canvas.addEventListener('touchend', this._onTouchEnd, false)
     canvas.addEventListener('touchcancel', this._onTouchCancel, { passive: true })
@@ -2972,8 +2976,9 @@ export class Zumly {
     this.touchstartX = event.changedTouches[0].screenX
     this.touchstartY = event.changedTouches[0].screenY
     this._swipeBlocked = this._ownsHorizontalDrag(event.target)
+    this._swipeBack = this._claimEdgeSwipe(event)
     const now = performance.now()
-    this._swipe = { x: this.touchstartX, time: now, velocity: 0, lateral: !!this._lateralSwipe() }
+    this._swipe = { x: this.touchstartX, time: now, velocity: 0, lateral: !this._swipeBack && !!this._lateralSwipe() }
   }
 
   /**
@@ -3001,10 +3006,12 @@ export class Zumly {
     swipe.time = now
     const dx = touch.screenX - this.touchstartX
     const dy = touch.screenY - this.touchstartY
-    if (!this._scrub && dx < -10 && Math.abs(dx) > Math.abs(dy) * 1.2) this._beginZoomOutScrub('swipe')
+    // A zoom-out swipe runs to the left, or to the right from the left edge.
+    const travel = this._swipeBack ? dx : -dx
+    if (!this._scrub && travel > 10 && Math.abs(dx) > Math.abs(dy) * 1.2) this._beginZoomOutScrub('swipe')
     if (this._scrub?.source !== 'swipe') return
     event.preventDefault()
-    this._scrubZoomOut(-dx / (this.canvas.clientWidth * SWIPE_FOLLOW_WIDTH))
+    this._scrubZoomOut(travel / (this.canvas.clientWidth * SWIPE_FOLLOW_WIDTH))
   }
 
   /**
@@ -3032,13 +3039,31 @@ export class Zumly {
     if (scrub?.source === 'swipe' && (event.touches?.length ?? 0) === 0) {
       // A fast release flicks the zoom-out through; a finger held still does not.
       const swipe = this._swipe
-      const flick = swipe && performance.now() - swipe.time < 80 && swipe.velocity < -0.5 && scrub.progress > 0.1
+      const velocity = this._swipeBack ? swipe?.velocity : -swipe?.velocity
+      const flick = swipe && performance.now() - swipe.time < 80 && velocity > 0.5 && scrub.progress > 0.1
       this._swipe = null
       this.touching = false
       this._endZoomOutScrub(flick || scrub.progress >= this.gestures.threshold)
       return true
     }
     return false
+  }
+
+  /**
+   * A touch at a screen edge would start the browser's own back or forward swipe (iOS Safari),
+   * which slides the page away instead of zooming out. While there is a view to go back to the
+   * swipe stays here; stopping the touchstart is the only thing that keeps it from the browser.
+   * At the root it is the browser's. Returns true for the left edge, the one that swipes back.
+   * @private
+   */
+  _claimEdgeSwipe (event) {
+    if (this.storedViews.length < 2 || this._swipeBlocked || !event.cancelable || event.touches?.length !== 1) return false
+    const x = event.changedTouches[0].clientX
+    const left = x < EDGE_SWIPE_WIDTH
+    if (!left && x <= window.innerWidth - EDGE_SWIPE_WIDTH) return false
+    if (event.target.closest?.(EDGE_SWIPE_EXEMPT)) return false
+    event.preventDefault()
+    return left
   }
 
   /**
@@ -3084,16 +3109,17 @@ export class Zumly {
     const isTap = Math.abs(dx) < 10 && Math.abs(dy) < 10
     // With lateralNav.swipe, a horizontal swipe moves between siblings
     // (left: next, right: previous) and no longer zooms out.
-    const lateral = Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy) && !this._swipeBlocked ? this._lateralSwipe() : null
+    const lateral = Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy) && !this._swipeBlocked && !this._swipeBack ? this._lateralSwipe() : null
+    const edgeBack = this._swipeBack && dx > 30 && Math.abs(dx) > Math.abs(dy)
     if (lateral) {
       const to = dx < 0 ? lateral.next : lateral.prev
       if (to && !this.blockEvents) {
         this.tracing(dx < 0 ? 'swipe left → next sibling' : 'swipe right → previous sibling')
         this._doLateral(to)
       }
-    } else if (dx < -30 && !this._swipeBlocked) {
+    } else if ((dx < -30 || edgeBack) && !this._swipeBlocked) {
       if (this.storedViews.length > 1 && !this.blockEvents) {
-        this.tracing('swipe left')
+        this.tracing(edgeBack ? 'swipe from the left edge' : 'swipe left')
         this.zoomOut()
       } else {
         this.notify("is on level zero. Can't zoom out. Trigger: Swipe left")
