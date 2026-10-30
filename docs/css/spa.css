@@ -102,9 +102,6 @@ body { overflow: hidden; line-height: 1.6; background: var(--abyss); }
 .home-stars:empty { display: none; }
 .home-sponsor { color: #e0447a; background: color-mix(in srgb, #e0447a 8%, transparent); border: 1px solid color-mix(in srgb, #e0447a 45%, transparent); }
 .home-sponsor:hover { color: #e0447a; background: color-mix(in srgb, #e0447a 16%, transparent); }
-.home-links { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-top: 14px; font-size: 0.86rem; }
-.home-links a { color: var(--text-mid); text-decoration: none; }
-.home-links a:hover { color: var(--accent); }
 .home-footer {
   margin-top: 30px; display: flex; gap: 8px 16px; flex-wrap: wrap; justify-content: center;
   max-width: 760px; font-size: 0.9rem; color: var(--text-dim);
