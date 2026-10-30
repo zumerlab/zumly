@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v1.2.1](https://github.com/zumerlab/zumly/compare/v1.2.0...v1.2.1)
+
+> 30 October 2026
+
+**Performance**
+
+- Improves animations in CSS driver [`c165fbe`](https://github.com/zumerlab/zumly/commit/c165fbe72db60269879b8ce8ea18d215848ba5e5)
+
+**Chores**
+
+- increase background size of earth element for better visibility [`c339791`](https://github.com/zumerlab/zumly/commit/c3397911056cc420795ae470f49aa9215dc7e985)
+
+
+
 #### [v1.2.0](https://github.com/zumerlab/zumly/compare/v1.1.0...v1.2.0)
 
 > 29 October 2026
