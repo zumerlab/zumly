@@ -24,9 +24,8 @@
   <link rel="help" type="text/plain" href="llms-full.txt" title="LLM-friendly full reference" />
   <!-- The home view's fish is the largest thing on screen: fetch it before the view arrives. -->
   <link rel="preload" as="image" href="fish-480.png" fetchpriority="high" />
-  <link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/roboto-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="css/fonts.css" />
-  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
   <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css" />
   <link rel="stylesheet" href="css/site.css" />
   <link rel="stylesheet" href="css/spa.css" />
@@ -35,12 +34,11 @@
 </head>
 
 <body>
-  <button class="theme-toggle floating" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
   <div class="zumly-canvas" id="app"></div>
   <noscript>
     <main>
       <h1>Zumly</h1>
-      <p>Zumly is a JavaScript library for zoom navigation: click an element and the next view grows out of it. This demo needs JavaScript.</p>
+      <p>Zumly is a JavaScript library for zoom navigation: click an element and the next view grows out of it. This site needs JavaScript.</p>
       <p><a href="learn/">Learn Zumly in six steps</a> · <a href="api.html">API reference</a> · <a href="https://github.com/zumerlab/zumly">GitHub</a></p>
     </main>
   </noscript>
@@ -73,17 +71,18 @@
           '<h2 class="v-title">Showcases</h2><p class="v-sub">Small apps built with Zumly. Zoom into a card: the app grows out of its own thumbnail.</p>' +
           '<div class="sc-grid">' + cards + '</div></div></div>'
       },
-      // The API reference is a standalone page (api.html); the demo shows its <main>
+      // The API reference is a standalone page (api.html); the demo shows its sidebar and <main>
       api: {
         title: 'API',
         render: function () {
           return fetch('api.html').then(function (r) { return r.text() }).then(function (html) {
-            var main = new DOMParser().parseFromString(html, 'text/html').querySelector('main')
-            return '<div class="z-view v v-doc"><main>' + main.innerHTML + '</main></div>'
+            var docs = new DOMParser().parseFromString(html, 'text/html').querySelector('.docs')
+            return '<div class="z-view v v-doc"><div class="docs">' + docs.innerHTML + '</div></div>'
           })
         },
         mounted: function (node) {
           window.enhanceCode(node)
+          window.enhanceSidebar(node, node)
           // In-page links scroll the view: the hash belongs to the router
           node.addEventListener('click', function (e) {
             var a = e.target.closest('a[href^="#"]')
@@ -117,6 +116,11 @@
       inputs: { wheel: false }
     })
 
+    // A link to a section of the home (#/home/showcases, from the docs) zooms into its card once
+    // the home is up. The router does not open deep links, and it rewrites the hash as it starts.
+    var startAt = location.hash.replace(/^#\/?/, '').split('/')
+    startAt = startAt[0] === 'home' && /^[\w-]+$/.test(startAt[1] || '') ? startAt[1] : null
+
     app.use(Z.Router)
     // Every view a visitor zooms or slides to, for the site analytics (/zumerlab.js)
     app.on('viewChanged', function (e) { if (window.zumerlab && e.type !== 'init') window.zumerlab.track('zoom_view', { view: e.viewName, nav: e.type }) })
@@ -146,6 +150,8 @@
 
     app.init().then(function () {
       showVersion()
+      var card = startAt && app.canvas.querySelector('.zt[data-to="' + startAt + '"]')
+      if (card) app.zoomIn(card)
       // GitHub stars (shields.io JSON avoids GitHub API rate limits)
       fetch('https://img.shields.io/github/stars/zumerlab/zumly.json')
         .then(function (r) { return r.json() })

@@ -2,13 +2,13 @@
    Root views use container units, so a card thumbnail is the same view drawn small.
    Every trigger has the shape of the view it opens. */
 
-.sx { box-sizing: border-box; font-family: Inter, system-ui, sans-serif; color: var(--sx-text); background: var(--sx-bg); }
+.sx { box-sizing: border-box; font-family: 'Roboto', system-ui, sans-serif; color: var(--sx-text); background: var(--sx-bg); }
 .sx *, .sx *::before { box-sizing: border-box; }
 .sx h1, .sx h2, .sx p { margin: 0; color: inherit; }
 .sx .zoom-me { cursor: zoom-in; }
 
 .sx-root { width: 100%; height: 100%; container-type: size; display: flex; flex-direction: column; gap: 3cqmin; padding: 4cqmin 5cqmin; }
-.sx-root h1 { font-size: 4.2cqmin; font-weight: 800; letter-spacing: -0.02em; }
+.sx-root h1 { font-size: 4.2cqmin; font-weight: 700; }
 .sx-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 2cqmin; flex-wrap: wrap; }
 .sx-head p { color: var(--sx-dim); font-size: 2cqmin; margin-top: 0.4cqmin; }
 .sx-kpis { display: flex; gap: 1.2cqmin; flex-wrap: wrap; }
@@ -20,7 +20,7 @@
 /* Panels: a fixed shape, their own container */
 /* A container's own padding cannot use its container units: --w (its width) sizes them */
 .sx-panel { width: var(--w); container-type: size; padding: calc(var(--w) * 0.05); display: flex; flex-direction: column; gap: 4cqw; border-radius: calc(var(--w) * 0.03); box-shadow: 0 30px 80px #0006; }
-.sx-panel h2 { font-size: 5.5cqw; font-weight: 800; letter-spacing: -0.02em; }
+.sx-panel h2 { font-size: 5.5cqw; font-weight: 700; }
 .sx-panel .sx-head p { font-size: 2.6cqw; }
 
 /* ── Assembly line ── */
@@ -45,7 +45,7 @@
 .sx-issue b { font-size: 2.8cqw; } .sx-issue span { font-size: 2.2cqw; color: var(--sx-dim); }
 .sx-issue-view { --w: min(80vw, 128vh); width: var(--w); aspect-ratio: 16 / 10; container-type: size; padding: calc(var(--w) * 0.05) calc(var(--w) * 0.06); display: flex; flex-direction: column; gap: 2.4cqw; border-radius: calc(var(--w) * 0.03); }
 .sx-issue-view h2 { font-size: 5cqw; } .sx-issue-view > p { font-size: 2.6cqw; color: var(--sx-dim); }
-.sx-kicker { font-size: 2.2cqw !important; color: var(--sx-alert) !important; font-weight: 600; }
+.sx-kicker { font-size: 2.2cqw !important; color: var(--sx-alert) !important; font-weight: 500; }
 .sx-steps { list-style: none; margin: 1cqw 0 0; padding: 0; display: grid; gap: 1.6cqw; }
 .sx-steps label { display: flex; align-items: center; gap: 2cqw; font-size: 3cqw; padding: 2cqw 2.4cqw; border-radius: 1.6cqw; background: var(--sx-card); cursor: pointer; }
 .sx-steps input { width: 3cqw; height: 3cqw; accent-color: var(--sx-ok); }
@@ -78,11 +78,11 @@
 .sx-orbit::before { content: ''; position: absolute; width: 56cqmin; aspect-ratio: 1; border-radius: 50%; border: 0.2cqmin dashed #7f90b555; }
 .sx-planet { width: 18cqmin; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; font-size: 1.8cqmin; color: #cfe3ff; background: radial-gradient(circle at 35% 30%, #5aa9ff, #0d3a7a); box-shadow: 0 0 6cqmin #2b6fff55; }
 .sx-sat { position: absolute; width: 9cqmin; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: var(--sx-card); border: 0.3cqmin solid var(--sx-ok); transform: rotate(var(--a)) translateX(28cqmin) rotate(calc(-1 * var(--a))); }
-.sx-sat span { font-size: 1.3cqmin; font-weight: 700; letter-spacing: 0.04em; }
+.sx-sat span { font-size: 1.3cqmin; font-weight: 700; }
 .sx-sat.is-warn { border-color: var(--sx-alert); } .sx-sat.is-fail { border-color: var(--sx-fail); box-shadow: 0 0 3cqmin var(--sx-fail); }
 .sx-disc { --w: min(76vw, 76vh); width: var(--w); aspect-ratio: 1; border-radius: 50%; container-type: size; display: grid; place-content: center; justify-items: center; gap: 3cqw; text-align: center; background: radial-gradient(circle at 50% 35%, #1a2a52, #070c1f 75%); border: calc(var(--w) * 0.006) solid var(--sx-ok); }
 .sx-disc.is-warn { border-color: var(--sx-alert); } .sx-disc.is-fail { border-color: var(--sx-fail); }
-.sx-disc h2 { font-size: 9cqw; font-weight: 800; letter-spacing: 0.02em; }
+.sx-disc h2 { font-size: 9cqw; font-weight: 700; }
 .sx-disc .sx-kicker { color: var(--sx-dim) !important; font-size: 3.4cqw !important; }
 .sx-systems { display: flex; gap: 4cqw; }
 .sx-sys { width: 20cqw; aspect-ratio: 1; border-radius: 50%; display: grid; place-content: center; text-align: center; background: conic-gradient(var(--c) calc(var(--v) * 1%), #ffffff14 0); --c: var(--sx-ok); position: relative; }

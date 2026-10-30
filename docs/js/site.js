@@ -1,18 +1,6 @@
-// Static pages: theme toggle, copy buttons and a tiny highlighter for code blocks.
-// The theme class itself is set by an inline script in <head> to avoid a flash.
+// Static pages: the docs sidebar, copy buttons and a tiny highlighter for code blocks.
 ;(function () {
   'use strict'
-  var root = document.documentElement
-
-  function syncThemeButton () {
-    var b = document.getElementById('theme-btn')
-    if (b) b.innerHTML = root.classList.contains('light') ? '&#9728;' : '&#9790;'
-  }
-  window.toggleTheme = function () {
-    root.classList.toggle('light')
-    try { localStorage.setItem('zumly-theme', root.classList.contains('light') ? 'light' : 'dark') } catch (e) {}
-    syncThemeButton()
-  }
 
   var TOKENS = /(<!--[\s\S]*?-->|\/\*[\s\S]*?\*\/|\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`)|(<\/?[a-zA-Z][\w-]*|\/?>)|\b(const|let|var|new|await|async|function|return|import|from|export|default|if|else|true|false|null|this)\b/g
   function esc (s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }
@@ -67,9 +55,40 @@
   }
   window.enhanceCode = enhance
 
+  // The docs sidebar: groups that open and close, a menu button on phones, and the section
+  // you are reading marked in it.
+  // scroller is the element that scrolls the page (the demo's view; the window otherwise).
+  function sidebar (root, scroller) {
+    var side = root.querySelector('.docs-side')
+    if (!side) return
+    var toggle = side.querySelector('.docs-side-toggle')
+    toggle.addEventListener('click', function () {
+      toggle.setAttribute('aria-expanded', toggle.getAttribute('aria-expanded') !== 'true')
+    })
+    side.addEventListener('click', function (e) {
+      var head = e.target.closest('.docs-head')
+      if (head) head.setAttribute('aria-expanded', head.getAttribute('aria-expanded') !== 'true')
+      else if (e.target.closest('a')) toggle.setAttribute('aria-expanded', 'false')
+    })
+    var links = [].slice.call(side.querySelectorAll('a[href^="#"]'))
+    if (!links.length || !window.IntersectionObserver) return
+    var seen = {}
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting })
+      var here = null
+      for (var i = 0; i < links.length && !here; i++) if (seen[links[i].hash.slice(1)]) here = links[i]
+      if (here) links.forEach(function (a) { a.classList.toggle('is-here', a === here) })
+    }, { root: scroller || null, rootMargin: '-80px 0px -55% 0px' })
+    links.forEach(function (a) {
+      var section = root.querySelector(a.hash)
+      if (section) io.observe(section)
+    })
+  }
+  window.enhanceSidebar = sidebar
+
   function ready () {
-    syncThemeButton()
     enhance(document)
+    sidebar(document)
     document.querySelectorAll('[data-reload]').forEach(function (b) {
       b.addEventListener('click', function () {
         var f = document.getElementById(b.getAttribute('data-reload'))

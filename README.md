@@ -11,9 +11,8 @@
 <p align="center"><strong>Focus-driven navigation. Zoom into what matters.</strong></p>
 
 <p align="center">
-  <a href="https://zumerlab.com/zumly/"><strong>Live demo</strong></a> ·
+  <a href="https://zumerlab.com/zumly/#/home/showcases"><strong>Showcases</strong></a> ·
   <a href="https://zumerlab.com/zumly/learn/"><strong>Learn in six steps</strong></a> ·
-  <a href="demos/">Demos</a> ·
   <a href="https://www.npmjs.com/package/zumly"><img src="https://img.shields.io/npm/v/zumly.svg" alt="npm version" align="center"></a>
 </p>
 

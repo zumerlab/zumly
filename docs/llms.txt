@@ -50,7 +50,8 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 
 ## Links
 
-- Live demo: https://zumerlab.com/zumly/
+- Site: https://zumerlab.com/zumly/
+- Showcases: https://zumerlab.com/zumly/#/home/showcases
 - GitHub: https://github.com/zumerlab/zumly
 - npm: https://www.npmjs.com/package/zumly
 - Full LLM reference: https://zumerlab.com/zumly/llms-full.txt

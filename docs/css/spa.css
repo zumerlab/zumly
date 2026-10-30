@@ -4,11 +4,6 @@ html, body { height: 100%; }
 body { overflow: hidden; line-height: 1.6; background: var(--abyss); }
 #app { position: absolute; inset: 0; }
 
-.theme-toggle.floating {
-  position: fixed; top: 14px; right: 14px; z-index: 9999; margin: 0;
-  background: var(--nav-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-}
-
 /* Every section view */
 .v {
   width: 100%; height: 100%;
@@ -21,7 +16,7 @@ body { overflow: hidden; line-height: 1.6; background: var(--abyss); }
 }
 .v-inner { max-width: 880px; margin: 0 auto; }
 .v-section h2.v-title {
-  font-size: clamp(1.7rem, 4vw, 2.3rem); font-weight: 850; letter-spacing: -0.02em;
+  font-size: clamp(1.7rem, 4vw, 2.25rem); font-weight: 700;
   text-align: center; margin-bottom: 6px;
 }
 .v-section .v-sub { text-align: center; color: var(--text-dim); margin-bottom: 28px; }
@@ -35,11 +30,6 @@ body { overflow: hidden; line-height: 1.6; background: var(--abyss); }
     radial-gradient(circle at 50% 24%, rgba(140, 205, 255, 0.14), transparent 38%),
     linear-gradient(180deg, #06223d 0%, #04101d 45%, #020912 100%);
 }
-html.light .v-home {
-  background:
-    radial-gradient(circle at 50% 24%, rgba(255, 255, 255, 0.9), transparent 40%),
-    linear-gradient(180deg, #cfe9fb 0%, #e8f4fc 50%, #f3f8fd 100%);
-}
 .home-fish { position: relative; width: 190px; height: 190px; margin-bottom: 4px; }
 .home-fish img { width: 100%; height: 100%; animation: swim 6s ease-in-out infinite; }
 /* The lure's light (the image's lure sits at about 16%, 26%) */
@@ -49,7 +39,6 @@ html.light .v-home {
   background: radial-gradient(circle, rgba(223, 243, 255, 0.55), transparent 65%);
   animation: lure 3.2s ease-in-out infinite;
 }
-html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143, 216, 0.25), transparent 65%); }
 @keyframes swim { 50% { transform: translate(4px, -6px) rotate(-2deg); } }
 @keyframes lure { 50% { opacity: 0.45; transform: translate(-50%, -50%) scale(0.8); } }
 .bubble {
@@ -65,17 +54,17 @@ html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143
 
 .home-title-wrap { position: relative; display: inline-block; }
 .home-title {
-  font-size: clamp(3rem, 10vw, 5.4rem); font-weight: 900; letter-spacing: -0.04em; line-height: 1;
+  font-size: clamp(3rem, 10vw, 5rem); font-weight: 700; line-height: 1;
   color: var(--text);
 }
 .home-version {
   position: absolute; bottom: 4px; left: calc(100% + 8px);
-  font-size: 0.62rem; font-weight: 700; color: var(--accent); white-space: nowrap;
+  font-size: 0.7rem; font-weight: 500; color: var(--accent); white-space: nowrap;
   border: 1px solid var(--line-strong); padding: 1px 7px; border-radius: 99px;
 }
 /* Filled from npm when the page loads; hidden until then. */
 .home-version:empty { display: none; }
-.home-tagline { font-size: 0.82rem; font-weight: 650; letter-spacing: 0.4em; color: var(--fish); margin: 8px 0 12px; }
+.home-tagline { font-size: 0.95rem; font-weight: 500; color: var(--fish); margin: 10px 0 12px; }
 .home-sub { font-size: clamp(1rem, 2.4vw, 1.18rem); color: var(--text-mid); max-width: 460px; margin: 0 auto 30px; }
 
 .targets { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; max-width: 760px; }
@@ -88,8 +77,8 @@ html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143
 }
 .zt:hover, .zt:focus-visible { transform: translateY(-3px); border-color: var(--line-strong); background: var(--surface-hover); }
 .zt-icon { display: block; width: 30px; height: 30px; margin: 0 auto 8px; color: var(--fish); }
-.zt-title { display: block; font-weight: 750; font-size: 0.98rem; }
-.zt-desc { display: block; font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
+.zt-title { display: block; font-weight: 500; font-size: 1rem; }
+.zt-desc { display: block; font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
 
 .home-install {
   display: inline-flex; align-items: center; gap: 10px; margin-top: 28px;
@@ -97,23 +86,22 @@ html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143
   padding: 8px 8px 8px 16px; border-radius: 99px; border: 1px solid var(--line); background: var(--code-bg);
 }
 .home-install button {
-  font: 600 0.74rem var(--font); color: var(--text); background: var(--surface-hover);
+  font: 500 0.75rem var(--font); color: var(--text); background: var(--surface-hover);
   border: 1px solid var(--line); border-radius: 99px; padding: 4px 12px; cursor: pointer;
 }
 /* GitHub and Sponsor as buttons: the two asks on the home */
 .home-cta { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 22px; }
 .home-cta a {
   display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 99px;
-  font-weight: 650; font-size: 0.9rem; text-decoration: none; transition: background 0.2s, border-color 0.2s;
+  font-weight: 500; font-size: 0.9rem; text-decoration: none; transition: background 0.2s, border-color 0.2s;
 }
 .home-star { color: var(--text); background: var(--surface); border: 1px solid var(--line-strong); }
 .home-star:hover { color: var(--text); background: var(--surface-hover); border-color: var(--fish); }
 .home-star svg { width: 17px; height: 17px; }
-.home-stars { color: var(--fish); font-weight: 700; padding-left: 9px; border-left: 1px solid var(--line-strong); }
+.home-stars { color: var(--fish); font-weight: 500; padding-left: 9px; border-left: 1px solid var(--line-strong); }
 .home-stars:empty { display: none; }
 .home-sponsor { color: #e0447a; background: color-mix(in srgb, #e0447a 8%, transparent); border: 1px solid color-mix(in srgb, #e0447a 45%, transparent); }
 .home-sponsor:hover { color: #e0447a; background: color-mix(in srgb, #e0447a 16%, transparent); }
-html.light .home-sponsor, html.light .home-sponsor:hover { color: #b8285f; }
 .home-links { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-top: 14px; font-size: 0.86rem; }
 .home-links a { color: var(--text-mid); text-decoration: none; }
 .home-links a:hover { color: var(--accent); }
@@ -121,7 +109,7 @@ html.light .home-sponsor, html.light .home-sponsor:hover { color: #b8285f; }
   margin-top: 30px; display: flex; gap: 8px 16px; flex-wrap: wrap; justify-content: center;
   max-width: 680px; font-size: 0.76rem; color: var(--text-dim);
 }
-.home-footer strong { font-weight: 650; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.66rem; }
+.home-footer strong { font-weight: 500; color: var(--text-mid); }
 .home-footer a { color: var(--text-dim); text-decoration: none; }
 .home-footer a:hover { color: var(--accent); }
 
@@ -142,20 +130,20 @@ html.light .home-sponsor, html.light .home-sponsor:hover { color: #b8285f; }
 /* The thumbnail is the real first view; its container units scale it down */
 .sc-mini { width: 100%; height: 100%; container-type: size; pointer-events: none; }
 .sc-label { padding: 10px 16px 14px; }
-.sc-tag { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fish); }
-.sc-label h4 { font-size: 0.95rem; margin: 2px 0 0; }
+.sc-tag { font-size: 0.8rem; font-weight: 500; color: var(--fish); }
+.sc-label h4 { font-size: 1rem; font-weight: 500; margin: 2px 0 0; }
 .sc-label p { font-size: 0.8rem; color: var(--text-dim); margin: 3px 0 6px; }
 .sc-label a { font-size: 0.78rem; color: var(--accent); }
 
 /* ━━━ API view ━━━ */
 .v-doc { background: var(--bg); }
-.v-doc main { padding-top: 84px; padding-bottom: 80px; }
+/* The view is the scroller: the sidebar sticks to its top, under the sibling bar */
+.v-doc .docs > main { padding: 84px 0 80px; }
+.v-doc .docs-side { top: 0; max-height: 100vh; padding-top: 84px; }
 
 /* In the demo, leave room for the sibling bar (top) and the back button (bottom) */
 #app > .z-view.sx-root { padding-top: 64px; padding-bottom: 64px; }
 
-/* Over a showcase, the theme button would sit on the app */
-body:has(.is-current-view.sx) .theme-toggle.floating { display: none; }
 
 @media (max-width: 560px) {
   .v-section { padding: 72px 16px 72px; }

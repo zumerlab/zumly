@@ -18,9 +18,8 @@
   <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
   <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
   <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
-  <link rel="preload" href="../fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="../fonts/roboto-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="../css/fonts.css" />
-  <script>(function () { var t; try { t = localStorage.getItem('zumly-theme') } catch (e) {} if (t ? t === 'light' : matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.classList.add('light') })()</script>
   <link rel="stylesheet" href="../css/site.css" />
   <script src="../js/site.js" defer></script>
 </head>
@@ -31,12 +30,62 @@
       <a class="nav-link" href="../learn/" aria-current="page">Learn</a>
       <a class="nav-link" href="../learn/#guides">Guides</a>
       <a class="nav-link" href="../api.html">API</a>
-      <a class="nav-link" href="../">Demo</a>
+      <a class="nav-link" href="../#/home/showcases">Showcases</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
       <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
-      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
     </div>
   </nav>
+
+  <div class="docs">
+  <aside class="docs-side">
+    <button type="button" class="docs-side-toggle" aria-expanded="false">Contents</button>
+    <nav class="docs-nav" aria-label="Docs">
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="true">Learn</button>
+        <div class="docs-items">
+          <a href="../learn/">Overview</a>
+          <a href="../learn/first-app.html">Your first app</a>
+          <a href="../learn/depth.html">Going deeper</a>
+          <a href="../learn/siblings.html" aria-current="page">Siblings</a>
+          <a href="../learn/views.html">Where views come from</a>
+          <a href="../learn/navigate.html">Navigating from code</a>
+          <a href="../learn/motion.html">Motion and gestures</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Guides</button>
+        <div class="docs-items">
+          <a href="../guides/navigation.html">Navigation controls</a>
+          <a href="../guides/heavy-views.html">Heavy views</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Frameworks</button>
+        <div class="docs-items">
+          <a href="../integrations/react.html">React</a>
+          <a href="../integrations/vue.html">Vue</a>
+          <a href="../integrations/svelte.html">Svelte</a>
+          <a href="../integrations/angular.html">Angular</a>
+          <a href="../integrations/orbit-css.html">Orbit CSS</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Drivers</button>
+        <div class="docs-items">
+          <a href="../drivers/gsap.html">GSAP</a>
+          <a href="../drivers/anime.html">Anime.js</a>
+          <a href="../drivers/motion.html">Motion</a>
+          <a href="../drivers/custom.html">Write your own</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Reference</button>
+        <div class="docs-items">
+          <a href="../api.html">API reference</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
 
   <main>
     <header class="hero">
@@ -157,6 +206,7 @@ views: {
 
     <nav class="pager" aria-label="Steps"><a class="prev" href="depth.html"><small>&larr; Step 2</small>Going deeper</a><a class="next" href="views.html"><small>Step 4 &rarr;</small>Where views come from</a></nav>
   </main>
+  </div>
 
   <footer class="site-footer">
     <div class="footer-inner">
@@ -195,7 +245,7 @@ views: {
         <div>
           <h2>Zumly</h2>
           <ul>
-            <li><a href="../">Live demo</a></li>
+            <li><a href="../#/home/showcases">Showcases</a></li>
             <li><a href="../api.html">API reference</a></li>
             <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
             <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>

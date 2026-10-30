@@ -1,5 +1,6 @@
 /* Shared look of the guide examples (integrations/examples, drivers/examples) */
-body { margin: 0; font: 15px/1.4 system-ui, sans-serif; color: #e8f1fb; background: #04101d; }
+@import url(fonts.css);
+body { margin: 0; font: 15px/1.4 Roboto, system-ui, sans-serif; color: #e8f1fb; background: #04101d; }
 .stage { position: relative; height: 100vh; }
 .z-view { display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; }
 h1, h2, p { margin: 0; }
@@ -14,6 +15,6 @@ h1 { font-size: 1.3rem; }
 .venus { background: radial-gradient(circle at 35% 30%, #f6dc9a, #a8692a); }
 .earth { background: radial-gradient(circle at 35% 30%, #7cc4ff, #1b4f8f); }
 .mars { background: radial-gradient(circle at 35% 30%, #ff9a6b, #8f3416); }
-.tag { font: 600 11px/1 ui-monospace, monospace; padding: 5px 10px; border-radius: 99px; background: #ffffff1a; color: #b9d3ee; }
-button { font: inherit; padding: 8px 16px; border: 0; border-radius: 99px; background: #3da9fc; color: #04101d; font-weight: 600; cursor: pointer; }
+.tag { font-size: 12px; line-height: 1; font-weight: 500; padding: 5px 10px; border-radius: 99px; background: #ffffff1a; color: #b9d3ee; }
+button { font: inherit; padding: 8px 16px; border: 0; border-radius: 99px; background: #3da9fc; color: #04101d; font-weight: 500; cursor: pointer; }
 .hint { font-size: 13px; color: #9fb6d4; max-width: 340px; }

@@ -2,8 +2,8 @@
 //   node scripts/build-docs.mjs          rewrite the pages
 //   node scripts/build-docs.mjs --check  exit 1 if a page is out of date
 //
-// 1. Every page with <nav class="site-nav"> / <footer class="site-footer"> gets the shared
-//    nav and footer below, with links relative to the page.
+// 1. Every page with <nav class="site-nav"> / <aside class="docs-side"> / <footer class="site-footer">
+//    gets the shared nav, sidebar and footer below, with links relative to the page.
 // 2. <pre data-example="name"> in learn/ gets the source of learn/examples/name.html;
 //    "name#script" or "name#style" takes the contents of the last such block, and
 //    "name#tag" any other element whole (e.g. "navigate#nav").
@@ -31,12 +31,48 @@ function nav (to, section) {
       <a class="nav-link" href="${to('learn/')}"${cur('learn')}>Learn</a>
       <a class="nav-link" href="${to('learn/#guides')}"${cur('guides')}>Guides</a>
       <a class="nav-link" href="${to('api.html')}"${cur('api')}>API</a>
-      <a class="nav-link" href="${to('')}">Demo</a>
+      <a class="nav-link" href="${to('')}#/home/showcases">Showcases</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
       <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
-      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">&#9790;</button>
     </div>
   </nav>`
+}
+
+// The docs sidebar: every page, in groups; only the current page's group starts open.
+// On api.html its sections hang under it.
+const SIDEBAR = [
+  ['Learn', [['learn/', 'Overview'], ...STEPS.map(([file, title]) => [`learn/${file}.html`, title])]],
+  ['Guides', [['guides/navigation.html', 'Navigation controls'], ['guides/heavy-views.html', 'Heavy views']]],
+  ['Frameworks', [
+    ['integrations/react.html', 'React'], ['integrations/vue.html', 'Vue'], ['integrations/svelte.html', 'Svelte'],
+    ['integrations/angular.html', 'Angular'], ['integrations/orbit-css.html', 'Orbit CSS']
+  ]],
+  ['Drivers', [['drivers/gsap.html', 'GSAP'], ['drivers/anime.html', 'Anime.js'], ['drivers/motion.html', 'Motion'], ['drivers/custom.html', 'Write your own']]],
+  ['Reference', [['api.html', 'API reference']]]
+]
+const API_SECTIONS = [
+  ['constructor', 'Options'], ['transitions', 'Transitions'], ['navigation', 'Navigation UI'], ['methods', 'Methods'],
+  ['events', 'Events'], ['views', 'View sources'], ['triggers', 'Triggers']
+]
+
+function sidebar (to, rel) {
+  const current = path => rel === path || rel === path + 'index.html'
+  const link = ([path, title]) => {
+    const a = `<a href="${to(path)}"${current(path) ? ' aria-current="page"' : ''}>${title}</a>`
+    if (!(path === 'api.html' && current(path))) return a
+    return a + `\n          <div class="docs-sub">${API_SECTIONS.map(([id, text]) => `<a href="#${id}">${text}</a>`).join('')}</div>`
+  }
+  return `<aside class="docs-side">
+    <button type="button" class="docs-side-toggle" aria-expanded="false">Contents</button>
+    <nav class="docs-nav" aria-label="Docs">
+      ${SIDEBAR.map(([head, items]) => `<div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="${items.some(([path]) => current(path))}">${head}</button>
+        <div class="docs-items">
+          ${items.map(link).join('\n          ')}
+        </div>
+      </div>`).join('\n      ')}
+    </nav>
+  </aside>`
 }
 
 function footer (to) {
@@ -73,7 +109,7 @@ function footer (to) {
         <div>
           <h2>Zumly</h2>
           <ul>
-            ${li(to(''), 'Live demo')}
+            ${li(to('') + '#/home/showcases', 'Showcases')}
             ${li(to('api.html'), 'API reference')}
             ${li('https://github.com/zumerlab/zumly', 'GitHub')}
             ${li('https://www.npmjs.com/package/zumly', 'npm')}
@@ -130,6 +166,7 @@ for (const file of walk(DOCS)) {
   const before = readFileSync(file, 'utf8')
   const after = before
     .replace(/<nav class="site-nav">[\s\S]*?<\/nav>/, () => nav(to, section))
+    .replace(/<aside class="docs-side">[\s\S]*?<\/aside>/, () => sidebar(to, rel))
     .replace(/<footer class="site-footer">[\s\S]*?<\/footer>/, () => footer(to))
     .replace(/(<pre data-example="([^"]+)"><code>)[\s\S]*?(<\/code><\/pre>)/g,
       (m, open, spec, close) => open + escapeHtml(exampleSource(spec)) + close)

@@ -6,7 +6,7 @@ Version: 1.0.0
 License: MIT
 Author: Juan Martin Muda — Zumerlab
 Repository: https://github.com/zumerlab/zumly
-Live demo: https://zumerlab.com/zumly/ · Learn in six steps: https://zumerlab.com/zumly/learn/ · API reference: https://zumerlab.com/zumly/api.html
+Site: https://zumerlab.com/zumly/ · Showcases: https://zumerlab.com/zumly/#/home/showcases · Learn in six steps: https://zumerlab.com/zumly/learn/ · API reference: https://zumerlab.com/zumly/api.html
 npm: https://www.npmjs.com/package/zumly
 
 ---
