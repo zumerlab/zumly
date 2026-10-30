@@ -230,7 +230,7 @@ Controls how the zoom scale is calculated. `'width'` scales the child view so it
 
 #### `transitions.effects`
 
-Array of 1-2 CSS filter strings applied to background views during zoom. First applies to previousView, second to lastView. If only one is provided, it is used for both. Can be overridden per trigger with `data-with-effects="blur(3px) | blur(8px) saturate(0)"`.
+Array of 1-2 CSS filter strings applied to background views during zoom. First applies to previousView, second to lastView. If only one is provided, it is used for both. The lastView is scaled by the level before it too, so its `blur()` radius is divided by that scale: the blur stays what you wrote instead of growing with depth. Can be overridden per trigger with `data-with-effects="blur(3px) | blur(8px) saturate(0)"`.
 
 #### `transitions.animateEffects`
 

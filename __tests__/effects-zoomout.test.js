@@ -46,7 +46,8 @@ it.each(['none', 'css', 'waapi'])('keeps background effects after zoom-out with 
   await createApp(driver)
   await zoomThrough('a', 'b', 'c')
   await expect.poll(() => filterOf('previous')).toBe('blur(3px)')
-  await expect.poll(() => filterOf('last')).toBe('blur(8px) saturate(0)')
+  // The last view carries the scale of the level before: its blur radius is divided by it.
+  await expect.poll(() => filterOf('last')).toBe(`blur(${8 / app.storedViews[2].scale}px) saturate(0)`)
 
   await app.zoomOut()
   await expect.poll(() => app.blockEvents).toBe(false)

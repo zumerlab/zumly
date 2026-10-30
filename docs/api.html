@@ -182,7 +182,7 @@
           <span class="api-type">[string, string]</span>
           <span class="api-default">default: ['none', 'none']</span>
         </div>
-        <div class="api-desc">CSS filter strings applied to background views during zoom. First value for the previous view, second for the last (deepest background) view. Example: <code>['blur(3px) brightness(0.7)', 'blur(8px) saturate(0)']</code>.</div>
+        <div class="api-desc">CSS filter strings applied to background views during zoom. First value for the previous view, second for the last (deepest background) view. Example: <code>['blur(3px) brightness(0.7)', 'blur(8px) saturate(0)']</code>. The last view is also scaled by the level before it, so its <code>blur()</code> radius is divided by that scale: the blur stays what you wrote instead of growing with depth, and the cost with it.</div>
       </div>
 
       <div class="api-entry" id="opt-animateeffects">

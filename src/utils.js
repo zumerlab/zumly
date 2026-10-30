@@ -544,3 +544,17 @@ export function formatLabel (label, view = {}) {
   }
   return label.replace(/\{(title|name)\}/g, (_, key) => view[key] ?? '')
 }
+
+/**
+ * A filter string with every blur() radius divided by `divisor`. CSS blurs a view in its own
+ * pixels, before its transform: a view two levels back is scaled by the level before it too, so
+ * its blur would grow with every level (and cost as much). Dividing by that scale keeps the blur
+ * where the effect says. 'none' and the other functions stay as they are.
+ * @param {string} filter - e.g. 'blur(8px) saturate(0)'
+ * @param {number} divisor - the scale the view already carries
+ * @returns {string}
+ */
+export function scaleBlur (filter, divisor) {
+  if (!filter || filter === 'none' || !Number.isFinite(divisor) || divisor <= 1) return filter
+  return filter.replace(/blur\(\s*([-+\d.eE]+)([a-z%]*)\s*\)/gi, (_, n, unit) => `blur(${Math.round(parseFloat(n) / divisor * 1e4) / 1e4}${unit})`)
+}

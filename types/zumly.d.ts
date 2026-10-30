@@ -108,7 +108,7 @@ export interface TransitionOptions {
    * gsap and motion drivers, a library ease name. Default: 'ease-in-out'.
    */
   ease?: string
-  /** Array of 1-2 CSS filter strings for background view effects. */
+  /** Array of 1-2 CSS filter strings for background view effects. The last view's blur() radius is divided by the scale it carries from the level before, so the blur does not grow with depth. */
   effects?: [string] | [string, string]
   /** Transition the effects' filter with the zoom (true) or apply it at once (false). Default: true. */
   animateEffects?: boolean

@@ -1,4 +1,4 @@
-import { prepareAndInsertView, definitionTitle, formatLabel, notification, checkParameters, normalizeDuration, normalizeEase } from './utils.js'
+import { prepareAndInsertView, definitionTitle, formatLabel, notification, checkParameters, normalizeDuration, normalizeEase, scaleBlur } from './utils.js'
 import {
   computeCoverScale,
   computeCurrentViewStartTransform,
@@ -47,6 +47,8 @@ const SWIPE_FOLLOW_WIDTH = 0.6
 const PINCH_FOLLOW_CLOSE = 0.6
 /** Last part of a zoom-out (0-1) over which the view shrinking into its trigger fades out. */
 const ZOOM_OUT_FADE = 1 / 3
+/** How long the view two levels back takes to appear once a zoom-out brings it back, in ms. */
+const RETURNED_VIEW_FADE_MS = 200
 
 /**
  * Index of a view identity among sibling entries ({ name, params, key }): the
@@ -90,6 +92,8 @@ export class Zumly {
     // Internal state
     this.storedViews = []
     this.currentStage = null
+    /** Fades of views brought back by a zoom-out, finished before the next navigation. */
+    this._returnedFades = new Set()
     this.debug = false
     this.trace = []
     this.blockEvents = false
@@ -489,9 +493,11 @@ export class Zumly {
    * @param {[string, string]} effects - [previousEffect, lastEffect]
    * @param {string} duration - CSS duration for transition timing
    * @param {string} ease - CSS easing for transition timing
+   * @param {number} [lastScale=1] - the scale the last view carries from the levels before:
+   *   its blur() radius is divided by it, so the blur does not grow with depth (see scaleBlur)
    * @private
    */
-  _applyEffects (previousView, lastView, effects, duration, ease) {
+  _applyEffects (previousView, lastView, effects, duration, ease, lastScale = 1) {
     if (!effects || (effects[0] === 'none' && effects[1] === 'none')) return
     if (previousView && effects[0] !== 'none') {
       this._setEffectDuration(previousView)
@@ -502,7 +508,7 @@ export class Zumly {
     }
     if (lastView && effects[1] !== 'none') {
       this._setEffectDuration(lastView)
-      lastView.style.setProperty('--z-effect-filter', effects[1])
+      lastView.style.setProperty('--z-effect-filter', scaleBlur(effects[1], lastScale))
       lastView.style.setProperty('--zoom-duration', duration)
       lastView.style.setProperty('--zoom-ease', ease)
       lastView.classList.add('has-effect')
@@ -543,6 +549,42 @@ export class Zumly {
     // Safety: remove after duration in case transitionend doesn't fire
     const dur = element.style.getPropertyValue('--zoom-duration')
     this._setTrackedTimeout(onEnd, dur ? parseFloat(dur) * (dur.includes('ms') ? 1 : 1000) + 100 : 1100)
+  }
+
+  /**
+   * The view two levels above the one a zoom-out lands on was out of the canvas, so no driver
+   * moved it. Once the zoom-out ends, put it where it sat when that level was entered, with the
+   * effect it had, and let it appear. Without this it stayed hidden until the next zoom-in.
+   * @param {HTMLElement|null} node
+   * @private
+   */
+  _placeReturnedLast (node) {
+    const index = this.storedViews.length - 1
+    const stage = this.storedViews[index]
+    const entry = stage?.views[INDEX_LAST]
+    if (!node || !entry || entry.viewName !== node.dataset.viewName) return
+    node.style.transformOrigin = entry.forwardState.origin
+    node.style.transform = entry.forwardState.transform
+    node.classList.remove('is-current-view', 'is-previous-view')
+    node.classList.add('is-last-view')
+    const effect = (stage.effects ?? this._resolveEffects(null))[1]
+    if (effect !== 'none' && !this._prefersReducedMotion()) {
+      const duration = stage.views[INDEX_CURRENT]?.forwardState?.duration ?? this.duration
+      const ease = stage.views[INDEX_CURRENT]?.forwardState?.ease ?? this.ease
+      this._applyEffects(null, node, ['none', effect], duration, ease, this.storedViews[index - 1]?.scale ?? 1)
+      // The view comes back with its effect already on, not blurring in front of the user.
+      node.style.setProperty('--z-effect-duration', '0s')
+      if (this.animateEffects !== false) this._setTrackedTimeout(() => node.style.removeProperty('--z-effect-duration'), 100)
+    } else {
+      this._removeEffect(node)
+    }
+    node.classList.remove('hide')
+    if (typeof node.animate === 'function' && !this._prefersReducedMotion()) {
+      // Finished early by the next navigation, so a view that changes role again is never caught mid-fade.
+      const fade = node.animate([{ opacity: 0 }, { opacity: 1 }], { duration: RETURNED_VIEW_FADE_MS })
+      this._returnedFades.add(fade)
+      fade.onfinish = () => this._returnedFades.delete(fade)
+    }
   }
 
   // ─── Trigger hide/crossfade ───────────────────────────────────────
@@ -726,6 +768,8 @@ export class Zumly {
    */
   _runNavigation (operation) {
     if (this._destroyed || this.blockEvents) return Promise.resolve()
+    for (const fade of this._returnedFades) fade.finish()
+    this._returnedFades.clear()
     const task = { pendingViews: new Set() }
     task.promise = new Promise(resolve => { task.resolve = resolve })
     this._navigationTask = task
@@ -1530,7 +1574,7 @@ export class Zumly {
     this.tracing('setCSSVariables()')
     // Apply background view effects (blur, saturate, etc.)
     const effects = this._resolveEffects(el)
-    this._applyEffects(previousView, lastView, effects, duration, ease)
+    this._applyEffects(previousView, lastView, effects, duration, ease, preScale)
     // Zoom-out back to this level restores the same background effects.
     snapShoot.effects = effects
     // Hide/crossfade trigger element during zoom
@@ -2154,6 +2198,7 @@ export class Zumly {
       const parent = this.storedViews[t]
       this.lateralHistory = parent?.lateralHistory ?? []
       if (parent) delete parent.lateralHistory
+      this._placeReturnedLast(targetGrand)
       this._onTransitionComplete()
       this._updateNav()
       activateView(target)
@@ -2240,6 +2285,7 @@ export class Zumly {
       const newlastView = canvas.querySelector('.z-view:first-child')
       if (newlastView) {
         showViewContent(newlastView)
+        // Hidden while the zoom-out runs (no driver moves it); placed and shown when it ends.
         newlastView.classList.add('hide')
       }
     }
@@ -2266,6 +2312,7 @@ export class Zumly {
       const parent = this.storedViews[this.storedViews.length - 1]
       this.lateralHistory = parent?.lateralHistory ?? []
       if (parent) delete parent.lateralHistory
+      this._placeReturnedLast(detachedNode)
       this._updateNav()
       activateView(previousView)
       this._emit('afterZoomOut', { zoomLevel: this.zoomLevel(), viewName: to, from })
