@@ -100,10 +100,23 @@ html.light .home-fish::before { background: radial-gradient(circle, rgba(47, 143
   font: 600 0.74rem var(--font); color: var(--text); background: var(--surface-hover);
   border: 1px solid var(--line); border-radius: 99px; padding: 4px 12px; cursor: pointer;
 }
-.home-links { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-top: 18px; font-size: 0.86rem; }
+/* GitHub and Sponsor as buttons: the two asks on the home */
+.home-cta { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 22px; }
+.home-cta a {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 99px;
+  font-weight: 650; font-size: 0.9rem; text-decoration: none; transition: background 0.2s, border-color 0.2s;
+}
+.home-star { color: var(--text); background: var(--surface); border: 1px solid var(--line-strong); }
+.home-star:hover { color: var(--text); background: var(--surface-hover); border-color: var(--fish); }
+.home-star svg { width: 17px; height: 17px; }
+.home-stars { color: var(--fish); font-weight: 700; padding-left: 9px; border-left: 1px solid var(--line-strong); }
+.home-stars:empty { display: none; }
+.home-sponsor { color: #e0447a; background: color-mix(in srgb, #e0447a 8%, transparent); border: 1px solid color-mix(in srgb, #e0447a 45%, transparent); }
+.home-sponsor:hover { color: #e0447a; background: color-mix(in srgb, #e0447a 16%, transparent); }
+html.light .home-sponsor, html.light .home-sponsor:hover { color: #b8285f; }
+.home-links { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; margin-top: 14px; font-size: 0.86rem; }
 .home-links a { color: var(--text-mid); text-decoration: none; }
 .home-links a:hover { color: var(--accent); }
-.home-stars { color: var(--fish); font-weight: 700; }
 .home-footer {
   margin-top: 30px; display: flex; gap: 8px 16px; flex-wrap: wrap; justify-content: center;
   max-width: 680px; font-size: 0.76rem; color: var(--text-dim);
