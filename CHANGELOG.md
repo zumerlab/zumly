@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v1.2.2](https://github.com/zumerlab/zumly/compare/v1.2.1...v1.2.2)
+
+> 30 October 2026
+
+**Fixes**
+
+- last view's blur no longer grows with depth, and it comes back visible after a zoom-out [`e8938bb`](https://github.com/zumerlab/zumly/commit/e8938bbb5e09ad902ddf23be8303d38e5ca2b54f)
+
 #### [v1.2.1](https://github.com/zumerlab/zumly/compare/v1.2.0...v1.2.1)
 
 > 30 October 2026
