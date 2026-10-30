@@ -176,4 +176,22 @@ for (const file of walk(DOCS)) {
   if (check) console.log('out of date:', rel)
   else { writeFileSync(file, after); console.log('updated:', rel) }
 }
+// The home (docs/views/home.html, fetched by the demo) lists the same pages as the sidebar,
+// one row per group, between the docs-links markers.
+function homeDocs () {
+  return SIDEBAR.map(([group, pages]) => `  <div class="home-footer">
+    <strong>${group}</strong>
+    ${pages.map(([path, title]) => `<a href="${path}">${title}</a>`).join('')}
+  </div>`).join('\n')
+}
+{
+  const file = DOCS + 'views/home.html'
+  const before = readFileSync(file, 'utf8')
+  const after = before.replace(/(<!-- docs-links -->\n)[\s\S]*?(  <!-- \/docs-links -->)/, (m, open, close) => open + homeDocs() + '\n' + close)
+  if (after !== before) {
+    stale++
+    if (check) console.log('out of date: views/home.html')
+    else { writeFileSync(file, after); console.log('updated: views/home.html') }
+  }
+}
 if (check && stale) process.exit(1)

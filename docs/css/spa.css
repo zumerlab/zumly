@@ -107,8 +107,10 @@ body { overflow: hidden; line-height: 1.6; background: var(--abyss); }
 .home-links a:hover { color: var(--accent); }
 .home-footer {
   margin-top: 30px; display: flex; gap: 8px 16px; flex-wrap: wrap; justify-content: center;
-  max-width: 680px; font-size: 0.76rem; color: var(--text-dim);
+  max-width: 760px; font-size: 0.9rem; color: var(--text-dim);
 }
+.home-footer + .home-footer { margin-top: 10px; }
+.home-footer:last-child { margin-top: 26px; font-size: 0.76rem; }
 .home-footer strong { font-weight: 500; color: var(--text-mid); }
 .home-footer a { color: var(--text-dim); text-decoration: none; }
 .home-footer a:hover { color: var(--accent); }
