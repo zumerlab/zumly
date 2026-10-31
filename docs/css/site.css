@@ -278,6 +278,12 @@ section > table { display: block; overflow-x: auto; }
 .config label { display: inline-flex; gap: 6px; align-items: center; font-size: 0.86rem; color: var(--text-mid); }
 .config select { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 8px; padding: 3px 6px; }
 .config :disabled { opacity: 0.45; }
+.config input[type="range"] { accent-color: var(--fish); width: 110px; }
+.config output { min-width: 4ch; font-size: 0.8rem; color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.config fieldset small { flex-basis: 100%; font-size: 0.78rem; line-height: 1.45; color: var(--text-dim); }
+.config-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 0 10px; font-size: 0.82rem; color: var(--text-dim); }
+.config-actions button { font: 500 0.8rem var(--font); color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+.config-actions button:hover { border-color: var(--line-strong); background: var(--surface-hover); }
 .step-list { list-style: none; padding: 0; display: grid; gap: 10px; counter-reset: step; }
 .step-list li { margin: 0; }
 .step-list a {

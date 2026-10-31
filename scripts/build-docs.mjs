@@ -30,6 +30,7 @@ function nav (to, section) {
       <a href="${to('')}" class="nav-brand" aria-label="Zumly home"><img src="${to('fish-160.png')}" alt="" width="30" height="30"><span>ZUMLY</span></a>
       <a class="nav-link" href="${to('learn/')}"${cur('learn')}>Learn</a>
       <a class="nav-link" href="${to('learn/#guides')}"${cur('guides')}>Guides</a>
+      <a class="nav-link" href="${to('guides/playground.html')}"${cur('playground')}>Playground</a>
       <a class="nav-link" href="${to('api.html')}"${cur('api')}>API</a>
       <a class="nav-link" href="${to('')}#/home/showcases">Showcases</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
@@ -42,7 +43,7 @@ function nav (to, section) {
 // On api.html its sections hang under it.
 const SIDEBAR = [
   ['Learn', [['learn/', 'Overview'], ...STEPS.map(([file, title]) => [`learn/${file}.html`, title])]],
-  ['Guides', [['guides/navigation.html', 'Navigation controls'], ['guides/architecture.html', 'Architecture'], ['guides/heavy-views.html', 'Heavy views']]],
+  ['Guides', [['guides/playground.html', 'Playground'], ['guides/navigation.html', 'Navigation controls'], ['guides/architecture.html', 'Architecture'], ['guides/heavy-views.html', 'Heavy views']]],
   ['Frameworks', [
     ['integrations/react.html', 'React'], ['integrations/vue.html', 'Vue'], ['integrations/svelte.html', 'Svelte'],
     ['integrations/angular.html', 'Angular'], ['integrations/orbit-css.html', 'Orbit CSS']
@@ -84,6 +85,7 @@ function footer (to) {
           <h2>Learn</h2>
           <ul>
             ${STEPS.map(([file, title]) => li(to(`learn/${file}.html`), title)).join('\n            ')}
+            ${li(to('guides/playground.html'), 'Playground')}
             ${li(to('guides/navigation.html'), 'Navigation controls')}
             ${li(to('guides/architecture.html'), 'Architecture')}
           </ul>
@@ -161,7 +163,8 @@ for (const file of walk(DOCS)) {
     const path = (up === '.' ? '' : up + '/') + target
     return path || './'
   }
-  const section = rel.startsWith('learn/') ? 'learn'
+  const section = rel === 'guides/playground.html' ? 'playground'
+    : rel.startsWith('learn/') ? 'learn'
     : rel.startsWith('integrations/') || rel.startsWith('drivers/') || rel.startsWith('guides/') ? 'guides'
       : rel === 'api.html' ? 'api' : ''
   const before = readFileSync(file, 'utf8')

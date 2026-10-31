@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zumly · Playground</title>
+  <link rel="stylesheet" href="https://unpkg.com/zumly/dist/zumly.css">
+  <script src="https://unpkg.com/zumly/dist/zumly.js"></script>
+  <style>
+    body { margin: 0; font: 15px/1.4 system-ui, sans-serif; color: #e4effa; }
+    .stage { position: relative; height: 100vh; }
+    .z-view { display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; }
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 1.2rem; font-weight: 500; }
+    h2 { font-size: 1rem; font-weight: 500; }
+    p { font-size: 0.85rem; opacity: 0.75; }
+    .row { display: flex; gap: 14px; }
+
+    /* Level 1: the shelf fills the canvas */
+    .shelf { width: 100%; height: 100%; background: radial-gradient(ellipse 80% 60% at 50% 0%, #0f2a45, #04101d 70%); }
+    /* Square covers open wide albums: the shapes differ on purpose, so `cover` has something to decide */
+    .cover { width: 104px; height: 104px; border-radius: 12px; cursor: zoom-in; display: grid; place-content: center; font-weight: 500; color: white; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); }
+
+    /* Level 2: a wide album */
+    .album { width: 440px; height: 248px; border-radius: 18px; color: white; }
+    .album .row { gap: 22px; }
+    /* Round tracks open round views: same shape, so the zoom reads as one */
+    .dot { width: 54px; height: 54px; border-radius: 50%; cursor: zoom-in; display: grid; place-content: center; font-size: 0.8rem; background: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.35); }
+
+    /* Level 3: a round track */
+    .track { width: 220px; height: 220px; border-radius: 50%; color: white; padding: 0 28px; box-sizing: border-box; }
+
+    .tide { background: linear-gradient(160deg, #2f8fd8, #15497a); }
+    .ember { background: linear-gradient(160deg, #e0744a, #8a2f2f); }
+    .moss { background: linear-gradient(160deg, #4fa36e, #1f4a3a); }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="canvas zumly-canvas"></div>
+  </div>
+  <script>
+    const albums = [
+      ['tide', 'Tide', ['Undertow', 'Low water', 'Drift']],
+      ['ember', 'Ember', ['Kindling', 'Afterglow', 'Ash']],
+      ['moss', 'Moss', ['Shade', 'Dew', 'Root']]
+    ]
+    const views = {
+      shelf: `<div class="z-view shelf" data-title="Shelf">
+                <h1>Three albums</h1>
+                <p>Click a cover. Then a track.</p>
+                <div class="row">${albums.map(([id, name]) =>
+                  `<div class="zoom-me cover ${id}" data-to="${id}">${name}</div>`).join('')}</div>
+              </div>`
+    }
+    for (const [id, name, tracks] of albums) {
+      views[id] = `<div class="z-view album ${id}" data-title="${name}">
+                     <h2>${name}</h2>
+                     <div class="row">${tracks.map((track, i) =>
+                       `<div class="zoom-me dot" data-to="${id}-${i + 1}">${i + 1}</div>`).join('')}</div>
+                   </div>`
+      tracks.forEach((track, i) => {
+        views[`${id}-${i + 1}`] = `<div class="z-view track ${id}" data-title="${track}"><h2>${track}</h2><p>Track ${i + 1} of ${name}</p></div>`
+      })
+    }
+
+    let app = null
+    let queue = Promise.resolve()
+    // The playground page calls configure() with Zumly options. The app is rebuilt and
+    // walks back, instantly, to the view you were on. Calls run one after another.
+    window.configure = function (options = {}) {
+      queue = queue.then(async () => {
+        const path = app ? app.getViewStack().slice(1).map(view => view.name) : ['tide']
+        app?.destroy()
+        app = new Zumly({ mount: '.canvas', initialView: 'shelf', views, ...options })
+        await app.init()
+        for (const name of path) {
+          const trigger = document.querySelector(`.is-current-view .zoom-me[data-to="${name}"]`)
+          if (!trigger) break
+          trigger.dataset.withDuration = '1ms'
+          await app.zoomIn(trigger)
+          delete trigger.dataset.withDuration
+        }
+      })
+      return queue
+    }
+    if (window.parent === window) window.configure()
+  </script>
+</body>
+</html>

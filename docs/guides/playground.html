@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Analytics, cookie consent and events for zumerlab.com -->
+  <script async src="/zumerlab.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Playground — Zumly guide</title>
+  <meta name="description" content="Every Zumly option that changes what you see, on one live example: motion, cover, effects behind, navigation controls, gestures and driver. Change one thing and the code shows the line you need." />
+  <link rel="canonical" href="https://zumerlab.com/zumly/guides/playground.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Playground — Zumly guide" />
+  <meta property="og:description" content="Every Zumly option that changes what you see, on one live example: motion, cover, effects behind, navigation controls, gestures and driver. Change one thing and the code shows the line you need." />
+  <meta property="og:url" content="https://zumerlab.com/zumly/guides/playground.html" />
+  <meta property="og:image" content="https://zumerlab.com/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="../favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="../llms.txt" title="LLM-friendly summary" />
+  <link rel="preload" href="../fonts/roboto-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="../css/fonts.css" />
+  <link rel="stylesheet" href="../css/site.css" />
+  <script src="../js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand" aria-label="Zumly home"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="../learn/">Learn</a>
+      <a class="nav-link" href="../learn/#guides">Guides</a>
+      <a class="nav-link" href="../guides/playground.html" aria-current="page">Playground</a>
+      <a class="nav-link" href="../api.html">API</a>
+      <a class="nav-link" href="../#/home/showcases">Showcases</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5" aria-label="Sponsor"><span aria-hidden="true">&#9829;</span><span class="nav-sponsor-text"> Sponsor</span></a>
+    </div>
+  </nav>
+
+  <div class="docs">
+  <aside class="docs-side">
+    <button type="button" class="docs-side-toggle" aria-expanded="false">Contents</button>
+    <nav class="docs-nav" aria-label="Docs">
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Learn</button>
+        <div class="docs-items">
+          <a href="../learn/">Overview</a>
+          <a href="../learn/first-app.html">Your first app</a>
+          <a href="../learn/depth.html">Going deeper</a>
+          <a href="../learn/siblings.html">Siblings</a>
+          <a href="../learn/views.html">Where views come from</a>
+          <a href="../learn/navigate.html">Navigating from code</a>
+          <a href="../learn/motion.html">Motion and gestures</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="true">Guides</button>
+        <div class="docs-items">
+          <a href="../guides/playground.html" aria-current="page">Playground</a>
+          <a href="../guides/navigation.html">Navigation controls</a>
+          <a href="../guides/architecture.html">Architecture</a>
+          <a href="../guides/heavy-views.html">Heavy views</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Frameworks</button>
+        <div class="docs-items">
+          <a href="../integrations/react.html">React</a>
+          <a href="../integrations/vue.html">Vue</a>
+          <a href="../integrations/svelte.html">Svelte</a>
+          <a href="../integrations/angular.html">Angular</a>
+          <a href="../integrations/orbit-css.html">Orbit CSS</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Drivers</button>
+        <div class="docs-items">
+          <a href="../drivers/gsap.html">GSAP</a>
+          <a href="../drivers/anime.html">Anime.js</a>
+          <a href="../drivers/motion.html">Motion</a>
+          <a href="../drivers/custom.html">Write your own</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Reference</button>
+        <div class="docs-items">
+          <a href="../api.html">API reference</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <span class="hero-eyebrow">Guide</span>
+      <h1 class="hero-title">Playground</h1>
+      <p class="hero-sub">One example, and every option that changes what you see. Change one thing, zoom in and out, and the code below shows the line you need. Nothing else.</p>
+    </header>
+
+    <div class="demo">
+      <div class="demo-bar"><span>Live example</span><a href="examples/playground.html" target="_blank" rel="noopener">Open &#8599;</a></div>
+      <iframe id="playground-demo" src="examples/playground.html" title="Playground: live example"></iframe>
+    </div>
+
+    <form class="config" id="config" aria-label="Zumly options">
+      <fieldset>
+        <legend>Motion</legend>
+        <label>duration <input type="range" name="duration" min="200" max="2000" step="100" value="1000"> <output for="duration">1s</output></label>
+        <label>ease <select name="ease">
+          <option value="ease-in-out" selected>ease-in-out</option>
+          <option value="ease-out">ease-out</option>
+          <option value="ease-in">ease-in</option>
+          <option value="linear">linear</option>
+          <option value="cubic-bezier(.2,.8,.2,1)">soft landing</option>
+          <option value="cubic-bezier(.34,1.56,.64,1)">overshoot</option>
+        </select></label>
+        <label>cover <select name="cover"><option selected>width</option><option>height</option></select></label>
+        <small>The covers are square and the albums are wide, so <code>cover</code> has something to decide. Round tracks open round views: nothing to decide there.</small>
+      </fieldset>
+      <fieldset>
+        <legend>Behind</legend>
+        <label>effects <select name="effects">
+          <option value="none" selected>none</option>
+          <option value="blur">blur</option>
+          <option value="dim">dim</option>
+          <option value="blur-dim">blur + dim</option>
+          <option value="gray">grayscale</option>
+        </select></label>
+        <label><input type="checkbox" name="animateEffects" checked> animate them</label>
+        <label>hide trigger <select name="hideTrigger"><option value="false" selected>no</option><option value="true">yes</option><option value="fade">fade</option></select></label>
+        <label>stagger <input type="range" name="stagger" min="0" max="300" step="50" value="0"> <output for="stagger">0</output></label>
+        <small>What happens to the views waiting behind the current one. Zoom two levels deep to see both layers.</small>
+      </fieldset>
+      <fieldset>
+        <legend>Navigation</legend>
+        <label>back button <select name="depthNav"><option selected>button</option><option>title</option><option>rings</option><option value="off">off</option></select></label>
+        <label>sibling bar <select name="lateralNav"><option selected>always</option><option>auto</option><option value="off">off</option></select></label>
+        <small>Every option of both controls, live: <a href="navigation.html">Navigation controls</a>.</small>
+      </fieldset>
+      <fieldset>
+        <legend>Gestures and engine</legend>
+        <label><input type="checkbox" name="follow"> gestures follow</label>
+        <label>driver <select name="driver"><option selected>css</option><option>waapi</option><option>none</option></select></label>
+        <small>With <em>follow</em>, scroll down or swipe on the example and the zoom-out moves with you. GSAP, Anime.js and Motion: <a href="../drivers/gsap.html">Drivers</a>.</small>
+      </fieldset>
+    </form>
+    <div class="config-actions">
+      <span>Nothing set is the default. The code shows only what you changed.</span>
+      <button type="button" id="config-reset">Reset</button>
+    </div>
+    <pre data-plain><code id="config-code"></code></pre>
+
+    <section>
+      <h2>How to use it</h2>
+      <p>Change one thing at a time and zoom in and out a few times. Motion comes first: once duration and ease feel right, the rest is a layer on top. Every option here can also be set on a single trigger with a <code>data-with-*</code> attribute, so one zoom can behave differently from the others. The <a href="../api.html">API reference</a> lists them all.</p>
+    </section>
+  </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h2>Learn</h2>
+          <ul>
+            <li><a href="../learn/first-app.html">Your first app</a></li>
+            <li><a href="../learn/depth.html">Going deeper</a></li>
+            <li><a href="../learn/siblings.html">Siblings</a></li>
+            <li><a href="../learn/views.html">Where views come from</a></li>
+            <li><a href="../learn/navigate.html">Navigating from code</a></li>
+            <li><a href="../learn/motion.html">Motion and gestures</a></li>
+            <li><a href="../guides/playground.html">Playground</a></li>
+            <li><a href="../guides/navigation.html">Navigation controls</a></li>
+            <li><a href="../guides/architecture.html">Architecture</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Frameworks</h2>
+          <ul>
+            <li><a href="../integrations/react.html">React</a></li>
+            <li><a href="../integrations/vue.html">Vue</a></li>
+            <li><a href="../integrations/svelte.html">Svelte</a></li>
+            <li><a href="../integrations/angular.html">Angular</a></li>
+            <li><a href="../integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Drivers</h2>
+          <ul>
+            <li><a href="../drivers/gsap.html">GSAP</a></li>
+            <li><a href="../drivers/anime.html">Anime.js</a></li>
+            <li><a href="../drivers/motion.html">Motion</a></li>
+            <li><a href="../drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Zumly</h2>
+          <ul>
+            <li><a href="../#/home/showcases">Showcases</a></li>
+            <li><a href="../api.html">API reference</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="../llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="../fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License · <a href="/privacy.html">Privacy</a><span data-cookie-settings hidden> · <a href="#">Cookies</a></span></span>
+        <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Turns the form into Zumly options, shows the ones that differ from the defaults, and rebuilds the example
+    ;(function () {
+      var form = document.getElementById('config')
+      var code = document.getElementById('config-code')
+      var frame = document.getElementById('playground-demo')
+      var reset = document.getElementById('config-reset')
+      var EFFECTS = {
+        blur: ['blur(3px)', 'blur(8px)'],
+        dim: ['brightness(.6)', 'brightness(.3)'],
+        'blur-dim': ['blur(3px) brightness(.6)', 'blur(8px) brightness(.3)'],
+        gray: ['saturate(0) brightness(.7)', 'saturate(0) brightness(.4)']
+      }
+      function time (ms) { return ms % 1000 === 0 ? (ms / 1000) + 's' : ms + 'ms' }
+      function options () {
+        var f = form.elements
+        var t = {}
+        var ms = +f.duration.value
+        if (ms !== 1000) t.duration = time(ms)
+        if (f.ease.value !== 'ease-in-out') t.ease = f.ease.value
+        if (f.cover.value !== 'width') t.cover = f.cover.value
+        if (f.effects.value !== 'none') t.effects = EFFECTS[f.effects.value]
+        if (f.effects.value !== 'none' && !f.animateEffects.checked) t.animateEffects = false
+        if (f.hideTrigger.value !== 'false') t.hideTrigger = f.hideTrigger.value === 'true' ? true : 'fade'
+        if (+f.stagger.value) t.stagger = +f.stagger.value
+        var o = {}
+        if (f.driver.value !== 'css') t.driver = f.driver.value
+        if (Object.keys(t).length) o.transitions = t
+        if (f.depthNav.value === 'off') o.depthNav = false
+        else if (f.depthNav.value !== 'button') o.depthNav = { style: f.depthNav.value }
+        if (f.lateralNav.value === 'off') o.lateralNav = false
+        else if (f.lateralNav.value !== 'always') o.lateralNav = { mode: f.lateralNav.value }
+        if (f.follow.checked) o.gestures = { follow: true }
+        f.animateEffects.disabled = f.effects.value === 'none'
+        form.querySelector('output[for="duration"]').value = time(ms)
+        form.querySelector('output[for="stagger"]').value = f.stagger.value
+        return o
+      }
+      function literal (value, indent) {
+        if (Array.isArray(value)) return '[' + value.map(function (v) { return literal(v) }).join(', ') + ']'
+        if (value && typeof value === 'object') {
+          var names = Object.keys(value)
+          if (names.length === 1) return '{ ' + names[0] + ': ' + literal(value[names[0]]) + ' }'
+          var pad = indent + '  '
+          return '{\n' + Object.keys(value).map(function (key) {
+            return pad + key + ': ' + literal(value[key], pad)
+          }).join(',\n') + '\n' + indent + '}'
+        }
+        return JSON.stringify(value).replace(/"/g, "'")
+      }
+      function apply () {
+        var o = options()
+        var keys = Object.keys(o)
+        var lines = keys.map(function (key) { return '  ' + key + ': ' + literal(o[key], '  ') })
+        code.textContent = 'new Zumly({\n  mount: \'.canvas\',\n  initialView: \'shelf\',\n  views' +
+          (lines.length ? ',\n' + lines.join(',\n') : '  // every option at its default') + '\n})'
+        if (frame.contentWindow && frame.contentWindow.configure) frame.contentWindow.configure(o)
+      }
+      form.addEventListener('change', apply)
+      form.addEventListener('input', function (e) {
+        if (e.target.type !== 'range') return
+        form.querySelector('output[for="' + e.target.name + '"]').value = e.target.name === 'duration' ? time(+e.target.value) : e.target.value
+      })
+      reset.addEventListener('click', function () { form.reset(); apply() })
+      frame.addEventListener('load', apply)
+      apply()
+    })()
+  </script>
+</body>
+</html>

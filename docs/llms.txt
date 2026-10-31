@@ -61,6 +61,7 @@ Each screen is a view, written by hand as HTML and CSS. Some elements in a view 
 - Full LLM reference: https://zumerlab.com/zumly/llms-full.txt
 - Learn in six steps (each with a runnable single-file example): https://zumerlab.com/zumly/learn/
 - API reference: https://zumerlab.com/zumly/api.html
+- Playground (every visible option on one live example): https://zumerlab.com/zumly/guides/playground.html
 - Heavy views (rasterize and WebGL, with SnapDOM): https://zumerlab.com/zumly/guides/heavy-views.html
 - Architecture (the library explored with itself: layers, files, flows, options, API): https://zumerlab.com/zumly/guides/architecture.html
 - Driver API: https://github.com/zumerlab/zumly/blob/main/docs/DRIVER_API.md

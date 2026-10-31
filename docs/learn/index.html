@@ -29,6 +29,7 @@
       <a href="../" class="nav-brand" aria-label="Zumly home"><img src="../fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
       <a class="nav-link" href="../learn/" aria-current="page">Learn</a>
       <a class="nav-link" href="../learn/#guides">Guides</a>
+      <a class="nav-link" href="../guides/playground.html">Playground</a>
       <a class="nav-link" href="../api.html">API</a>
       <a class="nav-link" href="../#/home/showcases">Showcases</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
@@ -55,6 +56,7 @@
       <div class="docs-group">
         <button type="button" class="docs-head" aria-expanded="false">Guides</button>
         <div class="docs-items">
+          <a href="../guides/playground.html">Playground</a>
           <a href="../guides/navigation.html">Navigation controls</a>
           <a href="../guides/architecture.html">Architecture</a>
           <a href="../guides/heavy-views.html">Heavy views</a>
@@ -125,8 +127,6 @@
       <p>It is a poor fit for long reading flows and plain forms, where there is nothing to zoom into.</p>
     </section>
 
-    <section>
-      <h2>Why Zumly</h2>
     <section id="how">
       <h2>How it works</h2>
       <p>Think of your app as screens, not as one big canvas. Each screen is a view you write by hand, with its own HTML and CSS. Inside a view, you mark some elements as triggers: a card, a circle, a letter.</p>
@@ -136,6 +136,8 @@
       <p>Most of that trip can be tuned. How long it takes and with what curve. Whether the trigger covers the new view by width or by height when their shapes differ. What happens to the views behind, from a soft blur to nothing at all. Which engine draws it: CSS, GSAP, WebGL. You can set these once for the whole app, or per trigger with <code>data-with-*</code> attributes. The defaults are there so you don't have to think about any of it on day one.</p>
     </section>
 
+    <section>
+      <h2>Why Zumly</h2>
       <ul class="why-list">
         <li><strong>Zoom from the element.</strong> The next screen grows out of what you clicked and shrinks back into it, so you always know where you came from.</li>
         <li><strong>Context stays.</strong> The screens you came from wait behind the current one, dimmed. Click one, scroll, swipe or press ← to go back.</li>
@@ -164,6 +166,11 @@
           <h3>Drivers</h3>
           <p>Animate with an animation library, or write your own driver.</p>
           <p><a href="../drivers/gsap.html">GSAP</a> · <a href="../drivers/anime.html">Anime.js</a> · <a href="../drivers/motion.html">Motion</a> · <a href="../drivers/custom.html">Custom</a></p>
+        </div>
+        <div class="guide-card">
+          <h3>Playground</h3>
+          <p>Every option that changes what you see, on one live example. The code shows only what you changed.</p>
+          <p><a href="../guides/playground.html">Playground</a></p>
         </div>
         <div class="guide-card">
           <h3>Navigation controls</h3>
@@ -202,6 +209,7 @@
             <li><a href="../learn/views.html">Where views come from</a></li>
             <li><a href="../learn/navigate.html">Navigating from code</a></li>
             <li><a href="../learn/motion.html">Motion and gestures</a></li>
+            <li><a href="../guides/playground.html">Playground</a></li>
             <li><a href="../guides/navigation.html">Navigation controls</a></li>
             <li><a href="../guides/architecture.html">Architecture</a></li>
           </ul>
