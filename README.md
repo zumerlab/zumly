@@ -30,6 +30,18 @@ Zumly is not an infinite pan-and-zoom canvas. Movement happens in discrete steps
 - **Your views, your framework.** HTML strings, URLs, functions, or React, Vue, Svelte and Angular components. No dependencies.
 - **Accessible.** Keyboard, focus and screen-reader labels work out of the box.
 
+### How it works
+
+Think of your app as screens, not as one big canvas. Each screen is a view you write by hand, with its own HTML and CSS. Inside a view, you mark some elements as triggers: a card, a circle, a letter.
+
+When someone clicks a trigger, Zumly does the rest. It scales the current view up until the trigger fills the screen, and the next view grows out of that spot. The view you came from stays behind, dimmed, so you still see where you are.
+
+Going back is the same trip in reverse: the current view shrinks back into the trigger, and the parent comes back into focus. Moving between siblings slides sideways instead.
+
+The trick is a convention, not magic. If the trigger and the view it opens share a shape, the zoom feels real. If they look different, it still works, it just reads as a morph. You decide what each screen looks like. Zumly decides how to get from one to the other.
+
+Most of that trip can be tuned. How long it takes and with what curve. Whether the trigger covers the new view by width or by height when their shapes differ. What happens to the views behind, from a soft blur to nothing at all. Which engine draws it: CSS, GSAP, WebGL. You can set these once for the whole app, or per trigger with `data-with-*` attributes. The defaults are there so you don't have to think about any of it on day one. You can try them all live in the [playground](https://zumerlab.com/zumly/guides/playground.html).
+
 ## Install
 
 ```sh

@@ -11,6 +11,10 @@ Zumly is a structured, trigger-driven zoom user interface engine. Users zoom int
 - Plugin system with hash router included
 - Touch, keyboard, mouse, and wheel input support
 
+## How it works
+
+Each screen is a view, written by hand as HTML and CSS. Some elements in a view are triggers. Clicking one scales the current view until the trigger fills the canvas, and the next view grows out of that spot; the parent stays behind, dimmed. Zoom-out is the same transform in reverse. Siblings slide sideways. The zoom reads as continuous when the trigger and its view share a shape. Duration, ease, cover side (width/height), background effects and the animation driver can be set per instance or per trigger (`data-with-*`).
+
 ## Key concepts
 
 - **Canvas**: Container element with class `zumly-canvas` where views render

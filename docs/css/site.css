@@ -220,6 +220,8 @@ section > table { display: block; overflow-x: auto; }
 
 /* ━━━ Final CTA ━━━ */
 /* Why Zumly: a short list, in the demo and on Learn */
+.why-how { max-width: 640px; margin: 56px auto 0; text-align: center; }
+.why-how .v-title { margin-bottom: 18px; }
 .why-list { max-width: 640px; margin: 0 auto; padding-left: 1.2em; display: grid; gap: 10px; font-size: 1rem; color: var(--text-mid); text-align: left; }
 
 /* File name above a code block */
