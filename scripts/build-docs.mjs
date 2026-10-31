@@ -34,7 +34,7 @@ function nav (to, section) {
       <a class="nav-link" href="${to('api.html')}"${cur('api')}>API</a>
       <a class="nav-link" href="${to('')}#/home/showcases">Showcases</a>
       <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
-      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5"><span aria-hidden="true">&#9829;</span> Sponsor</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5" aria-label="Sponsor"><span aria-hidden="true">&#9829;</span><span class="nav-sponsor-text"> Sponsor</span></a>
     </div>
   </nav>`
 }

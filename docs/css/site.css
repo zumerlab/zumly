@@ -67,7 +67,7 @@ img { max-width: 100%; }
   display: flex; align-items: center; gap: 8px; margin-right: auto;
   color: var(--text); text-decoration: none; font-weight: 700; font-size: 0.95rem;
 }
-.nav-brand img { width: 30px; height: 30px; }
+.nav-brand img { width: 30px; height: 30px; flex-shrink: 0; }
 .nav-link {
   color: var(--text-mid); text-decoration: none; font-size: 0.88rem; font-weight: 500;
   padding: 6px 10px; border-radius: 8px;
@@ -350,7 +350,7 @@ section > table { display: block; overflow-x: auto; }
 .footer-bottom .footer-sponsor { margin-left: auto; color: #e0447a; font-weight: 500; }
 
 /* Sponsor link: the one warm color on the site */
-.nav-sponsor { margin-left: 4px; padding: 6px 12px; border-radius: 99px; font-size: 0.84rem; font-weight: 500; color: #e0447a; border: 1px solid color-mix(in srgb, #e0447a 40%, transparent); }
+.nav-sponsor { margin-left: 4px; padding: 6px 12px; white-space: nowrap; border-radius: 99px; font-size: 0.84rem; font-weight: 500; color: #e0447a; border: 1px solid color-mix(in srgb, #e0447a 40%, transparent); }
 .nav-sponsor:hover { background: color-mix(in srgb, #e0447a 12%, transparent); }
 .nav-sponsor span, .home-sponsor span { color: #e0447a; }
 
@@ -371,12 +371,22 @@ section > table { display: block; overflow-x: auto; }
   .docs-nav { padding: 18px 0 4px; }
   .docs > main { padding-top: 28px; }
 }
+@media (max-width: 480px) {
+  /* Six links and the brand do not fit: the heart stands for Sponsor */
+  .nav-sponsor-text { display: none; }
+  .nav-sponsor { padding: 5px 8px; }
+  .nav-brand img { width: 26px; height: 26px; }
+  .nav-link { padding: 6px 4px; font-size: 0.8rem; }
+}
+@media (max-width: 380px) {
+  .nav-link[href$="showcases"] { display: none; }
+}
 @media (max-width: 560px) {
   main { padding: 32px 16px 56px; }
   .docs > main { padding: 24px 0 56px; }
   .nav-inner { padding: 0 12px; gap: 0; }
   .nav-brand span { display: none; }
-  .nav-link { padding: 6px 8px; font-size: 0.84rem; }
+  .nav-link { padding: 6px 6px; font-size: 0.82rem; }
   .nav-link.nav-gh { display: none; }
   .nav-sponsor { padding: 5px 9px; }
   .hero { margin-bottom: 32px; }
