@@ -1,7 +1,7 @@
 <p align="center">
   <a href="https://github.com/zumerlab/zumly">
     <!-- Built from docs/zumly-logo.png in this repo; raw URL so the image works on npm too -->
-    <img src="https://raw.githubusercontent.com/zumerlab/zumly/main/docs/zumly-logo.png" alt="Zumly" width="200">
+    <img src="https://github.com/user-attachments/assets/dbd4109e-006e-4e66-91dc-d08bc0c2a3b4" alt="Zumly" width="200">
   </a>
 </p>
 
