@@ -11,10 +11,28 @@ export function removeViewFromCanvas(element: HTMLElement, canvas: HTMLElement):
 export function showViews(...elements: (HTMLElement | null | undefined)[]): void
 export function runLateralInstant(spec: TransitionSpec, onComplete: () => void): void
 export const SAFETY_BUFFER_MS: number
+/** What createFinishGuard() returns. */
+export interface FinishGuard {
+  /** Run cleanup once and clear the safety timer. Later calls do nothing. */
+  finish: () => void
+  /**
+   * Re-arm the safety timer to fire `ms` from now. Call it when the animation
+   * really starts (its first painted frame), so a slow first frame does not cut
+   * the animation short. Does nothing once the guard has finished.
+   */
+  extend: (ms: number) => void
+  /** Id of the timer armed at creation. extend() replaces that timer; this id is not updated. */
+  safetyTimer: number
+}
+
+/**
+ * A finish-once guard: `finish()` runs `cleanup` the first time it is called,
+ * and a safety timer runs it after `timeoutMs` if nothing else did.
+ */
 export function createFinishGuard(
   cleanup: () => void,
   timeoutMs: number
-): { finish: () => void; safetyTimer: number }
+): FinishGuard
 export function identityMatrix(): MatrixComponents
 export function parseMatrixString(mStr: string): MatrixComponents
 export function matrixToString(m: MatrixComponents): string

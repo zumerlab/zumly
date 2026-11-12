@@ -135,6 +135,21 @@ function runTransition(spec, onComplete) {
 
 Animation libraries run on `requestAnimationFrame`, which stops in hidden tabs. Start the deadline from the first frame you paint (`guard.extend(ms)`), so a slow first frame on a heavy page does not cut the animation short, and ignore your library's callbacks once the guard has finished: a late `onUpdate` must never paint over the next navigation. The built-in anime, gsap and motion drivers do this.
 
+`createFinishGuard` returns `{ finish, extend, safetyTimer }`:
+
+- `finish()` runs your cleanup once and clears the safety timer. Later calls do nothing.
+- `extend(ms)` re-arms the safety timer to fire `ms` from now. It does nothing once the guard has finished.
+- `safetyTimer` is the id of the timer armed at creation (`extend` replaces that timer).
+
+```js
+const guard = createFinishGuard(() => { tween.kill(); applyFinalState(); onComplete() }, durationMs + SAFETY_BUFFER_MS)
+requestAnimationFrame(() => {
+  guard.extend(durationMs + SAFETY_BUFFER_MS)   // the deadline counts from the first frame
+  tween.play()
+})
+tween.onComplete = guard.finish
+```
+
 *(In this repo, you can import from `../src/drivers/driver-helpers.js` from your own source files.)*
 
 ### 2. Apply final DOM state after animation
