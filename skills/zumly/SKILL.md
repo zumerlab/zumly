@@ -190,7 +190,7 @@ app.use(ZumlyRouter)
 await app.init()
 
 await app.zoomIn(document.querySelector('[data-id="kitchen"]'))
-await app.goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })   // the view gets exactly these props
+await app.goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })   // picks the sibling; the view gets its trigger's data too
 await app.back()                                                        // back to the kitchen
 await app.zoomOut()
 ```
@@ -247,7 +247,7 @@ Guides: [React](https://zumerlab.com/zumly/integrations/react.html), [Vue](https
 - **A second call does nothing.** Calls during a running navigation are ignored. `await` each one, including `init()`.
 - **Zooms land displaced.** Something scrolled the canvas or an ancestor. Use `overflow: clip`, not `hidden`, on containers around it, and scroll inside views instead.
 - **`data-to` with a typo.** An unknown name with a hyphen is treated as a custom element tag and fails after 10 s. Read the console: Zumly names the closest view.
-- **`props` are strings**, and with `goTo` / `zoomTo` the view gets only the `props` you pass, not the trigger's data.
+- **`props` are strings** when they come from `data-*`. `zoomTo` and depth `goTo` have no trigger, so the view gets only the `props` you pass. A lateral `goTo` with `props` picks the sibling and gives the view that trigger's data with your `props` on top.
 - **Library driver does not animate.** No global with a bundler: use `gsapDriver(gsap)`, `animeDriver(anime)`, `motionDriver({ animate })`.
 
 ## More

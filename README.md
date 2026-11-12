@@ -255,7 +255,7 @@ Triggers can share a view and tell it apart with their data. Each one is its own
 <div class="zoom-me" data-to="room" data-id="bedroom" data-title="Bedroom">Bedroom</div>
 ```
 
-From code, name the sibling by its props: `app.goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })`. With the router the hash carries them too: `#/house/room?id=kitchen`.
+From code, name the sibling by its props: `app.goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })`. The view gets that trigger's data, as on a click, with your props on top. With the router the hash carries them too: `#/house/room?id=kitchen`.
 
 The bar appears whenever there are siblings. `mode: 'auto'` hides it on views that cover the canvas. `keepAlive: true` keeps siblings you leave in the DOM, hidden, so their state survives while you stay at that level. `swipe: true` lets a horizontal swipe move between siblings (left: next, right: previous); where a view has no siblings, a swipe left still zooms out.
 

@@ -1699,9 +1699,11 @@ export class Zumly {
     this.tracing('lateral()')
     const duration = normalizeDuration(options.duration, 'goTo() duration', this.duration)
     const ease = normalizeEase(options.ease, this.transitionDriverName, 'goTo() ease', this.ease)
-    // The view gets the same props as when its trigger is clicked.
-    const props = options.props ?? (isBack ? options.savedProps : undefined) ??
-      (targetTrigger ? { ...targetTrigger.dataset } : params ? { ...params } : {})
+    // The view gets the same props as when its trigger is clicked. Props given to goTo()
+    // pick the sibling and go on top of its trigger's data; with no trigger for that
+    // sibling, they are all the view gets.
+    const props = (isBack ? options.savedProps : undefined) ??
+      (targetTrigger ? { ...targetTrigger.dataset, ...options.props } : options.props ?? (params ? { ...params } : {}))
 
     // keepAlive: try to find an existing hidden DOM node for the target view
     let incomingView = null

@@ -577,6 +577,16 @@ await app.goTo('settings', { mode: 'lateral' })
 
 Options: `{ mode?: 'depth' | 'lateral', duration?: string, ease?: string, props?: Record<string, unknown> }`
 
+Props a view receives (`ctx.props`), by how it was reached:
+
+| Reached by | `ctx.props` |
+|------------|-------------|
+| Click, tap, Enter or Space on a trigger; `zoomIn(el)` | The trigger's `data-*` attributes |
+| `zoomTo(name, { props })`, `goTo(name, { props })` (depth) | The `props` option alone (`{}` without it); there is no trigger |
+| Sibling bar (arrows, dots), swipe, click on a sibling's trigger in the parent, `goTo(name, { mode: 'lateral' })`, `goTo('room?id=kitchen', { mode: 'lateral' })` | The sibling's trigger `data-*`; for a declared sibling without a trigger, the params in its key |
+| `goTo(name, { mode: 'lateral', props })` | The trigger `data-*` of the sibling the props pick, with `props` on top; `props` alone when no trigger matches |
+| `back()` to a sibling, browser back with the router | The props that view had when it was last shown |
+
 ### `back(): Promise<void>`
 
 Navigate back. If there is lateral history at current depth, pops lateral history first (goes back laterally). Otherwise zooms out. Each depth keeps its own lateral history, also after zooming deeper and back out (the same behavior as the router's browser back). The depth back button always zooms out.

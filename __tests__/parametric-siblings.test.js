@@ -121,6 +121,52 @@ describe('parametric siblings', () => {
     expect(seen.at(-1)).toMatchObject({ to: 'room', id: 'bedroom', title: 'Bedroom', trigger: 'bedroom' })
   })
 
+  it('gives the view the trigger\'s data when goTo() picks the sibling by props', async () => {
+    const seen = []
+    create({ views: { house, room: ctx => { seen.push({ ...ctx.props, trigger: ctx.trigger?.dataset.id }); return room(ctx) } } })
+    await app.init()
+    await app.zoomIn(trigger('kitchen'))
+    const clicked = { to: 'room', id: 'kitchen', title: 'Kitchen', trigger: 'kitchen' }
+    expect(seen.at(-1)).toEqual(clicked)
+
+    await app.goTo('room', { mode: 'lateral', props: { id: 'bath' } })
+    expect(seen.at(-1)).toEqual({ to: 'room', id: 'bath', title: 'Bath', trigger: 'bath' })
+
+    // The same sibling by its key, with no props, gets the same.
+    await app.goTo('room?id=bedroom', { mode: 'lateral' })
+    expect(seen.at(-1)).toEqual({ to: 'room', id: 'bedroom', title: 'Bedroom', trigger: 'bedroom' })
+
+    // back() renders the view it returns to with the props it had.
+    await app.back()
+    expect(seen.at(-1)).toMatchObject({ to: 'room', id: 'bath', title: 'Bath' })
+    await app.back()
+    expect(seen.at(-1)).toMatchObject(clicked)
+  })
+
+  it('puts the props given to goTo() on top of the trigger\'s data', async () => {
+    const seen = []
+    create({ views: { house, room: ctx => { seen.push({ ...ctx.props }); return room(ctx) } } })
+    await app.init()
+    await app.zoomIn(trigger('kitchen'))
+    const filter = { open: true }
+    await app.goTo('room', { mode: 'lateral', props: { id: 'bath', title: 'Bathroom', filter } })
+    expect(shown()).toBe('bath')
+    expect(seen.at(-1)).toEqual({ to: 'room', id: 'bath', title: 'Bathroom', filter })
+    expect(app.getViewStack()[1].params).toEqual({ id: 'bath' })
+  })
+
+  it('gives the view the props alone when they match no trigger, and in depth mode', async () => {
+    const seen = []
+    create({ views: { house, room: ctx => { seen.push({ ...ctx.props, trigger: ctx.trigger?.dataset.id }); return room(ctx) } } })
+    await app.init()
+    await app.zoomIn(trigger('kitchen'))
+    await app.goTo('room', { mode: 'lateral', props: { id: 'cellar' } })
+    expect(seen.at(-1)).toEqual({ id: 'cellar', trigger: undefined })
+    await app.zoomOut()
+    await app.goTo('room', { props: { id: 'bath' } })
+    expect(seen.at(-1)).toEqual({ id: 'bath', trigger: undefined })
+  })
+
   it('switches siblings by clicking another trigger in the parent', async () => {
     create()
     await app.init()

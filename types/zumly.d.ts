@@ -255,7 +255,10 @@ export interface GoToOptions {
   /**
    * Props to pass to the target view. With mode 'lateral', they also pick the
    * sibling among triggers that share a view: `{ id: 'bedroom' }` for
-   * `data-to="room" data-id="bedroom"`.
+   * `data-to="room" data-id="bedroom"`. The view then gets that trigger's data
+   * attributes, as on a click, with these props on top; when no trigger
+   * matches, it gets these props alone. With mode 'depth' there is no trigger:
+   * the view gets these props alone.
    */
   props?: Record<string, unknown>
 }

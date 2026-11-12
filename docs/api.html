@@ -379,7 +379,7 @@
           <tbody>
             <tr><td><code>init()</code></td><td>Promise</td><td>Initialize and render the initial view</td></tr>
             <tr><td><code>zoomTo(name, opts?)</code></td><td>Promise</td><td>Programmatic zoom into a named view</td></tr>
-            <tr><td><code>goTo(name, opts?)</code></td><td>Promise</td><td>Navigate: <code>{ mode: 'depth' | 'lateral' }</code>. With <code>props</code>, a lateral move picks the sibling with that data: <code>goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })</code></td></tr>
+            <tr><td><code>goTo(name, opts?)</code></td><td>Promise</td><td>Navigate: <code>{ mode: 'depth' | 'lateral' }</code>. With <code>props</code>, a lateral move picks the sibling with that data: <code>goTo('room', { mode: 'lateral', props: { id: 'bedroom' } })</code>. The view gets that trigger's data attributes, as on a click, with your <code>props</code> on top. In depth mode there is no trigger, so the view gets your <code>props</code> alone.</td></tr>
             <tr><td><code>back()</code></td><td>Promise</td><td>Undo the last lateral move at this level, or zoom out. Each level keeps its own lateral history, also after zooming in and out again</td></tr>
             <tr><td><code>canGoBack()</code></td><td>boolean</td><td>Whether <code>back()</code> would navigate</td></tr>
             <tr><td><code>zoomIn(el)</code></td><td>Promise</td><td>Zoom into the view indicated by a trigger element</td></tr>
