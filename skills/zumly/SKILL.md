@@ -92,7 +92,7 @@ Click the card to zoom in. Click outside the detail, press the back button (bott
 | `transitions.animateEffects` | `true` | `false` applies the filters at once (cheaper with heavy views). |
 | `transitions.stagger` | `0` | ms between layers. |
 | `transitions.hideTrigger` | `false` | `true` hides the trigger during the zoom, `'fade'` crossfades it. |
-| `transitions.parallax` | — | Accepted, **does nothing** in 1.2.x. Do not use. |
+| `transitions.parallax` | — | Deprecated: accepted, **has no effect**, and a non-zero value warns. Do not use. |
 | `lateralNav` | on | Sibling bar. `false`, or `{ mode: 'always' \| 'auto', arrows, dots, position: 'bottom-center' \| 'top-center', keepAlive: false \| true \| 'visible', siblings, swipe: false }`. |
 | `depthNav` | on | Back button. `false`, or `{ position: 'bottom-left' \| 'top-left', style: 'button' \| 'title' \| 'rings' }`. |
 | `inputs` | all but pinch | `false`, or `{ click, keyboard, wheel, touch, pinch }`. `pinch` is opt-in. |

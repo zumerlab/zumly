@@ -355,7 +355,7 @@ const OPTIONS = [
   { k: 'transitions.animateEffects', d: 'true', s: 'false applies the filter at once instead of transitioning it (cheaper with heavy views).', c: ['zumly'] },
   { k: 'transitions.stagger', d: '0', s: 'Delay in ms between layers: current, previous (+1x), last (+2x). Per trigger: data-with-stagger.', c: ['zumly','tween','css'] },
   { k: 'transitions.hideTrigger', d: 'false', s: 'true hides the trigger during the zoom; "fade" crossfades trigger and view. Per trigger: data-hide-trigger.', c: ['zumly','style'] },
-  { k: 'transitions.parallax', d: '0 (reserved)', s: 'Accepted but pinned to 0; the geometry already supports it.', c: ['geometry'] },
+  { k: 'transitions.parallax', d: '0 (deprecated)', s: 'Deprecated: has no effect. Still accepted, always 0; a non-zero value warns.', c: ['geometry'] },
   { g: 'lateralNav · false or {…}' },
   { k: 'lateralNav.mode', d: '"always"', s: '"auto" hides the bar when the current view covers the whole canvas.', c: ['zumly','lnav'] },
   { k: 'lateralNav.arrows / dots', d: 'true / true', s: 'Arrows and dots of the sibling bar.', c: ['zumly','lnav'] },

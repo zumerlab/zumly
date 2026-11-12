@@ -114,7 +114,7 @@ export interface TransitionOptions {
   animateEffects?: boolean
   /** Progressive delay (ms) between view layers during zoom. Default: 0. */
   stagger?: number
-  /** Accepted for compatibility but not applied yet (always treated as 0). */
+  /** @deprecated Has no effect. Still accepted so existing configurations keep working; always treated as 0. */
   parallax?: number
   /** Hide the trigger element during zoom: 'fade' (crossfade), true (hide), or false. Default: false. */
   hideTrigger?: 'fade' | boolean

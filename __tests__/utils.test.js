@@ -208,7 +208,8 @@ describe('utils.checkParameters()', () => {
     expect(instance.isValid).toBe(false)
   })
 
-  it('parallax is always disabled (0)', () => {
+  it('parallax is deprecated: still accepted, always 0, and a non-zero value warns', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const instance = {}
     checkParameters(
       {
@@ -219,7 +220,24 @@ describe('utils.checkParameters()', () => {
       },
       instance
     )
+    expect(instance.isValid).toBe(true)
     expect(instance.parallax).toBe(0)
+    const text = warnSpy.mock.calls.map(call => call.join(' ')).join('\n')
+    expect(text).toMatch(/'transitions\.parallax' is deprecated and has no effect/)
+    expect(text).not.toMatch(/unknown option/)
+
+    warnSpy.mockClear()
+    checkParameters(
+      {
+        mount: '.first',
+        initialView: 'home',
+        views: { home: '<div class="z-view"></div>' },
+        transitions: { parallax: 0 },
+      },
+      instance
+    )
+    expect(warnSpy).not.toHaveBeenCalled()
+    warnSpy.mockRestore()
   })
 
   it('defaults parallax to 0 when not provided', () => {

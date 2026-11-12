@@ -321,8 +321,13 @@ export function checkParameters (parameters, instance) {
     }
   }
 
-  // Parallax: disabled (reserved for future use).
+  // Parallax: deprecated, has no effect. The option is still accepted so existing
+  // configurations keep working; it is always treated as 0.
   instance.parallax = 0
+  const parallaxIn = t && t.parallax
+  if (parallaxIn !== undefined && parallaxIn !== null && parallaxIn !== 0) {
+    notification(false, '\'transitions.parallax\' is deprecated and has no effect. Remove it.', 'warn')
+  }
 
   // Lateral navigation UI: auto-generated arrows and dots when siblings exist.
   // true = default (mode: 'auto'), false = disabled,
