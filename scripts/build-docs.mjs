@@ -49,7 +49,7 @@ const SIDEBAR = [
     ['integrations/angular.html', 'Angular'], ['integrations/orbit-css.html', 'Orbit CSS']
   ]],
   ['Drivers', [['drivers/gsap.html', 'GSAP'], ['drivers/anime.html', 'Anime.js'], ['drivers/motion.html', 'Motion'], ['drivers/custom.html', 'Write your own']]],
-  ['Reference', [['api.html', 'API reference']]]
+  ['Reference', [['api.html', 'API reference'], ['agents.html', 'AI agents']]]
 ]
 const API_SECTIONS = [
   ['constructor', 'Options'], ['transitions', 'Transitions'], ['navigation', 'Navigation UI'], ['methods', 'Methods'],
@@ -114,6 +114,7 @@ function footer (to) {
           <ul>
             ${li(to('') + '#/home/showcases', 'Showcases')}
             ${li(to('api.html'), 'API reference')}
+            ${li(to('agents.html'), 'AI agents')}
             ${li('https://github.com/zumerlab/zumly', 'GitHub')}
             ${li('https://www.npmjs.com/package/zumly', 'npm')}
             ${li(to('llms.txt'), 'llms.txt')}

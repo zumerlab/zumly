@@ -61,6 +61,8 @@ Each screen is a view, written by hand as HTML and CSS. Some elements in a view 
 - Full LLM reference: https://zumerlab.com/zumly/llms-full.txt
 - Learn in six steps (each with a runnable single-file example): https://zumerlab.com/zumly/learn/
 - API reference: https://zumerlab.com/zumly/api.html
+- AI agents (the agent skill, how to install it, what it asks of agents): https://zumerlab.com/zumly/agents.html
+- Agent skill (SKILL.md, also in the npm package at `node_modules/zumly/skills/zumly/`): https://raw.githubusercontent.com/zumerlab/zumly/main/skills/zumly/SKILL.md
 - Playground (every visible option on one live example): https://zumerlab.com/zumly/guides/playground.html
 - Heavy views (rasterize and WebGL, with SnapDOM): https://zumerlab.com/zumly/guides/heavy-views.html
 - Architecture (the library explored with itself: layers, files, flows, options, API): https://zumerlab.com/zumly/guides/architecture.html

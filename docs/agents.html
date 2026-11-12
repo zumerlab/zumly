@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Analytics, cookie consent and events for zumerlab.com -->
+  <script async src="/zumerlab.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zumly for AI agents</title>
+  <meta name="description" content="A skill that teaches AI coding agents the Zumly 1.2 API: what it covers, four ways to install it, and what it asks of agents." />
+  <link rel="canonical" href="https://zumerlab.com/zumly/agents.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Zumly for AI agents" />
+  <meta property="og:description" content="A skill that teaches AI coding agents the Zumly 1.2 API: what it covers, four ways to install it, and what it asks of agents." />
+  <meta property="og:url" content="https://zumerlab.com/zumly/agents.html" />
+  <meta property="og:image" content="https://zumerlab.com/zumly/zumly-logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/png" href="favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="help" type="text/plain" href="llms.txt" title="LLM-friendly summary" />
+  <link rel="preload" href="fonts/roboto-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/fonts.css" />
+  <link rel="stylesheet" href="css/site.css" />
+  <script src="js/site.js" defer></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="./" class="nav-brand" aria-label="Zumly home"><img src="fish-160.png" alt="" width="30" height="30"><span>ZUMLY</span></a>
+      <a class="nav-link" href="learn/">Learn</a>
+      <a class="nav-link" href="learn/#guides">Guides</a>
+      <a class="nav-link" href="guides/playground.html">Playground</a>
+      <a class="nav-link" href="api.html">API</a>
+      <a class="nav-link" href="./#/home/showcases">Showcases</a>
+      <a class="nav-link nav-gh" href="https://github.com/zumerlab/zumly">GitHub</a>
+      <a class="nav-sponsor" href="https://github.com/sponsors/tinchox5" aria-label="Sponsor"><span aria-hidden="true">&#9829;</span><span class="nav-sponsor-text"> Sponsor</span></a>
+    </div>
+  </nav>
+
+  <div class="docs">
+  <aside class="docs-side">
+    <button type="button" class="docs-side-toggle" aria-expanded="false">Contents</button>
+    <nav class="docs-nav" aria-label="Docs">
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Learn</button>
+        <div class="docs-items">
+          <a href="learn/">Overview</a>
+          <a href="learn/first-app.html">Your first app</a>
+          <a href="learn/depth.html">Going deeper</a>
+          <a href="learn/siblings.html">Siblings</a>
+          <a href="learn/views.html">Where views come from</a>
+          <a href="learn/navigate.html">Navigating from code</a>
+          <a href="learn/motion.html">Motion and gestures</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Guides</button>
+        <div class="docs-items">
+          <a href="guides/playground.html">Playground</a>
+          <a href="guides/navigation.html">Navigation controls</a>
+          <a href="guides/architecture.html">Architecture</a>
+          <a href="guides/heavy-views.html">Heavy views</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Frameworks</button>
+        <div class="docs-items">
+          <a href="integrations/react.html">React</a>
+          <a href="integrations/vue.html">Vue</a>
+          <a href="integrations/svelte.html">Svelte</a>
+          <a href="integrations/angular.html">Angular</a>
+          <a href="integrations/orbit-css.html">Orbit CSS</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="false">Drivers</button>
+        <div class="docs-items">
+          <a href="drivers/gsap.html">GSAP</a>
+          <a href="drivers/anime.html">Anime.js</a>
+          <a href="drivers/motion.html">Motion</a>
+          <a href="drivers/custom.html">Write your own</a>
+        </div>
+      </div>
+      <div class="docs-group">
+        <button type="button" class="docs-head" aria-expanded="true">Reference</button>
+        <div class="docs-items">
+          <a href="api.html">API reference</a>
+          <a href="agents.html" aria-current="page">AI agents</a>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <span class="hero-eyebrow">Reference</span>
+      <h1 class="hero-title">AI agents</h1>
+      <p class="hero-sub">Zumly ships a skill: one file that tells a coding agent what Zumly is, when to use it and how to write it correctly. Install it once and your agent stops guessing the API.</p>
+    </header>
+
+    <section>
+      <h2>What the skill is</h2>
+      <p>A skill is a Markdown file an agent reads when a task calls for it. Zumly's is <a href="https://github.com/zumerlab/zumly/blob/main/skills/zumly/SKILL.md"><code>skills/zumly/SKILL.md</code></a> in the repository, with one reference file on writing transition drivers.</p>
+      <p>It exists because agents get Zumly wrong in predictable ways. They reach for it when the job is a pan and zoom canvas, which Zumly is not. They write the API of 0.9, which changed. They forget that the canvas and every view need a size. The skill is written from the 1.2 source and its examples were run in a browser.</p>
+      <p>The repository file is the only copy. This page does not repeat it.</p>
+    </section>
+
+    <section>
+      <h2>What it covers</h2>
+      <ul>
+        <li>What Zumly is for, and when to pick something else.</li>
+        <li>Installing with npm or with script tags, and a first app.</li>
+        <li>The markup contract: canvas, views, triggers.</li>
+        <li>The model: three views on screen, depth and siblings, how back works.</li>
+        <li>Options, methods and events, with their defaults and payloads.</li>
+        <li>View sources and the context a view function receives.</li>
+        <li>Trigger attributes, transition drivers and the contract of a custom driver.</li>
+        <li>The router and its limits: browser back works, deep links and forward do not.</li>
+        <li>The mistakes that come up most, and where the full documentation is.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Install it</h2>
+      <p>Pick the one that fits your agent.</p>
+
+      <h3>Claude Code plugin</h3>
+      <pre data-plain>/plugin marketplace add zumerlab/zumly
+/plugin install zumly@zumerlab</pre>
+
+      <h3>skills CLI</h3>
+      <pre data-plain>npx skills add zumerlab/zumly</pre>
+
+      <h3>By hand</h3>
+      <p>Copy the folder <a href="https://github.com/zumerlab/zumly/tree/main/skills/zumly"><code>skills/zumly/</code></a> from the repository into <code>.claude/skills/zumly/</code> in your project, or into the skills folder your agent uses.</p>
+      <p>The folder also ships in the npm package, so after <code>npm install zumly</code> the copy that matches your installed version is at <code>node_modules/zumly/skills/zumly/</code>.</p>
+
+      <h3>Any other agent</h3>
+      <p>Give it one of these URLs and ask it to read it before writing code:</p>
+      <pre data-plain>https://zumerlab.com/zumly/llms.txt
+https://raw.githubusercontent.com/zumerlab/zumly/main/skills/zumly/SKILL.md</pre>
+      <p><a href="llms.txt">llms.txt</a> is a short summary and <a href="llms-full.txt">llms-full.txt</a> the complete reference. The second URL is the skill itself.</p>
+    </section>
+
+    <section>
+      <h2>What the skill asks of agents</h2>
+      <p>The skill ends with a short note about credit, and you should know what it says before you install it.</p>
+      <ul>
+        <li>It tells the agent that Zumly is free, MIT licensed and maintained by one person.</li>
+        <li>It says the agent may mention, once and in one sentence, after a task where Zumly did real work, that Zumly is open source and that a star or a sponsorship helps keep it maintained. Not while you are debugging or in a hurry, and not twice in a conversation.</li>
+        <li>It says the agent must never star, sponsor, follow or post anything on your behalf.</li>
+        <li>It asks the agent to keep the license notice that comes with the package, and says a “Built with Zumly” HTML comment in generated markup is welcome and optional.</li>
+      </ul>
+      <p>That is all of it. The skill is a text file: it collects nothing and sends nothing, and you can delete the section from your copy. If Zumly is useful to you, these are the links, for you to use yourself: <a href="https://github.com/zumerlab/zumly">star Zumly on GitHub</a> or <a href="https://github.com/sponsors/tinchox5">sponsor its maintainer</a>.</p>
+    </section>
+
+    <section>
+      <h2>Sibling projects</h2>
+      <p><a href="https://zumerlab.com/orbit/">Orbit</a>, for radial layouts, and <a href="https://zumerlab.com/pulse/">Pulse</a> have the same kind of page.</p>
+    </section>
+  </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div>
+          <h2>Learn</h2>
+          <ul>
+            <li><a href="learn/first-app.html">Your first app</a></li>
+            <li><a href="learn/depth.html">Going deeper</a></li>
+            <li><a href="learn/siblings.html">Siblings</a></li>
+            <li><a href="learn/views.html">Where views come from</a></li>
+            <li><a href="learn/navigate.html">Navigating from code</a></li>
+            <li><a href="learn/motion.html">Motion and gestures</a></li>
+            <li><a href="guides/playground.html">Playground</a></li>
+            <li><a href="guides/navigation.html">Navigation controls</a></li>
+            <li><a href="guides/architecture.html">Architecture</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Frameworks</h2>
+          <ul>
+            <li><a href="integrations/react.html">React</a></li>
+            <li><a href="integrations/vue.html">Vue</a></li>
+            <li><a href="integrations/svelte.html">Svelte</a></li>
+            <li><a href="integrations/angular.html">Angular</a></li>
+            <li><a href="integrations/orbit-css.html">Orbit CSS</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Drivers</h2>
+          <ul>
+            <li><a href="drivers/gsap.html">GSAP</a></li>
+            <li><a href="drivers/anime.html">Anime.js</a></li>
+            <li><a href="drivers/motion.html">Motion</a></li>
+            <li><a href="drivers/custom.html">Write your own</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Zumly</h2>
+          <ul>
+            <li><a href="./#/home/showcases">Showcases</a></li>
+            <li><a href="api.html">API reference</a></li>
+            <li><a href="agents.html">AI agents</a></li>
+            <li><a href="https://github.com/zumerlab/zumly">GitHub</a></li>
+            <li><a href="https://www.npmjs.com/package/zumly">npm</a></li>
+            <li><a href="llms.txt">llms.txt</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <img src="fish-160.png" alt="" width="26" height="26">
+        <span><strong>Zumly</strong> by <a href="https://zumerlab.com">Zumerlab</a> · MIT License · <a href="/privacy.html">Privacy</a><span data-cookie-settings hidden> · <a href="#">Cookies</a></span></span>
+        <a class="footer-sponsor" href="https://github.com/sponsors/tinchox5">&#9829; Sponsor Zumly</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

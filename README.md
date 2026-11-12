@@ -407,6 +407,16 @@ new Zumly({ /* … */ webgl: { snapdom, stream, hover: true } })
 
 The satellites become siblings, so the sibling bar moves around the ring. The [Orbit integration guide](https://zumerlab.com/zumly/integrations/orbit-css.html) covers sizing, state, depth layers and touch, and has [a live example](https://zumerlab.com/zumly/integrations/examples/orbit.html).
 
+## AI agents
+
+Zumly ships a skill for coding agents: [`skills/zumly/SKILL.md`](skills/zumly/SKILL.md) tells an agent what Zumly is, when to use it and how to write the 1.2 API correctly. It is also in the npm package, at `node_modules/zumly/skills/zumly/`.
+
+```sh
+npx skills add zumerlab/zumly
+```
+
+Other ways to install it, and what the skill asks of agents, are on the [AI agents page](https://zumerlab.com/zumly/agents.html).
+
 ## Router
 
 ```js

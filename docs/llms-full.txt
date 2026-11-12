@@ -8,6 +8,7 @@ Author: Juan Martin Muda — Zumerlab
 Repository: https://github.com/zumerlab/zumly
 Site: https://zumerlab.com/zumly/ · Showcases: https://zumerlab.com/zumly/#/home/showcases · Learn in six steps: https://zumerlab.com/zumly/learn/ · API reference: https://zumerlab.com/zumly/api.html
 npm: https://www.npmjs.com/package/zumly
+Agent skill: https://raw.githubusercontent.com/zumerlab/zumly/main/skills/zumly/SKILL.md (in the npm package at `node_modules/zumly/skills/zumly/`) · AI agents page: https://zumerlab.com/zumly/agents.html
 
 ---
 
