@@ -342,7 +342,7 @@ const app = new Zumly({
 await app.init()
 await app.zoomTo('detail')
 expect(app.getCurrentViewName()).toBe('detail')
-app.back()
+await app.back()   // resolves when your driver has called onComplete()
 expect(app.getCurrentViewName()).toBe('home')
 ```
 
