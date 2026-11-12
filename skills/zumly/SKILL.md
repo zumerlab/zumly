@@ -231,7 +231,7 @@ A custom driver is a function `(spec, onComplete) => void`. Zumly computes the t
 app.use(ZumlyRouter)                    // or app.use(Zumly.Router); options: { prefix: '/', separator: '/' }
 ```
 
-It writes the view path to the hash (`#/house/room?id=kitchen`) and makes the browser **back** button undo lateral moves and zoom out. It does **not** support browser forward or deep links: a forward is undone, and loading a URL with a nested hash starts at `initialView` and rewrites the hash. Do not promise shareable deep URLs. A plugin is an object with `install(instance, options)` or a function `(instance, options)`.
+It writes the view path to the hash (`#/house/room?id=kitchen`) and makes the browser **back** button undo lateral moves and zoom out. A zoom-in or a move to a sibling adds a history entry; `zoomOut()` and `back()` rewrite the current one. It does **not** support browser forward or deep links: a forward is undone, and loading a URL with a nested hash starts at `initialView` and rewrites the hash. Do not promise shareable deep URLs. A plugin is an object with `install(instance, options)` or a function `(instance, options)`.
 
 ## Frameworks
 

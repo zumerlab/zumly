@@ -950,6 +950,7 @@ Or with script tag:
 
 - `zoomInStart` / `lateralStart` → `pushState` (new hash entry, as the motion starts, so a browser back during it returns to the view it left); `afterZoomIn` / `afterLateral` → `replaceState` if anything changed
 - `afterZoomOut` → `replaceState` (updates hash without new history entry)
+- `lateralStart` with `isBack` (`back()` undoing a lateral move) → `replaceState` too: going back in the app never adds a history entry
 - `popstate` event (browser back) → `zoomOut()` or `goTo(name, { mode: 'lateral' })`
 - Forward navigation via popstate is blocked (goes back)
 - Cleans up all listeners on `destroy`
