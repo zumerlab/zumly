@@ -1631,13 +1631,19 @@ export class Zumly {
   async zoomIn (el) {
     if (this._destroyed) return
     if (!el?.dataset?.to) return
-    // A trigger in a view behind the current one is not a way in: its view is inert, a
-    // click there moves to a sibling or zooms out, and zooming from it would stack its
-    // view on top of a view it does not belong to.
+    // A trigger in a view behind the current one is not a way in: its view is inert, and
+    // zooming from it would stack its view on top of a view it does not belong to. It
+    // does what a click on it does: a sibling's trigger in the parent moves to that sibling.
     if (!this.blockEvents && this.canvas?.contains(el)) {
       const currentView = this.canvas.querySelector(':scope > .is-current-view')
       if (currentView && !currentView.contains(el)) {
-        this.notify(`zoomIn() ignored: the trigger for "${el.dataset.to}" is in a view behind the current one ("${this.getCurrentViewName()}"). Use goTo("${el.dataset.to}", { mode: 'lateral' }) to move to a sibling, or zoomOut() first.`, 'warn')
+        const { siblings, entered } = this._parentTriggers()
+        if (siblings.includes(el)) return this._lateralToTrigger(el)
+        if (entered.includes(el)) {
+          this.notify(`zoomIn() ignored: "${el.dataset.to}" is already the current view.`)
+          return
+        }
+        this.notify(`zoomIn() ignored: the trigger for "${el.dataset.to}" is in a view behind the current one ("${this.getCurrentViewName()}") and does not lead to a sibling of it. Call zoomOut() first.`, 'warn')
         return
       }
     }
@@ -2551,7 +2557,7 @@ export class Zumly {
       if (siblingTrigger) {
         this.tracing('onZoom() → lateral')
         event.stopPropagation()
-        this._doLateral(viewKey(siblingTrigger.dataset.to, identityParams(siblingTrigger.dataset)))
+        this._lateralToTrigger(siblingTrigger)
         return
       }
       this.tracing('onZoom() → zoomOut')
@@ -2569,21 +2575,43 @@ export class Zumly {
    * @private
    */
   _findSiblingTriggerAtPoint (x, y) {
-    const previousView = this.canvas.querySelector('.is-previous-view')
-    if (!previousView) return null
-    const current = this._currentIdentity()
-    if (!current) return null
-    const triggers = previousView.querySelectorAll('.zoom-me[data-to]:not([data-sibling="false"])')
-    const entries = this._siblingEntries(triggers, false)
-    const currentKey = entries[matchIdentity(entries, current)]?.key ?? current.key
-    for (const { trigger, key } of entries) {
-      if (key === currentKey) continue
+    for (const trigger of this._parentTriggers().siblings) {
       const rect = trigger.getBoundingClientRect()
       if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
         return trigger
       }
     }
     return null
+  }
+
+  /**
+   * The triggers in the parent (previous) view that take part in sibling moves:
+   * `siblings` lead to a sibling of the current view, `entered` to the current view
+   * itself. Triggers with data-sibling="false" are in neither.
+   * @returns {{ siblings: HTMLElement[], entered: HTMLElement[] }}
+   * @private
+   */
+  _parentTriggers () {
+    const siblings = []
+    const entered = []
+    const previousView = this.canvas.querySelector('.is-previous-view')
+    const current = previousView && this._currentIdentity()
+    if (!current) return { siblings, entered }
+    const triggers = previousView.querySelectorAll('.zoom-me[data-to]:not([data-sibling="false"])')
+    const entries = this._siblingEntries(triggers, false)
+    const currentKey = entries[matchIdentity(entries, current)]?.key ?? current.key
+    for (const { trigger, key } of entries) (key === currentKey ? entered : siblings).push(trigger)
+    return { siblings, entered }
+  }
+
+  /**
+   * Move to the sibling a trigger in the parent view leads to: what a click on that
+   * trigger does, and zoomIn() with it.
+   * @param {HTMLElement} trigger
+   * @private
+   */
+  _lateralToTrigger (trigger) {
+    return this._doLateral(viewKey(trigger.dataset.to, identityParams(trigger.dataset)))
   }
 
   // ─── Lateral navigation UI ────────────────────────────────────────

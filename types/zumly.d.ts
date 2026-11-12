@@ -493,9 +493,11 @@ export class Zumly {
 
   /**
    * Zoom into the view indicated by a trigger element with data-to="viewName".
-   * The trigger must be in the current view. One in a view behind it is ignored
-   * with a warning: use goTo(name, { mode: 'lateral' }) for a sibling, or
-   * zoomOut() first.
+   * Resolves when the transition ends. With a sibling's trigger in the parent
+   * view (the view right behind the current one), it moves to that sibling, as
+   * a click on that trigger does. The trigger of the current view itself does
+   * nothing. Any other trigger in a view behind (the grandparent, or one in the
+   * parent with data-sibling="false") is ignored with a warning: zoomOut() first.
    */
   zoomIn(el: HTMLElement): Promise<void>
 

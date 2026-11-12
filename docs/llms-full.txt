@@ -538,7 +538,7 @@ Returns the name of the currently active view, or null if not initialized.
 
 ### `zoomIn(el: HTMLElement): Promise<void>`
 
-Zoom into the view indicated by trigger element (must have `data-to="viewName"`). The trigger must be in the current view. A trigger in a view behind it (the parent or grandparent, which are inert) is ignored with a console warning: use `goTo(name, { mode: 'lateral' })` to move to a sibling, or `zoomOut()` first.
+Zoom into the view indicated by trigger element (must have `data-to="viewName"`). Normally the trigger is in the current view. With a trigger in the parent view (the one right behind) that leads to a sibling of the current view, `zoomIn(el)` does what a click on it does: a lateral move to that sibling, with the same props, events, history and sibling bar as `goTo(name, { mode: 'lateral' })`. The trigger of the current view itself does nothing. Any other trigger in a view behind (in the grandparent, or in the parent with `data-sibling="false"`) is ignored with a console warning: call `zoomOut()` first. A trigger outside the canvas zooms in from where it is.
 
 ### `zoomOut(target?): Promise<void>`
 

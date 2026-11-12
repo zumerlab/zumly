@@ -1,8 +1,9 @@
 /**
  * Tests for programmatic navigation API: getCurrentViewName, getZoomLevel, back, zoomTo.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { Zumly } from '../src/zumly.js'
+import { ZumlyRouter } from '../src/plugins/router.js'
 
 describe('programmatic navigation', () => {
   beforeEach(() => {
@@ -140,44 +141,122 @@ describe('programmatic navigation', () => {
       expect(app.getCurrentViewName()).toBe('home')
     })
 
-    it('zoomIn() ignores a trigger in a view behind the current one, with a warning', async () => {
-      const home = '<div class="z-view"><span class="zoom-me" data-to="detail">Detail</span><span class="zoom-me" data-to="settings">Settings</span></div>'
-      const detail = '<div class="z-view"><span class="zoom-me" data-to="deep">Deep</span></div>'
-      const app = createApp({ views: { home, detail, settings: settingsView, deep: '<div class="z-view">Deep</div>' } })
-      await app.init()
-      const toDetail = app.canvas.querySelector('[data-to="detail"]')
-      const toSettings = app.canvas.querySelector('[data-to="settings"]')
-      await app.zoomIn(toDetail)
-      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-      const changes = []
-      app.on('viewChanged', ({ type }) => changes.push(type))
-      const state = () => ({ stack: app.getViewStack().map(view => view.name), zoomed: [...app.canvas.querySelectorAll('.zoomed')].map(el => el.dataset.to) })
-      const before = state()
-      try {
-        // A sibling's trigger in the parent, and the trigger already entered.
-        await app.zoomIn(toSettings)
-        await app.zoomIn(toDetail)
+    describe('zoomIn() with a trigger in a view behind the current one', () => {
+      const home = `<div class="z-view" style="width:400px;height:300px">
+        <span class="zoom-me" data-to="detail" data-id="1" style="position:absolute;left:20px;top:20px;width:40px;height:30px">Detail</span>
+        <span class="zoom-me" data-to="settings" data-id="2" style="position:absolute;left:120px;top:20px;width:40px;height:30px">Settings</span>
+        <span class="zoom-me" data-to="about" data-sibling="false" style="position:absolute;left:220px;top:20px;width:40px;height:30px">About</span>
+      </div>`
+      const seen = []
+      const leaf = name => ctx => {
+        seen.push({ name, props: { ...ctx.props }, trigger: ctx.trigger?.dataset.to })
+        return `<div class="z-view" style="width:80px;height:60px">${name}<span class="zoom-me" data-to="deep">Deep</span></div>`
+      }
+      const events = ['beforeLateral', 'lateralStart', 'afterLateral', 'beforeZoomIn', 'zoomInStart', 'afterZoomIn', 'beforeZoomOut', 'afterZoomOut', 'viewMounted', 'viewChanged']
+      let app, fired, warn
+
+      const start = async () => {
+        document.body.innerHTML = '<div style="position:relative;width:400px;height:300px"><div class="canvas zumly-canvas"></div></div>'
+        window.history.replaceState(null, '', '#')
+        seen.length = 0
+        app = createApp({ views: { home, detail: leaf('detail'), settings: leaf('settings'), about: leaf('about'), deep: '<div class="z-view" style="width:40px;height:30px">Deep</div>' } })
+        app.use(ZumlyRouter)
+        await app.init()
+        await app.zoomIn(app.canvas.querySelector('[data-to="detail"]'))
+        fired = []
+        for (const name of events) app.on(name, data => fired.push(`${name}:${data.viewName}${data.from !== undefined ? '<' + data.from : ''}`))
+        warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      }
+      const trigger = name => app.canvas.querySelector(`.is-previous-view [data-to="${name}"], .is-last-view [data-to="${name}"]`)
+      const state = () => ({
+        stack: app.getViewStack().map(view => view.name),
+        level: app.zoomLevel(),
+        hash: window.location.hash,
+        dots: [...app.canvas.querySelectorAll('.z-lateral-nav .z-nav-lat-dot')].map(dot => dot.classList.contains('is-active')),
+        zoomed: [...app.canvas.querySelectorAll('.zoomed')].map(el => el.dataset.to),
+        lateralHistory: app.lateralHistory.length,
+        fired: [...fired],
+        last: seen.at(-1)
+      })
+
+      afterEach(() => {
+        warn?.mockRestore()
+        app?.destroy()
+        app = null
+        window.history.replaceState(null, '', '#')
+      })
+
+      it('moves to the sibling when the trigger is a sibling\'s in the parent, as a click on it does', async () => {
+        await start()
+        const result = app.zoomIn(trigger('settings'))
+        expect(result).toBeInstanceOf(Promise)
+        expect(await result).toBeUndefined()
+        const programmatic = state()
+        expect(programmatic).toEqual({
+          stack: ['home', 'settings'],
+          level: 2,
+          hash: '#/home/settings?id=2',
+          dots: [false, true],
+          zoomed: ['settings'],
+          lateralHistory: 1,
+          fired: ['beforeLateral:settings<detail', 'viewMounted:settings', 'lateralStart:settings<detail', 'afterLateral:settings<detail', 'viewChanged:settings<detail'],
+          last: { name: 'settings', props: { to: 'settings', id: '2' }, trigger: 'settings' }
+        })
+        expect(warn).not.toHaveBeenCalled()
+
+        // back() returns to the sibling it left, then zooms out.
+        await app.back()
+        expect(app.getViewStack().map(view => view.name)).toEqual(['home', 'detail'])
+        expect(window.location.hash).toBe('#/home/detail?id=1')
+        await app.back()
+        expect(app.getCurrentViewName()).toBe('home')
+        app.destroy()
+
+        // A real click on that trigger's spot ends in the same state.
+        await start()
+        const rect = trigger('settings').getBoundingClientRect()
+        app.canvas.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: 0, clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 }))
+        await vi.waitFor(() => expect(app.getCurrentViewName()).toBe('settings'))
+        await app._navigationTask?.promise
+        expect(state()).toEqual(programmatic)
+      })
+
+      it('does nothing when the trigger is the one already entered', async () => {
+        await start()
+        const before = state()
+        expect(await app.zoomIn(trigger('detail'))).toBeUndefined()
         expect(state()).toEqual(before)
-        expect(before).toEqual({ stack: ['home', 'detail'], zoomed: ['detail'] })
-        expect(changes).toEqual([])
-        expect(warn).toHaveBeenCalledTimes(2)
-        expect(warn.mock.calls[0].join(' ')).toMatch(/zoomIn\(\) ignored: the trigger for "settings" is in a view behind the current one \("detail"\)/)
+        expect(before.stack).toEqual(['home', 'detail'])
+        expect(warn).not.toHaveBeenCalled()
+      })
 
-        // One level deeper, a trigger in the grandparent is ignored too.
+      it('ignores, with a warning, a trigger in the parent that is not a sibling\'s', async () => {
+        await start()
+        const before = state()
+        await app.zoomIn(trigger('about'))
+        expect(state()).toEqual(before)
+        expect(warn).toHaveBeenCalledTimes(1)
+        const text = warn.mock.calls[0].join(' ')
+        expect(text).toMatch(/zoomIn\(\) ignored: the trigger for "about" is in a view behind the current one \("detail"\) and does not lead to a sibling of it\. Call zoomOut\(\) first\./)
+        expect(text).not.toMatch(/goTo/)
+      })
+
+      it('ignores, with a warning, a trigger in the grandparent', async () => {
+        await start()
         await app.zoomIn(app.canvas.querySelector('.is-current-view [data-to="deep"]'))
-        await app.zoomIn(toSettings)
-        expect(app.getViewStack().map(view => view.name)).toEqual(['home', 'detail', 'deep'])
-        expect(warn).toHaveBeenCalledTimes(3)
+        const before = state()
+        expect(before.stack).toEqual(['home', 'detail', 'deep'])
+        await app.zoomIn(trigger('settings'))
+        expect(state()).toEqual(before)
+        expect(warn).toHaveBeenCalledTimes(1)
+        expect(warn.mock.calls[0].join(' ')).toMatch(/the trigger for "settings" is in a view behind the current one \("deep"\) and does not lead to a sibling of it/)
 
-        // The same trigger works once its view is current again, and as a sibling.
+        // Once its view is the parent again, the same trigger moves to its sibling.
         await app.zoomOut()
-        await app.goTo('settings', { mode: 'lateral' })
+        await app.zoomIn(trigger('settings'))
         expect(app.getViewStack().map(view => view.name)).toEqual(['home', 'settings'])
-        await app.zoomOut()
-        await app.zoomIn(toSettings)
-        expect(app.getViewStack().map(view => view.name)).toEqual(['home', 'settings'])
-        expect(warn).toHaveBeenCalledTimes(3)
-      } finally { warn.mockRestore(); app.destroy() }
+        expect(warn).toHaveBeenCalledTimes(1)
+      })
     })
 
     it('zoomIn() still takes a trigger from outside the canvas', async () => {
