@@ -452,9 +452,11 @@ Triggers are keyboard reachable. Background views are `inert` and hidden from as
 | `initialView` | — | **Required.** Name of the first view. |
 | `views` | — | **Required.** Map of names to view sources. |
 | `transitions` | see above | Duration, easing, effects, `animateEffects`, driver. |
-| `lateralNav` | `{ mode: 'always' }` | Sibling bar: `mode`, `arrows`, `dots`, `position` (`'bottom-center'`, `'top-center'`), `keepAlive`, `siblings`. `false` hides it. |
-| `depthNav` | `{ position: 'bottom-left' }` | Back button; `position` is `'bottom-left'` or `'top-left'`. `false` hides it. It always zooms out. |
-| `inputs` | all `true` | `click`, `keyboard`, `wheel`, `touch`. `false` turns all off. |
+| `lateralNav` | `{ mode: 'always' }` | Sibling bar: `mode` (`'always'`, `'auto'`), `arrows` (`true`), `dots` (`true`), `position` (`'bottom-center'`, `'top-center'`), `keepAlive` (`false`, `true`, `'visible'`), `siblings`, `swipe` (`false`; `true` lets a horizontal swipe move between siblings). `false` hides it. |
+| `depthNav` | `{ position: 'bottom-left', style: 'button' }` | Back button; `position` is `'bottom-left'` or `'top-left'`, `style` is `'button'`, `'title'` or `'rings'`. `false` hides it. It always zooms out. |
+| `inputs` | all `true` but `pinch` | `click`, `keyboard`, `wheel`, `touch` (each `true`) and `pinch` (`false`: closing two fingers zooms out, opt-in because it competes with page zoom). `false` turns all off. |
+| `gestures` | `false` | Zoom-out that follows the gesture: `{ follow: false, threshold: 0.5 }`. `true` is `{ follow: true }`. `threshold` is the progress, between 0 and 1, past which releasing finishes the zoom-out. See [Gestures](#gestures). |
+| `labels` | English | Accessible names of the navigation controls: `back` (`'Back to {title}'`), `prev` (`'Previous sibling view'`), `next` (`'Next sibling view'`), `goTo` (`'Go to {title}'`). Each is a template, a function or `false`; `labels: false` turns them all off. See [Labels](#labels). |
 | `preload` | `[]` | Views to resolve during `init()`. |
 | `componentContext` | `new Map()` | Shared `context` for function and object views. |
 | `deferred` | `false` | Insert view content after the zoom. |
