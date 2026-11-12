@@ -112,10 +112,8 @@ Working document to guide next improvements.
 
 ### Current behavior
 - `stagger` is active and works across drivers.
-- `parallax` is deprecated: the option is still accepted, has no effect (always `0`) and a non-zero value warns.
 
 ### Open work
-- Define a real parallax model (transition-time and/or idle motion).
 - Evaluate optional snapshot layer for very heavy views using [snapDOM](https://github.com/zumerlab/snapdom).
 
 ---

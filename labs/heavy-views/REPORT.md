@@ -160,7 +160,7 @@ La previa crece 4× y casi toda sale del lienzo; la idea es que el navegador no 
   - Dejar `will-change: transform` en las vistas de atrás. Chrome agranda la textura en vez de re-rasterizar; queda blanda, pero detrás de un blur no se nota. Con `flatten` no hace falta.
   - `content-visibility: hidden` en lo que no se va a ver en todo el zoom, como la vista de dos niveles atrás cuando la previa la tapa.
   - `content-visibility: auto` por bloques sirve en reposo, no durante el zoom: los bloques entran y salen de pantalla en pleno movimiento.
-- **Variante de diseño:** que el fondo crezca menos. Hoy `parallax` solo achica el desplazamiento, no la escala. Con el fondo a 1,3× en vez de 4× casi no habría píxeles nuevos que rasterizar, pero ya no se "entra" en el disparador.
+- **Variante de diseño:** que el fondo crezca menos. Con el fondo a 1,3× en vez de 4× casi no habría píxeles nuevos que rasterizar, pero ya no se "entra" en el disparador.
 - **Veredicto:** la intuición es correcta, pero la herramienta no es recortar, sino que la vista sea una textura que se escala. Eso hace `flatten`, y lo harían View Transitions o WebGL. Desde CSS quedan dos ajustes chicos.
 
 ### 3. Todo en WebGL
@@ -207,7 +207,6 @@ Al hacer clic, primero se prepara todo (la foto de la vista que entra, o sus tex
 
 - `@zumer/snapdom-plugins` 4.4.0 trae `streamTexture(gl)` (`stream/src/webgl.js`): una textura WebGL que sigue a un stream y, en WebGL2, sube solo los rectángulos de cada parche. Es la pieza que le faltaba a la idea 3.
 - La demo de la guía (`docs/guides/examples/heavy.html`) tiene 48 mosaicos con `backdrop-filter` en el tablero y 90 filas con `backdrop-filter` en `detail`. Las barras de navegación de Zumly (`.z-lateral-nav`, `.z-nav-back`) también son de vidrio.
-- `transitions.parallax` solo achica el desplazamiento de las vistas de atrás, no su escala.
 - La guía de vistas pesadas no menciona `deferred`.
 - View Transitions:
   - de documento: Chrome 111+, Safari 18+, Firefox 144+;

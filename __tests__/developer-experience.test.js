@@ -54,7 +54,7 @@ describe('option diagnostics', () => {
   })
 
   it('knows every documented transitions option', () => {
-    app = create({ transitions: { driver: 'none', duration: 0, ease: 'linear', cover: 'width', effects: ['none'], animateEffects: false, stagger: 0, hideTrigger: false, parallax: 0 } })
+    app = create({ transitions: { driver: 'none', duration: 0, ease: 'linear', cover: 'width', effects: ['none'], animateEffects: false, stagger: 0, hideTrigger: false } })
     expect(messages(warn).join('\n')).not.toMatch(/unknown option/)
   })
 

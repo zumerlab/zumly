@@ -71,19 +71,15 @@ export function computePreviousViewOrigin (triggerRect, previousViewRect) {
  * @param {{ x: number, y: number, width: number, height: number }} triggerRect
  * @param {{ x: number, y: number }} previousViewRect
  * @param {number} scale
- * @param {number} [parallax=0] - Parallax intensity (0-1). Reduces translation to create depth lag.
  * @returns {{ x: number, y: number, transform: string }} Translate x,y (for lastView) and full transform string
  */
-export function computePreviousViewEndTransform (canvasRect, triggerRect, previousViewRect, scale, parallax = 0) {
+export function computePreviousViewEndTransform (canvasRect, triggerRect, previousViewRect, scale) {
   const x = canvasRect.width / 2 - triggerRect.width / 2 - triggerRect.x + previousViewRect.x
   const y = canvasRect.height / 2 - triggerRect.height / 2 - triggerRect.y + previousViewRect.y
-  const factor = 1 - parallax
-  const px = x * factor
-  const py = y * factor
   return {
     x,
     y,
-    transform: `translate(${px}px, ${py}px) scale(${scale})`
+    transform: `translate(${x}px, ${y}px) scale(${scale})`
   }
 }
 
@@ -98,7 +94,6 @@ export function computePreviousViewEndTransform (canvasRect, triggerRect, previo
  * @param {{ x: number, y: number, width: number, height: number }} params.previousViewRectWithPreviousAtEndTransform - previous view rect while it holds the “end” transform
  * @param {number} params.scale - cover scale from the active zoom step
  * @param {number} params.preScale - accumulated scale from shallower levels
- * @param {number} [params.parallax=0] - Parallax intensity (0-1). Last view uses 2x factor for deeper depth lag.
  * @returns {string} CSS transform value
  */
 export function computeLastViewEndTransform ({
@@ -109,8 +104,7 @@ export function computeLastViewEndTransform ({
   lastViewZoomedElementRect,
   previousViewRectWithPreviousAtEndTransform,
   scale,
-  preScale,
-  parallax = 0
+  preScale
 }) {
   const offsetX = canvasOffset.left
   const offsetY = canvasOffset.top
@@ -124,8 +118,7 @@ export function computeLastViewEndTransform ({
     (previousViewRectAtBaseTransform.y - lastViewZoomedElementRect.y) +
     previousViewRectWithPreviousAtEndTransform.y - offsetY +
     (previousViewRectWithPreviousAtEndTransform.height - lastViewZoomedElementRect.height) / 2
-  const factor = 1 - Math.min(parallax * 2, 0.9)
-  return `translate(${tx * factor}px, ${ty * factor}px) scale(${scale * preScale})`
+  return `translate(${tx}px, ${ty}px) scale(${scale * preScale})`
 }
 
 /**

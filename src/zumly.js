@@ -1438,7 +1438,7 @@ export class Zumly {
       const prevOriginStr = computePreviousViewOrigin(triggerRect, previousViewRectAsPrevious)
 
       prevEnd = computePreviousViewEndTransform(
-        canvasRectSize, triggerRect, previousViewRectAsPrevious, coverScale, this.parallax
+        canvasRectSize, triggerRect, previousViewRectAsPrevious, coverScale
       )
 
       // Parse old and new transforms for previousView to compute child positions mathematically
@@ -1492,8 +1492,7 @@ export class Zumly {
           lastViewZoomedElementRect: lastViewZoomedElementRectAfterIntermediate,
           previousViewRectWithPreviousAtEndTransform: previousViewRectWhileAtEndTransform,
           scale: coverScale,
-          preScale,
-          parallax: this.parallax
+          preScale
         })
       }
 

@@ -208,7 +208,7 @@ describe('utils.checkParameters()', () => {
     expect(instance.isValid).toBe(false)
   })
 
-  it('parallax is deprecated: still accepted, always 0, and a non-zero value warns', () => {
+  it('an option that no longer exists is reported as unknown and not stored', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const instance = {}
     checkParameters(
@@ -216,41 +216,14 @@ describe('utils.checkParameters()', () => {
         mount: '.first',
         initialView: 'home',
         views: { home: '<div class="z-view"></div>' },
-        transitions: { parallax: 0.15 },
+        transitions: { depthLag: 0.15 },
       },
       instance
     )
     expect(instance.isValid).toBe(true)
-    expect(instance.parallax).toBe(0)
-    const text = warnSpy.mock.calls.map(call => call.join(' ')).join('\n')
-    expect(text).toMatch(/'transitions\.parallax' is deprecated and has no effect/)
-    expect(text).not.toMatch(/unknown option/)
-
-    warnSpy.mockClear()
-    checkParameters(
-      {
-        mount: '.first',
-        initialView: 'home',
-        views: { home: '<div class="z-view"></div>' },
-        transitions: { parallax: 0 },
-      },
-      instance
-    )
-    expect(warnSpy).not.toHaveBeenCalled()
+    expect(instance).not.toHaveProperty('depthLag')
+    expect(warnSpy.mock.calls.map(call => call.join(' ')).join('\n')).toMatch(/unknown option 'transitions\.depthLag' is ignored\./)
     warnSpy.mockRestore()
-  })
-
-  it('defaults parallax to 0 when not provided', () => {
-    const instance = {}
-    checkParameters(
-      {
-        mount: '.first',
-        initialView: 'home',
-        views: { home: '<div class="z-view"></div>' },
-      },
-      instance
-    )
-    expect(instance.parallax).toBe(0)
   })
 
   it('parses transitions.stagger as positive number (ms)', () => {

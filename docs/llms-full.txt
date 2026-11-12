@@ -149,7 +149,6 @@ new Zumly({
     effects: ['blur(3px)', 'blur(8px) saturate(0)'],  // CSS filter for [previousView, lastView]
     animateEffects: true,     // false applies the effects at once instead of animating them (smoother with heavy views)
     stagger: 0,               // Progressive delay (ms) between view layers
-    parallax: 0,              // Deprecated: has no effect (accepted, always treated as 0; a non-zero value warns)
     hideTrigger: false,        // 'fade' | true | false — hide trigger element during zoom
   },
 

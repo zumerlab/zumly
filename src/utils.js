@@ -14,7 +14,7 @@ import { disposeView } from './view-lifecycle.js'
 import { didYouMean, unknownKeys, unknownViewMessage, CSS_TIME, isCssEasingSyntax, isValidCssEasing } from './diagnostics.js'
 
 const OPTION_KEYS = ['mount', 'initialView', 'views', 'preload', 'transitions', 'debug', 'componentContext', 'lateralNav', 'depthNav', 'inputs', 'deferred', 'labels', 'gestures', 'rasterize', 'webgl']
-const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'parallax', 'hideTrigger']
+const TRANSITION_KEYS = ['driver', 'cover', 'duration', 'ease', 'effects', 'animateEffects', 'stagger', 'hideTrigger']
 const LATERAL_NAV_KEYS = ['mode', 'arrows', 'dots', 'keepAlive', 'position', 'siblings', 'swipe']
 const DEPTH_NAV_KEYS = ['position', 'style']
 const DEPTH_NAV_STYLES = ['button', 'title', 'rings']
@@ -319,14 +319,6 @@ export function checkParameters (parameters, instance) {
     if (staggerIn !== undefined && staggerIn !== null && staggerIn !== 0) {
       notification(false, '\'transitions.stagger\' must be a positive number (ms). Falling back to 0 (disabled).', 'warn')
     }
-  }
-
-  // Parallax: deprecated, has no effect. The option is still accepted so existing
-  // configurations keep working; it is always treated as 0.
-  instance.parallax = 0
-  const parallaxIn = t && t.parallax
-  if (parallaxIn !== undefined && parallaxIn !== null && parallaxIn !== 0) {
-    notification(false, '\'transitions.parallax\' is deprecated and has no effect. Remove it.', 'warn')
   }
 
   // Lateral navigation UI: auto-generated arrows and dots when siblings exist.
