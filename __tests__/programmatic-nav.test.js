@@ -140,6 +140,60 @@ describe('programmatic navigation', () => {
       expect(app.getCurrentViewName()).toBe('home')
     })
 
+    it('zoomIn() ignores a trigger in a view behind the current one, with a warning', async () => {
+      const home = '<div class="z-view"><span class="zoom-me" data-to="detail">Detail</span><span class="zoom-me" data-to="settings">Settings</span></div>'
+      const detail = '<div class="z-view"><span class="zoom-me" data-to="deep">Deep</span></div>'
+      const app = createApp({ views: { home, detail, settings: settingsView, deep: '<div class="z-view">Deep</div>' } })
+      await app.init()
+      const toDetail = app.canvas.querySelector('[data-to="detail"]')
+      const toSettings = app.canvas.querySelector('[data-to="settings"]')
+      await app.zoomIn(toDetail)
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const changes = []
+      app.on('viewChanged', ({ type }) => changes.push(type))
+      const state = () => ({ stack: app.getViewStack().map(view => view.name), zoomed: [...app.canvas.querySelectorAll('.zoomed')].map(el => el.dataset.to) })
+      const before = state()
+      try {
+        // A sibling's trigger in the parent, and the trigger already entered.
+        await app.zoomIn(toSettings)
+        await app.zoomIn(toDetail)
+        expect(state()).toEqual(before)
+        expect(before).toEqual({ stack: ['home', 'detail'], zoomed: ['detail'] })
+        expect(changes).toEqual([])
+        expect(warn).toHaveBeenCalledTimes(2)
+        expect(warn.mock.calls[0].join(' ')).toMatch(/zoomIn\(\) ignored: the trigger for "settings" is in a view behind the current one \("detail"\)/)
+
+        // One level deeper, a trigger in the grandparent is ignored too.
+        await app.zoomIn(app.canvas.querySelector('.is-current-view [data-to="deep"]'))
+        await app.zoomIn(toSettings)
+        expect(app.getViewStack().map(view => view.name)).toEqual(['home', 'detail', 'deep'])
+        expect(warn).toHaveBeenCalledTimes(3)
+
+        // The same trigger works once its view is current again, and as a sibling.
+        await app.zoomOut()
+        await app.goTo('settings', { mode: 'lateral' })
+        expect(app.getViewStack().map(view => view.name)).toEqual(['home', 'settings'])
+        await app.zoomOut()
+        await app.zoomIn(toSettings)
+        expect(app.getViewStack().map(view => view.name)).toEqual(['home', 'settings'])
+        expect(warn).toHaveBeenCalledTimes(3)
+      } finally { warn.mockRestore(); app.destroy() }
+    })
+
+    it('zoomIn() still takes a trigger from outside the canvas', async () => {
+      const app = createApp()
+      await app.init()
+      const outside = document.createElement('button')
+      outside.className = 'zoom-me'
+      outside.dataset.to = 'detail'
+      document.body.append(outside)
+      await app.zoomIn(outside)
+      expect(app.getCurrentViewName()).toBe('detail')
+      await app.zoomOut()
+      expect(app.getCurrentViewName()).toBe('home')
+      app.destroy()
+    })
+
     it('click and programmatic navigation can be mixed', async () => {
       const app = createApp()
       await app.init()

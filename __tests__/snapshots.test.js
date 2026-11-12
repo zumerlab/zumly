@@ -138,9 +138,10 @@ describe('snapshots', () => {
         transitions: { driver: 'none', duration: '0s', ease: 'linear' }
       })
       await app.init()
-      await app.zoomIn(app.canvas.querySelector('.zoom-me'))
-      await app.zoomIn(app.canvas.querySelector('.zoom-me'))
-      await app.zoomIn(app.canvas.querySelector('.zoom-me'))
+      await app.zoomIn(app.canvas.querySelector('.is-current-view .zoom-me'))
+      await app.zoomIn(app.canvas.querySelector('.is-current-view .zoom-me'))
+      await app.zoomIn(app.canvas.querySelector('.is-current-view .zoom-me'))
+      expect(app.getViewStack().map(view => view.name)).toEqual(['v1', 'v2', 'v3', 'v4'])
       expect(app.canvas.querySelector('[data-view-name="v1"]')).toBeNull()
       const detached = getDetachedNode(app.currentStage)
       expect(detached).toBeTruthy()

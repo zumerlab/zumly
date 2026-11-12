@@ -208,7 +208,7 @@ Users navigate with clicks or taps on triggers, Enter or Space on a focused trig
 
 | Method | Does |
 | --- | --- |
-| `zoomIn(triggerElement)` | Zoom into the trigger's view, from the trigger. Use it to open a view from code while keeping its origin. |
+| `zoomIn(triggerElement)` | Zoom into the trigger's view, from the trigger. Use it to open a view from code while keeping its origin. The trigger must be in the current view; one in a view behind it is ignored with a warning. |
 | `zoomTo(name, { props, duration, ease })` | Zoom into a view from the center of the canvas. |
 | `goTo(name, { mode: 'lateral' })` | Move to a sibling at the same level. `goTo(name)` without `mode` is `zoomTo`. |
 | `zoomOut()`, `zoomOut(2)`, `zoomOut({ to: 'home' })` | Zoom out one level, several, or up to an ancestor, in one transition. |

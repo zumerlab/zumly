@@ -491,7 +491,12 @@ export class Zumly {
    */
   zoomTo(viewName: string, options?: ZoomToOptions): Promise<void>
 
-  /** Zoom into the view indicated by a trigger element with data-to="viewName". */
+  /**
+   * Zoom into the view indicated by a trigger element with data-to="viewName".
+   * The trigger must be in the current view. One in a view behind it is ignored
+   * with a warning: use goTo(name, { mode: 'lateral' }) for a sibling, or
+   * zoomOut() first.
+   */
   zoomIn(el: HTMLElement): Promise<void>
 
   /**

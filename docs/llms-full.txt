@@ -538,7 +538,7 @@ Returns the name of the currently active view, or null if not initialized.
 
 ### `zoomIn(el: HTMLElement): Promise<void>`
 
-Zoom into the view indicated by trigger element (must have `data-to="viewName"`).
+Zoom into the view indicated by trigger element (must have `data-to="viewName"`). The trigger must be in the current view. A trigger in a view behind it (the parent or grandparent, which are inert) is ignored with a console warning: use `goTo(name, { mode: 'lateral' })` to move to a sibling, or `zoomOut()` first.
 
 ### `zoomOut(target?): Promise<void>`
 

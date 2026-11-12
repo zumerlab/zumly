@@ -1631,6 +1631,16 @@ export class Zumly {
   async zoomIn (el) {
     if (this._destroyed) return
     if (!el?.dataset?.to) return
+    // A trigger in a view behind the current one is not a way in: its view is inert, a
+    // click there moves to a sibling or zooms out, and zooming from it would stack its
+    // view on top of a view it does not belong to.
+    if (!this.blockEvents && this.canvas?.contains(el)) {
+      const currentView = this.canvas.querySelector(':scope > .is-current-view')
+      if (currentView && !currentView.contains(el)) {
+        this.notify(`zoomIn() ignored: the trigger for "${el.dataset.to}" is in a view behind the current one ("${this.getCurrentViewName()}"). Use goTo("${el.dataset.to}", { mode: 'lateral' }) to move to a sibling, or zoomOut() first.`, 'warn')
+        return
+      }
+    }
     await this._doZoomIn(el.dataset.to, { el })
   }
 

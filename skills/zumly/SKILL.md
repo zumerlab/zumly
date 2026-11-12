@@ -112,7 +112,7 @@ All navigation methods return a promise that resolves when the transition ends.
 | Method | Does |
 | --- | --- |
 | `init()` | Renders `initialView` and starts. Nothing shows before it. |
-| `zoomIn(triggerElement)` | Zooms into the trigger's `data-to` view, from the trigger. |
+| `zoomIn(triggerElement)` | Zooms into the trigger's `data-to` view, from the trigger. The trigger must be in the current view; one in a view behind it is ignored with a warning (use a lateral `goTo`, or `zoomOut()` first). |
 | `zoomTo(name, { props, duration, ease })` | Zooms into a view from the center of the canvas (no trigger). No-op if `name` is already current. |
 | `goTo(name, { mode, props, duration, ease })` | `mode: 'lateral'` moves to a sibling; the default `'depth'` is `zoomTo`. |
 | `zoomOut()`, `zoomOut(2)`, `zoomOut({ to: 'home' })` | One level, several, or up to an ancestor, in one transition. Clamped to the root. |
