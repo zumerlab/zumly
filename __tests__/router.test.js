@@ -263,6 +263,56 @@ describe('ZumlyRouter plugin', () => {
     } finally { app.destroy() }
   })
 
+  it('back() undoing a lateral move rewrites the entry instead of adding one', async () => {
+    const app = createApp()
+    app.use(ZumlyRouter)
+    await app.init()
+    await app.zoomTo('detail')
+    await app.goTo('other', { mode: 'lateral' })
+    const length = window.history.length
+    const push = vi.spyOn(window.history, 'pushState')
+    try {
+      await app.back()
+      expect(app.getCurrentViewName()).toBe('detail')
+      expect(window.location.hash).toBe('#/home/detail')
+      expect(push).not.toHaveBeenCalled()
+      expect(window.history.length).toBe(length)
+
+      // A move forward to a sibling still adds its entry.
+      await app.goTo('other', { mode: 'lateral' })
+      expect(push).toHaveBeenCalledTimes(1)
+      expect(window.location.hash).toBe('#/home/other')
+    } finally { push.mockRestore(); app.destroy() }
+  })
+
+  it('browser back still works after back() undid a lateral move, without looping', async () => {
+    const app = createApp()
+    app.use(ZumlyRouter)
+    await app.init()
+    await app.zoomTo('detail')
+    await app.goTo('other', { mode: 'lateral' })
+    await app.back()
+    const browserBack = async () => {
+      const popped = new Promise(resolve => window.addEventListener('popstate', resolve, { once: true }))
+      window.history.back()
+      await popped
+      await app._navigationTask?.promise
+    }
+    const changes = []
+    app.on('viewChanged', ({ type, viewName }) => changes.push(`${type}:${viewName}`))
+    try {
+      // The entry back() rewrote and the one below it both say detail: the view stays.
+      await browserBack()
+      expect(window.location.hash).toBe('#/home/detail')
+      expect(app.getCurrentViewName()).toBe('detail')
+      await browserBack()
+      await vi.waitFor(() => expect(app.getCurrentViewName()).toBe('home'))
+      expect(window.location.hash).toBe('#/home')
+      expect(changes).toEqual(['zoomOut:home'])
+      expect(app.lateralHistory).toHaveLength(0)
+    } finally { app.destroy() }
+  })
+
   it('consumes multiple lateral entries when browser history skips siblings', async () => {
     const app = createApp({ views: { home: homeView, detail: detailView, other: otherView, third: '<div class="z-view">Third</div>' } })
     app.use(ZumlyRouter)

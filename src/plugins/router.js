@@ -3,6 +3,8 @@
  *
  * Syncs browser URL hash with Zumly navigation state.
  * Supports browser back (zoom-out, lateral) and hash updates on navigation.
+ * Going further (a zoom-in, a move to a sibling) adds a history entry; going
+ * back in the app (zoomOut(), back()) rewrites the current one.
  * Forward/deep-linking is intentionally not supported — in a ZUI the zoom
  * origin depends on the trigger element which doesn't exist without context.
  *
@@ -86,12 +88,15 @@ export const ZumlyRouter = {
 
     function pushHash () { setHash('pushState') }
     function replaceHash () { setHash('replaceState') }
+    // back() undoing a move to a sibling leaves a view, as a zoom-out does: it rewrites the
+    // current entry instead of adding one, so going back in the app never grows the history.
+    function lateralHash (data) { setHash(data && data.isBack ? 'replaceState' : 'pushState') }
 
     // A zoom-in or a move to a sibling writes its entry as it starts: a browser back during
     // the motion then comes back to the view it left, instead of the entry before it (which
     // can be outside the app). Its end only keeps the hash right.
     instance.on('zoomInStart', pushHash)
-    instance.on('lateralStart', pushHash)
+    instance.on('lateralStart', lateralHash)
     instance.on('afterZoomIn', replaceHash)
     instance.on('afterLateral', replaceHash)
     instance.on('afterZoomOut', replaceHash)
@@ -194,7 +199,7 @@ export const ZumlyRouter = {
       destroyed = true
       pendingTarget = null
       instance.off('zoomInStart', pushHash)
-      instance.off('lateralStart', pushHash)
+      instance.off('lateralStart', lateralHash)
       instance.off('afterZoomIn', replaceHash)
       instance.off('afterLateral', replaceHash)
       instance.off('afterZoomOut', replaceHash)
