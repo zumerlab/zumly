@@ -1,0 +1,9 @@
+{
+  "name": "zumly",
+  "description": "Agent skill for Zumly: zooming user interfaces where a click on a trigger zooms into the next view, with depth and lateral navigation, a hash router and pluggable transition drivers.",
+  "author": { "name": "Juan Martin Muda", "url": "https://zumerlab.com" },
+  "homepage": "https://zumerlab.com/zumly/agents.html",
+  "repository": "https://github.com/zumerlab/zumly",
+  "license": "MIT",
+  "keywords": ["zumly", "zui", "zoom", "navigation", "transitions"]
+}
