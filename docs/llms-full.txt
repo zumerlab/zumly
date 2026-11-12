@@ -2,7 +2,7 @@
 
 > JavaScript library for hierarchical zoom navigation (ZUI). Navigate in Z (depth) through discrete views in the XY plane with spatial transitions.
 
-Version: 1.0.0
+Version: 1.2.3
 License: MIT
 Author: Juan Martin Muda — Zumerlab
 Repository: https://github.com/zumerlab/zumly
@@ -90,7 +90,7 @@ When using the CDN, `Zumly` is available as a global (`window.Zumly`).
 ### Package exports
 
 ```
-"zumly"            → main entry (ESM: dist/zumly.mjs, CJS: dist/zumly.js)
+"zumly"            → main entry (ESM: dist/zumly.mjs, CJS: dist/zumly.cjs)
 "zumly/style.css"  → dist/zumly.css
 "zumly/css"        → dist/zumly.css
 "zumly/drivers"    → src/drivers/index.js (all built-in drivers)
