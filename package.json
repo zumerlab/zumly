@@ -13,6 +13,10 @@
   "bugs": {
     "url": "https://github.com/zumerlab/zumly/issues"
   },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/tinchox5"
+  },
   "keywords": [
     "zumly",
     "zooming",
@@ -67,6 +71,7 @@
     "src/view-visibility.js",
     "src/view-lifecycle.js",
     "docs/DRIVER_API.md",
+    "skills",
     "README.md"
   ],
   "engines": {
