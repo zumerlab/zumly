@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file. 
 
+#### [v1.2.4](https://github.com/zumerlab/zumly/compare/v1.2.3...v1.2.4)
+
+> 12 November 2026
+
+**Fixes**
+
+- zoomIn() ignores a trigger in a view behind the current one [`8e01d78`](https://github.com/zumerlab/zumly/commit/8e01d78dfce536ddd245ebd577297dccf9f65868)
+- goTo() lateral with props gives the view its trigger's data [`a2db193`](https://github.com/zumerlab/zumly/commit/a2db1939d21206b363ad2ebb49717e9cc090fe20)
+- **router:** back() undoing a lateral move no longer adds a history entry [`1bf4eea`](https://github.com/zumerlab/zumly/commit/1bf4eea143823751d6b2fe7060421c7ef25215e1)
+
+**Docs**
+
+- playground guide [`ae8fb82`](https://github.com/zumerlab/zumly/commit/ae8fb829c6c1e0b05831942110c22a6505554c0f)
+- **site:** header fits on phones [`20cdaff`](https://github.com/zumerlab/zumly/commit/20cdaff56b91df80d43b14bb643911df53cc9710)
+- explain how Zumly works [`e564fa7`](https://github.com/zumerlab/zumly/commit/e564fa7993866e5ab365437d555b831ac48de8ad)
+- **site:** redirect /drivers/ and /integrations/ to the guides [`ab0483b`](https://github.com/zumerlab/zumly/commit/ab0483bd375a25faca53afe230220be1102caff8)
+- **readme:** list gestures, labels, inputs.pinch and lateralNav.swipe in the options table [`78e6ff5`](https://github.com/zumerlab/zumly/commit/78e6ff5fd52f31e6b18063fc5db7734a48a63e72)
+- say that going back in the app rewrites the history entry [`1adbddd`](https://github.com/zumerlab/zumly/commit/1adbdddf60f94d262c3223676e7871d948148ec3)
+- await back() in the driver test snippet [`cfa1924`](https://github.com/zumerlab/zumly/commit/cfa1924715fe7c81ee4018506037c3e551ca7bd2)
+
+**Other**
+
+- Add agent skill for Zumly and ship it in the package [`ccc8870`](https://github.com/zumerlab/zumly/commit/ccc8870c256c7b8e184f40b2317a4ede80b4de90)
+- Add an AI agents page to the site and link it from the docs [`3090338`](https://github.com/zumerlab/zumly/commit/3090338d081fb9eeb6cd615485af665e5a2912d6)
+- Remove transitions.parallax [`3dde6b2`](https://github.com/zumerlab/zumly/commit/3dde6b2e279ae7dbb6cd9be527b984e6ce7a54d4)
+- Deprecate transitions.parallax, which has no effect [`c028a81`](https://github.com/zumerlab/zumly/commit/c028a812dd1b60cf7f274ff97876faef1c985965)
+- createFinishGuard returns extend() too [`871f802`](https://github.com/zumerlab/zumly/commit/871f802392b6e3754a1e6ce27b39445bcbcaa564)
+- Add a Claude Code plugin manifest and use the zumer marketplace in the install lines [`2dc843a`](https://github.com/zumerlab/zumly/commit/2dc843a6cbb86b499ac6a806fcb2254edb4137f7)
+- Correct the version and the CommonJS path in llms-full.txt [`32e7279`](https://github.com/zumerlab/zumly/commit/32e72791ae00f93b1736a5be14f395988d767eea)
+- Change logo image source in README [`a5aad47`](https://github.com/zumerlab/zumly/commit/a5aad47af13a81f215cbad59dffa997ed829ef11)
+
 #### [v1.2.3](https://github.com/zumerlab/zumly/compare/v1.2.2...v1.2.3)
 
 > 30 October 2026
